@@ -17,6 +17,7 @@ const AdminLogin = () => {
     // Mock Authentication Logic
     setTimeout(() => {
       if (email === 'admin@mockai.com' && password === 'admin123') {
+        localStorage.setItem('mockai_admin_auth', 'true');
         navigate('/admin/dashboard');
       } else {
         setError('Invalid email or password. Try admin@mockai.com / admin123');

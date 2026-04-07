@@ -12,7 +12,12 @@ import Logs from './pages/Logs';
 // Wrapper for Admin Content to inject Header/Sidebar Layout
 import { routes } from './routes';
 
-const AdminLayout = ({ children }) => {
+function PrivateRoute({ children }) {
+  const isAuthenticated = localStorage.getItem('mockai_admin_auth') === 'true';
+  return isAuthenticated ? children : <Navigate to="/admin/login" />;
+}
+
+function AdminLayout({ children }) {
   return (
     <div className="flex min-h-screen bg-[#080a10]">
       <Sidebar />
@@ -24,15 +29,35 @@ const AdminLayout = ({ children }) => {
       </div>
     </div>
   );
-};
+}
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         {routes.map((route, idx) => {
+          if (route.path === '/admin/login') {
+            return (
+              <Route 
+                key={idx} 
+                path={route.path} 
+                element={
+                  localStorage.getItem('mockai_admin_auth') === 'true' 
+                  ? <Navigate to="/admin/dashboard" /> 
+                  : route.element
+                } 
+              />
+            );
+          }
+
           const element = route.layout ? <AdminLayout>{route.element}</AdminLayout> : route.element;
-          return <Route key={idx} path={route.path} element={element} />;
+          return (
+            <Route 
+              key={idx} 
+              path={route.path} 
+              element={<PrivateRoute>{element}</PrivateRoute>} 
+            />
+          );
         })}
         {/* Root Redirects */}
         <Route path="/admin" element={<Navigate to="/admin/dashboard" />} />

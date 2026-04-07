@@ -31,12 +31,13 @@ const Header = () => {
           <input 
             type="text" 
             placeholder="Search everything..." 
+            onKeyDown={(e) => { if(e.key === 'Enter') alert(`Searching for: ${e.target.value}`) }}
             className="pl-10 pr-4 py-1.5 rounded-lg bg-slate-900/40 border border-slate-800/40 text-slate-200 text-sm focus:outline-none focus:border-indigo-500/40 focus:ring-1 focus:ring-indigo-500/20 w-60"
           />
         </div>
 
         {/* Notif */}
-        <button className="relative w-9 h-9 flex items-center justify-center rounded-lg bg-slate-800/30 text-slate-400 hover:text-white border border-slate-800/40 hover:border-slate-700/60 transition-all">
+        <button onClick={() => alert("You have 3 new notifications!")} className="relative w-9 h-9 flex items-center justify-center rounded-lg bg-slate-800/30 text-slate-400 hover:text-white border border-slate-800/40 hover:border-slate-700/60 transition-all">
           <Bell className="w-5 h-5" />
           <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-indigo-500 rounded-full"></span>
         </button>

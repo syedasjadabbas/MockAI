@@ -1,45 +1,53 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Users, Briefcase, Award, TrendingUp, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
 import StatsCard from '../components/StatsCard';
 import { InterviewActivityChart, UserGrowthChart } from '../components/Charts';
-
-const RecentInterviews = [
-  { id: 'INT-1082', candidate: 'Sarah Jenkins', type: 'Frontend Engineer', score: 88, status: 'Completed', time: '10 mins ago' },
-  { id: 'INT-1081', candidate: 'Michael Chen', type: 'Product Manager', score: null, status: 'In-Progress', time: '23 mins ago' },
-  { id: 'INT-1080', candidate: 'Alex Rodriguez', type: 'Data Scientist', score: 92, status: 'Completed', time: '1 hour ago' },
-  { id: 'INT-1079', candidate: 'Emily Taylor', type: 'UX Designer', score: 76, status: 'Completed', time: '3 hours ago' },
-  { id: 'INT-1078', candidate: 'James Wilson', type: 'DevOps Engineer', score: null, status: 'Failed', time: '5 hours ago' },
-];
+import { usersData, interviewsData, resultsData } from '../data/mockData';
 
 const Dashboard = () => {
+  const totalUsers = usersData.length;
+  const totalInterviews = interviewsData.length;
+  const totalResponses = resultsData.length * 5; // Fake some number based on results
+  const avgPerformance = resultsData.length ? Math.round(resultsData.reduce((acc, r) => acc + r.overallScore, 0) / resultsData.length) : 0;
+
+  const RecentInterviews = interviewsData.slice(0, 5).map((interview) => ({
+    id: `INT-${interview.id}`,
+    candidate: interview.user,
+    type: interview.type,
+    score: interview.score,
+    status: interview.status,
+    time: interview.date
+  }));
+
   return (
     <div className="space-y-8">
       {/* Stats Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatsCard 
           title="Total Users" 
-          value="2,845" 
+          value={totalUsers.toLocaleString()} 
           icon={Users} 
           percentage="12.5%" 
           trend="up" 
         />
         <StatsCard 
           title="Interviews Conducted" 
-          value="14,204" 
+          value={totalInterviews.toLocaleString()} 
           icon={Briefcase} 
           percentage="8.2%" 
           trend="up" 
         />
         <StatsCard 
           title="Total Responses" 
-          value="85,120" 
+          value={totalResponses.toLocaleString()} 
           icon={Award} 
           percentage="5.1%" 
           trend="up" 
         />
         <StatsCard 
           title="Avg. Performance" 
-          value="78.4%" 
+          value={`${avgPerformance}%`} 
           icon={TrendingUp} 
           percentage="2.4%" 
           trend="down" 
@@ -56,7 +64,7 @@ const Dashboard = () => {
       <div className="glass-card p-6 rounded-2xl hover:border-indigo-500/10 transition-all duration-300">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-semibold text-white">Recent Interviews</h3>
-          <button className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 transition-colors">View All</button>
+          <Link to="/admin/interviews" className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 transition-colors">View All</Link>
         </div>
 
         <div className="overflow-x-auto">
