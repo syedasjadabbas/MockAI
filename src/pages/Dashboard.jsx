@@ -90,12 +90,12 @@ const Dashboard = () => {
                     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${
                       item.status === 'Completed' 
                         ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/10'
-                        : item.status === 'In-Progress'
+                        : item.status === 'In Progress' || item.status === 'Scheduled'
                           ? 'bg-amber-500/10 text-amber-400 border-amber-500/10'
                           : 'bg-rose-500/10 text-rose-400 border-rose-500/10'
                     }`}>
                       {item.status === 'Completed' && <CheckCircle2 className="w-3.5 h-3.5" />}
-                      {item.status === 'In-Progress' && <Clock className="w-3.5 h-3.5" />}
+                      {(item.status === 'In Progress' || item.status === 'Scheduled') && <Clock className="w-3.5 h-3.5" />}
                       {item.status === 'Failed' && <AlertCircle className="w-3.5 h-3.5" />}
                       {item.status}
                     </span>
