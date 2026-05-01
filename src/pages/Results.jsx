@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Award, ShieldAlert, Sparkles, AlertCircle } from 'lucide-react';
-import { resultsData, interviewsData } from '../data/mockData';
+import { fetchWithAuth } from '../api';
 
 const ScoreIndicator = ({ score }) => {
   let color = 'bg-rose-500/20 text-rose-400 border-rose-500/20';
@@ -16,13 +16,13 @@ const ScoreIndicator = ({ score }) => {
 };
 
 const Results = () => {
-  const mappedResults = resultsData.map(res => {
-    const interview = interviewsData.find(i => i.id === res.interviewId);
-    return {
-      ...res,
-      date: interview ? interview.date : 'Unknown Date'
-    };
-  });
+  const [mappedResults, setMappedResults] = useState([]);
+
+  useEffect(() => {
+    fetchWithAuth('/results')
+      .then(data => setMappedResults(data.map(r => ({...r, id: r.id || r._id}))))
+      .catch(console.error);
+  }, []);
 
   return (
     <div className="space-y-6">

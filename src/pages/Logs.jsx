@@ -1,8 +1,16 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Terminal, Calendar, User, Info } from 'lucide-react';
-import { logsData } from '../data/mockData';
+import { fetchWithAuth } from '../api';
 
 const Logs = () => {
+  const [logsData, setLogsData] = useState([]);
+
+  useEffect(() => {
+    fetchWithAuth('/logs')
+      .then(data => setLogsData(data.map(l => ({...l, id: l.id || l._id}))))
+      .catch(console.error);
+  }, []);
+
   const getLogType = (action) => {
     if (action.includes('Viewed') || action.includes('Opened')) return 'View';
     if (action.includes('Checked')) return 'Read';

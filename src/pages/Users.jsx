@@ -1,11 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, ChevronLeft, ChevronRight, Eye, MoreVertical, X } from 'lucide-react';
-import { usersData } from '../data/mockData';
+import { fetchWithAuth } from '../api';
 
 const Users = () => {
   const [search, setSearch] = useState('');
   const [selectedUser, setSelectedUser] = useState(null);
-  const [users, setUsers] = useState(usersData);
+  const [users, setUsers] = useState([]);
+
+  useEffect(() => {
+    fetchWithAuth('/users')
+      .then(data => {
+        setUsers(data.map(u => ({ ...u, id: u.id || u._id })));
+      })
+      .catch(console.error);
+  }, []);
 
   const filteredUsers = users.filter(user => 
     user.name.toLowerCase().includes(search.toLowerCase()) || 

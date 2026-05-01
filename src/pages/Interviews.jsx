@@ -1,11 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Filter, Calendar, Clock, CheckCircle2, AlertCircle, Eye, X } from 'lucide-react';
-import { interviewsData } from '../data/mockData';
+import { fetchWithAuth } from '../api';
 
 const Interviews = () => {
   const [statusFilter, setStatusFilter] = useState('All');
   const [typeFilter, setTypeFilter] = useState('All');
   const [selectedInterview, setSelectedInterview] = useState(null);
+  const [interviewsData, setInterviewsData] = useState([]);
+
+  useEffect(() => {
+    fetchWithAuth('/interviews')
+      .then(data => setInterviewsData(data.map(i => ({...i, id: i.id || i._id}))))
+      .catch(console.error);
+  }, []);
 
   const filteredInterviews = interviewsData.filter(item => {
     const matchStatus = statusFilter === 'All' || item.status === statusFilter;

@@ -1,0 +1,5 @@
+fastapi[all]
+pymongo
+passlib[bcrypt]
+PyJWT
+python-multipart

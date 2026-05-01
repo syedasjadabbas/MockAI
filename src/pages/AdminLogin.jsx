@@ -14,16 +14,27 @@ const AdminLogin = () => {
     setLoading(true);
     setError('');
 
-    // Mock Authentication Logic
-    setTimeout(() => {
-      if (email === 'admin@mockai.com' && password === 'admin123') {
-        localStorage.setItem('mockai_admin_auth', 'true');
-        navigate('/admin/dashboard');
-      } else {
-        setError('Invalid email or password. Try admin@mockai.com / admin123');
-        setLoading(false);
+    fetch('http://localhost:8000/api/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    })
+    .then(async res => {
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || 'Invalid email or password');
       }
-    }, 1000);
+      return res.json();
+    })
+    .then(data => {
+      localStorage.setItem('mockai_admin_auth', 'true');
+      localStorage.setItem('mockai_admin_token', data.token);
+      navigate('/admin/dashboard');
+    })
+    .catch(err => {
+      setError(err.message);
+      setLoading(false);
+    });
   };
 
   return (

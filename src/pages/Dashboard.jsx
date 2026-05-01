@@ -3,22 +3,29 @@ import { Link } from 'react-router-dom';
 import { Users, Briefcase, Award, TrendingUp, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
 import StatsCard from '../components/StatsCard';
 import { InterviewActivityChart, UserGrowthChart } from '../components/Charts';
-import { usersData, interviewsData, resultsData } from '../data/mockData';
+import { fetchWithAuth } from '../api';
+import { useState, useEffect } from 'react';
 
 const Dashboard = () => {
-  const totalUsers = usersData.length;
-  const totalInterviews = interviewsData.length;
-  const totalResponses = resultsData.length * 5; // Fake some number based on results
-  const avgPerformance = resultsData.length ? Math.round(resultsData.reduce((acc, r) => acc + r.overallScore, 0) / resultsData.length) : 0;
+  const [stats, setStats] = useState({ totalUsers: 0, totalInterviews: 0, totalResponses: 0, averageScore: 0 });
+  const [recentInterviews, setRecentInterviews] = useState([]);
 
-  const RecentInterviews = interviewsData.slice(0, 5).map((interview) => ({
-    id: `INT-${interview.id}`,
-    candidate: interview.user,
-    type: interview.type,
-    score: interview.score,
-    status: interview.status,
-    time: interview.date
-  }));
+  useEffect(() => {
+    fetchWithAuth('/stats').then(setStats).catch(console.error);
+    fetchWithAuth('/recent-interviews').then(data => {
+      setRecentInterviews(data.map(interview => ({
+        id: `INT-${interview.id || interview._id}`,
+        candidate: interview.user || 'Unknown',
+        type: interview.type || 'N/A',
+        score: interview.score,
+        status: interview.status,
+        time: interview.date
+      })));
+    }).catch(console.error);
+  }, []);
+
+  const { totalUsers, totalInterviews, totalResponses, averageScore: avgPerformance } = stats;
+  const RecentInterviews = recentInterviews;
 
   return (
     <div className="space-y-8">
