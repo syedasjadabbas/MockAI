@@ -9,23 +9,37 @@ import { useState, useEffect } from 'react';
 const Dashboard = () => {
   const [stats, setStats] = useState({ totalUsers: 0, totalInterviews: 0, totalResponses: 0, averageScore: 0 });
   const [recentInterviews, setRecentInterviews] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchWithAuth('/stats').then(setStats).catch(console.error);
-    fetchWithAuth('/recent-interviews').then(data => {
-      setRecentInterviews(data.map(interview => ({
-        id: `INT-${interview.id || interview._id}`,
-        candidate: interview.user || 'Unknown',
-        type: interview.type || 'N/A',
-        score: interview.score,
-        status: interview.status,
-        time: interview.date
-      })));
-    }).catch(console.error);
+    setLoading(true);
+    Promise.all([
+      fetchWithAuth('/').then(data => {
+        setStats({
+          totalUsers: data.total_users || 0,
+          totalInterviews: data.total_interviews || 0,
+          totalResponses: data.total_interviews || 0,
+          averageScore: data.average_score || 0
+        });
+      }),
+      fetchWithAuth('/interviews').then(data => {
+        const latest = [...data].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 5);
+        setRecentInterviews(latest.map(interview => ({
+          id: `INT-${interview._id.slice(-6).toUpperCase()}`,
+          candidate: interview.candidate_name || 'Unknown',
+          type: interview.role || 'N/A',
+          score: interview.score,
+          status: interview.status || 'Completed',
+          time: new Date(interview.created_at).toLocaleDateString()
+        })));
+      })
+    ]).catch(console.error).finally(() => setLoading(false));
   }, []);
 
   const { totalUsers, totalInterviews, totalResponses, averageScore: avgPerformance } = stats;
   const RecentInterviews = recentInterviews;
+
+  if (loading) return <div className="flex items-center justify-center h-full min-h-[400px]"><div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div></div>;
 
   return (
     <div className="space-y-8">
@@ -92,17 +106,18 @@ const Dashboard = () => {
                   <td className="py-4 pr-4 font-medium text-sm text-indigo-400">{item.id}</td>
                   <td className="py-4 px-4 font-semibold text-sm text-slate-200">{item.candidate}</td>
                   <td className="py-4 px-4 text-sm text-slate-400">{item.type}</td>
-                  <td className="py-4 px-4 text-sm font-bold text-slate-200">{item.score ? `${item.score}%` : 'N/A'}</td>
+                  <td className="py-4 px-4 text-sm font-bold text-slate-200">{item.score != null ? `${item.score}%` : '-'}</td>
                   <td className="py-4 px-4">
                     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${
                       item.status === 'Completed' 
                         ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/10'
-                        : item.status === 'In Progress' || item.status === 'Scheduled'
+                        : item.status === 'In Progress'
                           ? 'bg-amber-500/10 text-amber-400 border-amber-500/10'
-                          : 'bg-rose-500/10 text-rose-400 border-rose-500/10'
+                          : 'bg-slate-500/10 text-slate-400 border-slate-500/10'
                     }`}>
                       {item.status === 'Completed' && <CheckCircle2 className="w-3.5 h-3.5" />}
-                      {(item.status === 'In Progress' || item.status === 'Scheduled') && <Clock className="w-3.5 h-3.5" />}
+                      {item.status === 'In Progress' && <Clock className="w-3.5 h-3.5" />}
+                      {item.status === 'Pending' && <Clock className="w-3.5 h-3.5" />}
                       {item.status === 'Failed' && <AlertCircle className="w-3.5 h-3.5" />}
                       {item.status}
                     </span>

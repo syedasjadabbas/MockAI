@@ -28,7 +28,7 @@ const AdminLogin = () => {
     })
     .then(data => {
       localStorage.setItem('mockai_admin_auth', 'true');
-      localStorage.setItem('mockai_admin_token', data.token);
+      localStorage.setItem('mockai_admin_token', data.access_token);
       navigate('/admin/dashboard');
     })
     .catch(err => {

@@ -4,11 +4,20 @@ import { fetchWithAuth } from '../api';
 
 const Logs = () => {
   const [logsData, setLogsData] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setLoading(true);
     fetchWithAuth('/logs')
-      .then(data => setLogsData(data.map(l => ({...l, id: l.id || l._id}))))
-      .catch(console.error);
+      .then(data => setLogsData(data.map(l => ({
+        id: l._id ? l._id.slice(-6).toUpperCase() : Math.random().toString(36).substring(7).toUpperCase(),
+        admin: l.admin_email || 'System Admin',
+        action: l.action,
+        target: l.target || 'System',
+        timestamp: l.created_at ? new Date(l.created_at).toLocaleString() : 'N/A'
+      }))))
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, []);
 
   const getLogType = (action) => {
@@ -17,6 +26,8 @@ const Logs = () => {
     if (action.includes('Logged In')) return 'Access';
     return 'Action';
   };
+
+  if (loading) return <div className="flex items-center justify-center h-full min-h-[400px]"><div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div></div>;
 
   return (
     <div className="space-y-6">
@@ -73,6 +84,9 @@ const Logs = () => {
                   <td className="py-4 px-6 text-slate-500 text-sm font-medium text-right">{item.timestamp}</td>
                 </tr>
               ))}
+              {logsData.length === 0 && (
+                <tr><td colSpan="6" className="py-8 text-center text-slate-400">No data available.</td></tr>
+              )}
             </tbody>
           </table>
         </div>

@@ -1,11 +1,13 @@
-from fastapi import Header, HTTPException, status
-from typing import Optional
+from fastapi import HTTPException, status, Depends
+from fastapi.security import OAuth2PasswordBearer
 from utils.auth import verify_token
 
-def verify_admin(authorization: Optional[str] = Header(None)):
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/admin/login")
+
+def verify_admin(token: str = Depends(oauth2_scheme)):
     """
     Dependency to verify that the request is authorized as an admin.
-    Extracts the token from the Authorization header and decodes it.
+    Extracts the token using OAuth2PasswordBearer to support Swagger UI.
     """
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -13,19 +15,15 @@ def verify_admin(authorization: Optional[str] = Header(None)):
         headers={"WWW-Authenticate": "Bearer"},
     )
     
-    # 1. Extract JWT token from Authorization header and 2. Check if header missing
-    if not authorization or not authorization.startswith("Bearer "):
+    if not token:
         raise credentials_exception
         
-    # Format: "Bearer <token>"
-    token = authorization.split(" ")[1]
-    
-    # 3. Decode token using verify_token (this handles invalid/expired tokens with a 401)
+    # Decode token using verify_token (this handles invalid/expired tokens with a 401)
     payload = verify_token(token)
     
-    # 4. Check role must be "admin" & 5. If invalid, return HTTPException 401
+    # Check role must be "admin" & If invalid, return HTTPException 401
     if payload.get("role") != "admin":
         raise credentials_exception
         
-    # 6. If valid, return token payload
+    # If valid, return token payload
     return payload
