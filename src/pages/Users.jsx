@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ChevronLeft, ChevronRight, Eye, MoreVertical, X, AlertCircle } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, Eye, MoreVertical, X, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { fetchWithAuth } from '../api';
 
 const Users = () => {
@@ -11,6 +11,20 @@ const Users = () => {
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newUserForm, setNewUserForm] = useState({ name: '', email: '' });
+  const [errorMsg, setErrorMsg] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [toast, setToast] = useState(null);
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const closeAddModal = () => {
+    setShowAddModal(false);
+    setNewUserForm({ name: '', email: '' });
+    setErrorMsg(null);
+  };
 
   useEffect(() => {
     const closeDropdown = () => setActiveDropdown(null);
@@ -20,15 +34,18 @@ const Users = () => {
 
   const handleDeleteUser = async () => {
     if (!confirmDelete) return;
+    setIsSubmitting(true);
     try {
       await fetchWithAuth(`/users/${confirmDelete._id || confirmDelete.id}`, { method: 'DELETE' });
       setUsers(users.filter(u => u.id !== confirmDelete.id));
-      alert('User deleted successfully');
+      setConfirmDelete(null);
+      showToast('User deleted successfully');
     } catch (err) {
       console.error(err);
-      alert('Failed to delete user');
+      showToast('Failed to delete user', 'error');
+    } finally {
+      setIsSubmitting(false);
     }
-    setConfirmDelete(null);
   };
 
   useEffect(() => {
@@ -38,7 +55,7 @@ const Users = () => {
           ...u, 
           id: u._id ? u._id.slice(-6).toUpperCase() : u.id,
           interviews: u.interview_count || 0,
-          joined: u.created_at ? new Date(u.created_at).toISOString().split('T')[0] : 'N/A'
+          joined: u.created_at ? new Date(u.created_at).toISOString().split('T')[0] : '-'
         })));
       })
       .catch(console.error)
@@ -52,7 +69,12 @@ const Users = () => {
 
   const handleAddUser = async (e) => {
     e.preventDefault();
-    if (!newUserForm.name || !newUserForm.email) return;
+    setErrorMsg(null);
+    if (!newUserForm.name || !newUserForm.email) {
+      setErrorMsg("All fields required");
+      return;
+    }
+    setIsSubmitting(true);
     try {
       const data = await fetchWithAuth('/users', {
         method: 'POST',
@@ -60,12 +82,13 @@ const Users = () => {
         body: JSON.stringify(newUserForm)
       });
       setUsers([{ ...data, id: data._id.slice(-6).toUpperCase(), interviews: 0, joined: new Date().toISOString().split('T')[0] }, ...users]);
-      setShowAddModal(false);
-      setNewUserForm({ name: '', email: '' });
-      alert('User created successfully');
+      closeAddModal();
+      showToast('User created successfully');
     } catch (err) {
       console.error(err);
-      alert('Failed to create user');
+      setErrorMsg(err.message || 'User already exists');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -147,7 +170,7 @@ const Users = () => {
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="glass-card p-6 rounded-2xl w-full max-w-md relative border border-slate-800">
-            <button onClick={() => setShowAddModal(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white">
+            <button disabled={isSubmitting} onClick={closeAddModal} className="absolute top-4 right-4 text-slate-400 hover:text-white disabled:opacity-50">
               <X className="w-5 h-5" />
             </button>
             <h3 className="text-xl font-bold text-white mb-4">Add New User</h3>
@@ -160,9 +183,12 @@ const Users = () => {
                 <label className="block text-sm text-slate-400 mb-1">Email</label>
                 <input type="email" required value={newUserForm.email} onChange={e => setNewUserForm({...newUserForm, email: e.target.value})} className="w-full px-4 py-2.5 rounded-xl bg-slate-900/40 border border-slate-800/40 text-slate-200 text-sm focus:outline-none focus:border-indigo-500/40" placeholder="john@example.com" />
               </div>
+              {errorMsg && (
+                <p className="text-rose-400 text-xs font-semibold">{errorMsg}</p>
+              )}
               <div className="pt-2">
-                <button type="submit" className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm transition-all shadow-lg shadow-indigo-500/20">
-                  Create User
+                <button disabled={isSubmitting} type="submit" className={`w-full py-2.5 rounded-xl font-semibold text-sm transition-all shadow-lg ${isSubmitting ? 'bg-indigo-600/50 text-white/50 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-500/20'}`}>
+                  {isSubmitting ? 'Creating...' : 'Create User'}
                 </button>
               </div>
             </form>
@@ -215,10 +241,19 @@ const Users = () => {
             <h3 className="text-xl font-bold text-white mb-2">Delete Item</h3>
             <p className="text-slate-400 mb-6">Are you sure you want to delete this item? This action cannot be undone.</p>
             <div className="flex gap-3">
-              <button onClick={() => setConfirmDelete(null)} className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-sm transition-all border border-slate-700">Cancel</button>
-              <button onClick={handleDeleteUser} className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold text-sm transition-all shadow-lg shadow-rose-500/20">Confirm</button>
+              <button disabled={isSubmitting} onClick={() => setConfirmDelete(null)} className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-sm transition-all border border-slate-700 disabled:opacity-50">Cancel</button>
+              <button disabled={isSubmitting} onClick={handleDeleteUser} className={`flex-1 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-lg ${isSubmitting ? 'bg-rose-600/50 text-white/50 cursor-not-allowed' : 'bg-rose-600 hover:bg-rose-500 text-white shadow-rose-500/20'}`}>
+                {isSubmitting ? 'Deleting...' : 'Confirm'}
+              </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {toast && (
+        <div className={`fixed bottom-4 right-4 px-6 py-3 rounded-xl shadow-xl z-50 font-medium text-sm flex items-center gap-2 ${toast.type === 'error' ? 'bg-rose-500 text-white' : 'bg-emerald-500 text-white'}`}>
+          {toast.type === 'error' ? <AlertCircle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
+          {toast.message}
         </div>
       )}
     </div>

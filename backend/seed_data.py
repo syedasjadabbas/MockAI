@@ -69,17 +69,22 @@ def seed_data():
             role, transcript = random.choice(roles_transcripts)
             status = random.choice(statuses)
             
-            # If not completed, score/confidence/stress might not be applicable or 0, but for mock data we can leave them
-            # Let's widen the score range to trigger the < 50 case (35-95)
-            score = random.randint(40, 95) if status == "Completed" else None
+            if status == "Completed":
+                score = random.randint(40, 95)
+                confidence = random.randint(50, 90)
+                stress = random.choice(["Low", "Medium", "High"])
+            else:
+                score = None
+                confidence = None
+                stress = None
             
             interview = {
                 "user_id": str(user_id),
                 "role": role,
                 "status": status,
                 "score": score,
-                "confidence": random.randint(50, 90) if status == "Completed" else None,
-                "stress": random.randint(10, 90) if status == "Completed" else None,
+                "confidence": confidence,
+                "stress": stress,
                 "transcript": transcript,
                 # Randomize strictly to make sure recent sorting mixes different domains
                 "created_at": datetime.utcnow() - timedelta(days=random.randint(0, 10), hours=random.randint(1, 24))

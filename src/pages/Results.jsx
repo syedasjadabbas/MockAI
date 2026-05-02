@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Award, ShieldAlert, Sparkles, AlertCircle } from 'lucide-react';
 import { fetchWithAuth } from '../api';
 
-const ScoreIndicator = ({ score }) => {
-  if (score == null) return <span className="text-slate-500 font-medium text-xs">-</span>;
+const ScoreIndicator = ({ scoreStr }) => {
+  if (!scoreStr || scoreStr === '-') return <span className="text-slate-500 font-medium text-xs">-</span>;
   
+  const score = parseInt(scoreStr.replace('%', ''));
   if (score < 60) {
     return (
       <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border bg-red-500/20 text-red-400 border-red-500/20">
@@ -31,15 +32,18 @@ const Results = () => {
 
   useEffect(() => {
     fetchWithAuth('/interviews')
-      .then(data => setMappedResults(data.map(r => ({
-        id: r._id.slice(-6).toUpperCase(),
-        interviewId: r._id.slice(-6).toUpperCase(),
-        user: r.candidate_name || 'Unknown',
-        overallScore: r.score,
-        confidenceScore: r.confidence,
-        stressIndicator: r.stress == null ? 'N/A' : (r.stress <= 40 ? 'Low' : r.stress <= 70 ? 'Medium' : 'High'),
-        date: r.created_at ? new Date(r.created_at).toISOString().split('T')[0] : 'N/A'
-      }))))
+      .then(data => setMappedResults(data.map(r => {
+        const hasScore = r.score !== null && r.score !== undefined;
+        return {
+          id: r._id.slice(-6).toUpperCase(),
+          interviewId: r._id.slice(-6).toUpperCase(),
+          user: r.candidate_name || 'Deleted User',
+          overallScore: hasScore ? `${r.score}%` : '-',
+          confidenceScore: hasScore && r.confidence != null ? `${r.confidence}%` : '-',
+          stressIndicator: hasScore && r.stress ? r.stress : '-',
+          date: r.created_at ? new Date(r.created_at).toISOString().split('T')[0] : '-'
+        };
+      }).sort((a, b) => new Date(b.date) - new Date(a.date))))
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
@@ -52,8 +56,8 @@ const Results = () => {
         `RES-${r.id}`,
         `INT-${r.interviewId}`,
         `"${r.user}"`,
-        r.overallScore != null ? `${r.overallScore}%` : 'N/A',
-        r.confidenceScore != null ? `${r.confidenceScore}%` : 'N/A',
+        r.overallScore,
+        r.confidenceScore,
         r.stressIndicator,
         r.date
       ].join(','))
@@ -103,22 +107,22 @@ const Results = () => {
                   <td className="py-4 px-6 font-medium text-sm text-slate-400">INT-{item.interviewId}</td>
                   <td className="py-4 px-6 font-semibold text-sm text-slate-200">{item.user}</td>
                   <td className="py-4 px-6">
-                    <ScoreIndicator score={item.overallScore} />
+                    <ScoreIndicator scoreStr={item.overallScore} />
                   </td>
                   <td className="py-4 px-6">
-                    {item.confidenceScore != null ? (
+                    {item.confidenceScore !== '-' ? (
                       <div className="flex items-center gap-2">
                         <div className="flex-1 max-w-24 h-1.5 rounded-full bg-slate-800 border border-slate-700/60 overflow-hidden">
-                          <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${item.confidenceScore}%` }}></div>
+                          <div className="h-full bg-indigo-500 rounded-full" style={{ width: item.confidenceScore }}></div>
                         </div>
-                        <span className="text-xs font-semibold text-slate-400">{item.confidenceScore}%</span>
+                        <span className="text-xs font-semibold text-slate-400">{item.confidenceScore}</span>
                       </div>
                     ) : (
-                      <span className="text-slate-500 font-medium text-xs">N/A</span>
+                      <span className="text-slate-500 font-medium text-xs">-</span>
                     )}
                   </td>
                   <td className="py-4 px-6">
-                    {item.stressIndicator !== 'N/A' ? (
+                    {item.stressIndicator !== '-' ? (
                       <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold border ${
                         item.stressIndicator === 'Low' 
                           ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/10'
@@ -131,7 +135,7 @@ const Results = () => {
                         {item.stressIndicator}
                       </span>
                     ) : (
-                      <span className="text-slate-500 font-medium text-xs">N/A</span>
+                      <span className="text-slate-500 font-medium text-xs">-</span>
                     )}
                   </td>
                   <td className="py-4 px-6 text-slate-500 text-sm font-medium text-right">{item.date}</td>

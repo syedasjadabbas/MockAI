@@ -11,6 +11,13 @@ const Interviews = () => {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [loading, setLoading] = useState(true);
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [toast, setToast] = useState(null);
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
 
   useEffect(() => {
     const closeDropdown = () => setActiveDropdown(null);
@@ -20,15 +27,18 @@ const Interviews = () => {
 
   const handleDeleteInterview = async () => {
     if (!confirmDelete) return;
+    setIsSubmitting(true);
     try {
       await fetchWithAuth(`/interviews/${confirmDelete._id || confirmDelete.id}`, { method: 'DELETE' });
       setInterviewsData(interviewsData.filter(i => i.id !== confirmDelete.id));
-      alert('Interview deleted successfully');
+      setConfirmDelete(null);
+      showToast('Interview deleted successfully');
     } catch (err) {
       console.error(err);
-      alert('Failed to delete interview');
+      showToast('Failed to delete interview', 'error');
+    } finally {
+      setIsSubmitting(false);
     }
-    setConfirmDelete(null);
   };
 
   useEffect(() => {
@@ -36,10 +46,10 @@ const Interviews = () => {
       .then(data => setInterviewsData(data.map(i => ({
         id: i._id.slice(-6).toUpperCase(),
         _id: i._id,
-        user: i.candidate_name || 'Unknown',
-        type: i.role || 'N/A',
+        user: i.candidate_name || 'Deleted User',
+        type: i.role || '-',
         status: i.status || (i.score != null ? 'Completed' : 'In Progress'),
-        date: i.created_at ? new Date(i.created_at).toISOString().split('T')[0] : 'N/A',
+        date: i.created_at ? new Date(i.created_at).toISOString().split('T')[0] : '-',
         score: i.score,
         confidence: i.confidence,
         stress: i.stress,
@@ -201,22 +211,20 @@ const Interviews = () => {
                 <p className="text-sm text-slate-400">Date</p>
                 <p className="font-semibold text-slate-200">{selectedInterview.date}</p>
               </div>
-              {selectedInterview.score && (
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <p className="text-sm text-slate-400">Score</p>
-                    <p className="font-bold text-indigo-400">{selectedInterview.score}%</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-slate-400">Confidence</p>
-                    <p className="font-bold text-emerald-400">{selectedInterview.confidence}%</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-slate-400">Stress</p>
-                    <p className="font-bold text-amber-400">{selectedInterview.stress}%</p>
-                  </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <p className="text-sm text-slate-400">Score</p>
+                  <p className={`font-bold ${selectedInterview.score != null ? 'text-indigo-400' : 'text-slate-500'}`}>{selectedInterview.score != null ? `${selectedInterview.score}%` : '-'}</p>
                 </div>
-              )}
+                <div>
+                  <p className="text-sm text-slate-400">Confidence</p>
+                  <p className={`font-bold ${selectedInterview.score != null ? 'text-emerald-400' : 'text-slate-500'}`}>{selectedInterview.score != null && selectedInterview.confidence != null ? `${selectedInterview.confidence}%` : '-'}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-slate-400">Stress</p>
+                  <p className={`font-bold ${selectedInterview.score != null ? 'text-amber-400' : 'text-slate-500'}`}>{selectedInterview.score != null && selectedInterview.stress ? selectedInterview.stress : '-'}</p>
+                </div>
+              </div>
               {selectedInterview.transcript && (
                 <div>
                   <p className="text-sm text-slate-400 mb-1">Transcript</p>
@@ -245,10 +253,19 @@ const Interviews = () => {
             <h3 className="text-xl font-bold text-white mb-2">Delete Item</h3>
             <p className="text-slate-400 mb-6">Are you sure you want to delete this item? This action cannot be undone.</p>
             <div className="flex gap-3">
-              <button onClick={() => setConfirmDelete(null)} className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-sm transition-all border border-slate-700">Cancel</button>
-              <button onClick={handleDeleteInterview} className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold text-sm transition-all shadow-lg shadow-rose-500/20">Confirm</button>
+              <button disabled={isSubmitting} onClick={() => setConfirmDelete(null)} className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-sm transition-all border border-slate-700 disabled:opacity-50">Cancel</button>
+              <button disabled={isSubmitting} onClick={handleDeleteInterview} className={`flex-1 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-lg ${isSubmitting ? 'bg-rose-600/50 text-white/50 cursor-not-allowed' : 'bg-rose-600 hover:bg-rose-500 text-white shadow-rose-500/20'}`}>
+                {isSubmitting ? 'Deleting...' : 'Confirm'}
+              </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {toast && (
+        <div className={`fixed bottom-4 right-4 px-6 py-3 rounded-xl shadow-xl z-50 font-medium text-sm flex items-center gap-2 ${toast.type === 'error' ? 'bg-rose-500 text-white' : 'bg-emerald-500 text-white'}`}>
+          {toast.type === 'error' ? <AlertCircle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
+          {toast.message}
         </div>
       )}
     </div>

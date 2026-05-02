@@ -58,7 +58,7 @@ async def admin_login(login_data: LoginRequest):
     access_token = create_access_token(token_payload)
     
     # 6. Response
-    log_action("LOGIN", login_data.email, "System")
+    log_action("LOGIN", login_data.email, login_data.email)
     return {
         "access_token": access_token,
         "token_type": "bearer"
@@ -148,7 +148,7 @@ class CreateUserRequest(BaseModel):
 @router.post("/users")
 async def create_user(user_data: CreateUserRequest, token_payload: dict = Depends(verify_admin)):
     if users_collection.find_one({"email": user_data.email}):
-        raise HTTPException(status_code=400, detail="Email already registered")
+        raise HTTPException(status_code=400, detail="User already exists")
         
     new_user = {
         "name": user_data.name,
@@ -161,7 +161,7 @@ async def create_user(user_data: CreateUserRequest, token_payload: dict = Depend
     
     admin_user = users_collection.find_one({"_id": ObjectId(token_payload.get("user_id"))})
     admin_email = admin_user.get("email") if admin_user else "Unknown Admin"
-    log_action("UPDATE", admin_email, f"Created User: {user_data.name}")
+    log_action("CREATE_USER", admin_email, f"Created User: {user_data.name}")
     
     created_user = users_collection.find_one({"_id": result.inserted_id})
     created_user.pop("password", None)
@@ -184,7 +184,7 @@ async def delete_user(id: str, token_payload: dict = Depends(verify_admin)):
     if result.deleted_count == 0:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
         
-    log_action("DELETE", admin_email, f"User: {target_name}")
+    log_action("DELETE_USER", admin_email, target_name)
     return {"message": "User deleted successfully"}
 
 # Projection to return only the requested fields
@@ -259,7 +259,7 @@ async def delete_interview(id: str, token_payload: dict = Depends(verify_admin))
     if result.deleted_count == 0:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Interview not found")
         
-    log_action("DELETE", admin_email, f"Interview: {target_role}")
+    log_action("DELETE_INTERVIEW", admin_email, id)
     return {"message": "Interview deleted successfully"}
 
 @router.get("/logs")

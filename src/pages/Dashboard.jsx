@@ -26,8 +26,8 @@ const Dashboard = () => {
         const latest = [...data].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 5);
         setRecentInterviews(latest.map(interview => ({
           id: `INT-${interview._id.slice(-6).toUpperCase()}`,
-          candidate: interview.candidate_name || 'Unknown',
-          type: interview.role || 'N/A',
+          candidate: interview.candidate_name || 'Deleted User',
+          type: interview.role || '-',
           score: interview.score,
           status: interview.status || 'Completed',
           time: new Date(interview.created_at).toLocaleDateString()
@@ -106,7 +106,9 @@ const Dashboard = () => {
                   <td className="py-4 pr-4 font-medium text-sm text-indigo-400">{item.id}</td>
                   <td className="py-4 px-4 font-semibold text-sm text-slate-200">{item.candidate}</td>
                   <td className="py-4 px-4 text-sm text-slate-400">{item.type}</td>
-                  <td className="py-4 px-4 text-sm font-bold text-slate-200">{item.score != null ? `${item.score}%` : '-'}</td>
+                  <td className="py-4 px-4 text-sm">
+                    {item.score != null ? <span className="font-bold text-slate-200">{item.score}%</span> : <span className="text-slate-500 font-medium">-</span>}
+                  </td>
                   <td className="py-4 px-4">
                     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${
                       item.status === 'Completed' 

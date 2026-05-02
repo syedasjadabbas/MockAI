@@ -14,16 +14,17 @@ const Logs = () => {
         admin: l.admin_email || 'System Admin',
         action: l.action,
         target: l.target || 'System',
-        timestamp: l.created_at ? new Date(l.created_at).toLocaleString() : 'N/A'
+        timestamp: l.created_at ? new Date(l.created_at).toLocaleString() : '-'
       }))))
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
 
   const getLogType = (action) => {
-    if (action.includes('Viewed') || action.includes('Opened')) return 'View';
-    if (action.includes('Checked')) return 'Read';
-    if (action.includes('Logged In')) return 'Access';
+    if (action === 'LOGIN') return 'Access';
+    if (action === 'DELETE_USER' || action === 'DELETE_INTERVIEW') return 'Delete';
+    if (action === 'UPDATE') return 'Update';
+    if (action === 'CREATE_USER') return 'Create';
     return 'Action';
   };
 
