@@ -1,17 +1,17 @@
-from database import users_collection
+from database import admins_collection
 from utils.auth import hash_password
 
 def seed_admin():
     email = "admin@mockai.com"
-    raw_password = "admin" # Set a default password
+    raw_password = "admin123" # Set a default password
     role = "admin"
 
     # Check if user already exists to avoid duplicates
-    existing_user = users_collection.find_one({"email": email})
+    existing_user = admins_collection.find_one({"email": email})
     
     if existing_user:
-        print(f"User with email {email} already exists. Skipping insertion.")
-        return
+        print(f"User with email {email} already exists. Deleting it.")
+        admins_collection.delete_one({"email": email})
 
     # Hash the password using the utility function we created
     hashed_pw = hash_password(raw_password)
@@ -25,7 +25,7 @@ def seed_admin():
     }
 
     # Insert into the database
-    users_collection.insert_one(admin_document)
+    admins_collection.insert_one(admin_document)
     print(f"Successfully inserted default admin user.")
     print(f"Email: {email}")
     print(f"Password: {raw_password}")

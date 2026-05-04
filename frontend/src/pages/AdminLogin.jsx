@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Terminal, Mail, Lock, AlertCircle, X } from 'lucide-react';
+import { fetchWithAuth } from '../api';
 
 const AdminLogin = () => {
   const [email, setEmail] = useState('');
@@ -17,17 +18,9 @@ const AdminLogin = () => {
     setLoading(true);
     setError('');
 
-    fetch('http://localhost:8000/api/admin/login', {
+    fetchWithAuth('/login', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
-    })
-    .then(async res => {
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail || 'Invalid email or password');
-      }
-      return res.json();
     })
     .then(data => {
       localStorage.setItem('mockai_admin_auth', 'true');
@@ -46,17 +39,9 @@ const AdminLogin = () => {
     setError('');
     setResetSuccess(false);
     
-    fetch('http://localhost:8000/api/admin/forgot-password', {
+    fetchWithAuth('/forgot-password', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: forgotEmail })
-    })
-    .then(async res => {
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail || 'Failed to reset password');
-      }
-      return res.json();
     })
     .then(data => {
       setResetSuccess(true);

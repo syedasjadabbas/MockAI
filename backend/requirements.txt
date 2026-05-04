@@ -3,3 +3,4 @@ pymongo
 passlib[bcrypt]
 PyJWT
 python-multipart
+python-jose[cryptography]

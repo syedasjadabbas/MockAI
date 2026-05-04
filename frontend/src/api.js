@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:8000/api/admin';
+const API_URL = 'http://127.0.0.1:8000/admin';
 
 export const fetchWithAuth = async (endpoint, options = {}) => {
   const token = localStorage.getItem('mockai_admin_token');

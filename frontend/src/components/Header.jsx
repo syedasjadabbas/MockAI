@@ -39,10 +39,7 @@ const Header = () => {
     const token = localStorage.getItem('mockai_admin_token');
     if (!token) return;
 
-    fetch('http://localhost:8000/api/admin/me', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-      .then(res => res.json())
+    fetchWithAuth('/me')
       .then(data => {
         if (data && data.name) {
           setAdminInfo({ name: data.name, email: data.email, role: data.role });
@@ -50,10 +47,7 @@ const Header = () => {
       })
       .catch(() => { });
 
-    fetch('http://localhost:8000/api/admin/logs', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-      .then(res => res.json())
+    fetchWithAuth('/logs')
       .then(data => {
         if (Array.isArray(data)) {
           const newNotifs = [];
@@ -116,10 +110,7 @@ const Header = () => {
     fetchGlobalData();
     window.addEventListener('dataUpdated', fetchGlobalData);
 
-    fetch('http://localhost:8000/api/admin/interviews', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-      .then(res => res.json())
+    fetchWithAuth('/interviews')
       .then(data => {
         if (Array.isArray(data)) {
           const flaggedIds = JSON.parse(localStorage.getItem('mockai_flagged_scores') || '[]');
@@ -237,23 +228,13 @@ const Header = () => {
     setError('');
 
     try {
-      const token = localStorage.getItem('mockai_admin_token');
-      const response = await fetch('http://localhost:8000/api/admin/change-password', {
+      await fetchWithAuth('/change-password', {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
         body: JSON.stringify({
           old_password: oldPassword,
           new_password: newPassword
         })
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Failed to update password');
-      }
 
       window.dispatchEvent(new CustomEvent('notify', { detail: { message: 'Password updated successfully', type: 'success' } }));
       setShowPasswordModal(false);
@@ -271,16 +252,10 @@ const Header = () => {
     setAddAdminLoading(true);
     setAddAdminError('');
     try {
-      const token = localStorage.getItem('mockai_admin_token');
-      const response = await fetch('http://localhost:8000/api/admin/create/send-otp', {
+      await fetchWithAuth('/create/send-otp', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ name: addAdminName, email: addAdminEmail })
       });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Failed to send OTP');
-      }
       setAddAdminStep(2);
     } catch (err) {
       setAddAdminError(err.message);
@@ -294,16 +269,10 @@ const Header = () => {
     setAddAdminLoading(true);
     setAddAdminError('');
     try {
-      const token = localStorage.getItem('mockai_admin_token');
-      const response = await fetch('http://localhost:8000/api/admin/create', {
+      await fetchWithAuth('/create', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ name: addAdminName, email: addAdminEmail, password: addAdminPassword, otp: addAdminOtp })
       });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Failed to create admin');
-      }
       window.dispatchEvent(new CustomEvent('notify', { detail: { message: 'Admin created successfully', type: 'success' } }));
       setShowAddAdminModal(false);
       setAddAdminName('');
