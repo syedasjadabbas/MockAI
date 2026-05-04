@@ -17,6 +17,16 @@ const Header = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [adminInfo, setAdminInfo] = useState({ name: 'Admin User', email: 'admin@mockai.com', role: 'Admin' });
 
+  // Add Admin State
+  const [showAddAdminModal, setShowAddAdminModal] = useState(false);
+  const [addAdminName, setAddAdminName] = useState('');
+  const [addAdminEmail, setAddAdminEmail] = useState('');
+  const [addAdminPassword, setAddAdminPassword] = useState('');
+  const [addAdminOtp, setAddAdminOtp] = useState('');
+  const [addAdminStep, setAddAdminStep] = useState(1);
+  const [addAdminLoading, setAddAdminLoading] = useState(false);
+  const [addAdminError, setAddAdminError] = useState('');
+
   // Initial load & Logs Sync
   useEffect(() => {
     const storedNotifs = JSON.parse(localStorage.getItem('mockai_notifications') || '[]');
@@ -233,6 +243,58 @@ const Header = () => {
     }
   };
 
+  const handleSendOtp = async (e) => {
+    e.preventDefault();
+    setAddAdminLoading(true);
+    setAddAdminError('');
+    try {
+      const token = localStorage.getItem('mockai_admin_token');
+      const response = await fetch('http://localhost:8000/api/admin/create/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ name: addAdminName, email: addAdminEmail })
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to send OTP');
+      }
+      setAddAdminStep(2);
+    } catch (err) {
+      setAddAdminError(err.message);
+    } finally {
+      setAddAdminLoading(false);
+    }
+  };
+
+  const handleCreateAdmin = async (e) => {
+    e.preventDefault();
+    setAddAdminLoading(true);
+    setAddAdminError('');
+    try {
+      const token = localStorage.getItem('mockai_admin_token');
+      const response = await fetch('http://localhost:8000/api/admin/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ name: addAdminName, email: addAdminEmail, password: addAdminPassword, otp: addAdminOtp })
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to create admin');
+      }
+      alert('Admin created successfully');
+      setShowAddAdminModal(false);
+      setAddAdminName('');
+      setAddAdminEmail('');
+      setAddAdminPassword('');
+      setAddAdminOtp('');
+      setAddAdminStep(1);
+    } catch (err) {
+      setAddAdminError(err.message);
+    } finally {
+      setAddAdminLoading(false);
+    }
+  };
+
   return (
     <>
       <header className="fixed top-0 right-0 left-64 h-16 glass-panel border-b border-slate-800/40 z-30 px-6 flex items-center justify-between">
@@ -342,7 +404,10 @@ const Header = () => {
                 <p className="font-semibold text-slate-200 capitalize">{adminInfo.role}</p>
               </div>
             </div>
-            <button onClick={() => setShowProfileModal(false)} className="w-full mt-6 bg-slate-800 hover:bg-slate-700 text-white font-medium py-2 rounded-lg transition-colors border border-slate-700">
+            <button onClick={() => {setShowProfileModal(false); setShowAddAdminModal(true);}} className="w-full mt-6 bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2 rounded-lg transition-colors border border-indigo-500">
+              + Add Admin
+            </button>
+            <button onClick={() => setShowProfileModal(false)} className="w-full mt-2 bg-slate-800 hover:bg-slate-700 text-white font-medium py-2 rounded-lg transition-colors border border-slate-700">
               Close
             </button>
           </div>
@@ -396,6 +461,104 @@ const Header = () => {
                 {loading ? 'Updating...' : 'Update Password'}
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add Admin Modal */}
+      {showAddAdminModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl w-96 relative shadow-2xl">
+            <button 
+              onClick={() => {
+                setShowAddAdminModal(false);
+                setAddAdminStep(1);
+                setAddAdminError('');
+              }}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <h2 className="text-xl font-bold text-white mb-4">Create Admin</h2>
+            
+            {addAdminError && (
+              <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
+                {addAdminError}
+              </div>
+            )}
+
+            {addAdminStep === 1 ? (
+              <form onSubmit={handleSendOtp} className="space-y-4">
+                <div>
+                  <label className="block text-sm text-slate-400 mb-1">Name</label>
+                  <input 
+                    type="text" 
+                    value={addAdminName}
+                    onChange={(e) => setAddAdminName(e.target.value)}
+                    className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-slate-400 mb-1">Email</label>
+                  <input 
+                    type="email" 
+                    value={addAdminEmail}
+                    onChange={(e) => setAddAdminEmail(e.target.value)}
+                    className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-slate-400 mb-1">Password</label>
+                  <input 
+                    type="password" 
+                    value={addAdminPassword}
+                    onChange={(e) => setAddAdminPassword(e.target.value)}
+                    className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
+                    required
+                  />
+                </div>
+                <button 
+                  type="submit" 
+                  disabled={addAdminLoading}
+                  className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2 rounded-lg transition-colors disabled:opacity-50 mt-2"
+                >
+                  {addAdminLoading ? 'Sending...' : 'Verify Email'}
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={handleCreateAdmin} className="space-y-4">
+                <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-lg mb-4">
+                  <p className="text-sm text-indigo-200">A 6-digit verification code has been sent to <strong>{addAdminEmail}</strong>.</p>
+                </div>
+                <div>
+                  <label className="block text-sm text-slate-400 mb-1">Enter Verification Code (OTP)</label>
+                  <input 
+                    type="text" 
+                    value={addAdminOtp}
+                    onChange={(e) => setAddAdminOtp(e.target.value)}
+                    className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500 tracking-widest text-center font-mono text-lg"
+                    maxLength={6}
+                    required
+                  />
+                </div>
+                <button 
+                  type="submit" 
+                  disabled={addAdminLoading || addAdminOtp.length !== 6}
+                  className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2 rounded-lg transition-colors disabled:opacity-50 mt-2"
+                >
+                  {addAdminLoading ? 'Creating...' : 'Create Admin'}
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => {setAddAdminStep(1); setAddAdminOtp('');}}
+                  className="w-full mt-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium py-2 rounded-lg transition-colors text-sm"
+                >
+                  Back
+                </button>
+              </form>
+            )}
           </div>
         </div>
       )}

@@ -27,6 +27,7 @@ users_collection = db["users"]
 interviews_collection = db["interviews"]
 admin_logs_collection = db["admin_logs"]
 admins_collection = db["admins"]
+otps_collection = db["otps"]
 
 def serialize_mongo(document: dict) -> dict:
     """

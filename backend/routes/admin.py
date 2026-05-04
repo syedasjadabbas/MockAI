@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, status, Depends
 from pydantic import BaseModel
 from bson import ObjectId
-from database import users_collection, interviews_collection, serialize_mongo, admin_logs_collection, admins_collection
+from database import users_collection, interviews_collection, serialize_mongo, admin_logs_collection, admins_collection, otps_collection
 from utils.auth import verify_password, create_access_token, hash_password
 from middleware.admin_auth import verify_admin
 from datetime import datetime
@@ -111,6 +111,13 @@ class ForgotPasswordRequest(BaseModel):
 
 import string
 import random
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 @router.post("/forgot-password")
 async def forgot_password(data: ForgotPasswordRequest):
@@ -128,8 +135,63 @@ async def forgot_password(data: ForgotPasswordRequest):
         {"$set": {"password": hashed_pw}}
     )
     
+    # Try sending email
+    try:
+        sender_email = os.getenv("SMTP_EMAIL")
+        sender_password = os.getenv("SMTP_PASSWORD")
+        smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
+        smtp_port = int(os.getenv("SMTP_PORT", "587"))
+        
+        print("SMTP_EMAIL:", sender_email)
+        print("SMTP_PASSWORD set:", bool(sender_password))
+        
+        if sender_email and sender_password:
+            msg = MIMEMultipart()
+            msg['From'] = sender_email
+            msg['To'] = data.email
+            msg['Subject'] = "MockAI Admin - Password Reset"
+            
+            html_body = f"""
+            <html>
+              <body style="font-family: 'Inter', Arial, sans-serif; background-color: #080a10; padding: 40px 20px; margin: 0;">
+                <div style="max-width: 500px; margin: 0 auto; background-color: #0f1624; border: 1px solid rgba(255, 255, 255, 0.05); padding: 30px; border-radius: 16px; box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);">
+                  <h2 style="color: #ffffff; margin-top: 0; font-size: 24px; font-weight: 700;">MockAI Password Reset</h2>
+                  <p style="color: #94a3b8; font-size: 15px; line-height: 1.5;">Hello Admin,</p>
+                  <p style="color: #94a3b8; font-size: 15px; line-height: 1.5;">Your temporary password for the MockAI Admin Portal is:</p>
+                  
+                  <div style="background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.2); padding: 16px; text-align: center; border-radius: 8px; margin: 24px 0;">
+                    <span style="font-family: monospace; font-size: 22px; font-weight: bold; color: #818cf8; letter-spacing: 2px;">
+                      {temp_password}
+                    </span>
+                  </div>
+                  
+                  <p style="color: #ef4444; font-size: 14px; margin-bottom: 0;">
+                    <strong>⚠️ Security Warning:</strong> Please change your password immediately after logging in.
+                  </p>
+                </div>
+                <div style="text-align: center; margin-top: 20px; color: #475569; font-size: 12px;">
+                  &copy; 2026 MockAI System. All rights reserved.
+                </div>
+              </body>
+            </html>
+            """
+            msg.attach(MIMEText(html_body, 'html'))
+            
+            server = smtplib.SMTP(smtp_server, smtp_port)
+            server.starttls()
+            server.login(sender_email, sender_password)
+            server.send_message(msg)
+            server.quit()
+            print("Email sent successfully")
+        else:
+            print(f"[DEBUG] SMTP not configured. Temporary password for {data.email} is: {temp_password}")
+    except Exception as e:
+        print("EMAIL ERROR:", e)
+        print("Temporary password:", temp_password)
+        # In a real scenario we might fail the request, but we'll continue here
+    
     log_action("UPDATE", user.get("email"), "Forgot Password Reset")
-    return {"message": "Password reset successful", "temporary_password": temp_password}
+    return {"message": "Password reset email sent"}
 
 @router.get("/")
 async def get_admin_dashboard(token_payload: dict = Depends(verify_admin)):
@@ -379,3 +441,105 @@ async def get_logs(token_payload: dict = Depends(verify_admin)):
         return [serialize_mongo(log) for log in dummy_logs]
         
     return [serialize_mongo(log) for log in logs]
+
+import re
+
+class SendOtpRequest(BaseModel):
+    name: str
+    email: str
+
+@router.post("/create/send-otp")
+async def send_create_admin_otp(data: SendOtpRequest, token_payload: dict = Depends(verify_admin)):
+    if not re.match(r"[^@]+@[^@]+\.[^@]+", data.email):
+        raise HTTPException(status_code=400, detail="Invalid email format")
+        
+    if admins_collection.find_one({"email": data.email}):
+        raise HTTPException(status_code=400, detail="Admin with this email already exists")
+        
+    otp = ''.join(random.choices(string.digits, k=6))
+    
+    otps_collection.update_one(
+        {"email": data.email},
+        {"$set": {"otp": otp, "created_at": datetime.utcnow()}},
+        upsert=True
+    )
+    
+    try:
+        sender_email = os.getenv("SMTP_EMAIL")
+        sender_password = os.getenv("SMTP_PASSWORD")
+        smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
+        smtp_port = int(os.getenv("SMTP_PORT", "587"))
+        
+        if sender_email and sender_password:
+            msg = MIMEMultipart()
+            msg['From'] = sender_email
+            msg['To'] = data.email
+            msg['Subject'] = "MockAI Admin - Verify Email"
+            
+            html_body = f"""
+            <html>
+              <body style="font-family: 'Inter', Arial, sans-serif; background-color: #080a10; padding: 40px 20px; margin: 0;">
+                <div style="max-width: 500px; margin: 0 auto; background-color: #0f1624; border: 1px solid rgba(255, 255, 255, 0.05); padding: 30px; border-radius: 16px; box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);">
+                  <h2 style="color: #ffffff; margin-top: 0; font-size: 24px; font-weight: 700;">Admin Verification</h2>
+                  <p style="color: #94a3b8; font-size: 15px; line-height: 1.5;">Hello {data.name},</p>
+                  <p style="color: #94a3b8; font-size: 15px; line-height: 1.5;">You are being added as an Admin to MockAI. Your verification code is:</p>
+                  
+                  <div style="background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.2); padding: 16px; text-align: center; border-radius: 8px; margin: 24px 0;">
+                    <span style="font-family: monospace; font-size: 28px; font-weight: bold; color: #818cf8; letter-spacing: 4px;">
+                      {otp}
+                    </span>
+                  </div>
+                </div>
+              </body>
+            </html>
+            """
+            msg.attach(MIMEText(html_body, 'html'))
+            
+            server = smtplib.SMTP(smtp_server, smtp_port)
+            server.starttls()
+            server.login(sender_email, sender_password)
+            server.send_message(msg)
+            server.quit()
+        else:
+            print(f"[DEBUG] SMTP not configured. OTP for {data.email} is: {otp}")
+    except Exception as e:
+        print("EMAIL ERROR:", e)
+        print("OTP:", otp)
+        
+    return {"message": "OTP sent successfully"}
+
+class CreateAdminRequest(BaseModel):
+    name: str
+    email: str
+    password: str
+    otp: str
+
+@router.post("/create")
+async def create_admin(data: CreateAdminRequest, token_payload: dict = Depends(verify_admin)):
+    if not data.name or not data.email or not data.password or not data.otp:
+        raise HTTPException(status_code=400, detail="All fields are required")
+        
+    otp_record = otps_collection.find_one({"email": data.email, "otp": data.otp})
+    if not otp_record:
+        raise HTTPException(status_code=400, detail="Invalid or expired OTP")
+        
+    if admins_collection.find_one({"email": data.email}):
+        raise HTTPException(status_code=400, detail="Admin already exists")
+        
+    new_admin = {
+        "name": data.name,
+        "email": data.email,
+        "password": hash_password(data.password),
+        "role": "admin",
+        "created_at": datetime.utcnow(),
+        "is_verified": True
+    }
+    
+    admins_collection.insert_one(new_admin)
+    otps_collection.delete_one({"email": data.email})
+    
+    admin_user = admins_collection.find_one({"_id": ObjectId(token_payload.get("user_id"))})
+    admin_email = admin_user.get("email") if admin_user else "Unknown Admin"
+    log_action("CREATE_ADMIN", admin_email, data.email)
+    
+    return {"message": "Admin created successfully"}

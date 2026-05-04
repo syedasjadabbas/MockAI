@@ -9,7 +9,7 @@ const AdminLogin = () => {
   const [loading, setLoading] = useState(false);
   const [showForgotPwd, setShowForgotPwd] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
-  const [tempPassword, setTempPassword] = useState('');
+  const [resetSuccess, setResetSuccess] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = (e) => {
@@ -38,11 +38,13 @@ const AdminLogin = () => {
       setError(err.message);
       setLoading(false);
     });
+  };
+
   const handleForgotPwd = (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
-    setTempPassword('');
+    setResetSuccess(false);
     
     fetch('http://localhost:8000/api/admin/forgot-password', {
       method: 'POST',
@@ -57,7 +59,7 @@ const AdminLogin = () => {
       return res.json();
     })
     .then(data => {
-      setTempPassword(data.temporary_password);
+      setResetSuccess(true);
     })
     .catch(err => setError(err.message))
     .finally(() => setLoading(false));
@@ -77,10 +79,9 @@ const AdminLogin = () => {
           <p className="text-sm text-slate-400 mb-6">Enter your email to receive a temporary password.</p>
           
           {error && <div className="mb-6 p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm flex items-center gap-2"><AlertCircle className="w-4 h-4 flex-shrink-0" />{error}</div>}
-          {tempPassword && (
+          {resetSuccess && (
             <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm">
-              Password reset successful. Your temporary password is: <strong className="ml-1 text-white select-all bg-emerald-500/20 px-2 py-0.5 rounded">{tempPassword}</strong>
-              <p className="mt-2 text-xs opacity-80">Please copy this password and sign in, then change it immediately.</p>
+              Password reset email sent. Please check your inbox.
             </div>
           )}
           
