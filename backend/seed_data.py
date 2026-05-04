@@ -71,8 +71,16 @@ def seed_data():
             
             if status == "Completed":
                 score = random.randint(40, 95)
-                confidence = random.randint(50, 90)
-                stress = random.choice(["Low", "Medium", "High"])
+                
+                if score < 60:
+                    confidence = random.randint(40, 65)
+                    stress = random.choice(["Medium", "High"])
+                elif score <= 80:
+                    confidence = random.randint(60, 80)
+                    stress = random.choice(["Low", "Medium"])
+                else:
+                    confidence = random.randint(75, 95)
+                    stress = "Low"
             else:
                 score = None
                 confidence = None

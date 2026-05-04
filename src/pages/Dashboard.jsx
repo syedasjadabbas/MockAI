@@ -1,14 +1,15 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Users, Briefcase, Award, TrendingUp, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Users, Briefcase, Award, TrendingUp, Clock, CheckCircle2, AlertCircle, Brain, Sparkles } from 'lucide-react';
 import StatsCard from '../components/StatsCard';
-import { InterviewActivityChart, UserGrowthChart } from '../components/Charts';
+import { ScoreDistributionChart, StatusDistributionChart } from '../components/Charts';
 import { fetchWithAuth } from '../api';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 
 const Dashboard = () => {
   const [stats, setStats] = useState({ totalUsers: 0, totalInterviews: 0, totalResponses: 0, averageScore: 0 });
   const [recentInterviews, setRecentInterviews] = useState([]);
+  const [allInterviews, setAllInterviews] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -23,6 +24,7 @@ const Dashboard = () => {
         });
       }),
       fetchWithAuth('/interviews').then(data => {
+        setAllInterviews(data);
         const latest = [...data].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 5);
         setRecentInterviews(latest.map(interview => ({
           id: `INT-${interview._id.slice(-6).toUpperCase()}`,
@@ -35,6 +37,55 @@ const Dashboard = () => {
       })
     ]).catch(console.error).finally(() => setLoading(false));
   }, []);
+
+  const chartsData = useMemo(() => {
+    const data = allInterviews;
+    const completed = data.filter(r => r.score !== null);
+    
+    let avgScore = 0;
+    let avgConfidence = 0;
+    let highStressCount = 0;
+
+    if (completed.length > 0) {
+      avgScore = completed.reduce((a, b) => a + b.score, 0) / completed.length;
+      avgConfidence = completed.reduce((a, b) => a + (b.confidence || 0), 0) / completed.length;
+      highStressCount = completed.filter(r => r.stress === 'High').length;
+    }
+
+    const scoreBuckets = {
+      high: completed.filter(r => r.score >= 80).length,
+      medium: completed.filter(r => r.score >= 60 && r.score < 80).length,
+      low: completed.filter(r => r.score < 60).length,
+      none: data.filter(r => r.score === null).length
+    };
+
+    const statusBuckets = {
+      completed: data.filter(i => i.status === "Completed").length,
+      progress: data.filter(i => i.status === "In Progress").length,
+      pending: data.filter(i => i.status === "Pending").length
+    };
+
+    let insights = [];
+
+    if (completed.length === 0) {
+      insights.push("No completed interviews yet.");
+    } else {
+      if (avgScore < 60) insights.push("Overall performance is low. Many candidates struggle.");
+      if (highStressCount > completed.length * 0.4) insights.push("High stress detected in many interviews.");
+    }
+
+    if (statusBuckets.pending > statusBuckets.completed) {
+      insights.push("Large number of interviews still pending.");
+    }
+
+    if (insights.length === 0) {
+      insights.push("System performance looks stable.");
+    }
+
+    insights = insights.slice(0, 3);
+
+    return { scoreBuckets, statusBuckets, insights };
+  }, [allInterviews]);
 
   const { totalUsers, totalInterviews, totalResponses, averageScore: avgPerformance } = stats;
   const RecentInterviews = recentInterviews;
@@ -76,9 +127,25 @@ const Dashboard = () => {
       </div>
 
       {/* Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <InterviewActivityChart />
-        <UserGrowthChart />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <ScoreDistributionChart data={chartsData.scoreBuckets} />
+        <StatusDistributionChart data={chartsData.statusBuckets} />
+        
+        {/* AI Insights Panel */}
+        <div className="glass-card p-6 rounded-2xl flex flex-col hover:border-indigo-500/10 transition-all duration-300">
+          <div className="flex items-center gap-2 mb-6">
+            <Brain className="w-5 h-5 text-indigo-400" />
+            <h3 className="text-lg font-semibold text-white">AI Insights</h3>
+          </div>
+          <ul className="space-y-4 flex-1">
+            {chartsData.insights.map((insight, idx) => (
+              <li key={idx} className="flex items-start gap-3 bg-slate-900/30 p-3 rounded-xl border border-slate-800/40">
+                <Sparkles className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span className="text-sm text-slate-300 leading-snug">{insight}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
 
       {/* Recent Activity */}

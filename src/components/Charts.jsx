@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -9,9 +9,10 @@ import {
   Title,
   Tooltip,
   Legend,
-  Filler
+  Filler,
+  ArcElement
 } from 'chart.js';
-import { Line, Bar } from 'react-chartjs-2';
+import { Bar, Pie } from 'react-chartjs-2';
 
 ChartJS.register(
   CategoryScale,
@@ -22,117 +23,72 @@ ChartJS.register(
   Title,
   Tooltip,
   Legend,
-  Filler
+  Filler,
+  ArcElement
 );
 
-const activityData = [
-  { name: 'Mon', interviews: 24, candidates: 18 },
-  { name: 'Tue', interviews: 35, candidates: 28 },
-  { name: 'Wed', interviews: 60, candidates: 48 },
-  { name: 'Thu', interviews: 42, candidates: 36 },
-  { name: 'Fri', interviews: 68, candidates: 54 },
-  { name: 'Sat', interviews: 32, candidates: 24 },
-  { name: 'Sun', interviews: 20, candidates: 14 },
-];
-
-const growthData = [
-  { name: 'Jan', users: 120 },
-  { name: 'Feb', users: 240 },
-  { name: 'Mar', users: 380 },
-  { name: 'Apr', users: 512 },
-  { name: 'May', users: 760 },
-  { name: 'Jun', users: 920 },
-];
-
-export const InterviewActivityChart = () => {
-  const chartRef = useRef(null);
-  const [chartData, setChartData] = useState({
-    labels: activityData.map(d => d.name),
-    datasets: []
-  });
-
-  useEffect(() => {
-    const chart = chartRef.current;
-    if (!chart) return;
-
-    const ctx = chart.ctx;
-    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-    gradient.addColorStop(0, 'rgba(99, 102, 241, 0.4)');
-    gradient.addColorStop(1, 'rgba(99, 102, 241, 0)');
-
-    setChartData({
-      labels: activityData.map(d => d.name),
-      datasets: [
-        {
-          label: 'Interviews',
-          data: activityData.map(d => d.interviews),
-          borderColor: '#6366f1',
-          backgroundColor: gradient,
-          fill: true,
-          tension: 0.4,
-          borderWidth: 2,
-          pointRadius: 0,
-          pointHoverRadius: 4,
-        }
-      ]
-    });
-  }, []);
+export const ScoreDistributionChart = ({ data }) => {
+  const chartData = {
+    labels: ['High (>=80)', 'Medium (60-79)', 'Low (<60)', 'Not Evaluated'],
+    datasets: [
+      {
+        data: [data?.high || 0, data?.medium || 0, data?.low || 0, data?.none || 0],
+        backgroundColor: [
+          'rgba(16, 185, 129, 0.8)',
+          'rgba(245, 158, 11, 0.8)',
+          'rgba(244, 63, 94, 0.8)',
+          'rgba(100, 116, 139, 0.8)',
+        ],
+        borderColor: [
+          'rgba(16, 185, 129, 1)',
+          'rgba(245, 158, 11, 1)',
+          'rgba(244, 63, 94, 1)',
+          'rgba(100, 116, 139, 1)',
+        ],
+        borderWidth: 1,
+      },
+    ],
+  };
 
   const options = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      legend: {
-        display: false,
-      },
+      legend: { position: 'right', labels: { color: '#cbd5e1', font: { size: 11 } } },
       tooltip: {
         backgroundColor: 'rgba(15, 23, 42, 0.9)',
-        borderColor: 'rgba(255,255,255,0.05)',
-        borderWidth: 1,
         titleColor: '#fff',
-        bodyColor: '#818cf8',
+        bodyColor: '#cbd5e1',
         padding: 10,
-        displayColors: false,
+        displayColors: true,
       }
-    },
-    scales: {
-      x: {
-        grid: { display: false },
-        ticks: { color: '#4b5563', font: { size: 12 } },
-        border: { display: false }
-      },
-      y: {
-        grid: { display: false },
-        ticks: { color: '#4b5563', font: { size: 12 } },
-        border: { display: false }
-      }
-    },
-    interaction: {
-      mode: 'index',
-      intersect: false,
     },
   };
 
   return (
     <div className="glass-card p-6 rounded-2xl h-80 flex flex-col hover:border-indigo-500/10 transition-all duration-300">
-      <h3 className="text-lg font-semibold text-white mb-4">Interview Activity</h3>
-      <div className="flex-1 relative">
-        <Line ref={chartRef} data={chartData} options={options} />
+      <h3 className="text-lg font-semibold text-white mb-4">Score Distribution</h3>
+      <div className="flex-1 relative flex items-center justify-center pb-2">
+        <Pie data={chartData} options={options} />
       </div>
     </div>
   );
 };
 
-export const UserGrowthChart = () => {
-  const data = {
-    labels: growthData.map(d => d.name),
+export const StatusDistributionChart = ({ data }) => {
+  const chartData = {
+    labels: ['Completed', 'In Progress', 'Pending'],
     datasets: [
       {
-        label: 'Users',
-        data: growthData.map(d => d.users),
-        backgroundColor: '#8b5cf6',
+        label: 'Interviews',
+        data: [data?.completed || 0, data?.progress || 0, data?.pending || 0],
+        backgroundColor: [
+          'rgba(16, 185, 129, 0.8)',
+          'rgba(245, 158, 11, 0.8)',
+          'rgba(99, 102, 241, 0.8)',
+        ],
         borderRadius: { topLeft: 6, topRight: 6 },
-        barThickness: 24,
+        barThickness: 40,
       }
     ]
   };
@@ -141,42 +97,26 @@ export const UserGrowthChart = () => {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      legend: {
-        display: false,
-      },
+      legend: { display: false },
       tooltip: {
         backgroundColor: 'rgba(15, 23, 42, 0.9)',
-        borderColor: 'rgba(255,255,255,0.05)',
-        borderWidth: 1,
         titleColor: '#fff',
-        bodyColor: '#a78bfa',
+        bodyColor: '#cbd5e1',
         padding: 10,
         displayColors: false,
       }
     },
     scales: {
-      x: {
-        grid: { display: false },
-        ticks: { color: '#4b5563', font: { size: 12 } },
-        border: { display: false }
-      },
-      y: {
-        grid: { display: false },
-        ticks: { color: '#4b5563', font: { size: 12 } },
-        border: { display: false }
-      }
-    },
-    interaction: {
-      mode: 'index',
-      intersect: false,
+      x: { grid: { display: false }, ticks: { color: '#94a3b8' }, border: { display: false } },
+      y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' }, border: { display: false } }
     },
   };
 
   return (
     <div className="glass-card p-6 rounded-2xl h-80 flex flex-col hover:border-indigo-500/10 transition-all duration-300">
-      <h3 className="text-lg font-semibold text-white mb-4">User Growth</h3>
+      <h3 className="text-lg font-semibold text-white mb-4">Status Distribution</h3>
       <div className="flex-1 relative">
-        <Bar data={data} options={options} />
+        <Bar data={chartData} options={options} />
       </div>
     </div>
   );

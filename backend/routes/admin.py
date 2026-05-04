@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, status, Depends
 from pydantic import BaseModel
 from bson import ObjectId
-from database import users_collection, interviews_collection, serialize_mongo, admin_logs_collection
+from database import users_collection, interviews_collection, serialize_mongo, admin_logs_collection, admins_collection
 from utils.auth import verify_password, create_access_token, hash_password
 from middleware.admin_auth import verify_admin
 from datetime import datetime
@@ -27,7 +27,7 @@ class ChangePasswordRequest(BaseModel):
 @router.post("/login")
 async def admin_login(login_data: LoginRequest):
     # 1. Find user in users_collection using email
-    user = users_collection.find_one({"email": login_data.email})
+    user = admins_collection.find_one({"email": login_data.email})
     
     # 2. If user not found -> return 401
     if not user:
@@ -36,7 +36,6 @@ async def admin_login(login_data: LoginRequest):
             detail="Invalid email or password"
         )
         
-    # 3. Check user role == "admin"
     if user.get("role") != "admin":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, 
@@ -72,7 +71,7 @@ async def change_admin_password(
     user_id = token_payload.get("user_id")
     
     # Fetch user from db
-    user = users_collection.find_one({"_id": ObjectId(user_id)})
+    user = admins_collection.find_one({"_id": ObjectId(user_id)})
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, 
@@ -88,13 +87,49 @@ async def change_admin_password(
         
     # Hash new password and update
     hashed_new_pw = hash_password(data.new_password)
-    users_collection.update_one(
+    admins_collection.update_one(
         {"_id": ObjectId(user_id)},
         {"$set": {"password": hashed_new_pw}}
     )
     
     log_action("UPDATE", user.get("email", "Unknown"), "Admin Password")
     return {"message": "Password updated successfully"}
+
+@router.get("/me")
+async def get_admin_profile(token_payload: dict = Depends(verify_admin)):
+    admin_user = admins_collection.find_one({"_id": ObjectId(token_payload.get("user_id"))})
+    if not admin_user:
+        raise HTTPException(status_code=404, detail="Admin not found")
+    return {
+        "name": admin_user.get("name", "Admin User"),
+        "email": admin_user.get("email"),
+        "role": admin_user.get("role", "admin")
+    }
+
+class ForgotPasswordRequest(BaseModel):
+    email: str
+
+import string
+import random
+
+@router.post("/forgot-password")
+async def forgot_password(data: ForgotPasswordRequest):
+    user = admins_collection.find_one({"email": data.email})
+    if not user:
+        # Prevent email enumeration by returning success anyway, but here for demo we might return 404 or success
+        # Actually prompt says: "generate temporary password, hash and update DB, return temp password in response"
+        raise HTTPException(status_code=404, detail="Email not found")
+        
+    temp_password = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+    hashed_pw = hash_password(temp_password)
+    
+    admins_collection.update_one(
+        {"_id": user["_id"]},
+        {"$set": {"password": hashed_pw}}
+    )
+    
+    log_action("UPDATE", user.get("email"), "Forgot Password Reset")
+    return {"message": "Password reset successful", "temporary_password": temp_password}
 
 @router.get("/")
 async def get_admin_dashboard(token_payload: dict = Depends(verify_admin)):
@@ -159,7 +194,7 @@ async def create_user(user_data: CreateUserRequest, token_payload: dict = Depend
     }
     result = users_collection.insert_one(new_user)
     
-    admin_user = users_collection.find_one({"_id": ObjectId(token_payload.get("user_id"))})
+    admin_user = admins_collection.find_one({"_id": ObjectId(token_payload.get("user_id"))})
     admin_email = admin_user.get("email") if admin_user else "Unknown Admin"
     log_action("CREATE_USER", admin_email, f"Created User: {user_data.name}")
     
@@ -168,6 +203,32 @@ async def create_user(user_data: CreateUserRequest, token_payload: dict = Depend
     created_user["interview_count"] = 0
     return serialize_mongo(created_user)
 
+class UpdateUserRequest(BaseModel):
+    name: str
+    email: str
+
+@router.put("/users/{id}")
+async def update_user(id: str, user_data: UpdateUserRequest, token_payload: dict = Depends(verify_admin)):
+    try:
+        obj_id = ObjectId(id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid user ID")
+        
+    result = users_collection.update_one(
+        {"_id": obj_id, "role": {"$ne": "admin"}},
+        {"$set": {"name": user_data.name, "email": user_data.email}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    admin_user = admins_collection.find_one({"_id": ObjectId(token_payload.get("user_id"))})
+    admin_email = admin_user.get("email") if admin_user else "Unknown Admin"
+    log_action("UPDATE", admin_email, f"User: {id}")
+    
+    updated_user = users_collection.find_one({"_id": obj_id})
+    updated_user.pop("password", None)
+    return serialize_mongo(updated_user)
+
 @router.delete("/users/{id}")
 async def delete_user(id: str, token_payload: dict = Depends(verify_admin)):
     try:
@@ -175,7 +236,7 @@ async def delete_user(id: str, token_payload: dict = Depends(verify_admin)):
     except Exception:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid user ID")
         
-    admin_user = users_collection.find_one({"_id": ObjectId(token_payload.get("user_id"))})
+    admin_user = admins_collection.find_one({"_id": ObjectId(token_payload.get("user_id"))})
     admin_email = admin_user.get("email") if admin_user else "Unknown Admin"
     user_to_delete = users_collection.find_one({"_id": obj_id})
     target_name = user_to_delete.get("name", id) if user_to_delete else id
@@ -243,6 +304,48 @@ async def get_interview(id: str, token_payload: dict = Depends(verify_admin)):
         
     return serialize_mongo(interview)
 
+class UpdateInterviewRequest(BaseModel):
+    status: str
+    role: str
+
+import random
+
+@router.patch("/interviews/{id}")
+async def update_interview(id: str, data: UpdateInterviewRequest, token_payload: dict = Depends(verify_admin)):
+    try:
+        obj_id = ObjectId(id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid interview ID")
+        
+    interview = interviews_collection.find_one({"_id": obj_id})
+    if not interview:
+        raise HTTPException(status_code=404, detail="Interview not found")
+        
+    update_data = {"status": data.status, "role": data.role}
+    if data.status != "Completed":
+        update_data["score"] = None
+        update_data["confidence"] = None
+        update_data["stress"] = None
+    elif data.status == "Completed":
+        if interview.get("score") is None:
+            update_data["score"] = random.randint(50, 95)
+            update_data["confidence"] = random.randint(40, 90)
+            update_data["stress"] = random.choice(["Low", "Medium", "High"])
+        
+    result = interviews_collection.update_one(
+        {"_id": obj_id},
+        {"$set": update_data}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Interview not found")
+        
+    admin_user = admins_collection.find_one({"_id": ObjectId(token_payload.get("user_id"))})
+    admin_email = admin_user.get("email") if admin_user else "Unknown Admin"
+    log_action("UPDATE", admin_email, f"Interview: {id}")
+    
+    updated_interview = interviews_collection.find_one({"_id": obj_id})
+    return serialize_mongo(updated_interview)
+
 @router.delete("/interviews/{id}")
 async def delete_interview(id: str, token_payload: dict = Depends(verify_admin)):
     try:
@@ -250,7 +353,7 @@ async def delete_interview(id: str, token_payload: dict = Depends(verify_admin))
     except Exception:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid interview ID")
         
-    admin_user = users_collection.find_one({"_id": ObjectId(token_payload.get("user_id"))})
+    admin_user = admins_collection.find_one({"_id": ObjectId(token_payload.get("user_id"))})
     admin_email = admin_user.get("email") if admin_user else "Unknown Admin"
     interview_to_delete = interviews_collection.find_one({"_id": obj_id})
     target_role = interview_to_delete.get("role", id) if interview_to_delete else id
@@ -268,10 +371,10 @@ async def get_logs(token_payload: dict = Depends(verify_admin)):
     if not logs:
         # Provide dummy logs if empty
         dummy_logs = [
-            {"action": "Admin logged in", "admin_email": "admin@mockai.com", "created_at": "2023-10-27T10:00:00Z"},
-            {"action": "Password changed", "admin_email": "admin@mockai.com", "created_at": "2023-10-26T15:30:00Z"},
-            {"action": "User deleted", "admin_email": "admin@mockai.com", "created_at": "2023-10-25T09:15:00Z"},
-            {"action": "Interview reviewed", "admin_email": "admin@mockai.com", "created_at": "2023-10-24T14:20:00Z"}
+            {"action": "LOGIN", "admin_email": "admin@mockai.com", "target": "admin@mockai.com", "created_at": "2023-10-27T10:00:00Z"},
+            {"action": "UPDATE", "admin_email": "admin@mockai.com", "target": "Admin Password", "created_at": "2023-10-26T15:30:00Z"},
+            {"action": "DELETE_USER", "admin_email": "admin@mockai.com", "target": "John Doe", "created_at": "2023-10-25T09:15:00Z"},
+            {"action": "DELETE_INTERVIEW", "admin_email": "admin@mockai.com", "target": "INT-123456", "created_at": "2023-10-24T14:20:00Z"}
         ]
         return [serialize_mongo(log) for log in dummy_logs]
         

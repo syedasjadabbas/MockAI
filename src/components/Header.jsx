@@ -1,14 +1,175 @@
-import React, { useState } from 'react';
-import { Bell, Search, User, Key, X } from 'lucide-react';
-import { useLocation } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Bell, Search, User, Key, X, CheckCircle2, AlertCircle, Info } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const Header = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState('');
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [adminInfo, setAdminInfo] = useState({ name: 'Admin User', email: 'admin@mockai.com', role: 'Admin' });
+
+  // Initial load & Logs Sync
+  useEffect(() => {
+    const storedNotifs = JSON.parse(localStorage.getItem('mockai_notifications') || '[]');
+    setNotifications(storedNotifs);
+    setUnreadCount(parseInt(localStorage.getItem('mockai_unread_count') || '0', 10));
+
+    const token = localStorage.getItem('mockai_admin_token');
+    if (!token) return;
+
+    fetch('http://localhost:8000/api/admin/me', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data && data.name) {
+        setAdminInfo({ name: data.name, email: data.email, role: data.role });
+      }
+    })
+    .catch(() => {});
+
+    fetch('http://localhost:8000/api/admin/logs', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (Array.isArray(data)) {
+        const newNotifs = [];
+        data.forEach(log => {
+          let message = '';
+          let type = 'info';
+          if (log.action === 'CREATE_USER') { message = `New user created: ${log.target}`; type = 'success'; }
+          else if (log.action === 'DELETE_USER') { message = `User deleted: ${log.target}`; type = 'warning'; }
+          else if (log.action === 'DELETE_INTERVIEW') { message = `Interview deleted: ${log.target}`; type = 'warning'; }
+          else if (log.action === 'LOGIN') { message = `Admin logged in`; type = 'info'; }
+          
+          if (message) {
+            newNotifs.push({
+              id: log._id || Date.now() + Math.random(),
+              message,
+              type,
+              time: new Date(log.created_at).toLocaleString()
+            });
+          }
+        });
+
+        setNotifications(prev => {
+          const combined = [...newNotifs, ...prev];
+          const unique = [];
+          const seen = new Set();
+          for (const item of combined) {
+            if (!seen.has(item.message)) {
+              seen.add(item.message);
+              unique.push(item);
+            }
+          }
+          const final = unique.slice(0, 20).sort((a,b) => new Date(b.time) - new Date(a.time));
+          localStorage.setItem('mockai_notifications', JSON.stringify(final));
+          return final;
+        });
+      }
+    })
+    .catch(() => {});
+  }, []);
+
+  // Low score detection
+  useEffect(() => {
+    const token = localStorage.getItem('mockai_admin_token');
+    if (!token) return;
+    fetch('http://localhost:8000/api/admin/interviews', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (Array.isArray(data)) {
+        const flaggedIds = JSON.parse(localStorage.getItem('mockai_flagged_scores') || '[]');
+        const lowScores = data.filter(i => i.score !== null && i.score < 50);
+        let updatedFlagged = [...flaggedIds];
+        let hasNew = false;
+
+        lowScores.forEach(recent => {
+          if (!flaggedIds.includes(recent._id)) {
+            updatedFlagged.push(recent._id);
+            hasNew = true;
+            const newNotif = {
+              id: `low-score-${recent._id}`,
+              message: `Low score detected (< 50) for ${recent.candidate_name}`,
+              type: 'error',
+              time: new Date().toLocaleString()
+            };
+            setNotifications(prev => {
+              if (prev.some(n => n.message === newNotif.message)) return prev;
+              
+              setUnreadCount(u => {
+                const count = u + 1;
+                localStorage.setItem('mockai_unread_count', count.toString());
+                return count;
+              });
+              
+              const next = [newNotif, ...prev].slice(0, 20);
+              localStorage.setItem('mockai_notifications', JSON.stringify(next));
+              return next;
+            });
+          }
+        });
+
+        if (hasNew) {
+          localStorage.setItem('mockai_flagged_scores', JSON.stringify(updatedFlagged));
+        }
+      }
+    })
+    .catch(() => {});
+  }, []);
+
+  // Custom events
+  useEffect(() => {
+    const handleNotify = (e) => {
+      const newNotif = {
+        id: Date.now().toString(),
+        message: e.detail.message,
+        type: e.detail.type || 'info',
+        time: new Date().toLocaleString()
+      };
+      setNotifications(prev => {
+        if (prev.some(n => n.message === newNotif.message)) return prev;
+        
+        setUnreadCount(u => {
+          const count = u + 1;
+          localStorage.setItem('mockai_unread_count', count.toString());
+          return count;
+        });
+
+        const next = [newNotif, ...prev].slice(0, 20);
+        localStorage.setItem('mockai_notifications', JSON.stringify(next));
+        return next;
+      });
+    };
+    window.addEventListener('notify', handleNotify);
+    return () => window.removeEventListener('notify', handleNotify);
+  }, []);
+
+  const handleOpenNotifications = () => {
+    setShowNotifications(!showNotifications);
+    setUnreadCount(0);
+    localStorage.setItem('mockai_unread_count', '0');
+  };
+
+  const handleClearNotifications = () => {
+    setNotifications([]);
+    setUnreadCount(0);
+    setShowNotifications(false);
+    localStorage.setItem('mockai_notifications', '[]');
+    localStorage.setItem('mockai_unread_count', '0');
+  };
   
   const getPageTitle = (path) => {
     switch(path) {
@@ -18,6 +179,22 @@ const Header = () => {
       case '/admin/results': return 'Evaluation Results';
       case '/admin/logs': return 'Action Logs';
       default: return 'Admin Panel';
+    }
+  };
+
+  const handleSearch = (e) => {
+    if (e.key === 'Enter') {
+      const query = searchQuery.trim();
+      if (!query) return;
+      
+      if (query.toUpperCase().startsWith('INT-')) {
+        navigate(`/admin/interviews?search=${encodeURIComponent(query)}`);
+      } else if (query.includes('@')) {
+        navigate(`/admin/users?search=${encodeURIComponent(query)}`);
+      } else {
+        navigate(`/admin/results?search=${encodeURIComponent(query)}`);
+      }
+      setSearchQuery('');
     }
   };
 
@@ -72,16 +249,50 @@ const Header = () => {
             <input 
               type="text" 
               placeholder="Search everything..." 
-              onKeyDown={(e) => { if(e.key === 'Enter') alert(`Searching for: ${e.target.value}`) }}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={handleSearch}
               className="pl-10 pr-4 py-1.5 rounded-lg bg-slate-900/40 border border-slate-800/40 text-slate-200 text-sm focus:outline-none focus:border-indigo-500/40 focus:ring-1 focus:ring-indigo-500/20 w-60"
             />
           </div>
 
           {/* Notif */}
-          <button onClick={() => alert("You have 3 new notifications!")} className="relative w-9 h-9 flex items-center justify-center rounded-lg bg-slate-800/30 text-slate-400 hover:text-white border border-slate-800/40 hover:border-slate-700/60 transition-all">
-            <Bell className="w-5 h-5" />
-            <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-indigo-500 rounded-full"></span>
-          </button>
+          <div className="relative">
+            <button onClick={handleOpenNotifications} className="relative w-9 h-9 flex items-center justify-center rounded-lg bg-slate-800/30 text-slate-400 hover:text-white border border-slate-800/40 hover:border-slate-700/60 transition-all">
+              <Bell className="w-5 h-5" />
+              {unreadCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-rose-500 rounded-full text-[9px] font-bold text-white flex items-center justify-center">{unreadCount}</span>
+              )}
+            </button>
+            {showNotifications && (
+              <div className="absolute top-12 right-0 w-80 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-50 overflow-hidden">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800/60 bg-slate-800/30">
+                  <h3 className="text-sm font-bold text-white">Notifications</h3>
+                  <button onClick={handleClearNotifications} className="text-[11px] font-semibold text-indigo-400 hover:text-indigo-300">Clear All</button>
+                </div>
+                <div className="max-h-80 overflow-y-auto">
+                  {notifications.length === 0 ? (
+                    <p className="px-4 py-6 text-center text-xs text-slate-500">No new notifications</p>
+                  ) : (
+                    notifications.map(n => (
+                      <div key={n.id} className="px-4 py-3 border-b border-slate-800/40 hover:bg-slate-800/20 transition-colors flex gap-3">
+                        <div className="mt-0.5">
+                          {n.type === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
+                          {n.type === 'error' && <AlertCircle className="w-4 h-4 text-rose-400" />}
+                          {n.type === 'warning' && <AlertCircle className="w-4 h-4 text-amber-400" />}
+                          {n.type === 'info' && <Info className="w-4 h-4 text-indigo-400" />}
+                        </div>
+                        <div>
+                          <p className="text-sm text-slate-200 leading-snug">{n.message}</p>
+                          <p className="text-[10px] text-slate-500 mt-1 font-medium">{n.time}</p>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Profile */}
           <div className="flex items-center gap-3 pl-2 border-l border-slate-800/60">
@@ -89,7 +300,12 @@ const Header = () => {
               <User className="w-4 h-4 text-indigo-400" />
             </div>
             <div className="hidden md:flex flex-col">
-              <p className="text-sm font-semibold text-slate-200">Admin User</p>
+              <button 
+                onClick={() => setShowProfileModal(true)} 
+                className="text-sm font-semibold text-slate-200 text-left hover:text-white transition-colors"
+              >
+                {adminInfo.name}
+              </button>
               <button 
                 onClick={() => setShowPasswordModal(true)} 
                 className="text-[11px] text-indigo-400 hover:text-indigo-300 text-left transition-colors flex items-center gap-1"
@@ -101,6 +317,37 @@ const Header = () => {
           </div>
         </div>
       </header>
+
+      {/* Admin Profile Modal */}
+      {showProfileModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="glass-card p-6 rounded-2xl w-full max-w-sm relative border border-slate-800 bg-slate-900 shadow-2xl">
+            <button onClick={() => setShowProfileModal(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white">
+              <X className="w-5 h-5" />
+            </button>
+            <div className="flex flex-col items-center mb-6 mt-2">
+              <div className="w-16 h-16 rounded-full bg-indigo-500/20 flex items-center justify-center border border-indigo-500/30 mb-3">
+                <User className="w-8 h-8 text-indigo-400" />
+              </div>
+              <h2 className="text-xl font-bold text-white">{adminInfo.name}</h2>
+              <span className="px-2 py-1 mt-2 bg-indigo-500/20 text-indigo-400 text-xs font-semibold rounded border border-indigo-500/20 uppercase tracking-wider">{adminInfo.role}</span>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-slate-400">Email</p>
+                <p className="font-semibold text-slate-200">{adminInfo.email}</p>
+              </div>
+              <div>
+                <p className="text-sm text-slate-400">Role</p>
+                <p className="font-semibold text-slate-200 capitalize">{adminInfo.role}</p>
+              </div>
+            </div>
+            <button onClick={() => setShowProfileModal(false)} className="w-full mt-6 bg-slate-800 hover:bg-slate-700 text-white font-medium py-2 rounded-lg transition-colors border border-slate-700">
+              Close
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Change Password Modal */}
       {showPasswordModal && (

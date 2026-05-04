@@ -1,16 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ChevronLeft, ChevronRight, Eye, MoreVertical, X, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, Eye, MoreVertical, X, AlertCircle, CheckCircle2, Edit } from 'lucide-react';
 import { fetchWithAuth } from '../api';
+import { useLocation } from 'react-router-dom';
 
 const Users = () => {
-  const [search, setSearch] = useState('');
+  const location = useLocation();
+  const [search, setSearch] = useState(() => new URLSearchParams(location.search).get('search') || '');
+
+  useEffect(() => {
+    const query = new URLSearchParams(location.search).get('search');
+    if (query !== null) setSearch(query);
+  }, [location.search]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [users, setUsers] = useState([]);
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [loading, setLoading] = useState(true);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [newUserForm, setNewUserForm] = useState({ name: '', email: '' });
+  const [editUserForm, setEditUserForm] = useState({ id: '', name: '', email: '' });
   const [errorMsg, setErrorMsg] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toast, setToast] = useState(null);
@@ -26,6 +35,12 @@ const Users = () => {
     setErrorMsg(null);
   };
 
+  const closeEditModal = () => {
+    setShowEditModal(false);
+    setEditUserForm({ id: '', name: '', email: '' });
+    setErrorMsg(null);
+  };
+
   useEffect(() => {
     const closeDropdown = () => setActiveDropdown(null);
     window.addEventListener('click', closeDropdown);
@@ -38,8 +53,10 @@ const Users = () => {
     try {
       await fetchWithAuth(`/users/${confirmDelete._id || confirmDelete.id}`, { method: 'DELETE' });
       setUsers(users.filter(u => u.id !== confirmDelete.id));
+      const deletedName = confirmDelete.name;
       setConfirmDelete(null);
       showToast('User deleted successfully');
+      window.dispatchEvent(new CustomEvent('notify', { detail: { message: `User deleted: ${deletedName}`, type: 'warning' } }));
     } catch (err) {
       console.error(err);
       showToast('Failed to delete user', 'error');
@@ -84,9 +101,36 @@ const Users = () => {
       setUsers([{ ...data, id: data._id.slice(-6).toUpperCase(), interviews: 0, joined: new Date().toISOString().split('T')[0] }, ...users]);
       closeAddModal();
       showToast('User created successfully');
+      window.dispatchEvent(new CustomEvent('notify', { detail: { message: `New user created: ${newUserForm.name}`, type: 'success' } }));
     } catch (err) {
       console.error(err);
       setErrorMsg(err.message || 'User already exists');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleUpdateUser = async (e) => {
+    e.preventDefault();
+    setErrorMsg(null);
+    if (!editUserForm.name || !editUserForm.email) {
+      setErrorMsg("All fields required");
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const data = await fetchWithAuth(`/users/${editUserForm._id || editUserForm.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: editUserForm.name, email: editUserForm.email })
+      });
+      setUsers(users.map(u => u.id === editUserForm.id ? { ...u, name: data.name, email: data.email } : u));
+      closeEditModal();
+      showToast('User updated successfully');
+      window.dispatchEvent(new CustomEvent('notify', { detail: { message: `User updated: ${data.name}`, type: 'info' } }));
+    } catch (err) {
+      console.error(err);
+      setErrorMsg(err.message || 'Failed to update user');
     } finally {
       setIsSubmitting(false);
     }
@@ -147,6 +191,7 @@ const Users = () => {
                       {activeDropdown === user.id && (
                         <div className="absolute right-0 top-full mt-1 w-36 bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-10 py-1">
                           <button onClick={(e) => { e.stopPropagation(); setSelectedUser(user); setActiveDropdown(null); }} className="w-full text-left px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 hover:text-white">View Details</button>
+                          <button onClick={(e) => { e.stopPropagation(); setEditUserForm({ ...user }); setShowEditModal(true); setActiveDropdown(null); }} className="w-full text-left px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 hover:text-white">Edit User</button>
                           <button onClick={(e) => { e.stopPropagation(); setConfirmDelete(user); setActiveDropdown(null); }} className="w-full text-left px-4 py-2 text-sm text-rose-400 hover:bg-slate-700 hover:text-rose-300">Delete</button>
                         </div>
                       )}
@@ -155,7 +200,11 @@ const Users = () => {
                 </tr>
               ))}
               {filteredUsers.length === 0 && (
-                <tr><td colSpan="6" className="py-8 text-center text-slate-400">No data available.</td></tr>
+                <tr>
+                  <td colSpan="6" className="py-8 text-center text-slate-400">
+                    {search.trim() ? `No results found for "${search.trim()}"` : 'No data available.'}
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
@@ -189,6 +238,35 @@ const Users = () => {
               <div className="pt-2">
                 <button disabled={isSubmitting} type="submit" className={`w-full py-2.5 rounded-xl font-semibold text-sm transition-all shadow-lg ${isSubmitting ? 'bg-indigo-600/50 text-white/50 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-500/20'}`}>
                   {isSubmitting ? 'Creating...' : 'Create User'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showEditModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="glass-card p-6 rounded-2xl w-full max-w-md relative border border-slate-800">
+            <button disabled={isSubmitting} onClick={closeEditModal} className="absolute top-4 right-4 text-slate-400 hover:text-white disabled:opacity-50">
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="text-xl font-bold text-white mb-4">Edit User</h3>
+            <form onSubmit={handleUpdateUser} className="space-y-4">
+              <div>
+                <label className="block text-sm text-slate-400 mb-1">Name</label>
+                <input type="text" required value={editUserForm.name} onChange={e => setEditUserForm({...editUserForm, name: e.target.value})} className="w-full px-4 py-2.5 rounded-xl bg-slate-900/40 border border-slate-800/40 text-slate-200 text-sm focus:outline-none focus:border-indigo-500/40" />
+              </div>
+              <div>
+                <label className="block text-sm text-slate-400 mb-1">Email</label>
+                <input type="email" required value={editUserForm.email} onChange={e => setEditUserForm({...editUserForm, email: e.target.value})} className="w-full px-4 py-2.5 rounded-xl bg-slate-900/40 border border-slate-800/40 text-slate-200 text-sm focus:outline-none focus:border-indigo-500/40" />
+              </div>
+              {errorMsg && (
+                <p className="text-rose-400 text-xs font-semibold">{errorMsg}</p>
+              )}
+              <div className="pt-2">
+                <button disabled={isSubmitting} type="submit" className={`w-full py-2.5 rounded-xl font-semibold text-sm transition-all shadow-lg ${isSubmitting ? 'bg-indigo-600/50 text-white/50 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-500/20'}`}>
+                  {isSubmitting ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>
             </form>

@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Terminal, Mail, Lock, AlertCircle } from 'lucide-react';
+import { Terminal, Mail, Lock, AlertCircle, X } from 'lucide-react';
 
 const AdminLogin = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showForgotPwd, setShowForgotPwd] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [tempPassword, setTempPassword] = useState('');
   const navigate = useNavigate();
 
   const handleLogin = (e) => {
@@ -35,7 +38,75 @@ const AdminLogin = () => {
       setError(err.message);
       setLoading(false);
     });
+  const handleForgotPwd = (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    setTempPassword('');
+    
+    fetch('http://localhost:8000/api/admin/forgot-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: forgotEmail })
+    })
+    .then(async res => {
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || 'Failed to reset password');
+      }
+      return res.json();
+    })
+    .then(data => {
+      setTempPassword(data.temporary_password);
+    })
+    .catch(err => setError(err.message))
+    .finally(() => setLoading(false));
   };
+
+  if (showForgotPwd) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#080a10] px-4">
+        <div className="absolute w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-[80px] -z-10"></div>
+        <div className="w-full max-w-md glass-card p-8 rounded-3xl relative">
+          <button onClick={() => setShowForgotPwd(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white">
+            <AlertCircle className="w-5 h-5 hidden" />
+            <X className="w-5 h-5" />
+          </button>
+          
+          <h2 className="text-2xl font-bold text-white mb-2">Forgot Password</h2>
+          <p className="text-sm text-slate-400 mb-6">Enter your email to receive a temporary password.</p>
+          
+          {error && <div className="mb-6 p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm flex items-center gap-2"><AlertCircle className="w-4 h-4 flex-shrink-0" />{error}</div>}
+          {tempPassword && (
+            <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm">
+              Password reset successful. Your temporary password is: <strong className="ml-1 text-white select-all bg-emerald-500/20 px-2 py-0.5 rounded">{tempPassword}</strong>
+              <p className="mt-2 text-xs opacity-80">Please copy this password and sign in, then change it immediately.</p>
+            </div>
+          )}
+          
+          <form onSubmit={handleForgotPwd} className="space-y-5">
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">Email Address</label>
+              <div className="relative">
+                <Mail className="w-5 h-5 absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-500" />
+                <input 
+                  type="email" 
+                  value={forgotEmail}
+                  onChange={(e) => setForgotEmail(e.target.value)}
+                  placeholder="admin@mockai.com" 
+                  required
+                  className="w-full pl-11 pr-4 py-3 rounded-xl bg-slate-900/40 border border-slate-800/60 text-slate-200 text-sm focus:outline-none focus:border-indigo-500/60 focus:ring-1 focus:ring-indigo-500/20 transition-all"
+                />
+              </div>
+            </div>
+            <button type="submit" disabled={loading} className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm shadow-lg shadow-indigo-500/20 transition-all">
+              {loading ? 'Processing...' : 'Reset Password'}
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#080a10] px-4">
@@ -96,6 +167,12 @@ const AdminLogin = () => {
           >
             {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : 'Sign In'}
           </button>
+          
+          <div className="text-right">
+            <button type="button" onClick={() => setShowForgotPwd(true)} className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
+              Forgot Password?
+            </button>
+          </div>
         </form>
 
         <div className="mt-8 text-center">

@@ -1,23 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import { Terminal, Calendar, User, Info } from 'lucide-react';
+import { Terminal, Calendar, User, Info, Filter } from 'lucide-react';
 import { fetchWithAuth } from '../api';
 
 const Logs = () => {
   const [logsData, setLogsData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [logFilter, setLogFilter] = useState('All');
 
-  useEffect(() => {
+  const fetchLogs = async () => {
     setLoading(true);
-    fetchWithAuth('/logs')
-      .then(data => setLogsData(data.map(l => ({
+    try {
+      const data = await fetchWithAuth('/logs');
+      setLogsData(data.map(l => ({
         id: l._id ? l._id.slice(-6).toUpperCase() : Math.random().toString(36).substring(7).toUpperCase(),
         admin: l.admin_email || 'System Admin',
         action: l.action,
         target: l.target || 'System',
         timestamp: l.created_at ? new Date(l.created_at).toLocaleString() : '-'
-      }))))
-      .catch(console.error)
-      .finally(() => setLoading(false));
+      })));
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLogs();
   }, []);
 
   const getLogType = (action) => {
@@ -30,6 +39,8 @@ const Logs = () => {
 
   if (loading) return <div className="flex items-center justify-center h-full min-h-[400px]"><div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div></div>;
 
+  const filteredLogs = logsData.filter(log => logFilter === 'All' || log.action === logFilter);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -37,11 +48,28 @@ const Logs = () => {
           <Terminal className="w-5 h-5 text-indigo-400" />
           Audit Logs
         </h2>
-        
-        <button onClick={() => alert("Fetching latest logs from the server...")} className="px-4 py-2 bg-slate-800/40 hover:bg-slate-800/60 transition-all border border-slate-800/40 rounded-xl text-sm text-slate-300 flex items-center gap-2">
-          <Calendar className="w-4 h-4 text-slate-400" />
-          Fetch logs
-        </button>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 px-3 py-2 bg-slate-800/40 border border-slate-800/40 rounded-xl">
+            <Filter className="w-4 h-4 text-slate-400" />
+            <select 
+              value={logFilter}
+              onChange={(e) => setLogFilter(e.target.value)}
+              className="bg-transparent text-sm text-slate-300 focus:outline-none"
+            >
+              <option value="All">All Actions</option>
+              <option value="LOGIN">LOGIN</option>
+              <option value="CREATE_USER">CREATE_USER</option>
+              <option value="DELETE_USER">DELETE_USER</option>
+              <option value="DELETE_INTERVIEW">DELETE_INTERVIEW</option>
+              <option value="UPDATE">UPDATE</option>
+            </select>
+          </div>
+
+          <button onClick={fetchLogs} className="px-4 py-2 bg-slate-800/40 hover:bg-slate-800/60 transition-all border border-slate-800/40 rounded-xl text-sm text-slate-300 flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-slate-400" />
+            Fetch logs
+          </button>
+        </div>
       </div>
 
       {/* Logs Table */}
@@ -59,7 +87,7 @@ const Logs = () => {
               </tr>
             </thead>
             <tbody>
-              {logsData.map((item, idx) => (
+              {filteredLogs.map((item, idx) => (
                 <tr key={idx} className="border-b border-slate-800/40 last:border-0 hover:bg-slate-800/10 transition-colors">
                   <td className="py-4 px-6 font-medium text-sm text-indigo-400">LOG-{item.id}</td>
                   <td className="py-4 px-6 flex items-center gap-2 font-semibold text-sm text-slate-200">
@@ -85,7 +113,7 @@ const Logs = () => {
                   <td className="py-4 px-6 text-slate-500 text-sm font-medium text-right">{item.timestamp}</td>
                 </tr>
               ))}
-              {logsData.length === 0 && (
+              {filteredLogs.length === 0 && (
                 <tr><td colSpan="6" className="py-8 text-center text-slate-400">No data available.</td></tr>
               )}
             </tbody>

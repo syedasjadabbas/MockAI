@@ -1,13 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { Filter, Calendar, Clock, CheckCircle2, AlertCircle, Eye, X, MoreVertical } from 'lucide-react';
+import { Filter, Calendar, Clock, CheckCircle2, AlertCircle, Eye, X, MoreVertical, Search } from 'lucide-react';
 import { fetchWithAuth } from '../api';
+import { useLocation } from 'react-router-dom';
 
 const Interviews = () => {
+  const location = useLocation();
   const [statusFilter, setStatusFilter] = useState('All');
   const [typeFilter, setTypeFilter] = useState('All');
   const [dateFilter, setDateFilter] = useState('');
+  const [search, setSearch] = useState(() => new URLSearchParams(location.search).get('search') || '');
+
+  useEffect(() => {
+    const query = new URLSearchParams(location.search).get('search');
+    if (query !== null) setSearch(query);
+  }, [location.search]);
   const [selectedInterview, setSelectedInterview] = useState(null);
   const [interviewsData, setInterviewsData] = useState([]);
+  const [editMode, setEditMode] = useState(false);
+  const [editInterviewData, setEditInterviewData] = useState({ status: '', type: '' });
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [loading, setLoading] = useState(true);
   const [confirmDelete, setConfirmDelete] = useState(null);
@@ -31,11 +41,56 @@ const Interviews = () => {
     try {
       await fetchWithAuth(`/interviews/${confirmDelete._id || confirmDelete.id}`, { method: 'DELETE' });
       setInterviewsData(interviewsData.filter(i => i.id !== confirmDelete.id));
+      const deletedId = confirmDelete.id;
       setConfirmDelete(null);
       showToast('Interview deleted successfully');
+      window.dispatchEvent(new CustomEvent('notify', { detail: { message: `Interview deleted: INT-${deletedId}`, type: 'warning' } }));
     } catch (err) {
       console.error(err);
       showToast('Failed to delete interview', 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleUpdateInterview = async () => {
+    setIsSubmitting(true);
+    try {
+      const updatedData = await fetchWithAuth(`/interviews/${selectedInterview._id || selectedInterview.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: editInterviewData.status, role: editInterviewData.type })
+      });
+      
+      setInterviewsData(interviewsData.map(i => {
+        if (i.id === selectedInterview.id) {
+          return {
+            ...i,
+            status: updatedData.status,
+            type: updatedData.role,
+            score: updatedData.score,
+            confidence: updatedData.confidence,
+            stress: updatedData.stress
+          };
+        }
+        return i;
+      }));
+      
+      setSelectedInterview({
+        ...selectedInterview,
+        status: updatedData.status,
+        type: updatedData.role,
+        score: updatedData.score,
+        confidence: updatedData.confidence,
+        stress: updatedData.stress
+      });
+      
+      setEditMode(false);
+      showToast('Interview updated successfully');
+      window.dispatchEvent(new CustomEvent('notify', { detail: { message: `Interview updated: INT-${selectedInterview.id}`, type: 'info' } }));
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to update interview', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -64,7 +119,12 @@ const Interviews = () => {
     const matchStatus = statusFilter === 'All' || item.status === statusFilter;
     const matchType = typeFilter === 'All' || item.type === typeFilter;
     const matchDate = !dateFilter || item.date === dateFilter;
-    return matchStatus && matchType && matchDate;
+    const matchSearch = search ? (
+      (item.user && item.user.toLowerCase().includes(search.toLowerCase())) ||
+      (item.type && item.type.toLowerCase().includes(search.toLowerCase())) ||
+      (item.id && item.id.toLowerCase().includes(search.toLowerCase()))
+    ) : true;
+    return matchStatus && matchType && matchDate && matchSearch;
   }).sort((a, b) => new Date(b.created_at || b.date) - new Date(a.created_at || a.date));
 
   const types = ['All', ...new Set(interviewsData.map(i => i.type))];
@@ -77,7 +137,18 @@ const Interviews = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <h2 className="text-xl font-bold text-white">All Sessions</h2>
         
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col md:flex-row items-center gap-3">
+          <div className="relative w-full md:w-56">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
+            <input 
+              type="text" 
+              placeholder="Search candidate, role, ID..." 
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-800/40 border border-slate-800/40 text-slate-200 text-sm focus:outline-none focus:border-indigo-500/40"
+            />
+          </div>
+
           <div className="flex items-center gap-2 px-3 py-2 bg-slate-800/40 border border-slate-800/40 rounded-xl">
             <Filter className="w-4 h-4 text-slate-400" />
             <select 
@@ -113,7 +184,7 @@ const Interviews = () => {
             />
           </div>
 
-          <button onClick={() => { setTypeFilter('All'); setStatusFilter('All'); setDateFilter(''); }} className="flex items-center gap-2 px-3 py-2 bg-slate-800/40 hover:bg-slate-800/60 transition-all border border-slate-800/40 rounded-xl text-sm text-slate-300">
+          <button onClick={() => { setTypeFilter('All'); setStatusFilter('All'); setDateFilter(''); setSearch(''); }} className="flex items-center gap-2 px-3 py-2 bg-slate-800/40 hover:bg-slate-800/60 transition-all border border-slate-800/40 rounded-xl text-sm text-slate-300">
             <X className="w-4 h-4" />
             Clear
           </button>
@@ -176,7 +247,11 @@ const Interviews = () => {
                 </tr>
               ))}
               {filteredInterviews.length === 0 && (
-                <tr><td colSpan="6" className="py-8 text-center text-slate-400">No data available.</td></tr>
+                <tr>
+                  <td colSpan="6" className="py-8 text-center text-slate-400">
+                    {search.trim() ? `No results found for "${search.trim()}"` : 'No data available.'}
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
@@ -185,8 +260,8 @@ const Interviews = () => {
 
       {selectedInterview && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="glass-card p-6 rounded-2xl w-full max-w-md relative">
-            <button onClick={() => setSelectedInterview(null)} className="absolute top-4 right-4 text-slate-400 hover:text-white">
+          <div className="glass-card p-6 rounded-2xl w-full max-w-md relative overflow-y-auto max-h-[90vh]">
+            <button onClick={() => { setSelectedInterview(null); setEditMode(false); }} className="absolute top-4 right-4 text-slate-400 hover:text-white">
               <X className="w-5 h-5" />
             </button>
             <h3 className="text-xl font-bold text-white mb-4">Interview Details</h3>
@@ -199,14 +274,33 @@ const Interviews = () => {
                 <p className="text-sm text-slate-400">Candidate</p>
                 <p className="font-semibold text-slate-200">{selectedInterview.user}</p>
               </div>
-              <div>
-                <p className="text-sm text-slate-400">Type</p>
-                <p className="font-semibold text-slate-200">{selectedInterview.type}</p>
-              </div>
-              <div>
-                <p className="text-sm text-slate-400">Status</p>
-                <p className="font-semibold text-slate-200">{selectedInterview.status}</p>
-              </div>
+              {editMode ? (
+                <>
+                  <div>
+                    <p className="text-sm text-slate-400 mb-1">Status</p>
+                    <select value={editInterviewData.status} onChange={e => setEditInterviewData({...editInterviewData, status: e.target.value})} className="w-full px-3 py-2 rounded-xl bg-slate-900/40 border border-slate-800/40 text-slate-200 text-sm focus:outline-none">
+                      <option value="Pending">Pending</option>
+                      <option value="In Progress">In Progress</option>
+                      <option value="Completed">Completed</option>
+                    </select>
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-400 mb-1">Type/Role</p>
+                    <input type="text" value={editInterviewData.type} onChange={e => setEditInterviewData({...editInterviewData, type: e.target.value})} className="w-full px-3 py-2 rounded-xl bg-slate-900/40 border border-slate-800/40 text-slate-200 text-sm focus:outline-none" />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <p className="text-sm text-slate-400">Type</p>
+                    <p className="font-semibold text-slate-200">{selectedInterview.type}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-400">Status</p>
+                    <p className="font-semibold text-slate-200">{selectedInterview.status}</p>
+                  </div>
+                </>
+              )}
               <div>
                 <p className="text-sm text-slate-400">Date</p>
                 <p className="font-semibold text-slate-200">{selectedInterview.date}</p>
@@ -225,6 +319,22 @@ const Interviews = () => {
                   <p className={`font-bold ${selectedInterview.score != null ? 'text-amber-400' : 'text-slate-500'}`}>{selectedInterview.score != null && selectedInterview.stress ? selectedInterview.stress : '-'}</p>
                 </div>
               </div>
+              {selectedInterview.score != null && (
+                <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800/60 mt-2 space-y-3">
+                  <div>
+                    <p className="text-xs text-emerald-400/80 font-semibold uppercase tracking-wider mb-1">Strength</p>
+                    <p className="text-sm text-slate-200">{selectedInterview.score >= 80 ? 'Strong communication' : selectedInterview.score >= 60 ? 'Good understanding' : 'Basic attempt'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-rose-400/80 font-semibold uppercase tracking-wider mb-1">Weakness</p>
+                    <p className="text-sm text-slate-200">{selectedInterview.score >= 80 ? 'Minor improvements needed' : selectedInterview.score >= 60 ? 'Lacks clarity in parts' : 'Weak communication'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-indigo-400/80 font-semibold uppercase tracking-wider mb-1">Suggestion</p>
+                    <p className="text-sm text-slate-200">{selectedInterview.score >= 80 ? 'Maintain consistency' : selectedInterview.score >= 60 ? 'Improve structured answers' : 'Practice fundamentals'}</p>
+                  </div>
+                </div>
+              )}
               {selectedInterview.transcript && (
                 <div>
                   <p className="text-sm text-slate-400 mb-1">Transcript</p>
@@ -235,12 +345,19 @@ const Interviews = () => {
               )}
             </div>
             <div className="mt-6 flex gap-3">
-              <button onClick={() => alert(`Fetching full logs for Interview INT-${selectedInterview.id}...`)} className="flex-1 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm transition-all shadow-lg shadow-indigo-500/20">
-                View Full Logs
-              </button>
-              <button onClick={() => setSelectedInterview(null)} className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-sm transition-all border border-slate-700">
-                Close
-              </button>
+              {editMode ? (
+                <>
+                  <button onClick={() => setEditMode(false)} className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-sm transition-all border border-slate-700">Cancel</button>
+                  <button disabled={isSubmitting} onClick={handleUpdateInterview} className={`flex-1 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-lg ${isSubmitting ? 'bg-indigo-600/50 text-white/50 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-500/20'}`}>
+                    {isSubmitting ? 'Saving...' : 'Save'}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button onClick={() => { setEditInterviewData({ status: selectedInterview.status, type: selectedInterview.type }); setEditMode(true); }} className="flex-1 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm transition-all shadow-lg shadow-indigo-500/20">Edit Details</button>
+                  <button onClick={() => setSelectedInterview(null)} className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-sm transition-all border border-slate-700">Close</button>
+                </>
+              )}
             </div>
           </div>
         </div>

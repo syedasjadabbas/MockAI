@@ -26,6 +26,7 @@ db = client[DATABASE_NAME]
 users_collection = db["users"]
 interviews_collection = db["interviews"]
 admin_logs_collection = db["admin_logs"]
+admins_collection = db["admins"]
 
 def serialize_mongo(document: dict) -> dict:
     """
