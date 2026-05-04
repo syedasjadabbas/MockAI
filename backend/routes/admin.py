@@ -26,8 +26,10 @@ class ChangePasswordRequest(BaseModel):
 
 @router.post("/login")
 async def admin_login(login_data: LoginRequest):
-    # 1. Find user in users_collection using email
-    user = admins_collection.find_one({"email": login_data.email})
+    normalized_email = login_data.email.strip().lower()
+
+    # 1. Find user in admins_collection using email
+    user = admins_collection.find_one({"email": normalized_email})
     
     # 2. If user not found -> return 401
     if not user:
@@ -39,7 +41,7 @@ async def admin_login(login_data: LoginRequest):
     if user.get("role") != "admin":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, 
-            detail="Access forbidden: User is not an admin"
+            detail="Invalid email or password"
         )
         
     # 4. Verify password
@@ -57,7 +59,7 @@ async def admin_login(login_data: LoginRequest):
     access_token = create_access_token(token_payload)
     
     # 6. Response
-    log_action("LOGIN", login_data.email, login_data.email)
+    log_action("LOGIN", normalized_email, normalized_email)
     return {
         "access_token": access_token,
         "token_type": "bearer"
@@ -560,3 +562,14 @@ async def create_admin(data: CreateAdminRequest, token_payload: dict = Depends(v
     log_action("CREATE_ADMIN", admin_email, data.email)
     
     return {"message": "Admin created successfully"}
+
+@router.get("/all-admins")
+async def get_all_admins(token_payload: dict = Depends(verify_admin)):
+    admins = list(admins_collection.find({}, {"password": 0}))
+    return [
+        {
+            "name": admin.get("name", "Unknown Admin"),
+            "email": admin.get("email")
+        }
+        for admin in admins
+    ]

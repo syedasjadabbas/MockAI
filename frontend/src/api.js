@@ -16,7 +16,9 @@ export const fetchWithAuth = async (endpoint, options = {}) => {
   if (response.status === 401) {
     localStorage.removeItem('mockai_admin_auth');
     localStorage.removeItem('mockai_admin_token');
-    window.location.href = '/admin/login';
+    if (window.location.pathname !== '/admin/login') {
+      window.location.href = '/admin/login';
+    }
   }
 
   if (!response.ok) {

@@ -16,19 +16,19 @@ const AdminLogin = () => {
   const handleLogin = (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
 
     fetchWithAuth('/login', {
       method: 'POST',
       body: JSON.stringify({ email, password })
     })
     .then(data => {
+      setError('');
       localStorage.setItem('mockai_admin_auth', 'true');
       localStorage.setItem('mockai_admin_token', data.access_token);
       navigate('/admin/dashboard');
     })
     .catch(err => {
-      setError(err.message);
+      setError('Invalid email or password');
       setLoading(false);
     });
   };
@@ -108,12 +108,6 @@ const AdminLogin = () => {
           <p className="text-sm text-slate-400 mt-1">Sign in to manage MockAI platform</p>
         </div>
 
-        {error && (
-          <div className="mb-6 p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 flex-shrink-0" />
-            {error}
-          </div>
-        )}
 
         <form onSubmit={handleLogin} className="space-y-5">
           <div>
@@ -145,6 +139,13 @@ const AdminLogin = () => {
               />
             </div>
           </div>
+
+          {error && (
+            <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              {error}
+            </div>
+          )}
 
           <button 
             type="submit" 

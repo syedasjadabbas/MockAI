@@ -6,6 +6,7 @@ import Interviews from './pages/Interviews';
 import Results from './pages/Results';
 import Logs from './pages/Logs';
 import AdminLogin from './pages/AdminLogin';
+import Admins from './pages/Admins';
 
 export const routes = [
   {
@@ -36,6 +37,11 @@ export const routes = [
   {
     path: '/admin/logs',
     element: <Logs />,
+    layout: true,
+  },
+  {
+    path: '/admin/admins',
+    element: <Admins />,
     layout: true,
   },
 ];

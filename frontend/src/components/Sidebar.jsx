@@ -7,7 +7,8 @@ import {
   Award, 
   FileText, 
   LogOut, 
-  Terminal 
+  Terminal,
+  Shield
 } from 'lucide-react';
 
 const Sidebar = () => {
@@ -19,6 +20,7 @@ const Sidebar = () => {
     { title: 'Interviews', icon: Briefcase, path: '/admin/interviews' },
     { title: 'Results', icon: Award, path: '/admin/results' },
     { title: 'Logs', icon: FileText, path: '/admin/logs' },
+    { title: 'Manage Admins', icon: Shield, path: '/admin/admins' },
   ];
 
   return (

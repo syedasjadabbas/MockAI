@@ -202,6 +202,7 @@ const Header = () => {
       case '/admin/interviews': return 'Interviews';
       case '/admin/results': return 'Evaluation Results';
       case '/admin/logs': return 'Action Logs';
+      case '/admin/admins': return 'Manage Admins';
       default: return 'Admin Panel';
     }
   };
