@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Filter, Calendar, Clock, CheckCircle2, AlertCircle, Eye, X, MoreVertical, Search } from 'lucide-react';
+import { Filter, Calendar, Clock, CheckCircle2, AlertCircle, Eye, X, MoreVertical, Search, Download } from 'lucide-react';
 import { fetchWithAuth } from '../api';
 import { useLocation } from 'react-router-dom';
+import { exportToCSV } from '../utils/csvExport';
 
 const Interviews = () => {
   const location = useLocation();
@@ -131,11 +132,28 @@ const Interviews = () => {
 
   if (loading) return <div className="flex items-center justify-center h-full min-h-[400px]"><div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div></div>;
 
+  const handleExport = () => {
+    const dataToExport = filteredInterviews.map(i => ({
+      ID: `INT-${i.id}`,
+      Candidate: i.candidate,
+      Role: i.type,
+      Status: i.status,
+      Date: i.date
+    }));
+    exportToCSV(dataToExport, 'interviews_export.csv');
+  };
+
   return (
     <div className="space-y-6">
       {/* Filters Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <h2 className="text-xl font-bold text-white">All Sessions</h2>
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <h2 className="text-xl font-bold text-white">All Sessions</h2>
+          <button onClick={handleExport} className="px-3 py-1.5 rounded-lg bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700/50 text-slate-300 font-semibold text-xs transition-all flex items-center gap-2">
+            <Download className="w-3.5 h-3.5" />
+            Export
+          </button>
+        </div>
         
         <div className="flex flex-col md:flex-row items-center gap-3">
           <div className="relative w-full md:w-56">

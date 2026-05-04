@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Terminal, Calendar, User, Info, Filter, Search } from 'lucide-react';
+import { Terminal, Calendar, User, Info, Filter, Search, Download } from 'lucide-react';
 import { fetchWithAuth } from '../api';
 import { useLocation } from 'react-router-dom';
+import { exportToCSV } from '../utils/csvExport';
 
 const Logs = () => {
   const location = useLocation();
@@ -57,6 +58,16 @@ const Logs = () => {
     ) : true;
     return matchFilter && matchSearch;
   });
+  const handleExport = () => {
+    const dataToExport = filteredLogs.map(log => ({
+      'Log ID': `LOG-${log.id}`,
+      'Admin Email': log.admin,
+      Action: log.action,
+      Target: log.target,
+      Timestamp: log.timestamp
+    }));
+    exportToCSV(dataToExport, 'audit_logs_export.csv');
+  };
 
   return (
     <div className="space-y-6">
@@ -66,6 +77,10 @@ const Logs = () => {
           Audit Logs
         </h2>
         <div className="flex items-center gap-3">
+          <button onClick={handleExport} className="px-3 py-2 rounded-xl bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700/50 text-slate-300 font-semibold text-xs transition-all flex items-center gap-2">
+            <Download className="w-3.5 h-3.5" />
+            Export
+          </button>
           <div className="relative w-48 md:w-60">
             <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
             <input 

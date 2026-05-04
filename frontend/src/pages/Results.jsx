@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Award, ShieldAlert, Sparkles, AlertCircle, Search, Filter } from 'lucide-react';
 import { fetchWithAuth } from '../api';
 import { useLocation } from 'react-router-dom';
+import { exportToCSV } from '../utils/csvExport';
 
 const ScoreIndicator = ({ scoreStr }) => {
   if (!scoreStr || scoreStr === '-') return <span className="text-slate-500 font-medium text-xs">-</span>;
@@ -115,25 +116,16 @@ const Results = () => {
   }, [mappedResults]);
 
   const handleExport = () => {
-    const headers = ['Result ID', 'Interview ID', 'Candidate', 'Overall Score', 'Confidence Score', 'Stress Indicator', 'Date'];
-    const csvContent = [
-      headers.join(','),
-      ...filteredResults.map(r => [
-        `RES-${r.id}`,
-        `INT-${r.interviewId}`,
-        `"${r.user}"`,
-        r.overallScore,
-        r.confidenceScore,
-        r.stressIndicator,
-        r.date
-      ].join(','))
-    ].join('\n');
-    
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'mockai_evaluation_results.csv';
-    link.click();
+    const dataToExport = filteredResults.map(r => ({
+      'Result ID': `RES-${r.id}`,
+      'Interview ID': `INT-${r.interviewId}`,
+      Candidate: r.user,
+      'Overall Score': r.overallScore,
+      'Confidence Score': r.confidenceScore,
+      'Stress Indicator': r.stressIndicator,
+      Date: r.date
+    }));
+    exportToCSV(dataToExport, 'mockai_evaluation_results.csv');
   };
 
   if (loading) return <div className="flex items-center justify-center h-full min-h-[400px]"><div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div></div>;

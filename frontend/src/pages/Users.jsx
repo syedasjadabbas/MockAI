@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ChevronLeft, ChevronRight, Eye, MoreVertical, X, AlertCircle, CheckCircle2, Edit } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, Eye, MoreVertical, X, AlertCircle, CheckCircle2, Edit, Download } from 'lucide-react';
 import { fetchWithAuth } from '../api';
 import { useLocation } from 'react-router-dom';
+import { exportToCSV } from '../utils/csvExport';
 
 const Users = () => {
   const location = useLocation();
@@ -137,6 +138,15 @@ const Users = () => {
 
   if (loading) return <div className="flex items-center justify-center h-full min-h-[400px]"><div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div></div>;
 
+  const handleExport = () => {
+    const dataToExport = filteredUsers.map(u => ({
+      Name: u.name,
+      Email: u.email,
+      'Interviews Count': u.interviews || u.interview_count || 0
+    }));
+    exportToCSV(dataToExport, 'users_export.csv');
+  };
+
   return (
     <div className="space-y-6">
       {/* Header with search */}
@@ -151,10 +161,15 @@ const Users = () => {
             className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900/40 border border-slate-800/40 text-slate-200 text-sm focus:outline-none focus:border-indigo-500/40 focus:ring-1 focus:ring-indigo-500/20"
           />
         </div>
-        
-        <button onClick={() => setShowAddModal(true)} className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm transition-all shadow-lg shadow-indigo-500/20">
-          + Add User
-        </button>
+        <div className="flex items-center gap-3">
+          <button onClick={handleExport} className="px-4 py-2.5 rounded-xl bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700/50 text-slate-300 font-semibold text-sm transition-all flex items-center gap-2">
+            <Download className="w-4 h-4" />
+            Export
+          </button>
+          <button onClick={() => setShowAddModal(true)} className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm transition-all shadow-lg shadow-indigo-500/20">
+            + Add User
+          </button>
+        </div>
       </div>
 
       {/* Users Table */}

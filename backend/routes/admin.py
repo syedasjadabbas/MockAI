@@ -242,11 +242,29 @@ class CreateUserRequest(BaseModel):
     name: str
     email: str
 
+def validate_required(fields: dict):
+    for key, value in fields.items():
+        if not value or (isinstance(value, str) and not value.strip()):
+            raise HTTPException(status_code=400, detail=f"{key} is required")
+
+def validate_email(email: str):
+    import re
+    if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+        raise HTTPException(status_code=400, detail="Invalid email format")
+
+def check_duplicate_email(email: str, exclude_user_id: str = None):
+    user_query = {"email": email}
+    if exclude_user_id:
+        user_query["_id"] = {"$ne": ObjectId(exclude_user_id)}
+    if users_collection.find_one(user_query) or admins_collection.find_one({"email": email}):
+        raise HTTPException(status_code=400, detail="Email already exists")
+
 @router.post("/users")
 async def create_user(user_data: CreateUserRequest, token_payload: dict = Depends(verify_admin)):
-    if users_collection.find_one({"email": user_data.email}):
-        raise HTTPException(status_code=400, detail="User already exists")
-        
+    validate_required({"name": user_data.name, "email": user_data.email})
+    validate_email(user_data.email)
+    check_duplicate_email(user_data.email)
+
     new_user = {
         "name": user_data.name,
         "email": user_data.email,
@@ -271,6 +289,9 @@ class UpdateUserRequest(BaseModel):
 
 @router.put("/users/{id}")
 async def update_user(id: str, user_data: UpdateUserRequest, token_payload: dict = Depends(verify_admin)):
+    validate_required({"name": user_data.name, "email": user_data.email})
+    validate_email(user_data.email)
+    check_duplicate_email(user_data.email, exclude_user_id=id)
     try:
         obj_id = ObjectId(id)
     except Exception:
@@ -450,11 +471,9 @@ class SendOtpRequest(BaseModel):
 
 @router.post("/create/send-otp")
 async def send_create_admin_otp(data: SendOtpRequest, token_payload: dict = Depends(verify_admin)):
-    if not re.match(r"[^@]+@[^@]+\.[^@]+", data.email):
-        raise HTTPException(status_code=400, detail="Invalid email format")
-        
-    if admins_collection.find_one({"email": data.email}):
-        raise HTTPException(status_code=400, detail="Admin with this email already exists")
+    validate_required({"name": data.name, "email": data.email})
+    validate_email(data.email)
+    check_duplicate_email(data.email)
         
     otp = ''.join(random.choices(string.digits, k=6))
     
@@ -516,15 +535,13 @@ class CreateAdminRequest(BaseModel):
 
 @router.post("/create")
 async def create_admin(data: CreateAdminRequest, token_payload: dict = Depends(verify_admin)):
-    if not data.name or not data.email or not data.password or not data.otp:
-        raise HTTPException(status_code=400, detail="All fields are required")
+    validate_required({"name": data.name, "email": data.email, "password": data.password, "otp": data.otp})
+    validate_email(data.email)
+    check_duplicate_email(data.email)
         
     otp_record = otps_collection.find_one({"email": data.email, "otp": data.otp})
     if not otp_record:
         raise HTTPException(status_code=400, detail="Invalid or expired OTP")
-        
-    if admins_collection.find_one({"email": data.email}):
-        raise HTTPException(status_code=400, detail="Admin already exists")
         
     new_admin = {
         "name": data.name,

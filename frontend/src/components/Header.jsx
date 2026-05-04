@@ -42,63 +42,63 @@ const Header = () => {
     fetch('http://localhost:8000/api/admin/me', {
       headers: { 'Authorization': `Bearer ${token}` }
     })
-    .then(res => res.json())
-    .then(data => {
-      if (data && data.name) {
-        setAdminInfo({ name: data.name, email: data.email, role: data.role });
-      }
-    })
-    .catch(() => {});
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.name) {
+          setAdminInfo({ name: data.name, email: data.email, role: data.role });
+        }
+      })
+      .catch(() => { });
 
     fetch('http://localhost:8000/api/admin/logs', {
       headers: { 'Authorization': `Bearer ${token}` }
     })
-    .then(res => res.json())
-    .then(data => {
-      if (Array.isArray(data)) {
-        const newNotifs = [];
-        data.forEach(log => {
-          let message = '';
-          let type = 'info';
-          if (log.action === 'CREATE_USER') { message = `New user created: ${log.target}`; type = 'success'; }
-          else if (log.action === 'DELETE_USER') { message = `User deleted: ${log.target}`; type = 'warning'; }
-          else if (log.action === 'DELETE_INTERVIEW') { message = `Interview deleted: ${log.target}`; type = 'warning'; }
-          else if (log.action === 'LOGIN') { message = `Admin logged in`; type = 'info'; }
-          
-          if (message) {
-            newNotifs.push({
-              id: log._id || Date.now() + Math.random(),
-              message,
-              type,
-              time: new Date(log.created_at).toLocaleString()
-            });
-          }
-        });
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          const newNotifs = [];
+          data.forEach(log => {
+            let message = '';
+            let type = 'info';
+            if (log.action === 'CREATE_USER') { message = `New user created: ${log.target}`; type = 'success'; }
+            else if (log.action === 'DELETE_USER') { message = `User deleted: ${log.target}`; type = 'warning'; }
+            else if (log.action === 'DELETE_INTERVIEW') { message = `Interview deleted: ${log.target}`; type = 'warning'; }
+            else if (log.action === 'LOGIN') { message = `Admin logged in`; type = 'info'; }
 
-        setNotifications(prev => {
-          const combined = [...newNotifs, ...prev];
-          const unique = [];
-          const seen = new Set();
-          for (const item of combined) {
-            if (!seen.has(item.message)) {
-              seen.add(item.message);
-              unique.push(item);
+            if (message) {
+              newNotifs.push({
+                id: log._id || Date.now() + Math.random(),
+                message,
+                type,
+                time: new Date(log.created_at).toLocaleString()
+              });
             }
-          }
-          const final = unique.slice(0, 20).sort((a,b) => new Date(b.time) - new Date(a.time));
-          localStorage.setItem('mockai_notifications', JSON.stringify(final));
-          return final;
-        });
-      }
-    })
-    .catch(() => {});
+          });
+
+          setNotifications(prev => {
+            const combined = [...newNotifs, ...prev];
+            const unique = [];
+            const seen = new Set();
+            for (const item of combined) {
+              if (!seen.has(item.message)) {
+                seen.add(item.message);
+                unique.push(item);
+              }
+            }
+            const final = unique.slice(0, 20).sort((a, b) => new Date(b.time) - new Date(a.time));
+            localStorage.setItem('mockai_notifications', JSON.stringify(final));
+            return final;
+          });
+        }
+      })
+      .catch(() => { });
   }, []);
 
   // Low score detection
   useEffect(() => {
     const token = localStorage.getItem('mockai_admin_token');
     if (!token) return;
-    
+
     const fetchGlobalData = () => {
       Promise.all([
         fetchWithAuth('/users').catch(() => []),
@@ -119,46 +119,46 @@ const Header = () => {
     fetch('http://localhost:8000/api/admin/interviews', {
       headers: { 'Authorization': `Bearer ${token}` }
     })
-    .then(res => res.json())
-    .then(data => {
-      if (Array.isArray(data)) {
-        const flaggedIds = JSON.parse(localStorage.getItem('mockai_flagged_scores') || '[]');
-        const lowScores = data.filter(i => i.score !== null && i.score < 50);
-        let updatedFlagged = [...flaggedIds];
-        let hasNew = false;
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          const flaggedIds = JSON.parse(localStorage.getItem('mockai_flagged_scores') || '[]');
+          const lowScores = data.filter(i => i.score !== null && i.score < 50);
+          let updatedFlagged = [...flaggedIds];
+          let hasNew = false;
 
-        lowScores.forEach(recent => {
-          if (!flaggedIds.includes(recent._id)) {
-            updatedFlagged.push(recent._id);
-            hasNew = true;
-            const newNotif = {
-              id: `low-score-${recent._id}`,
-              message: `Low score detected (< 50) for ${recent.candidate_name}`,
-              type: 'error',
-              time: new Date().toLocaleString()
-            };
-            setNotifications(prev => {
-              if (prev.some(n => n.message === newNotif.message)) return prev;
-              
-              setUnreadCount(u => {
-                const count = u + 1;
-                localStorage.setItem('mockai_unread_count', count.toString());
-                return count;
+          lowScores.forEach(recent => {
+            if (!flaggedIds.includes(recent._id)) {
+              updatedFlagged.push(recent._id);
+              hasNew = true;
+              const newNotif = {
+                id: `low-score-${recent._id}`,
+                message: `Low score detected (< 50) for ${recent.candidate_name}`,
+                type: 'error',
+                time: new Date().toLocaleString()
+              };
+              setNotifications(prev => {
+                if (prev.some(n => n.message === newNotif.message)) return prev;
+
+                setUnreadCount(u => {
+                  const count = u + 1;
+                  localStorage.setItem('mockai_unread_count', count.toString());
+                  return count;
+                });
+
+                const next = [newNotif, ...prev].slice(0, 20);
+                localStorage.setItem('mockai_notifications', JSON.stringify(next));
+                return next;
               });
-              
-              const next = [newNotif, ...prev].slice(0, 20);
-              localStorage.setItem('mockai_notifications', JSON.stringify(next));
-              return next;
-            });
-          }
-        });
+            }
+          });
 
-        if (hasNew) {
-          localStorage.setItem('mockai_flagged_scores', JSON.stringify(updatedFlagged));
+          if (hasNew) {
+            localStorage.setItem('mockai_flagged_scores', JSON.stringify(updatedFlagged));
+          }
         }
-      }
-    })
-    .catch(() => {});
+      })
+      .catch(() => { });
 
     return () => window.removeEventListener('dataUpdated', fetchGlobalData);
   }, []);
@@ -174,7 +174,7 @@ const Header = () => {
       };
       setNotifications(prev => {
         if (prev.some(n => n.message === newNotif.message)) return prev;
-        
+
         setUnreadCount(u => {
           const count = u + 1;
           localStorage.setItem('mockai_unread_count', count.toString());
@@ -203,9 +203,9 @@ const Header = () => {
     localStorage.setItem('mockai_notifications', '[]');
     localStorage.setItem('mockai_unread_count', '0');
   };
-  
+
   const getPageTitle = (path) => {
-    switch(path) {
+    switch (path) {
       case '/admin/dashboard': return 'Dashboard';
       case '/admin/users': return 'Manage Users';
       case '/admin/interviews': return 'Interviews';
@@ -219,7 +219,7 @@ const Header = () => {
     if (e.key === 'Enter') {
       const query = searchQuery.trim();
       if (!query) return;
-      
+
       const exactMatches = getSearchResults();
       if (exactMatches.length > 0) {
         navigate(exactMatches[0].path);
@@ -374,9 +374,9 @@ const Header = () => {
           {/* Search */}
           <div className="relative hidden md:block">
             <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
-            <input 
-              type="text" 
-              placeholder="Search everything..." 
+            <input
+              type="text"
+              placeholder="Search everything..."
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
@@ -393,13 +393,13 @@ const Header = () => {
                   <div className="p-3 text-xs text-slate-500 text-center">No results found</div>
                 ) : (
                   searchResults.map((res, i) => (
-                    <div 
-                      key={i} 
+                    <div
+                      key={i}
                       onClick={() => {
                         navigate(res.path);
                         setShowSearchDropdown(false);
                         setSearchQuery('');
-                      }} 
+                      }}
                       className="p-3 border-b border-slate-800/40 hover:bg-slate-800/40 cursor-pointer transition-colors flex flex-col gap-0.5"
                     >
                       <div className="flex items-center justify-between">
@@ -458,14 +458,14 @@ const Header = () => {
               <User className="w-4 h-4 text-indigo-400" />
             </div>
             <div className="hidden md:flex flex-col">
-              <button 
-                onClick={() => setShowProfileModal(true)} 
+              <button
+                onClick={() => setShowProfileModal(true)}
                 className="text-sm font-semibold text-slate-200 text-left hover:text-white transition-colors"
               >
                 {adminInfo.name}
               </button>
-              <button 
-                onClick={() => setShowPasswordModal(true)} 
+              <button
+                onClick={() => setShowPasswordModal(true)}
                 className="text-[11px] text-indigo-400 hover:text-indigo-300 text-left transition-colors flex items-center gap-1"
               >
                 <Key className="w-3 h-3" />
@@ -500,7 +500,7 @@ const Header = () => {
                 <p className="font-semibold text-slate-200 capitalize">{adminInfo.role}</p>
               </div>
             </div>
-            <button onClick={() => {setShowProfileModal(false); setShowAddAdminModal(true);}} className="w-full mt-6 bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2 rounded-lg transition-colors border border-indigo-500">
+            <button onClick={() => { setShowProfileModal(false); setShowAddAdminModal(true); }} className="w-full mt-6 bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2 rounded-lg transition-colors border border-indigo-500">
               + Add Admin
             </button>
             <button onClick={() => setShowProfileModal(false)} className="w-full mt-2 bg-slate-800 hover:bg-slate-700 text-white font-medium py-2 rounded-lg transition-colors border border-slate-700">
@@ -514,14 +514,14 @@ const Header = () => {
       {showPasswordModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl w-96 relative shadow-2xl">
-            <button 
+            <button
               onClick={() => setShowPasswordModal(false)}
               className="absolute top-4 right-4 text-slate-400 hover:text-white"
             >
               <X className="w-5 h-5" />
             </button>
             <h2 className="text-xl font-bold text-white mb-4">Change Password</h2>
-            
+
             {error && (
               <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
                 {error}
@@ -531,8 +531,8 @@ const Header = () => {
             <form onSubmit={handleChangePassword} className="space-y-4">
               <div>
                 <label className="block text-sm text-slate-400 mb-1">Old Password</label>
-                <input 
-                  type="password" 
+                <input
+                  type="password"
                   value={oldPassword}
                   onChange={(e) => setOldPassword(e.target.value)}
                   className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
@@ -541,16 +541,16 @@ const Header = () => {
               </div>
               <div>
                 <label className="block text-sm text-slate-400 mb-1">New Password</label>
-                <input 
-                  type="password" 
+                <input
+                  type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
                   required
                 />
               </div>
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 disabled={loading}
                 className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2 rounded-lg transition-colors disabled:opacity-50 mt-2"
               >
@@ -565,7 +565,7 @@ const Header = () => {
       {showAddAdminModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl w-96 relative shadow-2xl">
-            <button 
+            <button
               onClick={() => {
                 setShowAddAdminModal(false);
                 setAddAdminStep(1);
@@ -576,7 +576,7 @@ const Header = () => {
               <X className="w-5 h-5" />
             </button>
             <h2 className="text-xl font-bold text-white mb-4">Create Admin</h2>
-            
+
             {addAdminError && (
               <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
                 {addAdminError}
@@ -587,8 +587,8 @@ const Header = () => {
               <form onSubmit={handleSendOtp} className="space-y-4">
                 <div>
                   <label className="block text-sm text-slate-400 mb-1">Name</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={addAdminName}
                     onChange={(e) => setAddAdminName(e.target.value)}
                     className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
@@ -597,8 +597,8 @@ const Header = () => {
                 </div>
                 <div>
                   <label className="block text-sm text-slate-400 mb-1">Email</label>
-                  <input 
-                    type="email" 
+                  <input
+                    type="email"
                     value={addAdminEmail}
                     onChange={(e) => setAddAdminEmail(e.target.value)}
                     className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
@@ -607,16 +607,16 @@ const Header = () => {
                 </div>
                 <div>
                   <label className="block text-sm text-slate-400 mb-1">Password</label>
-                  <input 
-                    type="password" 
+                  <input
+                    type="password"
                     value={addAdminPassword}
                     onChange={(e) => setAddAdminPassword(e.target.value)}
                     className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
                     required
                   />
                 </div>
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   disabled={addAdminLoading}
                   className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2 rounded-lg transition-colors disabled:opacity-50 mt-2"
                 >
@@ -630,8 +630,8 @@ const Header = () => {
                 </div>
                 <div>
                   <label className="block text-sm text-slate-400 mb-1">Enter Verification Code (OTP)</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={addAdminOtp}
                     onChange={(e) => setAddAdminOtp(e.target.value)}
                     className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500 tracking-widest text-center font-mono text-lg"
@@ -639,16 +639,16 @@ const Header = () => {
                     required
                   />
                 </div>
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   disabled={addAdminLoading || addAdminOtp.length !== 6}
                   className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2 rounded-lg transition-colors disabled:opacity-50 mt-2"
                 >
                   {addAdminLoading ? 'Creating...' : 'Create Admin'}
                 </button>
-                <button 
+                <button
                   type="button"
-                  onClick={() => {setAddAdminStep(1); setAddAdminOtp('');}}
+                  onClick={() => { setAddAdminStep(1); setAddAdminOtp(''); }}
                   className="w-full mt-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium py-2 rounded-lg transition-colors text-sm"
                 >
                   Back
