@@ -35,7 +35,7 @@ const Dashboard = () => {
           time: new Date(interview.created_at).toLocaleDateString()
         })));
       })
-    ]).catch(console.error).finally(() => setLoading(false));
+    ]).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
   const chartsData = useMemo(() => {

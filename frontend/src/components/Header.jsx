@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { Bell, Search, User, Key, X, CheckCircle2, AlertCircle, Info } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { fetchWithAuth } from '../api';
 
 const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+  const [globalSearchData, setGlobalSearchData] = useState({ users: [], interviews: [], logs: [] });
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [oldPassword, setOldPassword] = useState('');
@@ -95,6 +98,24 @@ const Header = () => {
   useEffect(() => {
     const token = localStorage.getItem('mockai_admin_token');
     if (!token) return;
+    
+    const fetchGlobalData = () => {
+      Promise.all([
+        fetchWithAuth('/users').catch(() => []),
+        fetchWithAuth('/interviews').catch(() => []),
+        fetchWithAuth('/logs').catch(() => [])
+      ]).then(([usersData, interviewsData, logsData]) => {
+        setGlobalSearchData({
+          users: Array.isArray(usersData) ? usersData : [],
+          interviews: Array.isArray(interviewsData) ? interviewsData : [],
+          logs: Array.isArray(logsData) ? logsData : []
+        });
+      });
+    };
+
+    fetchGlobalData();
+    window.addEventListener('dataUpdated', fetchGlobalData);
+
     fetch('http://localhost:8000/api/admin/interviews', {
       headers: { 'Authorization': `Bearer ${token}` }
     })
@@ -138,6 +159,8 @@ const Header = () => {
       }
     })
     .catch(() => {});
+
+    return () => window.removeEventListener('dataUpdated', fetchGlobalData);
   }, []);
 
   // Custom events
@@ -197,14 +220,14 @@ const Header = () => {
       const query = searchQuery.trim();
       if (!query) return;
       
-      if (query.toUpperCase().startsWith('INT-')) {
-        navigate(`/admin/interviews?search=${encodeURIComponent(query)}`);
-      } else if (query.includes('@')) {
-        navigate(`/admin/users?search=${encodeURIComponent(query)}`);
+      const exactMatches = getSearchResults();
+      if (exactMatches.length > 0) {
+        navigate(exactMatches[0].path);
       } else {
-        navigate(`/admin/results?search=${encodeURIComponent(query)}`);
+        navigate(`/admin/users?search=${encodeURIComponent(query)}`);
       }
       setSearchQuery('');
+      setShowSearchDropdown(false);
     }
   };
 
@@ -232,7 +255,7 @@ const Header = () => {
         throw new Error(errorData.detail || 'Failed to update password');
       }
 
-      alert('Password updated successfully');
+      window.dispatchEvent(new CustomEvent('notify', { detail: { message: 'Password updated successfully', type: 'success' } }));
       setShowPasswordModal(false);
       setOldPassword('');
       setNewPassword('');
@@ -281,7 +304,7 @@ const Header = () => {
         const errorData = await response.json();
         throw new Error(errorData.detail || 'Failed to create admin');
       }
-      alert('Admin created successfully');
+      window.dispatchEvent(new CustomEvent('notify', { detail: { message: 'Admin created successfully', type: 'success' } }));
       setShowAddAdminModal(false);
       setAddAdminName('');
       setAddAdminEmail('');
@@ -294,6 +317,49 @@ const Header = () => {
       setAddAdminLoading(false);
     }
   };
+
+  const getSearchResults = () => {
+    if (!searchQuery.trim()) return [];
+    const query = searchQuery.toLowerCase();
+    const results = [];
+
+    globalSearchData.users.forEach(u => {
+      if (u.name?.toLowerCase().includes(query) || u.email?.toLowerCase().includes(query)) {
+        results.push({ type: 'User', id: u._id, title: u.name, subtitle: u.email, path: `/admin/users?search=${encodeURIComponent(u.email)}` });
+      }
+    });
+
+    globalSearchData.interviews.forEach(i => {
+      const interviewId = `INT-${i._id.slice(-6).toUpperCase()}`;
+      if (
+        interviewId.toLowerCase().includes(query) ||
+        i.candidate_name?.toLowerCase().includes(query) ||
+        i.role?.toLowerCase().includes(query)
+      ) {
+        if (i.score != null) {
+          results.push({ type: 'Result', id: i._id, title: `${interviewId} - ${i.candidate_name || 'Unknown'}`, subtitle: `${i.role || 'No Role'} • Score: ${i.score}%`, path: `/admin/results?search=${encodeURIComponent(interviewId)}` });
+        } else {
+          results.push({ type: 'Interview', id: i._id, title: `${interviewId} - ${i.candidate_name || 'Unknown'}`, subtitle: i.role || 'No Role', path: `/admin/interviews?search=${encodeURIComponent(interviewId)}` });
+        }
+      }
+    });
+
+    globalSearchData.logs?.forEach(l => {
+      const logId = `LOG-${l._id?.slice(-6).toUpperCase() || 'UNKNOWN'}`;
+      if (
+        logId.toLowerCase().includes(query) ||
+        l.admin_email?.toLowerCase().includes(query) ||
+        l.action?.toLowerCase().includes(query) ||
+        l.target?.toLowerCase().includes(query)
+      ) {
+        results.push({ type: 'Log', id: l._id || logId, title: `${l.action} - ${l.admin_email || 'System'}`, subtitle: `Target: ${l.target || 'None'}`, path: `/admin/logs?search=${encodeURIComponent(l.target || l.action)}` });
+      }
+    });
+
+    return results.slice(0, 5);
+  };
+
+  const searchResults = getSearchResults();
 
   return (
     <>
@@ -312,10 +378,40 @@ const Header = () => {
               type="text" 
               placeholder="Search everything..." 
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setShowSearchDropdown(true);
+              }}
+              onFocus={() => setShowSearchDropdown(true)}
+              onBlur={() => setTimeout(() => setShowSearchDropdown(false), 200)}
               onKeyDown={handleSearch}
               className="pl-10 pr-4 py-1.5 rounded-lg bg-slate-900/40 border border-slate-800/40 text-slate-200 text-sm focus:outline-none focus:border-indigo-500/40 focus:ring-1 focus:ring-indigo-500/20 w-60"
             />
+            {showSearchDropdown && searchQuery.trim() && (
+              <div className="absolute top-full mt-2 w-full bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-50 overflow-hidden">
+                {searchResults.length === 0 ? (
+                  <div className="p-3 text-xs text-slate-500 text-center">No results found</div>
+                ) : (
+                  searchResults.map((res, i) => (
+                    <div 
+                      key={i} 
+                      onClick={() => {
+                        navigate(res.path);
+                        setShowSearchDropdown(false);
+                        setSearchQuery('');
+                      }} 
+                      className="p-3 border-b border-slate-800/40 hover:bg-slate-800/40 cursor-pointer transition-colors flex flex-col gap-0.5"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-semibold text-slate-200">{res.title}</span>
+                        <span className="text-[10px] uppercase font-bold text-indigo-400">{res.type}</span>
+                      </div>
+                      <span className="text-xs text-slate-400">{res.subtitle}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
           </div>
 
           {/* Notif */}

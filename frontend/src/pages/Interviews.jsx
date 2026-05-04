@@ -45,8 +45,8 @@ const Interviews = () => {
       setConfirmDelete(null);
       showToast('Interview deleted successfully');
       window.dispatchEvent(new CustomEvent('notify', { detail: { message: `Interview deleted: INT-${deletedId}`, type: 'warning' } }));
+      window.dispatchEvent(new Event('dataUpdated'));
     } catch (err) {
-      console.error(err);
       showToast('Failed to delete interview', 'error');
     } finally {
       setIsSubmitting(false);
@@ -88,8 +88,8 @@ const Interviews = () => {
       setEditMode(false);
       showToast('Interview updated successfully');
       window.dispatchEvent(new CustomEvent('notify', { detail: { message: `Interview updated: INT-${selectedInterview.id}`, type: 'info' } }));
+      window.dispatchEvent(new Event('dataUpdated'));
     } catch (err) {
-      console.error(err);
       showToast('Failed to update interview', 'error');
     } finally {
       setIsSubmitting(false);
@@ -111,7 +111,7 @@ const Interviews = () => {
         transcript: i.transcript,
         created_at: i.created_at || ''
       }))))
-      .catch(console.error)
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 

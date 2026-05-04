@@ -57,8 +57,8 @@ const Users = () => {
       setConfirmDelete(null);
       showToast('User deleted successfully');
       window.dispatchEvent(new CustomEvent('notify', { detail: { message: `User deleted: ${deletedName}`, type: 'warning' } }));
+      window.dispatchEvent(new Event('dataUpdated'));
     } catch (err) {
-      console.error(err);
       showToast('Failed to delete user', 'error');
     } finally {
       setIsSubmitting(false);
@@ -75,7 +75,6 @@ const Users = () => {
           joined: u.created_at ? new Date(u.created_at).toISOString().split('T')[0] : '-'
         })));
       })
-      .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
 
@@ -102,8 +101,8 @@ const Users = () => {
       closeAddModal();
       showToast('User created successfully');
       window.dispatchEvent(new CustomEvent('notify', { detail: { message: `New user created: ${newUserForm.name}`, type: 'success' } }));
+      window.dispatchEvent(new Event('dataUpdated'));
     } catch (err) {
-      console.error(err);
       setErrorMsg(err.message || 'User already exists');
     } finally {
       setIsSubmitting(false);
@@ -128,8 +127,8 @@ const Users = () => {
       closeEditModal();
       showToast('User updated successfully');
       window.dispatchEvent(new CustomEvent('notify', { detail: { message: `User updated: ${data.name}`, type: 'info' } }));
+      window.dispatchEvent(new Event('dataUpdated'));
     } catch (err) {
-      console.error(err);
       setErrorMsg(err.message || 'Failed to update user');
     } finally {
       setIsSubmitting(false);

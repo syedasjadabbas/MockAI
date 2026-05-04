@@ -1,11 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Terminal, Calendar, User, Info, Filter } from 'lucide-react';
+import { Terminal, Calendar, User, Info, Filter, Search } from 'lucide-react';
 import { fetchWithAuth } from '../api';
+import { useLocation } from 'react-router-dom';
 
 const Logs = () => {
+  const location = useLocation();
   const [logsData, setLogsData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [logFilter, setLogFilter] = useState('All');
+  const [search, setSearch] = useState(() => new URLSearchParams(location.search).get('search') || '');
+
+  useEffect(() => {
+    const query = new URLSearchParams(location.search).get('search');
+    if (query !== null) setSearch(query);
+  }, [location.search]);
 
   const fetchLogs = async () => {
     setLoading(true);
@@ -19,7 +27,7 @@ const Logs = () => {
         timestamp: l.created_at ? new Date(l.created_at).toLocaleString() : '-'
       })));
     } catch (err) {
-      console.error(err);
+      // ignore
     } finally {
       setLoading(false);
     }
@@ -39,7 +47,16 @@ const Logs = () => {
 
   if (loading) return <div className="flex items-center justify-center h-full min-h-[400px]"><div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div></div>;
 
-  const filteredLogs = logsData.filter(log => logFilter === 'All' || log.action === logFilter);
+  const filteredLogs = logsData.filter(log => {
+    const matchFilter = logFilter === 'All' || log.action === logFilter;
+    const matchSearch = search ? (
+      (log.admin && log.admin.toLowerCase().includes(search.toLowerCase())) ||
+      (log.action && log.action.toLowerCase().includes(search.toLowerCase())) ||
+      (log.target && log.target.toLowerCase().includes(search.toLowerCase())) ||
+      (log.id && log.id.toLowerCase().includes(search.toLowerCase()))
+    ) : true;
+    return matchFilter && matchSearch;
+  });
 
   return (
     <div className="space-y-6">
@@ -49,6 +66,16 @@ const Logs = () => {
           Audit Logs
         </h2>
         <div className="flex items-center gap-3">
+          <div className="relative w-48 md:w-60">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
+            <input 
+              type="text" 
+              placeholder="Search logs..." 
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-800/40 border border-slate-800/40 text-slate-200 text-sm focus:outline-none focus:border-indigo-500/40"
+            />
+          </div>
           <div className="flex items-center gap-2 px-3 py-2 bg-slate-800/40 border border-slate-800/40 rounded-xl">
             <Filter className="w-4 h-4 text-slate-400" />
             <select 

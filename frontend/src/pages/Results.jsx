@@ -61,7 +61,7 @@ const Results = () => {
           return new Date(b.date) - new Date(a.date);
         }));
       })
-      .catch(console.error)
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 

@@ -13,8 +13,8 @@ import Logs from './pages/Logs';
 import { routes } from './routes';
 
 function PrivateRoute({ children }) {
-  const isAuthenticated = localStorage.getItem('mockai_admin_auth') === 'true';
-  return isAuthenticated ? children : <Navigate to="/admin/login" />;
+  const token = localStorage.getItem('mockai_admin_token');
+  return token ? children : <Navigate to="/admin/login" />;
 }
 
 function AdminLayout({ children }) {
@@ -42,7 +42,7 @@ function App() {
                 key={idx} 
                 path={route.path} 
                 element={
-                  localStorage.getItem('mockai_admin_auth') === 'true' 
+                  localStorage.getItem('mockai_admin_token') 
                   ? <Navigate to="/admin/dashboard" /> 
                   : route.element
                 } 
