@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status, Depends, Request
 from pydantic import BaseModel
 from bson import ObjectId
 from database import users_collection, interviews_collection, serialize_mongo, admin_logs_collection, admins_collection, otps_collection
@@ -6,13 +6,30 @@ from utils.auth import verify_password, create_access_token, hash_password
 from middleware.admin_auth import verify_admin
 from datetime import datetime
 
+from collections import defaultdict
+import time
+
 router = APIRouter()
 
-def log_action(action: str, admin_email: str, target: str = "System"):
+# Simple in-memory rate limiter for login
+_login_attempts: dict = defaultdict(list)
+RATE_LIMIT_WINDOW = 60   # seconds
+RATE_LIMIT_MAX    = 10   # attempts per window
+
+def check_login_rate_limit(ip: str):
+    now = time.time()
+    attempts = [t for t in _login_attempts[ip] if now - t < RATE_LIMIT_WINDOW]
+    _login_attempts[ip] = attempts
+    if len(attempts) >= RATE_LIMIT_MAX:
+        raise HTTPException(status_code=429, detail="Too many login attempts. Please wait and try again.")
+    _login_attempts[ip].append(now)
+
+def log_action(action: str, admin_email: str, target: str = "System", severity: str = "info"):
     admin_logs_collection.insert_one({
         "action": action,
         "admin_email": admin_email,
         "target": target,
+        "severity": severity,
         "created_at": datetime.utcnow()
     })
 
@@ -25,7 +42,8 @@ class ChangePasswordRequest(BaseModel):
     new_password: str
 
 @router.post("/login")
-async def admin_login(login_data: LoginRequest):
+async def admin_login(login_data: LoginRequest, request: Request):
+    check_login_rate_limit(request.client.host if request.client else "unknown")
     normalized_email = login_data.email.strip().lower()
 
     # 1. Find user in admins_collection using email
@@ -97,6 +115,9 @@ async def change_admin_password(
     log_action("UPDATE", user.get("email", "Unknown"), "Admin Password")
     return {"message": "Password updated successfully"}
 
+from fastapi import File, UploadFile
+import uuid
+
 @router.get("/me")
 async def get_admin_profile(token_payload: dict = Depends(verify_admin)):
     admin_user = admins_collection.find_one({"_id": ObjectId(token_payload.get("user_id"))})
@@ -105,8 +126,52 @@ async def get_admin_profile(token_payload: dict = Depends(verify_admin)):
     return {
         "name": admin_user.get("name", "Admin User"),
         "email": admin_user.get("email"),
-        "role": admin_user.get("role", "admin")
+        "role": admin_user.get("role", "admin"),
+        "profile_picture": admin_user.get("profile_picture")
     }
+
+class UpdateNameRequest(BaseModel):
+    name: str
+
+@router.patch("/update-name")
+async def update_admin_name(data: UpdateNameRequest, token_payload: dict = Depends(verify_admin)):
+    if not data.name or not data.name.strip():
+        raise HTTPException(status_code=400, detail="Name cannot be empty")
+    admin_id = token_payload.get("user_id")
+    admins_collection.update_one(
+        {"_id": ObjectId(admin_id)},
+        {"$set": {"name": data.name.strip()}}
+    )
+    admin = admins_collection.find_one({"_id": ObjectId(admin_id)})
+    log_action("UPDATE", admin.get("email", "Unknown"), "Admin Name", severity="info")
+    return {"message": "Name updated successfully", "name": data.name.strip()}
+
+@router.post("/profile-picture")
+async def upload_profile_picture(file: UploadFile = File(...), token_payload: dict = Depends(verify_admin)):
+    if file.content_type not in ["image/jpeg", "image/png"]:
+        raise HTTPException(status_code=400, detail="Only JPG and PNG files are allowed")
+    
+    content = await file.read()
+    if len(content) > 2 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File size exceeds 2MB limit")
+        
+    ext = file.filename.split(".")[-1]
+    filename = f"{uuid.uuid4()}.{ext}"
+    filepath = f"uploads/{filename}"
+    
+    with open(filepath, "wb") as f:
+        f.write(content)
+        
+    admin_id = token_payload.get("user_id")
+    file_url = f"/uploads/{filename}"
+    admins_collection.update_one(
+        {"_id": ObjectId(admin_id)},
+        {"$set": {"profile_picture": file_url}}
+    )
+    
+    admin_email = admins_collection.find_one({"_id": ObjectId(admin_id)}).get("email")
+    log_action("UPDATE", admin_email, "Profile Picture")
+    return {"message": "Profile picture updated", "url": file_url}
 
 class ForgotPasswordRequest(BaseModel):
     email: str
@@ -291,6 +356,7 @@ class UpdateUserRequest(BaseModel):
 
 @router.put("/users/{id}")
 async def update_user(id: str, user_data: UpdateUserRequest, token_payload: dict = Depends(verify_admin)):
+    raise HTTPException(status_code=403, detail="Modifying users is not allowed in this phase")
     validate_required({"name": user_data.name, "email": user_data.email})
     validate_email(user_data.email)
     check_duplicate_email(user_data.email, exclude_user_id=id)
@@ -316,6 +382,7 @@ async def update_user(id: str, user_data: UpdateUserRequest, token_payload: dict
 
 @router.delete("/users/{id}")
 async def delete_user(id: str, token_payload: dict = Depends(verify_admin)):
+    raise HTTPException(status_code=403, detail="Deleting users is not allowed in this phase")
     try:
         obj_id = ObjectId(id)
     except Exception:
@@ -346,6 +413,20 @@ INTERVIEW_PROJECTION = {
 }
 
 from typing import Optional
+
+@router.get("/results")
+async def get_completed_results(token_payload: dict = Depends(verify_admin)):
+    query = {"status": "Completed"}
+    interviews = list(interviews_collection.find(query, INTERVIEW_PROJECTION))
+    
+    for interview in interviews:
+        try:
+            user = users_collection.find_one({"_id": ObjectId(interview.get("user_id"))})
+            interview["candidate_name"] = user.get("name", "Deleted User") if user else "Deleted User"
+        except Exception:
+            interview["candidate_name"] = "Deleted User"
+            
+    return [serialize_mongo(interview) for interview in interviews]
 
 @router.get("/interviews")
 async def get_interviews(
@@ -397,6 +478,7 @@ import random
 
 @router.patch("/interviews/{id}")
 async def update_interview(id: str, data: UpdateInterviewRequest, token_payload: dict = Depends(verify_admin)):
+    raise HTTPException(status_code=403, detail="Modifying interviews is not allowed in this phase")
     try:
         obj_id = ObjectId(id)
     except Exception:
@@ -433,6 +515,7 @@ async def update_interview(id: str, data: UpdateInterviewRequest, token_payload:
 
 @router.delete("/interviews/{id}")
 async def delete_interview(id: str, token_payload: dict = Depends(verify_admin)):
+    raise HTTPException(status_code=403, detail="Deleting interviews is not allowed in this phase")
     try:
         obj_id = ObjectId(id)
     except Exception:

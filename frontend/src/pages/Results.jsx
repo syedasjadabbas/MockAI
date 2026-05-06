@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Award, ShieldAlert, Sparkles, AlertCircle, Search, Filter } from 'lucide-react';
+import { Award, ShieldAlert, Sparkles, AlertCircle, Search, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 import { fetchWithAuth } from '../api';
 import { useLocation } from 'react-router-dom';
 import { exportToCSV } from '../utils/csvExport';
+import { formatDateOnly } from '../utils/dateFormat';
 
 const ScoreIndicator = ({ scoreStr }) => {
   if (!scoreStr || scoreStr === '-') return <span className="text-slate-500 font-medium text-xs">-</span>;
@@ -34,6 +35,10 @@ const Results = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState(() => new URLSearchParams(location.search).get('search') || '');
   const [scoreFilter, setScoreFilter] = useState('All Scores');
+  const [errorMsg, setErrorMsg] = useState(null);
+  const [sortBy, setSortBy] = useState('date_desc');
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 10;
 
   useEffect(() => {
     const query = new URLSearchParams(location.search).get('search');
@@ -41,10 +46,14 @@ const Results = () => {
   }, [location.search]);
 
   useEffect(() => {
-    fetchWithAuth('/interviews')
+    fetchWithAuth('/results')
       .then(data => {
-        setMappedResults(data.map(r => {
-          const hasScore = r.score !== null && r.score !== undefined;
+        const completedOnly = data.filter(r => {
+          const status = r.status || (r.score != null ? 'Completed' : 'In Progress');
+          return status === 'Completed' && r.score !== null && r.score !== undefined;
+        });
+        setMappedResults(completedOnly.map(r => {
+          const hasScore = true;
           return {
             id: r._id.slice(-6).toUpperCase(),
             interviewId: r._id.slice(-6).toUpperCase(),
@@ -53,7 +62,7 @@ const Results = () => {
             scoreValue: hasScore ? r.score : null,
             confidenceScore: hasScore && r.confidence != null ? `${r.confidence}%` : '-',
             stressIndicator: hasScore && r.stress ? r.stress : '-',
-            date: r.created_at ? new Date(r.created_at).toISOString().split('T')[0] : '-'
+            date: r.created_at ? formatDateOnly(r.created_at) : '-'
           };
         }).sort((a, b) => {
           if (a.date === '-' && b.date === '-') return 0;
@@ -62,7 +71,9 @@ const Results = () => {
           return new Date(b.date) - new Date(a.date);
         }));
       })
-      .catch(() => {})
+      .catch((err) => {
+        setErrorMsg("Failed to load evaluation results. Please try again.");
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -80,6 +91,18 @@ const Results = () => {
 
     return matchSearch && matchScore;
   });
+
+  const sortedResults = [...filteredResults].sort((a, b) => {
+    if (sortBy === 'score_desc') return (b.scoreValue ?? -1) - (a.scoreValue ?? -1);
+    if (sortBy === 'score_asc') return (a.scoreValue ?? 9999) - (b.scoreValue ?? 9999);
+    if (sortBy === 'name_asc') return a.user.localeCompare(b.user);
+    if (sortBy === 'name_desc') return b.user.localeCompare(a.user);
+    // default date_desc — already sorted on data load
+    return 0;
+  });
+
+  const totalPages = Math.max(1, Math.ceil(sortedResults.length / PAGE_SIZE));
+  const pagedResults = sortedResults.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const insightData = useMemo(() => {
     const completed = mappedResults.filter(r => r.scoreValue !== null);
@@ -130,6 +153,16 @@ const Results = () => {
 
   if (loading) return <div className="flex items-center justify-center h-full min-h-[400px]"><div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div></div>;
 
+  if (errorMsg) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full min-h-[400px] text-center">
+        <AlertCircle className="w-10 h-10 text-rose-500 mb-3" />
+        <h3 className="text-lg font-bold text-white mb-1">Error Loading Data</h3>
+        <p className="text-slate-400">{errorMsg}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -159,6 +192,21 @@ const Results = () => {
               <option value="Medium">Medium (60-79)</option>
               <option value="Low">Low (&lt; 60)</option>
               <option value="Not Evaluated">Not Evaluated</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2 px-3 py-2 bg-slate-900/40 border border-slate-800/40 rounded-xl">
+            <Filter className="w-4 h-4 text-slate-400" />
+            <select
+              value={sortBy}
+              onChange={(e) => { setSortBy(e.target.value); setPage(1); }}
+              className="bg-transparent text-sm text-slate-300 focus:outline-none"
+            >
+              <option value="date_desc">Newest First</option>
+              <option value="score_desc">Score: High→Low</option>
+              <option value="score_asc">Score: Low→High</option>
+              <option value="name_asc">Name: A→Z</option>
+              <option value="name_desc">Name: Z→A</option>
             </select>
           </div>
 
@@ -229,6 +277,13 @@ const Results = () => {
       <div className="mb-2 text-right">
         <span className="text-xs text-slate-500 font-medium">* Scores are shown only for completed interviews</span>
       </div>
+      {filteredResults.length === 0 ? (
+        <div className="glass-card p-12 rounded-2xl border border-slate-800/40 flex flex-col items-center justify-center text-center">
+          <Award className="w-12 h-12 text-slate-500 mb-3 opacity-50" />
+          <h3 className="text-lg font-semibold text-slate-300">No completed interviews available</h3>
+          <p className="text-sm text-slate-500 mt-1">{search.trim() ? `No results found for "${search.trim()}"` : 'Evaluation results will appear here once interviews are completed.'}</p>
+        </div>
+      ) : (
       <div className="glass-card rounded-2xl border border-slate-800/40 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
@@ -244,7 +299,7 @@ const Results = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredResults.map((item, idx) => (
+              {pagedResults.map((item, idx) => (
                 <tr key={idx} className="border-b border-slate-800/40 last:border-0 hover:bg-slate-800/10 transition-colors">
                   <td className="py-4 px-6 font-medium text-sm text-indigo-400">RES-{item.id}</td>
                   <td className="py-4 px-6 font-medium text-sm text-slate-400">INT-{item.interviewId}</td>
@@ -284,17 +339,24 @@ const Results = () => {
                   <td className="py-4 px-6 text-slate-500 text-sm font-medium text-right">{item.date}</td>
                 </tr>
               ))}
-              {filteredResults.length === 0 && (
-                <tr>
-                  <td colSpan="7" className="py-8 text-center text-slate-400">
-                    {search.trim() ? `No results found for "${search.trim()}"` : 'No data available.'}
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
         </div>
+        {/* Pagination */}
+        <div className="p-4 border-t border-slate-800/40 flex items-center justify-between">
+          <p className="text-xs text-slate-400">Showing <span className="text-slate-200 font-medium">{Math.min((page-1)*PAGE_SIZE+1, sortedResults.length)}–{Math.min(page*PAGE_SIZE, sortedResults.length)}</span> of <span className="text-slate-200 font-medium">{sortedResults.length}</span> results</p>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setPage(p => Math.max(1,p-1))} disabled={page === 1} className="p-1.5 rounded-lg bg-slate-800/60 border border-slate-700/50 text-slate-400 disabled:opacity-40 hover:text-white transition-all">
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <span className="text-xs text-slate-400 font-medium">{page} / {totalPages}</span>
+            <button onClick={() => setPage(p => Math.min(totalPages,p+1))} disabled={page === totalPages} className="p-1.5 rounded-lg bg-slate-800/60 border border-slate-700/50 text-slate-400 disabled:opacity-40 hover:text-white transition-all">
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
       </div>
+      )}
     </div>
   );
 };

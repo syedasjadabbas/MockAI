@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Filter, Calendar, Clock, CheckCircle2, AlertCircle, Eye, X, MoreVertical, Search, Download } from 'lucide-react';
+import { Filter, Calendar, Clock, CheckCircle2, AlertCircle, Eye, X, Search, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 import { fetchWithAuth } from '../api';
 import { useLocation } from 'react-router-dom';
 import { exportToCSV } from '../utils/csvExport';
+import { formatDateOnly } from '../utils/dateFormat';
 
 const Interviews = () => {
   const location = useLocation();
@@ -10,6 +11,8 @@ const Interviews = () => {
   const [typeFilter, setTypeFilter] = useState('All');
   const [dateFilter, setDateFilter] = useState('');
   const [search, setSearch] = useState(() => new URLSearchParams(location.search).get('search') || '');
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 10;
 
   useEffect(() => {
     const query = new URLSearchParams(location.search).get('search');
@@ -97,6 +100,8 @@ const Interviews = () => {
     }
   };
 
+  const [loadError, setLoadError] = useState(null);
+
   useEffect(() => {
     fetchWithAuth('/interviews')
       .then(data => setInterviewsData(data.map(i => ({
@@ -105,14 +110,14 @@ const Interviews = () => {
         user: i.candidate_name || 'Deleted User',
         type: i.role || '-',
         status: i.status || (i.score != null ? 'Completed' : 'In Progress'),
-        date: i.created_at ? new Date(i.created_at).toISOString().split('T')[0] : '-',
+        date: i.created_at ? formatDateOnly(i.created_at) : '-',
         score: i.score,
         confidence: i.confidence,
         stress: i.stress,
         transcript: i.transcript,
         created_at: i.created_at || ''
       }))))
-      .catch(() => {})
+      .catch((err) => setLoadError("Failed to load interviews. Please try again."))
       .finally(() => setLoading(false));
   }, []);
 
@@ -128,9 +133,22 @@ const Interviews = () => {
     return matchStatus && matchType && matchDate && matchSearch;
   }).sort((a, b) => new Date(b.created_at || b.date) - new Date(a.created_at || a.date));
 
+  const totalPages = Math.max(1, Math.ceil(filteredInterviews.length / PAGE_SIZE));
+  const pagedInterviews = filteredInterviews.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
   const types = ['All', ...new Set(interviewsData.map(i => i.type))];
 
   if (loading) return <div className="flex items-center justify-center h-full min-h-[400px]"><div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div></div>;
+
+  if (loadError) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full min-h-[400px] text-center">
+        <AlertCircle className="w-10 h-10 text-rose-500 mb-3" />
+        <h3 className="text-lg font-bold text-white mb-1">Error Loading Data</h3>
+        <p className="text-slate-400">{loadError}</p>
+      </div>
+    );
+  }
 
   const handleExport = () => {
     const dataToExport = filteredInterviews.map(i => ({
@@ -210,6 +228,13 @@ const Interviews = () => {
       </div>
 
       {/* Interviews Table */}
+      {filteredInterviews.length === 0 ? (
+        <div className="glass-card p-12 rounded-2xl border border-slate-800/40 flex flex-col items-center justify-center text-center">
+          <Clock className="w-12 h-12 text-slate-500 mb-3 opacity-50" />
+          <h3 className="text-lg font-semibold text-slate-300">No interviews available</h3>
+          <p className="text-sm text-slate-500 mt-1">{search.trim() ? `No results found for "${search.trim()}"` : 'There are no interviews recorded yet.'}</p>
+        </div>
+      ) : (
       <div className="glass-card rounded-2xl border border-slate-800/40 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
@@ -224,7 +249,7 @@ const Interviews = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredInterviews.map((item, idx) => (
+              {pagedInterviews.map((item, idx) => (
                 <tr key={idx} onClick={() => setSelectedInterview(item)} className="border-b border-slate-800/40 last:border-0 hover:bg-slate-800/10 transition-colors cursor-pointer">
                   <td className="py-4 px-6 font-medium text-sm text-indigo-400">INT-{item.id}</td>
                   <td className="py-4 px-6 font-semibold text-sm text-slate-200">{item.user}</td>
@@ -251,30 +276,28 @@ const Interviews = () => {
                         <Eye className="w-3.5 h-3.5" />
                         Details
                       </button>
-                      <button onClick={(e) => { e.stopPropagation(); setActiveDropdown(activeDropdown === item.id ? null : item.id); }} className="p-1.5 rounded-lg bg-slate-800/50 text-slate-400 hover:text-white border border-slate-800/40 transition-all">
-                        <MoreVertical className="w-4 h-4" />
-                      </button>
-                      {activeDropdown === item.id && (
-                        <div className="absolute right-0 top-full mt-1 w-36 bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-10 py-1">
-                          <button onClick={(e) => { e.stopPropagation(); setSelectedInterview(item); setActiveDropdown(null); }} className="w-full text-left px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 hover:text-white">View Details</button>
-                          <button onClick={(e) => { e.stopPropagation(); setConfirmDelete(item); setActiveDropdown(null); }} className="w-full text-left px-4 py-2 text-sm text-rose-400 hover:bg-slate-700 hover:text-rose-300">Delete</button>
-                        </div>
-                      )}
                     </div>
                   </td>
                 </tr>
               ))}
-              {filteredInterviews.length === 0 && (
-                <tr>
-                  <td colSpan="6" className="py-8 text-center text-slate-400">
-                    {search.trim() ? `No results found for "${search.trim()}"` : 'No data available.'}
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
         </div>
+        {/* Pagination */}
+        <div className="p-4 border-t border-slate-800/40 flex items-center justify-between">
+          <p className="text-xs text-slate-400">Showing <span className="text-slate-200 font-medium">{Math.min((page-1)*PAGE_SIZE+1, filteredInterviews.length)}–{Math.min(page*PAGE_SIZE, filteredInterviews.length)}</span> of <span className="text-slate-200 font-medium">{filteredInterviews.length}</span> interviews</p>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setPage(p => Math.max(1,p-1))} disabled={page === 1} className="p-1.5 rounded-lg bg-slate-800/60 border border-slate-700/50 text-slate-400 disabled:opacity-40 hover:text-white transition-all">
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <span className="text-xs text-slate-400 font-medium">{page} / {totalPages}</span>
+            <button onClick={() => setPage(p => Math.min(totalPages,p+1))} disabled={page === totalPages} className="p-1.5 rounded-lg bg-slate-800/60 border border-slate-700/50 text-slate-400 disabled:opacity-40 hover:text-white transition-all">
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
       </div>
+      )}
 
       {selectedInterview && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
@@ -363,19 +386,7 @@ const Interviews = () => {
               )}
             </div>
             <div className="mt-6 flex gap-3">
-              {editMode ? (
-                <>
-                  <button onClick={() => setEditMode(false)} className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-sm transition-all border border-slate-700">Cancel</button>
-                  <button disabled={isSubmitting} onClick={handleUpdateInterview} className={`flex-1 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-lg ${isSubmitting ? 'bg-indigo-600/50 text-white/50 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-500/20'}`}>
-                    {isSubmitting ? 'Saving...' : 'Save'}
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button onClick={() => { setEditInterviewData({ status: selectedInterview.status, type: selectedInterview.type }); setEditMode(true); }} className="flex-1 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm transition-all shadow-lg shadow-indigo-500/20">Edit Details</button>
-                  <button onClick={() => setSelectedInterview(null)} className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-sm transition-all border border-slate-700">Close</button>
-                </>
-              )}
+              <button onClick={() => setSelectedInterview(null)} className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-sm transition-all border border-slate-700">Close</button>
             </div>
           </div>
         </div>

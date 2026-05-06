@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ChevronLeft, ChevronRight, Eye, MoreVertical, X, AlertCircle, CheckCircle2, Edit, Download } from 'lucide-react';
+import { Search, Eye, MoreVertical, X, AlertCircle, CheckCircle2, Edit, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 import { fetchWithAuth } from '../api';
 import { useLocation } from 'react-router-dom';
 import { exportToCSV } from '../utils/csvExport';
+import { formatDateOnly } from '../utils/dateFormat';
 
 const Users = () => {
   const location = useLocation();
   const [search, setSearch] = useState(() => new URLSearchParams(location.search).get('search') || '');
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 10;
 
   useEffect(() => {
     const query = new URLSearchParams(location.search).get('search');
@@ -66,6 +69,8 @@ const Users = () => {
     }
   };
 
+  const [loadError, setLoadError] = useState(null);
+
   useEffect(() => {
     fetchWithAuth('/users')
       .then(data => {
@@ -73,9 +78,10 @@ const Users = () => {
           ...u, 
           id: u._id ? u._id.slice(-6).toUpperCase() : u.id,
           interviews: u.interview_count || 0,
-          joined: u.created_at ? new Date(u.created_at).toISOString().split('T')[0] : '-'
+          joined: u.created_at ? formatDateOnly(u.created_at) : '-'
         })));
       })
+      .catch((err) => setLoadError("Failed to load users. Please try again."))
       .finally(() => setLoading(false));
   }, []);
 
@@ -84,11 +90,19 @@ const Users = () => {
     user.email.toLowerCase().includes(search.toLowerCase())
   );
 
+  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / PAGE_SIZE));
+  const pagedUsers = filteredUsers.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
   const handleAddUser = async (e) => {
     e.preventDefault();
     setErrorMsg(null);
     if (!newUserForm.name || !newUserForm.email) {
       setErrorMsg("All fields required");
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newUserForm.email)) {
+      setErrorMsg("Invalid email format");
       return;
     }
     setIsSubmitting(true);
@@ -138,6 +152,16 @@ const Users = () => {
 
   if (loading) return <div className="flex items-center justify-center h-full min-h-[400px]"><div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div></div>;
 
+  if (loadError) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full min-h-[400px] text-center">
+        <AlertCircle className="w-10 h-10 text-rose-500 mb-3" />
+        <h3 className="text-lg font-bold text-white mb-1">Error Loading Data</h3>
+        <p className="text-slate-400">{loadError}</p>
+      </div>
+    );
+  }
+
   const handleExport = () => {
     const dataToExport = filteredUsers.map(u => ({
       Name: u.name,
@@ -166,13 +190,20 @@ const Users = () => {
             <Download className="w-4 h-4" />
             Export
           </button>
-          <button onClick={() => setShowAddModal(true)} className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm transition-all shadow-lg shadow-indigo-500/20">
+          <button onClick={() => setShowAddModal(true)} className="hidden px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm transition-all shadow-lg shadow-indigo-500/20">
             + Add User
           </button>
         </div>
       </div>
 
       {/* Users Table */}
+      {filteredUsers.length === 0 ? (
+        <div className="glass-card p-12 rounded-2xl border border-slate-800/40 flex flex-col items-center justify-center text-center">
+          <AlertCircle className="w-12 h-12 text-slate-500 mb-3 opacity-50" />
+          <h3 className="text-lg font-semibold text-slate-300">No users found</h3>
+          <p className="text-sm text-slate-500 mt-1">{search.trim() ? `No results found for "${search.trim()}"` : 'There are no users registered yet.'}</p>
+        </div>
+      ) : (
       <div className="glass-card rounded-2xl overflow-hidden hover:border-indigo-500/10 transition-all duration-300">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
@@ -187,7 +218,7 @@ const Users = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredUsers.map((user, idx) => (
+              {pagedUsers.map((user, idx) => (
                 <tr key={idx} onClick={() => setSelectedUser(user)} className="border-b border-slate-800/40 last:border-0 hover:bg-slate-800/10 transition-colors cursor-pointer">
                   <td className="py-4 px-6 font-medium text-sm text-indigo-400">USR-{user.id}</td>
                   <td className="py-4 px-6 font-semibold text-sm text-slate-200">{user.name}</td>
@@ -205,30 +236,31 @@ const Users = () => {
                       {activeDropdown === user.id && (
                         <div className="absolute right-0 top-full mt-1 w-36 bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-10 py-1">
                           <button onClick={(e) => { e.stopPropagation(); setSelectedUser(user); setActiveDropdown(null); }} className="w-full text-left px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 hover:text-white">View Details</button>
-                          <button onClick={(e) => { e.stopPropagation(); setEditUserForm({ ...user }); setShowEditModal(true); setActiveDropdown(null); }} className="w-full text-left px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 hover:text-white">Edit User</button>
-                          <button onClick={(e) => { e.stopPropagation(); setConfirmDelete(user); setActiveDropdown(null); }} className="w-full text-left px-4 py-2 text-sm text-rose-400 hover:bg-slate-700 hover:text-rose-300">Delete</button>
                         </div>
                       )}
                     </div>
                   </td>
                 </tr>
               ))}
-              {filteredUsers.length === 0 && (
-                <tr>
-                  <td colSpan="6" className="py-8 text-center text-slate-400">
-                    {search.trim() ? `No results found for "${search.trim()}"` : 'No data available.'}
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
         </div>
 
-        {/* Pagination UI */}
+        {/* Pagination */}
         <div className="p-4 border-t border-slate-800/40 flex items-center justify-between">
-          <p className="text-xs text-slate-400">Showing <span className="text-slate-200 font-medium">1-{filteredUsers.length}</span> of <span className="text-slate-200 font-medium">{filteredUsers.length}</span> users</p>
+          <p className="text-xs text-slate-400">Showing <span className="text-slate-200 font-medium">{Math.min((page-1)*PAGE_SIZE+1, filteredUsers.length)}–{Math.min(page*PAGE_SIZE, filteredUsers.length)}</span> of <span className="text-slate-200 font-medium">{filteredUsers.length}</span> users</p>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setPage(p => Math.max(1,p-1))} disabled={page === 1} className="p-1.5 rounded-lg bg-slate-800/60 border border-slate-700/50 text-slate-400 disabled:opacity-40 hover:text-white transition-all">
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <span className="text-xs text-slate-400 font-medium">{page} / {totalPages}</span>
+            <button onClick={() => setPage(p => Math.min(totalPages,p+1))} disabled={page === totalPages} className="p-1.5 rounded-lg bg-slate-800/60 border border-slate-700/50 text-slate-400 disabled:opacity-40 hover:text-white transition-all">
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
+      )}
 
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">

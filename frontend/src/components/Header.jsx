@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { Bell, Search, User, Key, X, CheckCircle2, AlertCircle, Info } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Bell, Search, User, Key, X, CheckCircle2, AlertCircle, Info, Camera, Edit2 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { fetchWithAuth } from '../api';
+import { fetchWithAuth, API_BASE } from '../api';
 
 const Header = () => {
   const location = useLocation();
@@ -18,7 +18,15 @@ const Header = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [adminInfo, setAdminInfo] = useState({ name: 'Admin User', email: 'admin@mockai.com', role: 'Admin' });
+  const [adminInfo, setAdminInfo] = useState({ name: 'Admin User', email: 'admin@mockai.com', role: 'Admin', profile_picture: null });
+  const [profilePicture, setProfilePicture] = useState(null);
+  const [pictureUploading, setPictureUploading] = useState(false);
+  const [pictureError, setPictureError] = useState('');
+  const fileInputRef = useRef(null);
+  const [nameEditing, setNameEditing] = useState(false);
+  const [nameValue, setNameValue] = useState('');
+  const [nameLoading, setNameLoading] = useState(false);
+  const [nameError, setNameError] = useState('');
 
   // Add Admin State
   const [showAddAdminModal, setShowAddAdminModal] = useState(false);
@@ -42,7 +50,11 @@ const Header = () => {
     fetchWithAuth('/me')
       .then(data => {
         if (data && data.name) {
-          setAdminInfo({ name: data.name, email: data.email, role: data.role });
+          setAdminInfo({ name: data.name, email: data.email, role: data.role, profile_picture: data.profile_picture || null });
+          if (data.profile_picture) {
+            const url = data.profile_picture.startsWith('http') ? data.profile_picture : `${API_BASE}${data.profile_picture}`;
+            setProfilePicture(url);
+          }
         }
       })
       .catch(() => { });
@@ -288,6 +300,64 @@ const Header = () => {
     }
   };
 
+  const handleProfilePictureUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!['image/jpeg', 'image/png'].includes(file.type)) {
+      setPictureError('Only JPG and PNG files are allowed.');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setPictureError('File size must be under 2MB.');
+      return;
+    }
+    setPictureError('');
+    setPictureUploading(true);
+    try {
+      const token = localStorage.getItem('mockai_admin_token');
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch(`${API_BASE}/admin/profile-picture`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.detail || 'Upload failed');
+      }
+      const data = await res.json();
+      const fullUrl = `${API_BASE}${data.url}`;
+      setProfilePicture(fullUrl);
+      setAdminInfo(prev => ({ ...prev, profile_picture: data.url }));
+    } catch (err) {
+      setPictureError(err.message || 'Upload failed');
+    } finally {
+      setPictureUploading(false);
+    }
+  };
+
+  // Also fix the profilePicture URL on initial load
+  const buildPictureUrl = (path) => path ? (path.startsWith('http') ? path : `${API_BASE}${path}`) : null;
+
+  const handleUpdateName = async () => {
+    if (!nameValue.trim()) { setNameError('Name cannot be empty'); return; }
+    setNameLoading(true);
+    setNameError('');
+    try {
+      const data = await fetchWithAuth('/update-name', {
+        method: 'PATCH',
+        body: JSON.stringify({ name: nameValue.trim() })
+      });
+      setAdminInfo(prev => ({ ...prev, name: data.name }));
+      setNameEditing(false);
+    } catch (err) {
+      setNameError(err.message || 'Failed to update name');
+    } finally {
+      setNameLoading(false);
+    }
+  };
+
   const getSearchResults = () => {
     if (!searchQuery.trim()) return [];
     const query = searchQuery.toLowerCase();
@@ -424,8 +494,10 @@ const Header = () => {
 
           {/* Profile */}
           <div className="flex items-center gap-3 pl-2 border-l border-slate-800/60">
-            <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center border border-indigo-500/30">
-              <User className="w-4 h-4 text-indigo-400" />
+            <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center border border-indigo-500/30 overflow-hidden cursor-pointer" onClick={() => setShowProfileModal(true)}>
+              {profilePicture
+                ? <img src={profilePicture} alt="Admin" className="w-full h-full object-cover" onError={() => setProfilePicture(null)} />
+                : <User className="w-4 h-4 text-indigo-400" />}
             </div>
             <div className="hidden md:flex flex-col">
               <button
@@ -454,11 +526,63 @@ const Header = () => {
               <X className="w-5 h-5" />
             </button>
             <div className="flex flex-col items-center mb-6 mt-2">
-              <div className="w-16 h-16 rounded-full bg-indigo-500/20 flex items-center justify-center border border-indigo-500/30 mb-3">
-                <User className="w-8 h-8 text-indigo-400" />
+              <div className="relative group w-20 h-20 mb-3">
+                <div className="w-20 h-20 rounded-full bg-indigo-500/20 flex items-center justify-center border-2 border-indigo-500/30 overflow-hidden">
+                  {profilePicture
+                    ? <img src={profilePicture} alt="Admin" className="w-full h-full object-cover" onError={() => setProfilePicture(null)} />
+                    : <User className="w-10 h-10 text-indigo-400" />}
+                </div>
+                <button
+                  onClick={() => { setPictureError(''); fileInputRef.current?.click(); }}
+                  disabled={pictureUploading}
+                  className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity disabled:cursor-not-allowed"
+                  title="Upload profile picture"
+                >
+                  {pictureUploading
+                    ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    : <Camera className="w-5 h-5 text-white" />}
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png"
+                  className="hidden"
+                  onChange={handleProfilePictureUpload}
+                />
               </div>
-              <h2 className="text-xl font-bold text-white">{adminInfo.name}</h2>
+              {pictureError && <p className="text-xs text-rose-400 mb-1 text-center">{pictureError}</p>}
+              {/* Editable name */}
+              {nameEditing ? (
+                <div className="flex flex-col items-center gap-1 w-full">
+                  <input
+                    autoFocus
+                    value={nameValue}
+                    onChange={e => setNameValue(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') handleUpdateName(); if (e.key === 'Escape') setNameEditing(false); }}
+                    className="w-full text-center bg-slate-800/60 border border-slate-700 rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none focus:border-indigo-500"
+                    disabled={nameLoading}
+                    maxLength={60}
+                  />
+                  {nameError && <p className="text-xs text-rose-400">{nameError}</p>}
+                  <div className="flex gap-2 mt-1">
+                    <button onClick={handleUpdateName} disabled={nameLoading} className="px-3 py-1 text-xs rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold disabled:opacity-50 transition-all">
+                      {nameLoading ? 'Saving…' : 'Save'}
+                    </button>
+                    <button onClick={() => { setNameEditing(false); setNameError(''); }} className="px-3 py-1 text-xs rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300 font-semibold transition-all">Cancel</button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => { setNameValue(adminInfo.name); setNameEditing(true); setNameError(''); }}
+                  className="flex items-center gap-1.5 text-xl font-bold text-white hover:text-indigo-300 transition-colors group"
+                  title="Click to edit name"
+                >
+                  {adminInfo.name}
+                  <Edit2 className="w-3.5 h-3.5 opacity-0 group-hover:opacity-60 transition-opacity" />
+                </button>
+              )}
               <span className="px-2 py-1 mt-2 bg-indigo-500/20 text-indigo-400 text-xs font-semibold rounded border border-indigo-500/20 uppercase tracking-wider">{adminInfo.role}</span>
+              <p className="text-xs text-slate-500 mt-1">Click photo to change (JPG/PNG, max 2MB)</p>
             </div>
             <div className="space-y-4">
               <div>

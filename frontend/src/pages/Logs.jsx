@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Terminal, Calendar, User, Info, Filter, Search, Download } from 'lucide-react';
+import { Terminal, Calendar, User, Info, Filter, Search, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 import { fetchWithAuth } from '../api';
 import { useLocation } from 'react-router-dom';
 import { exportToCSV } from '../utils/csvExport';
+import { formatDate } from '../utils/dateFormat';
 
 const Logs = () => {
   const location = useLocation();
@@ -10,6 +11,8 @@ const Logs = () => {
   const [loading, setLoading] = useState(true);
   const [logFilter, setLogFilter] = useState('All');
   const [search, setSearch] = useState(() => new URLSearchParams(location.search).get('search') || '');
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 15;
 
   useEffect(() => {
     const query = new URLSearchParams(location.search).get('search');
@@ -25,7 +28,7 @@ const Logs = () => {
         admin: l.admin_email || 'System Admin',
         action: l.action,
         target: l.target || 'System',
-        timestamp: l.created_at ? new Date(l.created_at).toLocaleString() : '-'
+        timestamp: l.created_at ? formatDate(l.created_at) : '-'
       })));
     } catch (err) {
       // ignore
@@ -58,6 +61,9 @@ const Logs = () => {
     ) : true;
     return matchFilter && matchSearch;
   });
+
+  const totalPages = Math.max(1, Math.ceil(filteredLogs.length / PAGE_SIZE));
+  const pagedLogs = filteredLogs.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const handleExport = () => {
     const dataToExport = filteredLogs.map(log => ({
       'Log ID': `LOG-${log.id}`,
@@ -109,7 +115,7 @@ const Logs = () => {
 
           <button onClick={fetchLogs} className="px-4 py-2 bg-slate-800/40 hover:bg-slate-800/60 transition-all border border-slate-800/40 rounded-xl text-sm text-slate-300 flex items-center gap-2">
             <Calendar className="w-4 h-4 text-slate-400" />
-            Fetch logs
+            Refresh
           </button>
         </div>
       </div>
@@ -129,7 +135,7 @@ const Logs = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredLogs.map((item, idx) => (
+              {pagedLogs.map((item, idx) => (
                 <tr key={idx} className="border-b border-slate-800/40 last:border-0 hover:bg-slate-800/10 transition-colors">
                   <td className="py-4 px-6 font-medium text-sm text-indigo-400">LOG-{item.id}</td>
                   <td className="py-4 px-6 flex items-center gap-2 font-semibold text-sm text-slate-200">
@@ -156,10 +162,27 @@ const Logs = () => {
                 </tr>
               ))}
               {filteredLogs.length === 0 && (
-                <tr><td colSpan="6" className="py-8 text-center text-slate-400">No data available.</td></tr>
+                <tr><td colSpan="6" className="py-12 text-center">
+                  <Terminal className="w-10 h-10 text-slate-600 mx-auto mb-2" />
+                  <p className="text-slate-400 font-medium">No log entries found</p>
+                  <p className="text-slate-500 text-xs mt-1">{search ? `No results for "${search}"` : 'No actions have been logged yet.'}</p>
+                </td></tr>
               )}
             </tbody>
           </table>
+        </div>
+        {/* Pagination */}
+        <div className="p-4 border-t border-slate-800/40 flex items-center justify-between">
+          <p className="text-xs text-slate-400">Showing <span className="text-slate-200 font-medium">{Math.min((page-1)*PAGE_SIZE+1, filteredLogs.length)}–{Math.min(page*PAGE_SIZE, filteredLogs.length)}</span> of <span className="text-slate-200 font-medium">{filteredLogs.length}</span> entries</p>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setPage(p => Math.max(1,p-1))} disabled={page === 1} className="p-1.5 rounded-lg bg-slate-800/60 border border-slate-700/50 text-slate-400 disabled:opacity-40 hover:text-white transition-all">
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <span className="text-xs text-slate-400 font-medium">{page} / {totalPages}</span>
+            <button onClick={() => setPage(p => Math.min(totalPages,p+1))} disabled={page === totalPages} className="p-1.5 rounded-lg bg-slate-800/60 border border-slate-700/50 text-slate-400 disabled:opacity-40 hover:text-white transition-all">
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
     </div>
