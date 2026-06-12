@@ -73,6 +73,19 @@ MockAI is currently under active development as a research-oriented AI system fo
 * Maintainable project organization
 * AI-driven evaluation engine design
 
+## Screenshots
+
+<p align="center">
+  <img src="Screenshot 2026-05-04 112518.png" width="45%" />
+  <img src="Screenshot 2026-05-04 112543.png" width="45%" />
+</p>
+
+<p align="center">
+  <img src="Screenshot 2026-05-04 112554.png" width="45%" />
+  <img src="Screenshot 2026-05-04 112607.png" width="45%" />
+</p>
+
+
 ## Tech Stack
 
 ### Frontend
