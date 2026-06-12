@@ -1,7 +1,7 @@
 # MockAI – AI-Powered Interview Evaluation System
 
 <p align="center">
-  <img src="assets/banner.png" alt="MockAI Banner" />
+  <img src="banner.png" alt="MockAI Banner" />
 </p>
 
 Research-oriented AI interview evaluation platform focused on multimodal analysis using speech recognition, NLP, and facial emotion detection to assess communication, confidence, and interview performance.
