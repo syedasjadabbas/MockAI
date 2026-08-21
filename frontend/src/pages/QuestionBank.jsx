@@ -27,7 +27,6 @@ import {
   Cloud, 
   Terminal, 
   Shield, 
-  Sparkles,
   ChevronDown,
   RefreshCw,
   Check,
@@ -577,7 +576,7 @@ const QuestionBank = () => {
         <div className="glass-card rounded-2xl p-5 border flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">Difficulty Split</span>
-            <Sparkles className="w-4 h-4 text-indigo-400" />
+            <BarChart3 className="w-4 h-4 text-indigo-400" />
           </div>
           <div className="flex items-center gap-2 my-2">
             <span className={`px-2 py-0.5 rounded-lg text-xs font-bold border ${DIFFICULTY_CONFIG.Easy.colorDark}`}>
@@ -606,7 +605,7 @@ const QuestionBank = () => {
               <span className="text-xs text-emerald-500 font-semibold">Active Ready</span>
             </div>
           </div>
-          <p className="text-[11px] text-[var(--text-muted)]">Ready for live AI interview generation</p>
+          <p className="text-[11px] text-[var(--text-muted)]">Available for candidate interview sessions</p>
         </div>
       </div>
 

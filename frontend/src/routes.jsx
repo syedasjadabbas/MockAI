@@ -1,13 +1,14 @@
-import React from 'react';
+import React, { lazy } from 'react';
 import { Navigate } from 'react-router-dom';
-import Dashboard from './pages/Dashboard';
-import Users from './pages/Users';
-import Interviews from './pages/Interviews';
-import Results from './pages/Results';
-import Logs from './pages/Logs';
-import AdminLogin from './pages/AdminLogin';
-import Admins from './pages/Admins';
-import QuestionBank from './pages/QuestionBank';
+
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Users = lazy(() => import('./pages/Users'));
+const Interviews = lazy(() => import('./pages/Interviews'));
+const Results = lazy(() => import('./pages/Results'));
+const Logs = lazy(() => import('./pages/Logs'));
+const AdminLogin = lazy(() => import('./pages/AdminLogin'));
+const Admins = lazy(() => import('./pages/Admins'));
+const QuestionBank = lazy(() => import('./pages/QuestionBank'));
 
 export const routes = [
   {
