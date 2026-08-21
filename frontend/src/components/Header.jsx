@@ -72,6 +72,13 @@ const Header = ({ onToggleMobileMenu }) => {
             if (log.action === 'CREATE_USER') { message = `New user created: ${log.target}`; type = 'success'; }
             else if (log.action === 'DELETE_USER') { message = `User deleted: ${log.target}`; type = 'warning'; }
             else if (log.action === 'DELETE_INTERVIEW') { message = `Interview deleted: ${log.target}`; type = 'warning'; }
+            else if (log.action === 'CREATE_CATEGORY') { message = `New category created: ${log.target}`; type = 'success'; }
+            else if (log.action === 'UPDATE_CATEGORY' || log.action === 'UPDATE_CATEGORY_STATUS') { message = `Category updated: ${log.target}`; type = 'info'; }
+            else if (log.action === 'DELETE_CATEGORY') { message = `Category deleted: ${log.target}`; type = 'warning'; }
+            else if (log.action === 'CREATE_QUESTION') { message = `New question added: ${log.target}`; type = 'success'; }
+            else if (log.action === 'UPDATE_QUESTION' || log.action === 'UPDATE_QUESTION_STATUS') { message = `Question updated: ${log.target}`; type = 'info'; }
+            else if (log.action === 'DELETE_QUESTION') { message = `Question deleted: ${log.target}`; type = 'warning'; }
+            else if (log.action === 'SEED_QUESTION_BANK') { message = `Question Bank data initialized`; type = 'info'; }
             else if (log.action === 'LOGIN') { message = `Admin logged in`; type = 'info'; }
 
             if (message) {

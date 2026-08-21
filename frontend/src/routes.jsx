@@ -7,6 +7,7 @@ import Results from './pages/Results';
 import Logs from './pages/Logs';
 import AdminLogin from './pages/AdminLogin';
 import Admins from './pages/Admins';
+import QuestionBank from './pages/QuestionBank';
 
 export const routes = [
   {
@@ -27,6 +28,16 @@ export const routes = [
   {
     path: '/admin/interviews',
     element: <Interviews />,
+    layout: true,
+  },
+  {
+    path: '/admin/questions',
+    element: <QuestionBank />,
+    layout: true,
+  },
+  {
+    path: '/admin/question-bank',
+    element: <QuestionBank />,
     layout: true,
   },
   {
