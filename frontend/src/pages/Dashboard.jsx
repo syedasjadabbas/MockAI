@@ -16,29 +16,58 @@ const Dashboard = () => {
   const { isDark } = useTheme();
 
   useEffect(() => {
+    let isMounted = true;
     setLoading(true);
-    Promise.all([
-      fetchWithAuth('/').then(data => {
-        setStats({
-          totalUsers: data.total_users || 0,
-          totalInterviews: data.total_interviews || 0,
-          totalResponses: data.total_interviews || 0,
-          averageScore: data.average_score || 0
-        });
-      }),
-      fetchWithAuth('/interviews').then(data => {
-        setAllInterviews(data);
-        const latest = [...data].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 5);
-        setRecentInterviews(latest.map(interview => ({
-          id: `INT-${interview._id.slice(-6).toUpperCase()}`,
-          candidate: interview.candidate_name || 'Deleted User',
-          type: interview.role || '-',
-          score: interview.score,
-          status: interview.status || 'Completed',
-          time: new Date(interview.created_at).toLocaleDateString()
-        })));
-      })
-    ]).catch(() => {}).finally(() => setLoading(false));
+
+    const loadDashboardData = async () => {
+      try {
+        const [statsData, interviewsData] = await Promise.all([
+          fetchWithAuth('/').catch(() => ({})),
+          fetchWithAuth('/interviews').catch(() => [])
+        ]);
+
+        if (!isMounted) return;
+
+        if (statsData) {
+          setStats({
+            totalUsers: statsData.total_users || 0,
+            totalInterviews: statsData.total_interviews || 0,
+            totalResponses: statsData.total_interviews || 0,
+            averageScore: statsData.average_score || 0
+          });
+        }
+
+        if (Array.isArray(interviewsData)) {
+          setAllInterviews(interviewsData);
+          const latest = [...interviewsData]
+            .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
+            .slice(0, 5);
+
+          setRecentInterviews(
+            latest.map(interview => ({
+              id: `INT-${String(interview._id || Math.random().toString(36)).slice(-6).toUpperCase()}`,
+              candidate: interview.candidate_name || 'Deleted User',
+              type: interview.role || '-',
+              score: interview.score,
+              status: interview.status || 'Completed',
+              time: interview.created_at ? new Date(interview.created_at).toLocaleDateString() : '-'
+            }))
+          );
+        }
+      } catch (err) {
+        console.error('Failed to load dashboard data:', err);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadDashboardData();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const chartsData = useMemo(() => {
