@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, Briefcase, Award, TrendingUp, Clock, CheckCircle2, AlertCircle, Brain, Sparkles, ArrowRight } from 'lucide-react';
+import { Users, Briefcase, Award, TrendingUp, Clock, CheckCircle2, AlertCircle, Activity, ArrowRight, Info } from 'lucide-react';
 import StatsCard from '../components/StatsCard';
 import { ScoreDistributionChart, StatusDistributionChart } from '../components/Charts';
 import { CardSkeleton, TableSkeleton } from '../components/Skeleton';
@@ -71,18 +71,18 @@ const Dashboard = () => {
     let insights = [];
 
     if (completed.length === 0) {
-      insights.push("No completed interviews yet.");
+      insights.push("No completed interviews recorded yet.");
     } else {
-      if (avgScore < 60) insights.push("Overall performance is low. Many candidates struggle.");
-      if (highStressCount > completed.length * 0.4) insights.push("High stress detected in many interviews.");
+      if (avgScore < 60) insights.push("Average performance score is below 60%. Candidates require improvement.");
+      if (highStressCount > completed.length * 0.4) insights.push("High stress levels recorded across multiple interview sessions.");
     }
 
     if (statusBuckets.pending > statusBuckets.completed) {
-      insights.push("Large number of interviews still pending.");
+      insights.push("Pending interviews exceed completed evaluations.");
     }
 
     if (insights.length === 0) {
-      insights.push("System performance looks stable.");
+      insights.push("Overall candidate evaluation metrics are stable.");
     }
 
     insights = insights.slice(0, 3);
@@ -120,52 +120,44 @@ const Dashboard = () => {
           title="Total Users" 
           value={totalUsers.toLocaleString()} 
           icon={Users} 
-          percentage="12.5%" 
-          trend="up" 
         />
         <StatsCard 
           title="Interviews Conducted" 
           value={totalInterviews.toLocaleString()} 
           icon={Briefcase} 
-          percentage="8.2%" 
-          trend="up" 
         />
         <StatsCard 
           title="Total Responses" 
           value={totalResponses.toLocaleString()} 
           icon={Award} 
-          percentage="5.1%" 
-          trend="up" 
         />
         <StatsCard 
           title="Avg. Performance" 
           value={`${avgPerformance}%`} 
           icon={TrendingUp} 
-          percentage="2.4%" 
-          trend="down" 
         />
       </div>
 
-      {/* Charts & AI Insights Grid */}
+      {/* Charts & Highlights Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <ScoreDistributionChart data={chartsData.scoreBuckets} />
         <StatusDistributionChart data={chartsData.statusBuckets} />
         
-        {/* AI Insights Panel */}
+        {/* Performance Highlights Panel */}
         <div className="glass-card p-6 rounded-2xl flex flex-col hover:border-indigo-500/20 transition-all duration-300">
           <div className="flex items-center gap-2.5 mb-5">
             <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
-              <Brain className="w-4 h-4 text-indigo-500" />
+              <Activity className="w-4 h-4 text-indigo-500" />
             </div>
-            <h3 className="text-base sm:text-lg font-bold text-[var(--text-primary)]">AI Insights</h3>
+            <h3 className="text-base sm:text-lg font-bold text-[var(--text-primary)]">Performance Highlights</h3>
           </div>
           <ul className="space-y-3.5 flex-1">
             {chartsData.insights.map((insight, idx) => (
               <li 
                 key={idx} 
-                className="flex items-start gap-3 p-3.5 rounded-xl border border-[var(--border-table)] bg-[var(--bg-table-header)] transition-all hover:scale-[1.01]"
+                className="flex items-start gap-3 p-3.5 rounded-xl border border-[var(--border-table)] bg-[var(--bg-table-header)] transition-all"
               >
-                <Sparkles className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" />
+                <Info className="w-4 h-4 text-indigo-500 mt-0.5 flex-shrink-0" />
                 <span className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed">{insight}</span>
               </li>
             ))}

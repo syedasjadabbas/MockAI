@@ -128,11 +128,11 @@ const AdminLogin = () => {
       
       <div className="w-full max-w-md glass-card p-8 rounded-3xl relative border">
         <div className="flex flex-col items-center mb-8">
-          <div className="w-13 h-13 p-3 rounded-2xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/30 mb-3.5 animate-float shadow-sm">
+          <div className="w-13 h-13 p-3 rounded-2xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/30 mb-3.5 shadow-sm">
             <Terminal className="w-7 h-7 text-indigo-500" />
           </div>
           <h2 className="text-2xl font-extrabold text-[var(--text-primary)] tracking-tight">Admin Portal</h2>
-          <p className="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">Sign in to manage MockAI platform</p>
+          <p className="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">Sign in to access admin portal</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
