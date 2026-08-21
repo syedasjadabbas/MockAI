@@ -41,7 +41,7 @@ const Header = ({ onToggleMobileMenu }) => {
   const [addAdminLoading, setAddAdminLoading] = useState(false);
   const [addAdminError, setAddAdminError] = useState('');
 
-  // Initial load & Logs Sync
+  // Initial load: load admin info & notifications instantly from cache
   useEffect(() => {
     const storedNotifs = JSON.parse(localStorage.getItem('mockai_notifications') || '[]');
     setNotifications(storedNotifs);
@@ -50,19 +50,36 @@ const Header = ({ onToggleMobileMenu }) => {
     const token = localStorage.getItem('mockai_admin_token');
     if (!token) return;
 
-    fetchWithAuth('/me')
+    // Load admin profile from localStorage if present
+    const cachedAdmin = localStorage.getItem('mockai_admin_info');
+    if (cachedAdmin) {
+      try {
+        const parsed = JSON.parse(cachedAdmin);
+        setAdminInfo(parsed);
+        if (parsed.profile_picture) {
+          const url = parsed.profile_picture.startsWith('http') ? parsed.profile_picture : `${API_BASE}${parsed.profile_picture}`;
+          setProfilePicture(url);
+        }
+      } catch (_) {}
+    }
+
+    // Refresh profile in background
+    fetchWithAuth('/me', { ttl: 60000 })
       .then(data => {
         if (data && data.name) {
-          setAdminInfo({ name: data.name, email: data.email, role: data.role, profile_picture: data.profile_picture || null });
+          const info = { name: data.name, email: data.email, role: data.role, profile_picture: data.profile_picture || null };
+          setAdminInfo(info);
+          localStorage.setItem('mockai_admin_info', JSON.stringify(info));
           if (data.profile_picture) {
             const url = data.profile_picture.startsWith('http') ? data.profile_picture : `${API_BASE}${data.profile_picture}`;
             setProfilePicture(url);
           }
         }
       })
-      .catch(() => { });
+      .catch(() => {});
 
-    fetchWithAuth('/logs')
+    // Sync recent logs for notifications once
+    fetchWithAuth('/logs', { ttl: 30000 })
       .then(data => {
         if (Array.isArray(data)) {
           const newNotifs = [];
@@ -107,19 +124,17 @@ const Header = ({ onToggleMobileMenu }) => {
           });
         }
       })
-      .catch(() => { });
+      .catch(() => {});
   }, []);
 
-  // Low score detection
-  useEffect(() => {
-    const token = localStorage.getItem('mockai_admin_token');
-    if (!token) return;
-
-    const fetchGlobalData = () => {
+  // Lazy-load search data on search bar focus only
+  const handleSearchFocus = () => {
+    setShowSearchDropdown(true);
+    if (globalSearchData.users.length === 0 && globalSearchData.interviews.length === 0) {
       Promise.all([
-        fetchWithAuth('/users').catch(() => []),
-        fetchWithAuth('/interviews').catch(() => []),
-        fetchWithAuth('/logs').catch(() => [])
+        fetchWithAuth('/users', { ttl: 30000 }).catch(() => []),
+        fetchWithAuth('/interviews', { ttl: 30000 }).catch(() => []),
+        fetchWithAuth('/logs', { ttl: 30000 }).catch(() => [])
       ]).then(([usersData, interviewsData, logsData]) => {
         setGlobalSearchData({
           users: Array.isArray(usersData) ? usersData : [],
@@ -127,54 +142,8 @@ const Header = ({ onToggleMobileMenu }) => {
           logs: Array.isArray(logsData) ? logsData : []
         });
       });
-    };
-
-    fetchGlobalData();
-    window.addEventListener('dataUpdated', fetchGlobalData);
-
-    fetchWithAuth('/interviews')
-      .then(data => {
-        if (Array.isArray(data)) {
-          const flaggedIds = JSON.parse(localStorage.getItem('mockai_flagged_scores') || '[]');
-          const lowScores = data.filter(i => i.score !== null && i.score < 50);
-          let updatedFlagged = [...flaggedIds];
-          let hasNew = false;
-
-          lowScores.forEach(recent => {
-            if (!flaggedIds.includes(recent._id)) {
-              updatedFlagged.push(recent._id);
-              hasNew = true;
-              const newNotif = {
-                id: `low-score-${recent._id}`,
-                message: `Low score detected (< 50) for ${recent.candidate_name}`,
-                type: 'error',
-                time: new Date().toLocaleString()
-              };
-              setNotifications(prev => {
-                if (prev.some(n => n.message === newNotif.message)) return prev;
-
-                setUnreadCount(u => {
-                  const count = u + 1;
-                  localStorage.setItem('mockai_unread_count', count.toString());
-                  return count;
-                });
-
-                const next = [newNotif, ...prev].slice(0, 20);
-                localStorage.setItem('mockai_notifications', JSON.stringify(next));
-                return next;
-              });
-            }
-          });
-
-          if (hasNew) {
-            localStorage.setItem('mockai_flagged_scores', JSON.stringify(updatedFlagged));
-          }
-        }
-      })
-      .catch(() => { });
-
-    return () => window.removeEventListener('dataUpdated', fetchGlobalData);
-  }, []);
+    }
+  };
 
   // Custom events
   useEffect(() => {
@@ -440,7 +409,7 @@ const Header = ({ onToggleMobileMenu }) => {
                 setSearchQuery(e.target.value);
                 setShowSearchDropdown(true);
               }}
-              onFocus={() => setShowSearchDropdown(true)}
+              onFocus={handleSearchFocus}
               onBlur={() => setTimeout(() => setShowSearchDropdown(false), 200)}
               onKeyDown={handleSearch}
               className="pl-9 pr-4 py-2 rounded-xl text-xs sm:text-sm theme-input border focus:outline-none focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/15 w-48 lg:w-64 transition-all"

@@ -9,7 +9,10 @@ from database import (
     admins_collection,
     otps_collection,
     categories_collection,
-    questions_collection
+    questions_collection,
+    get_cached,
+    set_cached,
+    invalidate_cache
 )
 from utils.auth import verify_password, create_access_token, hash_password
 from middleware.admin_auth import verify_admin
@@ -51,7 +54,7 @@ class ChangePasswordRequest(BaseModel):
     new_password: str
 
 @router.post("/login")
-async def admin_login(login_data: LoginRequest, request: Request):
+def admin_login(login_data: LoginRequest, request: Request):
     check_login_rate_limit(request.client.host if request.client else "unknown")
     normalized_email = login_data.email.strip().lower()
 
@@ -94,7 +97,7 @@ async def admin_login(login_data: LoginRequest, request: Request):
     }
 
 @router.put("/change-password")
-async def change_admin_password(
+def change_admin_password(
     data: ChangePasswordRequest, 
     token_payload: dict = Depends(verify_admin)
 ):
@@ -129,7 +132,7 @@ from fastapi import File, UploadFile
 import uuid
 
 @router.get("/me")
-async def get_admin_profile(token_payload: dict = Depends(verify_admin)):
+def get_admin_profile(token_payload: dict = Depends(verify_admin)):
     admin_user = admins_collection.find_one({"_id": ObjectId(token_payload.get("user_id"))})
     if not admin_user:
         raise HTTPException(status_code=404, detail="Admin not found")
@@ -144,7 +147,7 @@ class UpdateNameRequest(BaseModel):
     name: str
 
 @router.patch("/update-name")
-async def update_admin_name(data: UpdateNameRequest, token_payload: dict = Depends(verify_admin)):
+def update_admin_name(data: UpdateNameRequest, token_payload: dict = Depends(verify_admin)):
     if not data.name or not data.name.strip():
         raise HTTPException(status_code=400, detail="Name cannot be empty")
     admin_id = token_payload.get("user_id")
@@ -197,11 +200,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 @router.post("/forgot-password")
-async def forgot_password(data: ForgotPasswordRequest):
+def forgot_password(data: ForgotPasswordRequest):
     user = admins_collection.find_one({"email": data.email})
     if not user:
-        # Prevent email enumeration by returning success anyway, but here for demo we might return 404 or success
-        # Actually prompt says: "generate temporary password, hash and update DB, return temp password in response"
         raise HTTPException(status_code=404, detail="Email not found")
         
     temp_password = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
@@ -218,9 +219,6 @@ async def forgot_password(data: ForgotPasswordRequest):
         sender_password = os.getenv("SMTP_PASSWORD")
         smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
         smtp_port = int(os.getenv("SMTP_PORT", "587"))
-        
-        print("SMTP_EMAIL:", sender_email)
-        print("SMTP_PASSWORD set:", bool(sender_password))
         
         if sender_email and sender_password:
             msg = MIMEMultipart()
@@ -259,19 +257,21 @@ async def forgot_password(data: ForgotPasswordRequest):
             server.login(sender_email, sender_password)
             server.send_message(msg)
             server.quit()
-            print("Email sent successfully")
         else:
             print(f"[DEBUG] SMTP not configured. Temporary password for {data.email} is: {temp_password}")
     except Exception as e:
         print("EMAIL ERROR:", e)
         print("Temporary password:", temp_password)
-        # In a real scenario we might fail the request, but we'll continue here
     
     log_action("UPDATE", user.get("email"), "Forgot Password Reset")
     return {"message": "Password reset email sent"}
 
 @router.get("/")
-async def get_admin_dashboard(token_payload: dict = Depends(verify_admin)):
+def get_admin_dashboard(token_payload: dict = Depends(verify_admin)):
+    cached = get_cached("dashboard_stats")
+    if cached:
+        return cached
+
     total_users = users_collection.count_documents({"role": {"$ne": "admin"}})
     total_interviews = interviews_collection.count_documents({})
     
@@ -297,22 +297,30 @@ async def get_admin_dashboard(token_payload: dict = Depends(verify_admin)):
         average_confidence = 0
         average_stress = 0
         
-    return {
+    result = {
         "total_users": total_users,
         "total_interviews": total_interviews,
         "average_score": average_score,
         "average_confidence": average_confidence,
         "average_stress": average_stress
     }
+    set_cached("dashboard_stats", result, ttl_seconds=15)
+    return result
 
 @router.get("/users")
-async def get_users(token_payload: dict = Depends(verify_admin)):
-    users = list(users_collection.find({"role": {"$ne": "admin"}}))
-    # Remove passwords from the response for security
+def get_users(token_payload: dict = Depends(verify_admin)):
+    users = list(users_collection.find({"role": {"$ne": "admin"}}, {"password": 0}).sort("created_at", -1))
+    
+    # 1 single aggregation to get interview counts for all users simultaneously
+    pipeline = [
+        {"$group": {"_id": "$user_id", "count": {"$sum": 1}}}
+    ]
+    counts_map = {str(item["_id"]): item["count"] for item in interviews_collection.aggregate(pipeline) if item.get("_id")}
+    
+    # Attach precomputed counts in memory
     for user in users:
-        user.pop("password", None)
-        # Add interview count per user
-        user["interview_count"] = interviews_collection.count_documents({"user_id": str(user["_id"])})
+        user["interview_count"] = counts_map.get(str(user["_id"]), 0)
+        
     return [serialize_mongo(user) for user in users]
 
 class CreateUserRequest(BaseModel):
@@ -337,7 +345,7 @@ def check_duplicate_email(email: str, exclude_user_id: str = None):
         raise HTTPException(status_code=400, detail="Email already exists")
 
 @router.post("/users")
-async def create_user(user_data: CreateUserRequest, token_payload: dict = Depends(verify_admin)):
+def create_user(user_data: CreateUserRequest, token_payload: dict = Depends(verify_admin)):
     validate_required({"name": user_data.name, "email": user_data.email})
     validate_email(user_data.email)
     check_duplicate_email(user_data.email)
@@ -350,6 +358,7 @@ async def create_user(user_data: CreateUserRequest, token_payload: dict = Depend
         "created_at": datetime.utcnow()
     }
     result = users_collection.insert_one(new_user)
+    invalidate_cache("dashboard_stats")
     
     admin_user = admins_collection.find_one({"_id": ObjectId(token_payload.get("user_id"))})
     admin_email = admin_user.get("email") if admin_user else "Unknown Admin"
@@ -365,53 +374,26 @@ class UpdateUserRequest(BaseModel):
     email: str
 
 @router.put("/users/{id}")
-async def update_user(id: str, user_data: UpdateUserRequest, token_payload: dict = Depends(verify_admin)):
+def update_user(id: str, user_data: UpdateUserRequest, token_payload: dict = Depends(verify_admin)):
     raise HTTPException(status_code=403, detail="Modifying users is not allowed in this phase")
-    validate_required({"name": user_data.name, "email": user_data.email})
-    validate_email(user_data.email)
-    check_duplicate_email(user_data.email, exclude_user_id=id)
-    try:
-        obj_id = ObjectId(id)
-    except Exception:
-        raise HTTPException(status_code=400, detail="Invalid user ID")
-        
-    result = users_collection.update_one(
-        {"_id": obj_id, "role": {"$ne": "admin"}},
-        {"$set": {"name": user_data.name, "email": user_data.email}}
-    )
-    if result.matched_count == 0:
-        raise HTTPException(status_code=404, detail="User not found")
-        
-    admin_user = admins_collection.find_one({"_id": ObjectId(token_payload.get("user_id"))})
-    admin_email = admin_user.get("email") if admin_user else "Unknown Admin"
-    log_action("UPDATE", admin_email, f"User: {id}")
-    
-    updated_user = users_collection.find_one({"_id": obj_id})
-    updated_user.pop("password", None)
-    return serialize_mongo(updated_user)
 
 @router.delete("/users/{id}")
-async def delete_user(id: str, token_payload: dict = Depends(verify_admin)):
+def delete_user(id: str, token_payload: dict = Depends(verify_admin)):
     raise HTTPException(status_code=403, detail="Deleting users is not allowed in this phase")
-    try:
-        obj_id = ObjectId(id)
-    except Exception:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid user ID")
-        
-    admin_user = admins_collection.find_one({"_id": ObjectId(token_payload.get("user_id"))})
-    admin_email = admin_user.get("email") if admin_user else "Unknown Admin"
-    user_to_delete = users_collection.find_one({"_id": obj_id})
-    target_name = user_to_delete.get("name", id) if user_to_delete else id
-    
-    result = users_collection.delete_one({"_id": obj_id, "role": {"$ne": "admin"}})
-    if result.deleted_count == 0:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-        
-    log_action("DELETE_USER", admin_email, target_name)
-    return {"message": "User deleted successfully"}
 
-# Projection to return only the requested fields
-INTERVIEW_PROJECTION = {
+# Lightweight projection for list views (omits heavy transcript)
+INTERVIEW_LIST_PROJECTION = {
+    "user_id": 1,
+    "role": 1,
+    "status": 1,
+    "score": 1,
+    "confidence": 1,
+    "stress": 1,
+    "created_at": 1
+}
+
+# Full projection for single interview detail modal
+INTERVIEW_DETAIL_PROJECTION = {
     "user_id": 1,
     "role": 1,
     "status": 1,
@@ -422,24 +404,42 @@ INTERVIEW_PROJECTION = {
     "created_at": 1
 }
 
+def attach_candidate_names(interviews: list) -> list:
+    """
+    Batch fetch user candidate names in a single $in query
+    to eliminate N+1 sequential database roundtrips.
+    """
+    if not interviews:
+        return interviews
+
+    user_ids = []
+    for item in interviews:
+        uid = item.get("user_id")
+        if uid and ObjectId.is_valid(str(uid)):
+            user_ids.append(ObjectId(str(uid)))
+
+    users_map = {}
+    if user_ids:
+        for u in users_collection.find({"_id": {"$in": user_ids}}, {"name": 1}):
+            users_map[str(u["_id"])] = u.get("name", "Deleted User")
+
+    for item in interviews:
+        uid = str(item.get("user_id", ""))
+        item["candidate_name"] = users_map.get(uid, "Deleted User")
+
+    return interviews
+
 from typing import Optional
 
 @router.get("/results")
-async def get_completed_results(token_payload: dict = Depends(verify_admin)):
+def get_completed_results(token_payload: dict = Depends(verify_admin)):
     query = {"status": "Completed"}
-    interviews = list(interviews_collection.find(query, INTERVIEW_PROJECTION))
-    
-    for interview in interviews:
-        try:
-            user = users_collection.find_one({"_id": ObjectId(interview.get("user_id"))})
-            interview["candidate_name"] = user.get("name", "Deleted User") if user else "Deleted User"
-        except Exception:
-            interview["candidate_name"] = "Deleted User"
-            
+    interviews = list(interviews_collection.find(query, INTERVIEW_LIST_PROJECTION).sort("created_at", -1))
+    attach_candidate_names(interviews)
     return [serialize_mongo(interview) for interview in interviews]
 
 @router.get("/interviews")
-async def get_interviews(
+def get_interviews(
     role: Optional[str] = None, 
     status_filter: Optional[str] = None, 
     date: Optional[str] = None, 
@@ -451,15 +451,8 @@ async def get_interviews(
     if status_filter and status_filter != 'All':
         query["status"] = status_filter
         
-    interviews = list(interviews_collection.find(query, INTERVIEW_PROJECTION))
-    
-    # Map user_id to user name
-    for interview in interviews:
-        try:
-            user = users_collection.find_one({"_id": ObjectId(interview.get("user_id"))})
-            interview["candidate_name"] = user.get("name", "Deleted User") if user else "Deleted User"
-        except Exception:
-            interview["candidate_name"] = "Deleted User"
+    interviews = list(interviews_collection.find(query, INTERVIEW_LIST_PROJECTION).sort("created_at", -1))
+    attach_candidate_names(interviews)
             
     # Filter by date exactly if provided (matching YYYY-MM-DD prefix)
     if date:
@@ -468,13 +461,13 @@ async def get_interviews(
     return [serialize_mongo(interview) for interview in interviews]
 
 @router.get("/interviews/{id}")
-async def get_interview(id: str, token_payload: dict = Depends(verify_admin)):
+def get_interview(id: str, token_payload: dict = Depends(verify_admin)):
     try:
         obj_id = ObjectId(id)
     except Exception:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid interview ID")
         
-    interview = interviews_collection.find_one({"_id": obj_id}, INTERVIEW_PROJECTION)
+    interview = interviews_collection.find_one({"_id": obj_id}, INTERVIEW_DETAIL_PROJECTION)
     if not interview:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Interview not found")
         
@@ -487,64 +480,15 @@ class UpdateInterviewRequest(BaseModel):
 import random
 
 @router.patch("/interviews/{id}")
-async def update_interview(id: str, data: UpdateInterviewRequest, token_payload: dict = Depends(verify_admin)):
+def update_interview(id: str, data: UpdateInterviewRequest, token_payload: dict = Depends(verify_admin)):
     raise HTTPException(status_code=403, detail="Modifying interviews is not allowed in this phase")
-    try:
-        obj_id = ObjectId(id)
-    except Exception:
-        raise HTTPException(status_code=400, detail="Invalid interview ID")
-        
-    interview = interviews_collection.find_one({"_id": obj_id})
-    if not interview:
-        raise HTTPException(status_code=404, detail="Interview not found")
-        
-    update_data = {"status": data.status, "role": data.role}
-    if data.status != "Completed":
-        update_data["score"] = None
-        update_data["confidence"] = None
-        update_data["stress"] = None
-    elif data.status == "Completed":
-        if interview.get("score") is None:
-            update_data["score"] = random.randint(50, 95)
-            update_data["confidence"] = random.randint(40, 90)
-            update_data["stress"] = random.choice(["Low", "Medium", "High"])
-        
-    result = interviews_collection.update_one(
-        {"_id": obj_id},
-        {"$set": update_data}
-    )
-    if result.matched_count == 0:
-        raise HTTPException(status_code=404, detail="Interview not found")
-        
-    admin_user = admins_collection.find_one({"_id": ObjectId(token_payload.get("user_id"))})
-    admin_email = admin_user.get("email") if admin_user else "Unknown Admin"
-    log_action("UPDATE", admin_email, f"Interview: {id}")
-    
-    updated_interview = interviews_collection.find_one({"_id": obj_id})
-    return serialize_mongo(updated_interview)
 
 @router.delete("/interviews/{id}")
-async def delete_interview(id: str, token_payload: dict = Depends(verify_admin)):
+def delete_interview(id: str, token_payload: dict = Depends(verify_admin)):
     raise HTTPException(status_code=403, detail="Deleting interviews is not allowed in this phase")
-    try:
-        obj_id = ObjectId(id)
-    except Exception:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid interview ID")
-        
-    admin_user = admins_collection.find_one({"_id": ObjectId(token_payload.get("user_id"))})
-    admin_email = admin_user.get("email") if admin_user else "Unknown Admin"
-    interview_to_delete = interviews_collection.find_one({"_id": obj_id})
-    target_role = interview_to_delete.get("role", id) if interview_to_delete else id
-    
-    result = interviews_collection.delete_one({"_id": obj_id})
-    if result.deleted_count == 0:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Interview not found")
-        
-    log_action("DELETE_INTERVIEW", admin_email, id)
-    return {"message": "Interview deleted successfully"}
 
 @router.get("/logs")
-async def get_logs(token_payload: dict = Depends(verify_admin)):
+def get_logs(token_payload: dict = Depends(verify_admin)):
     logs = list(admin_logs_collection.find({}).sort("created_at", -1).limit(50))
     if not logs:
         # Provide dummy logs if empty
@@ -565,7 +509,7 @@ class SendOtpRequest(BaseModel):
     email: str
 
 @router.post("/create/send-otp")
-async def send_create_admin_otp(data: SendOtpRequest, token_payload: dict = Depends(verify_admin)):
+def send_create_admin_otp(data: SendOtpRequest, token_payload: dict = Depends(verify_admin)):
     validate_required({"name": data.name, "email": data.email})
     validate_email(data.email)
     check_duplicate_email(data.email)
@@ -629,7 +573,7 @@ class CreateAdminRequest(BaseModel):
     otp: str
 
 @router.post("/create")
-async def create_admin(data: CreateAdminRequest, token_payload: dict = Depends(verify_admin)):
+def create_admin(data: CreateAdminRequest, token_payload: dict = Depends(verify_admin)):
     validate_required({"name": data.name, "email": data.email, "password": data.password, "otp": data.otp})
     validate_email(data.email)
     check_duplicate_email(data.email)
@@ -657,7 +601,7 @@ async def create_admin(data: CreateAdminRequest, token_payload: dict = Depends(v
     return {"message": "Admin created successfully"}
 
 @router.get("/all-admins")
-async def get_all_admins(token_payload: dict = Depends(verify_admin)):
+def get_all_admins(token_payload: dict = Depends(verify_admin)):
     admins = list(admins_collection.find({}, {"password": 0}))
     return [
         {
@@ -707,7 +651,7 @@ class StatusToggleRequest(BaseModel):
 # ----------------- Category Endpoints -----------------
 
 @router.get("/categories")
-async def get_categories(
+def get_categories(
     search: Optional[str] = None,
     status_filter: Optional[str] = None,
     token_payload: dict = Depends(verify_admin)
@@ -724,21 +668,33 @@ async def get_categories(
     
     categories = list(categories_collection.find(query).sort("created_at", -1))
     
-    # Calculate question counts per category dynamically
+    # 1 single aggregation to get total and active question counts for all categories
+    pipeline = [
+        {
+            "$group": {
+                "_id": "$category_id",
+                "total": {"$sum": 1},
+                "active": {
+                    "$sum": {"$cond": [{"$eq": ["$status", "active"]}, 1, 0]}
+                }
+            }
+        }
+    ]
+    counts_map = {item["_id"]: item for item in questions_collection.aggregate(pipeline) if item.get("_id")}
+    
     result = []
     for cat in categories:
         cat_id_str = str(cat["_id"])
-        total_q = questions_collection.count_documents({"category_id": cat_id_str})
-        active_q = questions_collection.count_documents({"category_id": cat_id_str, "status": "active"})
+        counts = counts_map.get(cat_id_str, {})
         cat_data = serialize_mongo(cat)
-        cat_data["question_count"] = total_q
-        cat_data["active_question_count"] = active_q
+        cat_data["question_count"] = counts.get("total", 0)
+        cat_data["active_question_count"] = counts.get("active", 0)
         result.append(cat_data)
         
     return result
 
 @router.get("/categories/{id}")
-async def get_category(id: str, token_payload: dict = Depends(verify_admin)):
+def get_category(id: str, token_payload: dict = Depends(verify_admin)):
     try:
         obj_id = ObjectId(id)
     except Exception:
@@ -754,7 +710,7 @@ async def get_category(id: str, token_payload: dict = Depends(verify_admin)):
     return cat_data
 
 @router.post("/categories")
-async def create_category(data: CreateCategoryRequest, token_payload: dict = Depends(verify_admin)):
+def create_category(data: CreateCategoryRequest, token_payload: dict = Depends(verify_admin)):
     name = (data.name or "").strip()
     if not name:
         raise HTTPException(status_code=400, detail="Category name is required")
@@ -777,6 +733,7 @@ async def create_category(data: CreateCategoryRequest, token_payload: dict = Dep
     
     res = categories_collection.insert_one(new_cat)
     created = categories_collection.find_one({"_id": res.inserted_id})
+    invalidate_cache("qb_stats")
     
     admin_user = admins_collection.find_one({"_id": ObjectId(token_payload.get("user_id"))})
     admin_email = admin_user.get("email") if admin_user else "Admin"
@@ -789,7 +746,7 @@ async def create_category(data: CreateCategoryRequest, token_payload: dict = Dep
 
 @router.put("/categories/{id}")
 @router.patch("/categories/{id}")
-async def update_category(id: str, data: UpdateCategoryRequest, token_payload: dict = Depends(verify_admin)):
+def update_category(id: str, data: UpdateCategoryRequest, token_payload: dict = Depends(verify_admin)):
     try:
         obj_id = ObjectId(id)
     except Exception:
@@ -823,6 +780,7 @@ async def update_category(id: str, data: UpdateCategoryRequest, token_payload: d
     update_fields["updated_at"] = datetime.utcnow()
     
     categories_collection.update_one({"_id": obj_id}, {"$set": update_fields})
+    invalidate_cache("qb_stats")
     
     # If category name changed, update denormalized category_name in questions
     if "name" in update_fields:
@@ -840,7 +798,7 @@ async def update_category(id: str, data: UpdateCategoryRequest, token_payload: d
     return res
 
 @router.patch("/categories/{id}/status")
-async def toggle_category_status(id: str, data: StatusToggleRequest, token_payload: dict = Depends(verify_admin)):
+def toggle_category_status(id: str, data: StatusToggleRequest, token_payload: dict = Depends(verify_admin)):
     try:
         obj_id = ObjectId(id)
     except Exception:
@@ -858,6 +816,7 @@ async def toggle_category_status(id: str, data: StatusToggleRequest, token_paylo
         {"_id": obj_id},
         {"$set": {"status": status_val, "updated_at": datetime.utcnow()}}
     )
+    invalidate_cache("qb_stats")
     
     admin_user = admins_collection.find_one({"_id": ObjectId(token_payload.get("user_id"))})
     admin_email = admin_user.get("email") if admin_user else "Admin"
@@ -870,7 +829,7 @@ async def toggle_category_status(id: str, data: StatusToggleRequest, token_paylo
     return res
 
 @router.delete("/categories/{id}")
-async def delete_category(id: str, token_payload: dict = Depends(verify_admin)):
+def delete_category(id: str, token_payload: dict = Depends(verify_admin)):
     try:
         obj_id = ObjectId(id)
     except Exception:
@@ -884,6 +843,7 @@ async def delete_category(id: str, token_payload: dict = Depends(verify_admin)):
     # Delete category and cascade delete its questions
     q_del_result = questions_collection.delete_many({"category_id": id})
     categories_collection.delete_one({"_id": obj_id})
+    invalidate_cache("qb_stats")
     
     admin_user = admins_collection.find_one({"_id": ObjectId(token_payload.get("user_id"))})
     admin_email = admin_user.get("email") if admin_user else "Admin"
@@ -897,7 +857,7 @@ async def delete_category(id: str, token_payload: dict = Depends(verify_admin)):
 # ----------------- Questions Endpoints -----------------
 
 @router.get("/questions")
-async def get_questions(
+def get_questions(
     search: Optional[str] = None,
     category_id: Optional[str] = None,
     difficulty: Optional[str] = None,
@@ -928,7 +888,7 @@ async def get_questions(
     return [serialize_mongo(q) for q in questions]
 
 @router.get("/questions/{id}")
-async def get_question(id: str, token_payload: dict = Depends(verify_admin)):
+def get_question(id: str, token_payload: dict = Depends(verify_admin)):
     try:
         obj_id = ObjectId(id)
     except Exception:
@@ -941,7 +901,7 @@ async def get_question(id: str, token_payload: dict = Depends(verify_admin)):
     return serialize_mongo(q)
 
 @router.post("/questions")
-async def create_question(data: CreateQuestionRequest, token_payload: dict = Depends(verify_admin)):
+def create_question(data: CreateQuestionRequest, token_payload: dict = Depends(verify_admin)):
     q_text = (data.question_text or "").strip()
     if not q_text:
         raise HTTPException(status_code=400, detail="Question text is required")
@@ -980,6 +940,7 @@ async def create_question(data: CreateQuestionRequest, token_payload: dict = Dep
     
     res = questions_collection.insert_one(new_q)
     created = questions_collection.find_one({"_id": res.inserted_id})
+    invalidate_cache("qb_stats")
     
     admin_user = admins_collection.find_one({"_id": ObjectId(token_payload.get("user_id"))})
     admin_email = admin_user.get("email") if admin_user else "Admin"
@@ -989,7 +950,7 @@ async def create_question(data: CreateQuestionRequest, token_payload: dict = Dep
 
 @router.put("/questions/{id}")
 @router.patch("/questions/{id}")
-async def update_question(id: str, data: UpdateQuestionRequest, token_payload: dict = Depends(verify_admin)):
+def update_question(id: str, data: UpdateQuestionRequest, token_payload: dict = Depends(verify_admin)):
     try:
         obj_id = ObjectId(id)
     except Exception:
@@ -1032,6 +993,7 @@ async def update_question(id: str, data: UpdateQuestionRequest, token_payload: d
     update_fields["updated_at"] = datetime.utcnow()
     
     questions_collection.update_one({"_id": obj_id}, {"$set": update_fields})
+    invalidate_cache("qb_stats")
     updated = questions_collection.find_one({"_id": obj_id})
     
     admin_user = admins_collection.find_one({"_id": ObjectId(token_payload.get("user_id"))})
@@ -1041,7 +1003,7 @@ async def update_question(id: str, data: UpdateQuestionRequest, token_payload: d
     return serialize_mongo(updated)
 
 @router.patch("/questions/{id}/status")
-async def toggle_question_status(id: str, data: StatusToggleRequest, token_payload: dict = Depends(verify_admin)):
+def toggle_question_status(id: str, data: StatusToggleRequest, token_payload: dict = Depends(verify_admin)):
     try:
         obj_id = ObjectId(id)
     except Exception:
@@ -1059,6 +1021,7 @@ async def toggle_question_status(id: str, data: StatusToggleRequest, token_paylo
         {"_id": obj_id},
         {"$set": {"status": status_val, "updated_at": datetime.utcnow()}}
     )
+    invalidate_cache("qb_stats")
     
     admin_user = admins_collection.find_one({"_id": ObjectId(token_payload.get("user_id"))})
     admin_email = admin_user.get("email") if admin_user else "Admin"
@@ -1068,7 +1031,7 @@ async def toggle_question_status(id: str, data: StatusToggleRequest, token_paylo
     return serialize_mongo(updated)
 
 @router.delete("/questions/{id}")
-async def delete_question(id: str, token_payload: dict = Depends(verify_admin)):
+def delete_question(id: str, token_payload: dict = Depends(verify_admin)):
     try:
         obj_id = ObjectId(id)
     except Exception:
@@ -1080,6 +1043,7 @@ async def delete_question(id: str, token_payload: dict = Depends(verify_admin)):
         
     q_text = q.get("question_text", id)
     questions_collection.delete_one({"_id": obj_id})
+    invalidate_cache("qb_stats")
     
     admin_user = admins_collection.find_one({"_id": ObjectId(token_payload.get("user_id"))})
     admin_email = admin_user.get("email") if admin_user else "Admin"
@@ -1090,37 +1054,74 @@ async def delete_question(id: str, token_payload: dict = Depends(verify_admin)):
 # ----------------- Question Bank Stats & Seed -----------------
 
 @router.get("/question-bank/stats")
-async def get_question_bank_stats(token_payload: dict = Depends(verify_admin)):
-    total_questions = questions_collection.count_documents({})
-    active_questions = questions_collection.count_documents({"status": "active"})
-    archived_questions = questions_collection.count_documents({"status": "archived"})
+def get_question_bank_stats(token_payload: dict = Depends(verify_admin)):
+    cached = get_cached("qb_stats")
+    if cached:
+        return cached
+
+    q_pipeline = [
+        {
+            "$facet": {
+                "status_counts": [
+                    {"$group": {"_id": "$status", "count": {"$sum": 1}}}
+                ],
+                "difficulty_counts": [
+                    {"$group": {"_id": "$difficulty", "count": {"$sum": 1}}}
+                ],
+                "total": [
+                    {"$count": "count"}
+                ]
+            }
+        }
+    ]
     
-    total_categories = categories_collection.count_documents({})
-    active_categories = categories_collection.count_documents({"status": "active"})
-    archived_categories = categories_collection.count_documents({"status": "archived"})
+    cat_pipeline = [
+        {
+            "$facet": {
+                "status_counts": [
+                    {"$group": {"_id": "$status", "count": {"$sum": 1}}}
+                ],
+                "total": [
+                    {"$count": "count"}
+                ]
+            }
+        }
+    ]
     
-    easy_count = questions_collection.count_documents({"difficulty": "Easy"})
-    medium_count = questions_collection.count_documents({"difficulty": "Medium"})
-    hard_count = questions_collection.count_documents({"difficulty": "Hard"})
+    q_aggr = list(questions_collection.aggregate(q_pipeline))
+    cat_aggr = list(categories_collection.aggregate(cat_pipeline))
     
-    return {
-        "total_questions": total_questions,
-        "active_questions": active_questions,
-        "archived_questions": archived_questions,
-        "total_categories": total_categories,
-        "active_categories": active_categories,
-        "archived_categories": archived_categories,
+    q_res = q_aggr[0] if q_aggr else {}
+    cat_res = cat_aggr[0] if cat_aggr else {}
+    
+    q_total = q_res.get("total", [{}])[0].get("count", 0) if q_res.get("total") else 0
+    q_status_map = {item["_id"]: item["count"] for item in q_res.get("status_counts", []) if item.get("_id")}
+    q_diff_map = {item["_id"]: item["count"] for item in q_res.get("difficulty_counts", []) if item.get("_id")}
+    
+    cat_total = cat_res.get("total", [{}])[0].get("count", 0) if cat_res.get("total") else 0
+    cat_status_map = {item["_id"]: item["count"] for item in cat_res.get("status_counts", []) if item.get("_id")}
+    
+    result = {
+        "total_questions": q_total,
+        "active_questions": q_status_map.get("active", 0),
+        "archived_questions": q_status_map.get("archived", 0),
+        "total_categories": cat_total,
+        "active_categories": cat_status_map.get("active", 0),
+        "archived_categories": cat_status_map.get("archived", 0),
         "difficulty_breakdown": {
-            "Easy": easy_count,
-            "Medium": medium_count,
-            "Hard": hard_count
+            "Easy": q_diff_map.get("Easy", 0),
+            "Medium": q_diff_map.get("Medium", 0),
+            "Hard": q_diff_map.get("Hard", 0)
         }
     }
+    set_cached("qb_stats", result, ttl_seconds=15)
+    return result
 
 @router.post("/question-bank/seed")
-async def trigger_seed_question_bank(token_payload: dict = Depends(verify_admin)):
+def trigger_seed_question_bank(token_payload: dict = Depends(verify_admin)):
     from seed_question_bank import seed_question_bank
     res = seed_question_bank(force=True)
+    invalidate_cache("qb_stats")
     
     admin_user = admins_collection.find_one({"_id": ObjectId(token_payload.get("user_id"))})
     admin_email = admin_user.get("email") if admin_user else "Admin"

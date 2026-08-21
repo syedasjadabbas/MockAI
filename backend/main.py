@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from routes.admin import router as admin_router
-from database import admins_collection, admin_collection, client
+from database import admins_collection, admin_collection, client, init_db_indexes
 from utils.auth import hash_password
 
 app = FastAPI(title="Admin Panel API")
@@ -34,10 +34,13 @@ app.include_router(admin_router, prefix="/api/v1/admin")  # versioned alias
 async def startup_event():
     """
     Verify database connectivity on startup, ensure default admin exists,
-    and initialize default categories & questions if empty.
+    initialize database indexes, and initialize default categories & questions if empty.
     """
     try:
         client.admin.command('ping')
+        # Create database indexes for maximum query performance
+        init_db_indexes()
+
         # Check if default admin exists
         admin = admin_collection.find_one({"email": "admin@mockai.com"})
         if not admin:
