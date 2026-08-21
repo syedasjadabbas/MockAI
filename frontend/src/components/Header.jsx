@@ -1,11 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Bell, Search, User, Key, X, CheckCircle2, AlertCircle, Info, Camera, Edit2 } from 'lucide-react';
+import { Bell, Search, User, Key, X, CheckCircle2, AlertCircle, Info, Camera, Edit2, Menu } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { fetchWithAuth, API_BASE } from '../api';
+import ThemeToggle from './ThemeToggle';
+import { useTheme } from '../context/ThemeContext';
 
-const Header = () => {
+const Header = ({ onToggleMobileMenu }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { isDark } = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [globalSearchData, setGlobalSearchData] = useState({ users: [], interviews: [], logs: [] });
@@ -337,9 +340,6 @@ const Header = () => {
     }
   };
 
-  // Also fix the profilePicture URL on initial load
-  const buildPictureUrl = (path) => path ? (path.startsWith('http') ? path : `${API_BASE}${path}`) : null;
-
   const handleUpdateName = async () => {
     if (!nameValue.trim()) { setNameError('Name cannot be empty'); return; }
     setNameLoading(true);
@@ -403,20 +403,31 @@ const Header = () => {
 
   return (
     <>
-      <header className="fixed top-0 right-0 left-64 h-16 glass-panel border-b border-slate-800/40 z-30 px-6 flex items-center justify-between">
-        {/* Title */}
-        <div>
-          <h1 className="text-xl font-bold tracking-tight text-white">{getPageTitle(location.pathname)}</h1>
+      <header className="fixed top-0 right-0 left-0 lg:left-64 h-16 glass-panel border-b z-30 px-4 sm:px-6 flex items-center justify-between transition-all duration-200">
+        {/* Left: Mobile hamburger & Page Title */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onToggleMobileMenu}
+            className="lg:hidden p-2 rounded-xl border border-[var(--border-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] transition-all"
+            aria-label="Toggle menu"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+          <div>
+            <h1 className="text-lg sm:text-xl font-bold tracking-tight text-[var(--text-primary)]">
+              {getPageTitle(location.pathname)}
+            </h1>
+          </div>
         </div>
 
         {/* Right Controls */}
-        <div className="flex items-center gap-4">
-          {/* Search */}
+        <div className="flex items-center gap-2.5 sm:gap-3.5">
+          {/* Global Search Bar */}
           <div className="relative hidden md:block">
-            <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
+            <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--text-muted)]" />
             <input
               type="text"
-              placeholder="Search everything..."
+              placeholder="Search mockai..."
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
@@ -425,12 +436,12 @@ const Header = () => {
               onFocus={() => setShowSearchDropdown(true)}
               onBlur={() => setTimeout(() => setShowSearchDropdown(false), 200)}
               onKeyDown={handleSearch}
-              className="pl-10 pr-4 py-1.5 rounded-lg bg-slate-900/40 border border-slate-800/40 text-slate-200 text-sm focus:outline-none focus:border-indigo-500/40 focus:ring-1 focus:ring-indigo-500/20 w-60"
+              className="pl-9 pr-4 py-2 rounded-xl text-xs sm:text-sm theme-input border focus:outline-none focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/15 w-48 lg:w-64 transition-all"
             />
             {showSearchDropdown && searchQuery.trim() && (
-              <div className="absolute top-full mt-2 w-full bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-50 overflow-hidden">
+              <div className="absolute top-full mt-2 w-full theme-modal rounded-2xl shadow-2xl z-50 overflow-hidden border">
                 {searchResults.length === 0 ? (
-                  <div className="p-3 text-xs text-slate-500 text-center">No results found</div>
+                  <div className="p-4 text-xs text-[var(--text-muted)] text-center">No results found</div>
                 ) : (
                   searchResults.map((res, i) => (
                     <div
@@ -440,13 +451,13 @@ const Header = () => {
                         setShowSearchDropdown(false);
                         setSearchQuery('');
                       }}
-                      className="p-3 border-b border-slate-800/40 hover:bg-slate-800/40 cursor-pointer transition-colors flex flex-col gap-0.5"
+                      className="p-3 border-b border-[var(--border-table)] hover:bg-[var(--bg-table-row-hover)] cursor-pointer transition-colors flex flex-col gap-0.5"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-semibold text-slate-200">{res.title}</span>
-                        <span className="text-[10px] uppercase font-bold text-indigo-400">{res.type}</span>
+                        <span className="text-sm font-semibold text-[var(--text-primary)]">{res.title}</span>
+                        <span className="text-[10px] uppercase font-bold text-indigo-500 bg-indigo-500/10 px-1.5 py-0.5 rounded">{res.type}</span>
                       </div>
-                      <span className="text-xs text-slate-400">{res.subtitle}</span>
+                      <span className="text-xs text-[var(--text-secondary)]">{res.subtitle}</span>
                     </div>
                   ))
                 )}
@@ -454,35 +465,46 @@ const Header = () => {
             )}
           </div>
 
-          {/* Notif */}
+          {/* Theme Toggle Button */}
+          <ThemeToggle />
+
+          {/* Notifications Dropdown */}
           <div className="relative">
-            <button onClick={handleOpenNotifications} className="relative w-9 h-9 flex items-center justify-center rounded-lg bg-slate-800/30 text-slate-400 hover:text-white border border-slate-800/40 hover:border-slate-700/60 transition-all">
+            <button 
+              onClick={handleOpenNotifications} 
+              className="relative p-2.5 rounded-xl border border-[var(--border-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] transition-all"
+              title="Notifications"
+            >
               <Bell className="w-5 h-5" />
               {unreadCount > 0 && (
-                <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-rose-500 rounded-full text-[9px] font-bold text-white flex items-center justify-center">{unreadCount}</span>
+                <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-rose-500 rounded-full text-[9px] font-bold text-white flex items-center justify-center animate-pulse">
+                  {unreadCount}
+                </span>
               )}
             </button>
             {showNotifications && (
-              <div className="absolute top-12 right-0 w-80 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-50 overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800/60 bg-slate-800/30">
-                  <h3 className="text-sm font-bold text-white">Notifications</h3>
-                  <button onClick={handleClearNotifications} className="text-[11px] font-semibold text-indigo-400 hover:text-indigo-300">Clear All</button>
+              <div className="absolute top-12 right-0 w-80 sm:w-96 theme-modal rounded-2xl shadow-2xl z-50 overflow-hidden border">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-table)] bg-[var(--bg-table-header)]">
+                  <h3 className="text-sm font-bold text-[var(--text-primary)]">Notifications</h3>
+                  <button onClick={handleClearNotifications} className="text-[11px] font-semibold text-indigo-500 hover:text-indigo-600">
+                    Clear All
+                  </button>
                 </div>
                 <div className="max-h-80 overflow-y-auto">
                   {notifications.length === 0 ? (
-                    <p className="px-4 py-6 text-center text-xs text-slate-500">No new notifications</p>
+                    <p className="px-4 py-8 text-center text-xs text-[var(--text-muted)]">No new notifications</p>
                   ) : (
                     notifications.map(n => (
-                      <div key={n.id} className="px-4 py-3 border-b border-slate-800/40 hover:bg-slate-800/20 transition-colors flex gap-3">
-                        <div className="mt-0.5">
-                          {n.type === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
-                          {n.type === 'error' && <AlertCircle className="w-4 h-4 text-rose-400" />}
-                          {n.type === 'warning' && <AlertCircle className="w-4 h-4 text-amber-400" />}
-                          {n.type === 'info' && <Info className="w-4 h-4 text-indigo-400" />}
+                      <div key={n.id} className="px-4 py-3 border-b border-[var(--border-table)] hover:bg-[var(--bg-table-row-hover)] transition-colors flex gap-3">
+                        <div className="mt-0.5 flex-shrink-0">
+                          {n.type === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
+                          {n.type === 'error' && <AlertCircle className="w-4 h-4 text-rose-500" />}
+                          {n.type === 'warning' && <AlertCircle className="w-4 h-4 text-amber-500" />}
+                          {n.type === 'info' && <Info className="w-4 h-4 text-indigo-500" />}
                         </div>
-                        <div>
-                          <p className="text-sm text-slate-200 leading-snug">{n.message}</p>
-                          <p className="text-[10px] text-slate-500 mt-1 font-medium">{n.time}</p>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs sm:text-sm text-[var(--text-primary)] leading-snug break-words">{n.message}</p>
+                          <p className="text-[10px] text-[var(--text-muted)] mt-1 font-medium">{n.time}</p>
                         </div>
                       </div>
                     ))
@@ -492,26 +514,30 @@ const Header = () => {
             )}
           </div>
 
-          {/* Profile */}
-          <div className="flex items-center gap-3 pl-2 border-l border-slate-800/60">
-            <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center border border-indigo-500/30 overflow-hidden cursor-pointer" onClick={() => setShowProfileModal(true)}>
+          {/* Profile Button & Menu */}
+          <div className="flex items-center gap-3 pl-2 border-l border-[var(--border-panel)]">
+            <div 
+              className="w-9 h-9 rounded-xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 overflow-hidden cursor-pointer hover:border-indigo-500/50 transition-all" 
+              onClick={() => setShowProfileModal(true)}
+              title="Admin Profile"
+            >
               {profilePicture
                 ? <img src={profilePicture} alt="Admin" className="w-full h-full object-cover" onError={() => setProfilePicture(null)} />
-                : <User className="w-4 h-4 text-indigo-400" />}
+                : <User className="w-4 h-4 text-indigo-500" />}
             </div>
-            <div className="hidden md:flex flex-col">
+            <div className="hidden sm:flex flex-col">
               <button
                 onClick={() => setShowProfileModal(true)}
-                className="text-sm font-semibold text-slate-200 text-left hover:text-white transition-colors"
+                className="text-xs sm:text-sm font-semibold text-[var(--text-primary)] text-left hover:text-indigo-500 transition-colors"
               >
                 {adminInfo.name}
               </button>
               <button
                 onClick={() => setShowPasswordModal(true)}
-                className="text-[11px] text-indigo-400 hover:text-indigo-300 text-left transition-colors flex items-center gap-1"
+                className="text-[11px] text-indigo-500 hover:text-indigo-600 text-left transition-colors flex items-center gap-1 font-medium"
               >
                 <Key className="w-3 h-3" />
-                Change Password
+                Password
               </button>
             </div>
           </div>
@@ -520,22 +546,25 @@ const Header = () => {
 
       {/* Admin Profile Modal */}
       {showProfileModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="glass-card p-6 rounded-2xl w-full max-w-sm relative border border-slate-800 bg-slate-900 shadow-2xl">
-            <button onClick={() => setShowProfileModal(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="theme-modal p-6 sm:p-8 rounded-3xl w-full max-w-sm relative border">
+            <button 
+              onClick={() => setShowProfileModal(false)} 
+              className="absolute top-4 right-4 p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+            >
               <X className="w-5 h-5" />
             </button>
             <div className="flex flex-col items-center mb-6 mt-2">
               <div className="relative group w-20 h-20 mb-3">
-                <div className="w-20 h-20 rounded-full bg-indigo-500/20 flex items-center justify-center border-2 border-indigo-500/30 overflow-hidden">
+                <div className="w-20 h-20 rounded-full bg-indigo-500/10 flex items-center justify-center border-2 border-indigo-500/30 overflow-hidden">
                   {profilePicture
                     ? <img src={profilePicture} alt="Admin" className="w-full h-full object-cover" onError={() => setProfilePicture(null)} />
-                    : <User className="w-10 h-10 text-indigo-400" />}
+                    : <User className="w-10 h-10 text-indigo-500" />}
                 </div>
                 <button
                   onClick={() => { setPictureError(''); fileInputRef.current?.click(); }}
                   disabled={pictureUploading}
-                  className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity disabled:cursor-not-allowed"
+                  className="absolute inset-0 rounded-full bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity disabled:cursor-not-allowed"
                   title="Upload profile picture"
                 >
                   {pictureUploading
@@ -550,54 +579,74 @@ const Header = () => {
                   onChange={handleProfilePictureUpload}
                 />
               </div>
-              {pictureError && <p className="text-xs text-rose-400 mb-1 text-center">{pictureError}</p>}
+              {pictureError && <p className="text-xs text-rose-500 mb-1 text-center font-medium">{pictureError}</p>}
+              
               {/* Editable name */}
               {nameEditing ? (
-                <div className="flex flex-col items-center gap-1 w-full">
+                <div className="flex flex-col items-center gap-2 w-full">
                   <input
                     autoFocus
                     value={nameValue}
                     onChange={e => setNameValue(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter') handleUpdateName(); if (e.key === 'Escape') setNameEditing(false); }}
-                    className="w-full text-center bg-slate-800/60 border border-slate-700 rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none focus:border-indigo-500"
+                    className="w-full text-center theme-input border rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
                     disabled={nameLoading}
                     maxLength={60}
                   />
-                  {nameError && <p className="text-xs text-rose-400">{nameError}</p>}
+                  {nameError && <p className="text-xs text-rose-500 font-medium">{nameError}</p>}
                   <div className="flex gap-2 mt-1">
-                    <button onClick={handleUpdateName} disabled={nameLoading} className="px-3 py-1 text-xs rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold disabled:opacity-50 transition-all">
+                    <button 
+                      onClick={handleUpdateName} 
+                      disabled={nameLoading} 
+                      className="px-3 py-1.5 text-xs rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold shadow-sm transition-all"
+                    >
                       {nameLoading ? 'Saving…' : 'Save'}
                     </button>
-                    <button onClick={() => { setNameEditing(false); setNameError(''); }} className="px-3 py-1 text-xs rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300 font-semibold transition-all">Cancel</button>
+                    <button 
+                      onClick={() => { setNameEditing(false); setNameError(''); }} 
+                      className="px-3 py-1.5 text-xs rounded-xl border border-[var(--border-card)] text-[var(--text-secondary)] font-semibold transition-all hover:bg-[var(--bg-card-hover)]"
+                    >
+                      Cancel
+                    </button>
                   </div>
                 </div>
               ) : (
                 <button
                   onClick={() => { setNameValue(adminInfo.name); setNameEditing(true); setNameError(''); }}
-                  className="flex items-center gap-1.5 text-xl font-bold text-white hover:text-indigo-300 transition-colors group"
+                  className="flex items-center gap-1.5 text-xl font-bold text-[var(--text-primary)] hover:text-indigo-500 transition-colors group"
                   title="Click to edit name"
                 >
                   {adminInfo.name}
-                  <Edit2 className="w-3.5 h-3.5 opacity-0 group-hover:opacity-60 transition-opacity" />
+                  <Edit2 className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 text-indigo-500 transition-opacity" />
                 </button>
               )}
-              <span className="px-2 py-1 mt-2 bg-indigo-500/20 text-indigo-400 text-xs font-semibold rounded border border-indigo-500/20 uppercase tracking-wider">{adminInfo.role}</span>
-              <p className="text-xs text-slate-500 mt-1">Click photo to change (JPG/PNG, max 2MB)</p>
+              <span className="px-2.5 py-0.5 mt-2 bg-indigo-500/10 text-indigo-500 text-xs font-bold rounded-full border border-indigo-500/20 uppercase tracking-wider">
+                {adminInfo.role}
+              </span>
+              <p className="text-[11px] text-[var(--text-muted)] mt-1.5">Click photo to change (JPG/PNG, max 2MB)</p>
             </div>
-            <div className="space-y-4">
+            
+            <div className="space-y-3.5 p-4 rounded-2xl bg-[var(--bg-table-header)] border border-[var(--border-table)]">
               <div>
-                <p className="text-sm text-slate-400">Email</p>
-                <p className="font-semibold text-slate-200">{adminInfo.email}</p>
+                <p className="text-xs text-[var(--text-muted)] font-medium">Email Address</p>
+                <p className="text-sm font-semibold text-[var(--text-primary)] break-all">{adminInfo.email}</p>
               </div>
               <div>
-                <p className="text-sm text-slate-400">Role</p>
-                <p className="font-semibold text-slate-200 capitalize">{adminInfo.role}</p>
+                <p className="text-xs text-[var(--text-muted)] font-medium">Role</p>
+                <p className="text-sm font-semibold text-[var(--text-primary)] capitalize">{adminInfo.role}</p>
               </div>
             </div>
-            <button onClick={() => { setShowProfileModal(false); setShowAddAdminModal(true); }} className="w-full mt-6 bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2 rounded-lg transition-colors border border-indigo-500">
+
+            <button 
+              onClick={() => { setShowProfileModal(false); setShowAddAdminModal(true); }} 
+              className="w-full mt-5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-xl transition-all shadow-md shadow-indigo-500/20 text-sm"
+            >
               + Add Admin
             </button>
-            <button onClick={() => setShowProfileModal(false)} className="w-full mt-2 bg-slate-800 hover:bg-slate-700 text-white font-medium py-2 rounded-lg transition-colors border border-slate-700">
+            <button 
+              onClick={() => setShowProfileModal(false)} 
+              className="w-full mt-2 border border-[var(--border-card)] hover:bg-[var(--bg-card-hover)] text-[var(--text-secondary)] font-semibold py-2.5 rounded-xl transition-all text-sm"
+            >
               Close
             </button>
           </div>
@@ -606,47 +655,48 @@ const Header = () => {
 
       {/* Change Password Modal */}
       {showPasswordModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl w-96 relative shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="theme-modal border p-6 sm:p-8 rounded-3xl w-full max-w-sm relative shadow-2xl">
             <button
               onClick={() => setShowPasswordModal(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white"
+              className="absolute top-4 right-4 p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
-            <h2 className="text-xl font-bold text-white mb-4">Change Password</h2>
+            <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4">Change Password</h2>
 
             {error && (
-              <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
+              <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-500 text-xs font-semibold flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
                 {error}
               </div>
             )}
 
             <form onSubmit={handleChangePassword} className="space-y-4">
               <div>
-                <label className="block text-sm text-slate-400 mb-1">Old Password</label>
+                <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Old Password</label>
                 <input
                   type="password"
                   value={oldPassword}
                   onChange={(e) => setOldPassword(e.target.value)}
-                  className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
+                  className="w-full theme-input border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm text-slate-400 mb-1">New Password</label>
+                <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">New Password</label>
                 <input
                   type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
+                  className="w-full theme-input border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all"
                   required
                 />
               </div>
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2 rounded-lg transition-colors disabled:opacity-50 mt-2"
+                className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-xl transition-all shadow-md shadow-indigo-500/20 disabled:opacity-50 mt-3 text-sm"
               >
                 {loading ? 'Updating...' : 'Update Password'}
               </button>
@@ -657,22 +707,23 @@ const Header = () => {
 
       {/* Add Admin Modal */}
       {showAddAdminModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl w-96 relative shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="theme-modal border p-6 sm:p-8 rounded-3xl w-full max-w-sm relative shadow-2xl">
             <button
               onClick={() => {
                 setShowAddAdminModal(false);
                 setAddAdminStep(1);
                 setAddAdminError('');
               }}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white"
+              className="absolute top-4 right-4 p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
-            <h2 className="text-xl font-bold text-white mb-4">Create Admin</h2>
+            <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4">Create Admin</h2>
 
             {addAdminError && (
-              <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
+              <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-500 text-xs font-semibold flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
                 {addAdminError}
               </div>
             )}
@@ -680,55 +731,55 @@ const Header = () => {
             {addAdminStep === 1 ? (
               <form onSubmit={handleSendOtp} className="space-y-4">
                 <div>
-                  <label className="block text-sm text-slate-400 mb-1">Name</label>
+                  <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Name</label>
                   <input
                     type="text"
                     value={addAdminName}
                     onChange={(e) => setAddAdminName(e.target.value)}
-                    className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
+                    className="w-full theme-input border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-slate-400 mb-1">Email</label>
+                  <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Email</label>
                   <input
                     type="email"
                     value={addAdminEmail}
                     onChange={(e) => setAddAdminEmail(e.target.value)}
-                    className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
+                    className="w-full theme-input border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-slate-400 mb-1">Password</label>
+                  <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Password</label>
                   <input
                     type="password"
                     value={addAdminPassword}
                     onChange={(e) => setAddAdminPassword(e.target.value)}
-                    className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
+                    className="w-full theme-input border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all"
                     required
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={addAdminLoading}
-                  className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2 rounded-lg transition-colors disabled:opacity-50 mt-2"
+                  className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-xl transition-all shadow-md shadow-indigo-500/20 disabled:opacity-50 mt-3 text-sm"
                 >
                   {addAdminLoading ? 'Sending...' : 'Verify Email'}
                 </button>
               </form>
             ) : (
               <form onSubmit={handleCreateAdmin} className="space-y-4">
-                <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-lg mb-4">
-                  <p className="text-sm text-indigo-200">A 6-digit verification code has been sent to <strong>{addAdminEmail}</strong>.</p>
+                <div className="p-3.5 bg-indigo-500/10 border border-indigo-500/20 rounded-xl mb-4">
+                  <p className="text-xs text-indigo-500 font-medium">A 6-digit verification code has been sent to <strong>{addAdminEmail}</strong>.</p>
                 </div>
                 <div>
-                  <label className="block text-sm text-slate-400 mb-1">Enter Verification Code (OTP)</label>
+                  <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Enter Verification Code (OTP)</label>
                   <input
                     type="text"
                     value={addAdminOtp}
                     onChange={(e) => setAddAdminOtp(e.target.value)}
-                    className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500 tracking-widest text-center font-mono text-lg"
+                    className="w-full theme-input border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 tracking-widest text-center font-mono text-lg"
                     maxLength={6}
                     required
                   />
@@ -736,14 +787,14 @@ const Header = () => {
                 <button
                   type="submit"
                   disabled={addAdminLoading || addAdminOtp.length !== 6}
-                  className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2 rounded-lg transition-colors disabled:opacity-50 mt-2"
+                  className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-xl transition-all shadow-md shadow-indigo-500/20 disabled:opacity-50 mt-3 text-sm"
                 >
                   {addAdminLoading ? 'Creating...' : 'Create Admin'}
                 </button>
                 <button
                   type="button"
                   onClick={() => { setAddAdminStep(1); setAddAdminOtp(''); }}
-                  className="w-full mt-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium py-2 rounded-lg transition-colors text-sm"
+                  className="w-full mt-2 border border-[var(--border-card)] hover:bg-[var(--bg-card-hover)] text-[var(--text-secondary)] font-semibold py-2.5 rounded-xl transition-all text-sm"
                 >
                   Back
                 </button>
