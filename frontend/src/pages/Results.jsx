@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Award, ShieldAlert, Sparkles, AlertCircle, Search, Filter, ChevronLeft, ChevronRight, TrendingUp, Download, CheckCircle2 } from 'lucide-react';
+import { Award, ShieldAlert, AlertCircle, Search, Filter, ChevronLeft, ChevronRight, TrendingUp, Download, CheckCircle2 } from 'lucide-react';
 import { fetchWithAuth } from '../api';
 import { useLocation } from 'react-router-dom';
 import { exportToCSV } from '../utils/csvExport';
@@ -31,7 +31,7 @@ const ScoreIndicator = ({ scoreStr }) => {
         ? isDark ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' : 'bg-emerald-50 text-emerald-700 border-emerald-200'
         : isDark ? 'bg-amber-500/15 text-amber-400 border-amber-500/30' : 'bg-amber-50 text-amber-700 border-amber-200'
     }`}>
-      <Sparkles className="w-3.5 h-3.5" />
+      {isHigh && <CheckCircle2 className="w-3.5 h-3.5" />}
       {score}%
     </span>
   );
