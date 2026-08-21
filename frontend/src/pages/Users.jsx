@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Eye, MoreVertical, X, AlertCircle, CheckCircle2, Edit, Download, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Eye, MoreVertical, X, AlertCircle, CheckCircle2, Download, ChevronLeft, ChevronRight, UserPlus, Users as UsersIcon } from 'lucide-react';
 import { fetchWithAuth } from '../api';
 import { useLocation } from 'react-router-dom';
 import { exportToCSV } from '../utils/csvExport';
 import { formatDateOnly } from '../utils/dateFormat';
+import { TableSkeleton } from '../components/Skeleton';
+import EmptyState from '../components/EmptyState';
+import { useTheme } from '../context/ThemeContext';
 
 const Users = () => {
   const location = useLocation();
+  const { isDark } = useTheme();
   const [search, setSearch] = useState(() => new URLSearchParams(location.search).get('search') || '');
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 10;
@@ -15,6 +19,7 @@ const Users = () => {
     const query = new URLSearchParams(location.search).get('search');
     if (query !== null) setSearch(query);
   }, [location.search]);
+
   const [selectedUser, setSelectedUser] = useState(null);
   const [users, setUsers] = useState([]);
   const [activeDropdown, setActiveDropdown] = useState(null);
@@ -27,6 +32,7 @@ const Users = () => {
   const [errorMsg, setErrorMsg] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toast, setToast] = useState(null);
+  const [loadError, setLoadError] = useState(null);
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -69,8 +75,6 @@ const Users = () => {
     }
   };
 
-  const [loadError, setLoadError] = useState(null);
-
   useEffect(() => {
     fetchWithAuth('/users')
       .then(data => {
@@ -81,7 +85,7 @@ const Users = () => {
           joined: u.created_at ? formatDateOnly(u.created_at) : '-'
         })));
       })
-      .catch((err) => setLoadError("Failed to load users. Please try again."))
+      .catch(() => setLoadError("Failed to load users. Please try again."))
       .finally(() => setLoading(false));
   }, []);
 
@@ -150,18 +154,6 @@ const Users = () => {
     }
   };
 
-  if (loading) return <div className="flex items-center justify-center h-full min-h-[400px]"><div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div></div>;
-
-  if (loadError) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full min-h-[400px] text-center">
-        <AlertCircle className="w-10 h-10 text-rose-500 mb-3" />
-        <h3 className="text-lg font-bold text-white mb-1">Error Loading Data</h3>
-        <p className="text-slate-400">{loadError}</p>
-      </div>
-    );
-  }
-
   const handleExport = () => {
     const dataToExport = filteredUsers.map(u => ({
       Name: u.name,
@@ -171,186 +163,191 @@ const Users = () => {
     exportToCSV(dataToExport, 'users_export.csv');
   };
 
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div className="h-10 w-72 rounded-xl bg-slate-800/40 animate-pulse" />
+          <div className="h-10 w-32 rounded-xl bg-slate-800/40 animate-pulse" />
+        </div>
+        <div className="glass-card rounded-2xl p-4">
+          <TableSkeleton rows={8} cols={6} />
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="glass-card p-12 rounded-3xl flex flex-col items-center justify-center text-center max-w-md mx-auto my-12">
+        <AlertCircle className="w-12 h-12 text-rose-500 mb-3" />
+        <h3 className="text-lg font-bold text-[var(--text-primary)] mb-1">Error Loading Data</h3>
+        <p className="text-sm text-[var(--text-secondary)] mb-4">{loadError}</p>
+        <button 
+          onClick={() => window.location.reload()} 
+          className="px-4 py-2 text-xs font-semibold rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white transition-all shadow-md shadow-indigo-500/20"
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      {/* Header with search */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* Header with Search and Export */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="relative flex-1 max-w-md">
-          <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
+          <Search className="w-4 h-4 absolute left-3.5 top-1/2 transform -translate-y-1/2 text-[var(--text-muted)]" />
           <input 
             type="text" 
             placeholder="Search by name or email..." 
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900/40 border border-slate-800/40 text-slate-200 text-sm focus:outline-none focus:border-indigo-500/40 focus:ring-1 focus:ring-indigo-500/20"
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm theme-input border focus:outline-none focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/20 transition-all"
           />
+          {search && (
+            <button 
+              onClick={() => setSearch('')} 
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
         <div className="flex items-center gap-3">
-          <button onClick={handleExport} className="px-4 py-2.5 rounded-xl bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700/50 text-slate-300 font-semibold text-sm transition-all flex items-center gap-2">
-            <Download className="w-4 h-4" />
-            Export
-          </button>
-          <button onClick={() => setShowAddModal(true)} className="hidden px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm transition-all shadow-lg shadow-indigo-500/20">
-            + Add User
+          <button 
+            onClick={handleExport} 
+            className="px-4 py-2.5 rounded-xl border border-[var(--border-card)] hover:bg-[var(--bg-card-hover)] text-[var(--text-primary)] font-semibold text-xs sm:text-sm transition-all flex items-center gap-2 shadow-sm"
+          >
+            <Download className="w-4 h-4 text-indigo-500" />
+            Export CSV
           </button>
         </div>
       </div>
 
       {/* Users Table */}
       {filteredUsers.length === 0 ? (
-        <div className="glass-card p-12 rounded-2xl border border-slate-800/40 flex flex-col items-center justify-center text-center">
-          <AlertCircle className="w-12 h-12 text-slate-500 mb-3 opacity-50" />
-          <h3 className="text-lg font-semibold text-slate-300">No users found</h3>
-          <p className="text-sm text-slate-500 mt-1">{search.trim() ? `No results found for "${search.trim()}"` : 'There are no users registered yet.'}</p>
+        <div className="glass-card rounded-2xl p-6">
+          <EmptyState 
+            icon={UsersIcon}
+            title="No Users Found" 
+            description={search.trim() ? `No matching users found for "${search.trim()}".` : 'There are no users registered in the system yet.'}
+            actionLabel={search.trim() ? "Clear Search" : undefined}
+            onAction={search.trim() ? () => setSearch('') : undefined}
+          />
         </div>
       ) : (
-      <div className="glass-card rounded-2xl overflow-hidden hover:border-indigo-500/10 transition-all duration-300">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-slate-800/60 bg-slate-800/20">
-                <th className="py-4 px-6 text-xs font-semibold text-slate-400 uppercase tracking-wider">User ID</th>
-                <th className="py-4 px-6 text-xs font-semibold text-slate-400 uppercase tracking-wider">Name</th>
-                <th className="py-4 px-6 text-xs font-semibold text-slate-400 uppercase tracking-wider">Email</th>
-                <th className="py-4 px-6 text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Interviews</th>
-                <th className="py-4 px-6 text-xs font-semibold text-slate-400 uppercase tracking-wider">Joined</th>
-                <th className="py-4 px-6 text-xs font-semibold text-slate-400 uppercase tracking-wider text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pagedUsers.map((user, idx) => (
-                <tr key={idx} onClick={() => setSelectedUser(user)} className="border-b border-slate-800/40 last:border-0 hover:bg-slate-800/10 transition-colors cursor-pointer">
-                  <td className="py-4 px-6 font-medium text-sm text-indigo-400">USR-{user.id}</td>
-                  <td className="py-4 px-6 font-semibold text-sm text-slate-200">{user.name}</td>
-                  <td className="py-4 px-6 text-sm text-slate-400">{user.email}</td>
-                  <td className="py-4 px-6 text-sm text-slate-200 font-bold">{user.interviews}</td>
-                  <td className="py-4 px-6 text-sm text-slate-500">{user.joined}</td>
-                  <td className="py-4 px-6 text-right">
-                    <div className="flex items-center justify-end gap-2 relative">
-                      <button onClick={(e) => { e.stopPropagation(); setSelectedUser(user); }} className="p-1.5 rounded-lg bg-slate-800/50 text-slate-400 hover:text-indigo-400 border border-slate-800/40 transition-all">
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      <button onClick={(e) => { e.stopPropagation(); setActiveDropdown(activeDropdown === user.id ? null : user.id); }} className="p-1.5 rounded-lg bg-slate-800/50 text-slate-400 hover:text-white border border-slate-800/40 transition-all">
-                        <MoreVertical className="w-4 h-4" />
-                      </button>
-                      {activeDropdown === user.id && (
-                        <div className="absolute right-0 top-full mt-1 w-36 bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-10 py-1">
-                          <button onClick={(e) => { e.stopPropagation(); setSelectedUser(user); setActiveDropdown(null); }} className="w-full text-left px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 hover:text-white">View Details</button>
-                        </div>
-                      )}
-                    </div>
-                  </td>
+        <div className="glass-card rounded-2xl overflow-hidden hover:border-indigo-500/20 transition-all duration-300">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-[var(--border-table)] bg-[var(--bg-table-header)]">
+                  <th className="py-4 px-6 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">User ID</th>
+                  <th className="py-4 px-6 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Name</th>
+                  <th className="py-4 px-6 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Email</th>
+                  <th className="py-4 px-6 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider text-center">Interviews</th>
+                  <th className="py-4 px-6 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Joined</th>
+                  <th className="py-4 px-6 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider text-right">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        <div className="p-4 border-t border-slate-800/40 flex items-center justify-between">
-          <p className="text-xs text-slate-400">Showing <span className="text-slate-200 font-medium">{Math.min((page-1)*PAGE_SIZE+1, filteredUsers.length)}–{Math.min(page*PAGE_SIZE, filteredUsers.length)}</span> of <span className="text-slate-200 font-medium">{filteredUsers.length}</span> users</p>
-          <div className="flex items-center gap-2">
-            <button onClick={() => setPage(p => Math.max(1,p-1))} disabled={page === 1} className="p-1.5 rounded-lg bg-slate-800/60 border border-slate-700/50 text-slate-400 disabled:opacity-40 hover:text-white transition-all">
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <span className="text-xs text-slate-400 font-medium">{page} / {totalPages}</span>
-            <button onClick={() => setPage(p => Math.min(totalPages,p+1))} disabled={page === totalPages} className="p-1.5 rounded-lg bg-slate-800/60 border border-slate-700/50 text-slate-400 disabled:opacity-40 hover:text-white transition-all">
-              <ChevronRight className="w-4 h-4" />
-            </button>
+              </thead>
+              <tbody className="divide-y divide-[var(--border-table)]">
+                {pagedUsers.map((user, idx) => (
+                  <tr 
+                    key={idx} 
+                    onClick={() => setSelectedUser(user)} 
+                    className="hover:bg-[var(--bg-table-row-hover)] transition-colors cursor-pointer"
+                  >
+                    <td className="py-4 px-6 font-mono font-semibold text-xs sm:text-sm text-indigo-500">USR-{user.id}</td>
+                    <td className="py-4 px-6 font-semibold text-sm text-[var(--text-primary)]">{user.name}</td>
+                    <td className="py-4 px-6 text-sm text-[var(--text-secondary)]">{user.email}</td>
+                    <td className="py-4 px-6 text-sm text-center">
+                      <span className="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-500/10 text-indigo-500 border border-indigo-500/20">
+                        {user.interviews}
+                      </span>
+                    </td>
+                    <td className="py-4 px-6 text-sm text-[var(--text-muted)]">{user.joined}</td>
+                    <td className="py-4 px-6 text-right">
+                      <div className="flex items-center justify-end gap-2 relative">
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); setSelectedUser(user); }} 
+                          className="p-2 rounded-xl border border-[var(--border-card)] text-[var(--text-secondary)] hover:text-indigo-500 hover:bg-[var(--bg-card-hover)] transition-all"
+                          title="View user details"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        </div>
-      </div>
-      )}
 
-      {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="glass-card p-6 rounded-2xl w-full max-w-md relative border border-slate-800">
-            <button disabled={isSubmitting} onClick={closeAddModal} className="absolute top-4 right-4 text-slate-400 hover:text-white disabled:opacity-50">
-              <X className="w-5 h-5" />
-            </button>
-            <h3 className="text-xl font-bold text-white mb-4">Add New User</h3>
-            <form onSubmit={handleAddUser} className="space-y-4">
-              <div>
-                <label className="block text-sm text-slate-400 mb-1">Name</label>
-                <input type="text" required value={newUserForm.name} onChange={e => setNewUserForm({...newUserForm, name: e.target.value})} className="w-full px-4 py-2.5 rounded-xl bg-slate-900/40 border border-slate-800/40 text-slate-200 text-sm focus:outline-none focus:border-indigo-500/40" placeholder="John Doe" />
-              </div>
-              <div>
-                <label className="block text-sm text-slate-400 mb-1">Email</label>
-                <input type="email" required value={newUserForm.email} onChange={e => setNewUserForm({...newUserForm, email: e.target.value})} className="w-full px-4 py-2.5 rounded-xl bg-slate-900/40 border border-slate-800/40 text-slate-200 text-sm focus:outline-none focus:border-indigo-500/40" placeholder="john@example.com" />
-              </div>
-              {errorMsg && (
-                <p className="text-rose-400 text-xs font-semibold">{errorMsg}</p>
-              )}
-              <div className="pt-2">
-                <button disabled={isSubmitting} type="submit" className={`w-full py-2.5 rounded-xl font-semibold text-sm transition-all shadow-lg ${isSubmitting ? 'bg-indigo-600/50 text-white/50 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-500/20'}`}>
-                  {isSubmitting ? 'Creating...' : 'Create User'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {showEditModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="glass-card p-6 rounded-2xl w-full max-w-md relative border border-slate-800">
-            <button disabled={isSubmitting} onClick={closeEditModal} className="absolute top-4 right-4 text-slate-400 hover:text-white disabled:opacity-50">
-              <X className="w-5 h-5" />
-            </button>
-            <h3 className="text-xl font-bold text-white mb-4">Edit User</h3>
-            <form onSubmit={handleUpdateUser} className="space-y-4">
-              <div>
-                <label className="block text-sm text-slate-400 mb-1">Name</label>
-                <input type="text" required value={editUserForm.name} onChange={e => setEditUserForm({...editUserForm, name: e.target.value})} className="w-full px-4 py-2.5 rounded-xl bg-slate-900/40 border border-slate-800/40 text-slate-200 text-sm focus:outline-none focus:border-indigo-500/40" />
-              </div>
-              <div>
-                <label className="block text-sm text-slate-400 mb-1">Email</label>
-                <input type="email" required value={editUserForm.email} onChange={e => setEditUserForm({...editUserForm, email: e.target.value})} className="w-full px-4 py-2.5 rounded-xl bg-slate-900/40 border border-slate-800/40 text-slate-200 text-sm focus:outline-none focus:border-indigo-500/40" />
-              </div>
-              {errorMsg && (
-                <p className="text-rose-400 text-xs font-semibold">{errorMsg}</p>
-              )}
-              <div className="pt-2">
-                <button disabled={isSubmitting} type="submit" className={`w-full py-2.5 rounded-xl font-semibold text-sm transition-all shadow-lg ${isSubmitting ? 'bg-indigo-600/50 text-white/50 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-500/20'}`}>
-                  {isSubmitting ? 'Saving...' : 'Save Changes'}
-                </button>
-              </div>
-            </form>
+          {/* Pagination */}
+          <div className="p-4 border-t border-[var(--border-table)] flex items-center justify-between">
+            <p className="text-xs text-[var(--text-muted)]">
+              Showing <span className="font-semibold text-[var(--text-primary)]">{Math.min((page-1)*PAGE_SIZE+1, filteredUsers.length)}–{Math.min(page*PAGE_SIZE, filteredUsers.length)}</span> of <span className="font-semibold text-[var(--text-primary)]">{filteredUsers.length}</span> users
+            </p>
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => setPage(p => Math.max(1, p-1))} 
+                disabled={page === 1} 
+                className="p-2 rounded-xl border border-[var(--border-card)] text-[var(--text-secondary)] disabled:opacity-40 hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] transition-all"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <span className="text-xs text-[var(--text-secondary)] font-semibold px-2">{page} / {totalPages}</span>
+              <button 
+                onClick={() => setPage(p => Math.min(totalPages, p+1))} 
+                disabled={page === totalPages} 
+                className="p-2 rounded-xl border border-[var(--border-card)] text-[var(--text-secondary)] disabled:opacity-40 hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] transition-all"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
       )}
 
+      {/* User Details Modal */}
       {selectedUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="glass-card p-6 rounded-2xl w-full max-w-md relative">
-            <button onClick={() => setSelectedUser(null)} className="absolute top-4 right-4 text-slate-400 hover:text-white">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="theme-modal p-6 sm:p-8 rounded-3xl w-full max-w-md relative border">
+            <button 
+              onClick={() => setSelectedUser(null)} 
+              className="absolute top-4 right-4 p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+            >
               <X className="w-5 h-5" />
             </button>
-            <h3 className="text-xl font-bold text-white mb-4">User Details</h3>
-            <div className="space-y-4">
+            <h3 className="text-xl font-bold text-[var(--text-primary)] mb-5">User Details</h3>
+            <div className="space-y-3.5 p-4 rounded-2xl bg-[var(--bg-table-header)] border border-[var(--border-table)]">
               <div>
-                <p className="text-sm text-slate-400">Name</p>
-                <p className="font-semibold text-slate-200">{selectedUser.name}</p>
+                <p className="text-xs text-[var(--text-muted)] font-medium">User ID</p>
+                <p className="font-mono text-sm font-semibold text-indigo-500">USR-{selectedUser.id}</p>
               </div>
               <div>
-                <p className="text-sm text-slate-400">Email</p>
-                <p className="font-semibold text-slate-200">{selectedUser.email}</p>
+                <p className="text-xs text-[var(--text-muted)] font-medium">Full Name</p>
+                <p className="font-semibold text-sm text-[var(--text-primary)]">{selectedUser.name}</p>
               </div>
               <div>
-                <p className="text-sm text-slate-400">Interviews Conducted</p>
-                <p className="font-semibold text-slate-200">{selectedUser.interviews}</p>
+                <p className="text-xs text-[var(--text-muted)] font-medium">Email Address</p>
+                <p className="font-semibold text-sm text-[var(--text-primary)] break-all">{selectedUser.email}</p>
               </div>
               <div>
-                <p className="text-sm text-slate-400">Role</p>
-                <p className="font-semibold text-slate-200">{selectedUser.role}</p>
+                <p className="text-xs text-[var(--text-muted)] font-medium">Interviews Conducted</p>
+                <p className="font-semibold text-sm text-[var(--text-primary)]">{selectedUser.interviews}</p>
               </div>
               <div>
-                <p className="text-sm text-slate-400">Joined</p>
-                <p className="font-semibold text-slate-200">{selectedUser.joined}</p>
+                <p className="text-xs text-[var(--text-muted)] font-medium">Joined Date</p>
+                <p className="font-semibold text-sm text-[var(--text-primary)]">{selectedUser.joined}</p>
               </div>
             </div>
-            <div className="mt-6">
-              <button onClick={() => setSelectedUser(null)} className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-sm transition-all border border-slate-700">
+            <div className="mt-5">
+              <button 
+                onClick={() => setSelectedUser(null)} 
+                className="w-full py-2.5 rounded-xl border border-[var(--border-card)] hover:bg-[var(--bg-card-hover)] text-[var(--text-primary)] font-semibold text-sm transition-all"
+              >
                 Close
               </button>
             </div>
@@ -358,24 +355,11 @@ const Users = () => {
         </div>
       )}
 
-      {confirmDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="glass-card p-6 rounded-2xl w-full max-w-sm relative text-center border border-slate-800">
-            <AlertCircle className="w-12 h-12 text-rose-500 mx-auto mb-4" />
-            <h3 className="text-xl font-bold text-white mb-2">Delete Item</h3>
-            <p className="text-slate-400 mb-6">Are you sure you want to delete this item? This action cannot be undone.</p>
-            <div className="flex gap-3">
-              <button disabled={isSubmitting} onClick={() => setConfirmDelete(null)} className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-sm transition-all border border-slate-700 disabled:opacity-50">Cancel</button>
-              <button disabled={isSubmitting} onClick={handleDeleteUser} className={`flex-1 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-lg ${isSubmitting ? 'bg-rose-600/50 text-white/50 cursor-not-allowed' : 'bg-rose-600 hover:bg-rose-500 text-white shadow-rose-500/20'}`}>
-                {isSubmitting ? 'Deleting...' : 'Confirm'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
+      {/* Toast Notification */}
       {toast && (
-        <div className={`fixed bottom-4 right-4 px-6 py-3 rounded-xl shadow-xl z-50 font-medium text-sm flex items-center gap-2 ${toast.type === 'error' ? 'bg-rose-500 text-white' : 'bg-emerald-500 text-white'}`}>
+        <div className={`fixed bottom-5 right-5 px-5 py-3 rounded-2xl shadow-xl z-50 font-semibold text-xs sm:text-sm flex items-center gap-2.5 transition-all ${
+          toast.type === 'error' ? 'bg-rose-600 text-white' : 'bg-emerald-600 text-white'
+        }`}>
           {toast.type === 'error' ? <AlertCircle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
           {toast.message}
         </div>

@@ -1,16 +1,19 @@
-import React from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, Briefcase, Award, TrendingUp, Clock, CheckCircle2, AlertCircle, Brain, Sparkles } from 'lucide-react';
+import { Users, Briefcase, Award, TrendingUp, Clock, CheckCircle2, AlertCircle, Brain, Sparkles, ArrowRight } from 'lucide-react';
 import StatsCard from '../components/StatsCard';
 import { ScoreDistributionChart, StatusDistributionChart } from '../components/Charts';
+import { CardSkeleton, TableSkeleton } from '../components/Skeleton';
+import EmptyState from '../components/EmptyState';
 import { fetchWithAuth } from '../api';
-import { useState, useEffect, useMemo } from 'react';
+import { useTheme } from '../context/ThemeContext';
 
 const Dashboard = () => {
   const [stats, setStats] = useState({ totalUsers: 0, totalInterviews: 0, totalResponses: 0, averageScore: 0 });
   const [recentInterviews, setRecentInterviews] = useState([]);
   const [allInterviews, setAllInterviews] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { isDark } = useTheme();
 
   useEffect(() => {
     setLoading(true);
@@ -88,14 +91,31 @@ const Dashboard = () => {
   }, [allInterviews]);
 
   const { totalUsers, totalInterviews, totalResponses, averageScore: avgPerformance } = stats;
-  const RecentInterviews = recentInterviews;
 
-  if (loading) return <div className="flex items-center justify-center h-full min-h-[400px]"><div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div></div>;
+  if (loading) {
+    return (
+      <div className="space-y-8 animate-fade-in">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <CardSkeleton key={i} />
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="glass-card p-6 rounded-2xl h-80 animate-pulse bg-slate-800/30" />
+          <div className="glass-card p-6 rounded-2xl h-80 animate-pulse bg-slate-800/30" />
+          <div className="glass-card p-6 rounded-2xl h-80 animate-pulse bg-slate-800/30" />
+        </div>
+        <div className="glass-card rounded-2xl p-4">
+          <TableSkeleton rows={5} cols={6} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
       {/* Stats Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
         <StatsCard 
           title="Total Users" 
           value={totalUsers.toLocaleString()} 
@@ -126,77 +146,101 @@ const Dashboard = () => {
         />
       </div>
 
-      {/* Charts Grid */}
+      {/* Charts & AI Insights Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <ScoreDistributionChart data={chartsData.scoreBuckets} />
         <StatusDistributionChart data={chartsData.statusBuckets} />
         
         {/* AI Insights Panel */}
-        <div className="glass-card p-6 rounded-2xl flex flex-col hover:border-indigo-500/10 transition-all duration-300">
-          <div className="flex items-center gap-2 mb-6">
-            <Brain className="w-5 h-5 text-indigo-400" />
-            <h3 className="text-lg font-semibold text-white">AI Insights</h3>
+        <div className="glass-card p-6 rounded-2xl flex flex-col hover:border-indigo-500/20 transition-all duration-300">
+          <div className="flex items-center gap-2.5 mb-5">
+            <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
+              <Brain className="w-4 h-4 text-indigo-500" />
+            </div>
+            <h3 className="text-base sm:text-lg font-bold text-[var(--text-primary)]">AI Insights</h3>
           </div>
-          <ul className="space-y-4 flex-1">
+          <ul className="space-y-3.5 flex-1">
             {chartsData.insights.map((insight, idx) => (
-              <li key={idx} className="flex items-start gap-3 bg-slate-900/30 p-3 rounded-xl border border-slate-800/40">
-                <Sparkles className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
-                <span className="text-sm text-slate-300 leading-snug">{insight}</span>
+              <li 
+                key={idx} 
+                className="flex items-start gap-3 p-3.5 rounded-xl border border-[var(--border-table)] bg-[var(--bg-table-header)] transition-all hover:scale-[1.01]"
+              >
+                <Sparkles className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" />
+                <span className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed">{insight}</span>
               </li>
             ))}
           </ul>
         </div>
       </div>
 
-      {/* Recent Activity */}
-      <div className="glass-card p-6 rounded-2xl hover:border-indigo-500/10 transition-all duration-300">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold text-white">Recent Interviews</h3>
-          <Link to="/admin/interviews" className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 transition-colors">View All</Link>
+      {/* Recent Activity Table */}
+      <div className="glass-card p-6 rounded-2xl hover:border-indigo-500/20 transition-all duration-300">
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h3 className="text-base sm:text-lg font-bold text-[var(--text-primary)]">Recent Interviews</h3>
+            <p className="text-xs text-[var(--text-muted)] mt-0.5">Latest candidate interview submissions</p>
+          </div>
+          <Link 
+            to="/admin/interviews" 
+            className="inline-flex items-center gap-1 text-xs font-bold text-indigo-500 hover:text-indigo-600 transition-colors py-1 px-2.5 rounded-lg hover:bg-indigo-500/10"
+          >
+            View All <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-slate-800/60">
-                <th className="pb-3 pr-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Interview ID</th>
-                <th className="pb-3 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Candidate</th>
-                <th className="pb-3 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Role/Type</th>
-                <th className="pb-3 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Score</th>
-                <th className="pb-3 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Status</th>
-                <th className="pb-3 pl-4 text-xs font-semibold text-slate-400 uppercase tracking-wider text-right">Time</th>
-              </tr>
-            </thead>
-            <tbody>
-              {RecentInterviews.map((item, idx) => (
-                <tr key={idx} className="border-b border-slate-800/40 last:border-0 hover:bg-slate-800/10 transition-colors">
-                  <td className="py-4 pr-4 font-medium text-sm text-indigo-400">{item.id}</td>
-                  <td className="py-4 px-4 font-semibold text-sm text-slate-200">{item.candidate}</td>
-                  <td className="py-4 px-4 text-sm text-slate-400">{item.type}</td>
-                  <td className="py-4 px-4 text-sm">
-                    {item.score != null ? <span className="font-bold text-slate-200">{item.score}%</span> : <span className="text-slate-500 font-medium">-</span>}
-                  </td>
-                  <td className="py-4 px-4">
-                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${
-                      item.status === 'Completed' 
-                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/10'
-                        : item.status === 'In Progress'
-                          ? 'bg-amber-500/10 text-amber-400 border-amber-500/10'
-                          : 'bg-slate-500/10 text-slate-400 border-slate-500/10'
-                    }`}>
-                      {item.status === 'Completed' && <CheckCircle2 className="w-3.5 h-3.5" />}
-                      {item.status === 'In Progress' && <Clock className="w-3.5 h-3.5" />}
-                      {item.status === 'Pending' && <Clock className="w-3.5 h-3.5" />}
-                      {item.status === 'Failed' && <AlertCircle className="w-3.5 h-3.5" />}
-                      {item.status}
-                    </span>
-                  </td>
-                  <td className="py-4 pl-4 text-sm text-slate-500 text-right">{item.time}</td>
+        {recentInterviews.length === 0 ? (
+          <EmptyState 
+            title="No Recent Interviews" 
+            description="Interviews conducted by candidates will appear here." 
+          />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-[var(--border-table)]">
+                  <th className="pb-3 pr-4 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Interview ID</th>
+                  <th className="pb-3 px-4 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Candidate</th>
+                  <th className="pb-3 px-4 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Role/Type</th>
+                  <th className="pb-3 px-4 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Score</th>
+                  <th className="pb-3 px-4 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Status</th>
+                  <th className="pb-3 pl-4 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider text-right">Date</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-[var(--border-table)]">
+                {recentInterviews.map((item, idx) => (
+                  <tr key={idx} className="hover:bg-[var(--bg-table-row-hover)] transition-colors">
+                    <td className="py-3.5 pr-4 font-mono font-semibold text-xs sm:text-sm text-indigo-500">{item.id}</td>
+                    <td className="py-3.5 px-4 font-semibold text-xs sm:text-sm text-[var(--text-primary)]">{item.candidate}</td>
+                    <td className="py-3.5 px-4 text-xs sm:text-sm text-[var(--text-secondary)]">{item.type}</td>
+                    <td className="py-3.5 px-4 text-xs sm:text-sm">
+                      {item.score != null ? (
+                        <span className="font-bold text-[var(--text-primary)]">{item.score}%</span>
+                      ) : (
+                        <span className="text-[var(--text-muted)] font-medium">-</span>
+                      )}
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border ${
+                        item.status === 'Completed' 
+                          ? isDark ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          : item.status === 'In Progress'
+                            ? isDark ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-amber-50 text-amber-700 border-amber-200'
+                            : isDark ? 'bg-slate-500/10 text-slate-400 border-slate-500/20' : 'bg-slate-100 text-slate-700 border-slate-200'
+                      }`}>
+                        {item.status === 'Completed' && <CheckCircle2 className="w-3 h-3" />}
+                        {item.status === 'In Progress' && <Clock className="w-3 h-3" />}
+                        {item.status === 'Pending' && <Clock className="w-3 h-3" />}
+                        {item.status === 'Failed' && <AlertCircle className="w-3 h-3" />}
+                        {item.status}
+                      </span>
+                    </td>
+                    <td className="py-3.5 pl-4 text-xs text-[var(--text-muted)] text-right">{item.time}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
