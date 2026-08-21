@@ -1,7 +1,16 @@
 from fastapi import APIRouter, HTTPException, status, Depends, Request
 from pydantic import BaseModel
 from bson import ObjectId
-from database import users_collection, interviews_collection, serialize_mongo, admin_logs_collection, admins_collection, otps_collection
+from database import (
+    users_collection,
+    interviews_collection,
+    serialize_mongo,
+    admin_logs_collection,
+    admins_collection,
+    otps_collection,
+    categories_collection,
+    questions_collection
+)
 from utils.auth import verify_password, create_access_token, hash_password
 from middleware.admin_auth import verify_admin
 from datetime import datetime
@@ -63,7 +72,8 @@ async def admin_login(login_data: LoginRequest, request: Request):
         )
         
     # 4. Verify password
-    if not verify_password(login_data.password, user.get("password", "")):
+    stored_password = user.get("password") or user.get("password_hash", "")
+    if not verify_password(login_data.password, stored_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, 
             detail="Invalid email or password"
@@ -656,3 +666,465 @@ async def get_all_admins(token_payload: dict = Depends(verify_admin)):
         }
         for admin in admins
     ]
+
+# ----------------------------------------------------
+# QUESTION BANK & INTERVIEW CATEGORY MANAGEMENT
+# ----------------------------------------------------
+
+class CreateCategoryRequest(BaseModel):
+    name: str
+    description: Optional[str] = ""
+    icon: Optional[str] = "Folder"
+    status: Optional[str] = "active"
+
+class UpdateCategoryRequest(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    icon: Optional[str] = None
+    status: Optional[str] = None
+
+class CreateQuestionRequest(BaseModel):
+    category_id: str
+    question_text: str
+    difficulty: Optional[str] = "Medium"
+    type: Optional[str] = "Technical"
+    expected_answer: Optional[str] = ""
+    tags: Optional[list[str]] = []
+    status: Optional[str] = "active"
+
+class UpdateQuestionRequest(BaseModel):
+    category_id: Optional[str] = None
+    question_text: Optional[str] = None
+    difficulty: Optional[str] = None
+    type: Optional[str] = None
+    expected_answer: Optional[str] = None
+    tags: Optional[list[str]] = None
+    status: Optional[str] = None
+
+class StatusToggleRequest(BaseModel):
+    status: str
+
+# ----------------- Category Endpoints -----------------
+
+@router.get("/categories")
+async def get_categories(
+    search: Optional[str] = None,
+    status_filter: Optional[str] = None,
+    token_payload: dict = Depends(verify_admin)
+):
+    query = {}
+    if status_filter and status_filter.lower() != "all":
+        query["status"] = status_filter.lower()
+    if search and search.strip():
+        term = search.strip()
+        query["$or"] = [
+            {"name": {"$regex": term, "$options": "i"}},
+            {"description": {"$regex": term, "$options": "i"}}
+        ]
+    
+    categories = list(categories_collection.find(query).sort("created_at", -1))
+    
+    # Calculate question counts per category dynamically
+    result = []
+    for cat in categories:
+        cat_id_str = str(cat["_id"])
+        total_q = questions_collection.count_documents({"category_id": cat_id_str})
+        active_q = questions_collection.count_documents({"category_id": cat_id_str, "status": "active"})
+        cat_data = serialize_mongo(cat)
+        cat_data["question_count"] = total_q
+        cat_data["active_question_count"] = active_q
+        result.append(cat_data)
+        
+    return result
+
+@router.get("/categories/{id}")
+async def get_category(id: str, token_payload: dict = Depends(verify_admin)):
+    try:
+        obj_id = ObjectId(id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid category ID")
+        
+    cat = categories_collection.find_one({"_id": obj_id})
+    if not cat:
+        raise HTTPException(status_code=404, detail="Category not found")
+        
+    cat_data = serialize_mongo(cat)
+    cat_data["question_count"] = questions_collection.count_documents({"category_id": id})
+    cat_data["active_question_count"] = questions_collection.count_documents({"category_id": id, "status": "active"})
+    return cat_data
+
+@router.post("/categories")
+async def create_category(data: CreateCategoryRequest, token_payload: dict = Depends(verify_admin)):
+    name = (data.name or "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Category name is required")
+        
+    # Check duplicate name case-insensitively
+    existing = categories_collection.find_one({"name": {"$regex": f"^{re.escape(name)}$", "$options": "i"}})
+    if existing:
+        raise HTTPException(status_code=400, detail="A category with this name already exists")
+        
+    status_val = data.status.lower() if data.status and data.status.lower() in ["active", "archived"] else "active"
+    
+    new_cat = {
+        "name": name,
+        "description": (data.description or "").strip(),
+        "icon": data.icon or "Folder",
+        "status": status_val,
+        "created_at": datetime.utcnow(),
+        "updated_at": datetime.utcnow()
+    }
+    
+    res = categories_collection.insert_one(new_cat)
+    created = categories_collection.find_one({"_id": res.inserted_id})
+    
+    admin_user = admins_collection.find_one({"_id": ObjectId(token_payload.get("user_id"))})
+    admin_email = admin_user.get("email") if admin_user else "Admin"
+    log_action("CREATE_CATEGORY", admin_email, f"Category: {name}")
+    
+    result = serialize_mongo(created)
+    result["question_count"] = 0
+    result["active_question_count"] = 0
+    return result
+
+@router.put("/categories/{id}")
+@router.patch("/categories/{id}")
+async def update_category(id: str, data: UpdateCategoryRequest, token_payload: dict = Depends(verify_admin)):
+    try:
+        obj_id = ObjectId(id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid category ID")
+        
+    existing = categories_collection.find_one({"_id": obj_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Category not found")
+        
+    update_fields = {}
+    if data.name is not None:
+        name = data.name.strip()
+        if not name:
+            raise HTTPException(status_code=400, detail="Category name cannot be empty")
+        # Check duplicate if name is different
+        dup = categories_collection.find_one({
+            "_id": {"$ne": obj_id},
+            "name": {"$regex": f"^{re.escape(name)}$", "$options": "i"}
+        })
+        if dup:
+            raise HTTPException(status_code=400, detail="A category with this name already exists")
+        update_fields["name"] = name
+        
+    if data.description is not None:
+        update_fields["description"] = data.description.strip()
+    if data.icon is not None:
+        update_fields["icon"] = data.icon.strip()
+    if data.status is not None and data.status.lower() in ["active", "archived"]:
+        update_fields["status"] = data.status.lower()
+        
+    update_fields["updated_at"] = datetime.utcnow()
+    
+    categories_collection.update_one({"_id": obj_id}, {"$set": update_fields})
+    
+    # If category name changed, update denormalized category_name in questions
+    if "name" in update_fields:
+        questions_collection.update_many({"category_id": id}, {"$set": {"category_name": update_fields["name"]}})
+        
+    updated = categories_collection.find_one({"_id": obj_id})
+    
+    admin_user = admins_collection.find_one({"_id": ObjectId(token_payload.get("user_id"))})
+    admin_email = admin_user.get("email") if admin_user else "Admin"
+    log_action("UPDATE_CATEGORY", admin_email, f"Category: {updated.get('name')}")
+    
+    res = serialize_mongo(updated)
+    res["question_count"] = questions_collection.count_documents({"category_id": id})
+    res["active_question_count"] = questions_collection.count_documents({"category_id": id, "status": "active"})
+    return res
+
+@router.patch("/categories/{id}/status")
+async def toggle_category_status(id: str, data: StatusToggleRequest, token_payload: dict = Depends(verify_admin)):
+    try:
+        obj_id = ObjectId(id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid category ID")
+        
+    status_val = data.status.lower()
+    if status_val not in ["active", "archived"]:
+        raise HTTPException(status_code=400, detail="Status must be 'active' or 'archived'")
+        
+    cat = categories_collection.find_one({"_id": obj_id})
+    if not cat:
+        raise HTTPException(status_code=404, detail="Category not found")
+        
+    categories_collection.update_one(
+        {"_id": obj_id},
+        {"$set": {"status": status_val, "updated_at": datetime.utcnow()}}
+    )
+    
+    admin_user = admins_collection.find_one({"_id": ObjectId(token_payload.get("user_id"))})
+    admin_email = admin_user.get("email") if admin_user else "Admin"
+    log_action("UPDATE_CATEGORY_STATUS", admin_email, f"Category '{cat.get('name')}' -> {status_val}")
+    
+    updated = categories_collection.find_one({"_id": obj_id})
+    res = serialize_mongo(updated)
+    res["question_count"] = questions_collection.count_documents({"category_id": id})
+    res["active_question_count"] = questions_collection.count_documents({"category_id": id, "status": "active"})
+    return res
+
+@router.delete("/categories/{id}")
+async def delete_category(id: str, token_payload: dict = Depends(verify_admin)):
+    try:
+        obj_id = ObjectId(id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid category ID")
+        
+    cat = categories_collection.find_one({"_id": obj_id})
+    if not cat:
+        raise HTTPException(status_code=404, detail="Category not found")
+        
+    cat_name = cat.get("name", id)
+    # Delete category and cascade delete its questions
+    q_del_result = questions_collection.delete_many({"category_id": id})
+    categories_collection.delete_one({"_id": obj_id})
+    
+    admin_user = admins_collection.find_one({"_id": ObjectId(token_payload.get("user_id"))})
+    admin_email = admin_user.get("email") if admin_user else "Admin"
+    log_action("DELETE_CATEGORY", admin_email, f"Category: {cat_name} (and {q_del_result.deleted_count} questions)")
+    
+    return {
+        "message": f"Category '{cat_name}' and {q_del_result.deleted_count} questions deleted successfully",
+        "deleted_questions_count": q_del_result.deleted_count
+    }
+
+# ----------------- Questions Endpoints -----------------
+
+@router.get("/questions")
+async def get_questions(
+    search: Optional[str] = None,
+    category_id: Optional[str] = None,
+    difficulty: Optional[str] = None,
+    status_filter: Optional[str] = None,
+    type: Optional[str] = None,
+    token_payload: dict = Depends(verify_admin)
+):
+    query = {}
+    if category_id and category_id.lower() != "all":
+        query["category_id"] = category_id
+    if difficulty and difficulty.lower() != "all":
+        query["difficulty"] = difficulty.capitalize() if difficulty.lower() in ["easy", "medium", "hard"] else difficulty
+    if status_filter and status_filter.lower() != "all":
+        query["status"] = status_filter.lower()
+    if type and type.lower() != "all":
+        query["type"] = type
+        
+    if search and search.strip():
+        term = search.strip()
+        query["$or"] = [
+            {"question_text": {"$regex": term, "$options": "i"}},
+            {"expected_answer": {"$regex": term, "$options": "i"}},
+            {"category_name": {"$regex": term, "$options": "i"}},
+            {"tags": {"$elemMatch": {"$regex": term, "$options": "i"}}}
+        ]
+        
+    questions = list(questions_collection.find(query).sort("created_at", -1))
+    return [serialize_mongo(q) for q in questions]
+
+@router.get("/questions/{id}")
+async def get_question(id: str, token_payload: dict = Depends(verify_admin)):
+    try:
+        obj_id = ObjectId(id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid question ID")
+        
+    q = questions_collection.find_one({"_id": obj_id})
+    if not q:
+        raise HTTPException(status_code=404, detail="Question not found")
+        
+    return serialize_mongo(q)
+
+@router.post("/questions")
+async def create_question(data: CreateQuestionRequest, token_payload: dict = Depends(verify_admin)):
+    q_text = (data.question_text or "").strip()
+    if not q_text:
+        raise HTTPException(status_code=400, detail="Question text is required")
+        
+    if not data.category_id or not data.category_id.strip():
+        raise HTTPException(status_code=400, detail="Category is required")
+        
+    # Verify category exists
+    try:
+        cat_obj_id = ObjectId(data.category_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid Category ID")
+        
+    cat = categories_collection.find_one({"_id": cat_obj_id})
+    if not cat:
+        raise HTTPException(status_code=404, detail="Selected category not found")
+        
+    difficulty = data.difficulty if data.difficulty in ["Easy", "Medium", "Hard"] else "Medium"
+    status_val = data.status.lower() if data.status and data.status.lower() in ["active", "archived"] else "active"
+    
+    # Process tags
+    clean_tags = [t.strip() for t in data.tags if isinstance(t, str) and t.strip()] if data.tags else []
+    
+    new_q = {
+        "category_id": data.category_id,
+        "category_name": cat.get("name", "Unknown Category"),
+        "question_text": q_text,
+        "difficulty": difficulty,
+        "type": (data.type or "Technical").strip(),
+        "expected_answer": (data.expected_answer or "").strip(),
+        "tags": clean_tags,
+        "status": status_val,
+        "created_at": datetime.utcnow(),
+        "updated_at": datetime.utcnow()
+    }
+    
+    res = questions_collection.insert_one(new_q)
+    created = questions_collection.find_one({"_id": res.inserted_id})
+    
+    admin_user = admins_collection.find_one({"_id": ObjectId(token_payload.get("user_id"))})
+    admin_email = admin_user.get("email") if admin_user else "Admin"
+    log_action("CREATE_QUESTION", admin_email, f"Question: {q_text[:35]}... ({cat.get('name')})")
+    
+    return serialize_mongo(created)
+
+@router.put("/questions/{id}")
+@router.patch("/questions/{id}")
+async def update_question(id: str, data: UpdateQuestionRequest, token_payload: dict = Depends(verify_admin)):
+    try:
+        obj_id = ObjectId(id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid question ID")
+        
+    existing = questions_collection.find_one({"_id": obj_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Question not found")
+        
+    update_fields = {}
+    if data.question_text is not None:
+        q_text = data.question_text.strip()
+        if not q_text:
+            raise HTTPException(status_code=400, detail="Question text cannot be empty")
+        update_fields["question_text"] = q_text
+        
+    if data.category_id is not None:
+        cat_id = data.category_id.strip()
+        try:
+            cat_obj_id = ObjectId(cat_id)
+        except Exception:
+            raise HTTPException(status_code=400, detail="Invalid Category ID")
+        cat = categories_collection.find_one({"_id": cat_obj_id})
+        if not cat:
+            raise HTTPException(status_code=404, detail="Selected category not found")
+        update_fields["category_id"] = cat_id
+        update_fields["category_name"] = cat.get("name", "Unknown Category")
+        
+    if data.difficulty is not None and data.difficulty in ["Easy", "Medium", "Hard"]:
+        update_fields["difficulty"] = data.difficulty
+    if data.type is not None:
+        update_fields["type"] = data.type.strip()
+    if data.expected_answer is not None:
+        update_fields["expected_answer"] = data.expected_answer.strip()
+    if data.tags is not None:
+        update_fields["tags"] = [t.strip() for t in data.tags if isinstance(t, str) and t.strip()]
+    if data.status is not None and data.status.lower() in ["active", "archived"]:
+        update_fields["status"] = data.status.lower()
+        
+    update_fields["updated_at"] = datetime.utcnow()
+    
+    questions_collection.update_one({"_id": obj_id}, {"$set": update_fields})
+    updated = questions_collection.find_one({"_id": obj_id})
+    
+    admin_user = admins_collection.find_one({"_id": ObjectId(token_payload.get("user_id"))})
+    admin_email = admin_user.get("email") if admin_user else "Admin"
+    log_action("UPDATE_QUESTION", admin_email, f"Question: {updated.get('question_text', '')[:35]}...")
+    
+    return serialize_mongo(updated)
+
+@router.patch("/questions/{id}/status")
+async def toggle_question_status(id: str, data: StatusToggleRequest, token_payload: dict = Depends(verify_admin)):
+    try:
+        obj_id = ObjectId(id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid question ID")
+        
+    status_val = data.status.lower()
+    if status_val not in ["active", "archived"]:
+        raise HTTPException(status_code=400, detail="Status must be 'active' or 'archived'")
+        
+    q = questions_collection.find_one({"_id": obj_id})
+    if not q:
+        raise HTTPException(status_code=404, detail="Question not found")
+        
+    questions_collection.update_one(
+        {"_id": obj_id},
+        {"$set": {"status": status_val, "updated_at": datetime.utcnow()}}
+    )
+    
+    admin_user = admins_collection.find_one({"_id": ObjectId(token_payload.get("user_id"))})
+    admin_email = admin_user.get("email") if admin_user else "Admin"
+    log_action("UPDATE_QUESTION_STATUS", admin_email, f"Question status -> {status_val}")
+    
+    updated = questions_collection.find_one({"_id": obj_id})
+    return serialize_mongo(updated)
+
+@router.delete("/questions/{id}")
+async def delete_question(id: str, token_payload: dict = Depends(verify_admin)):
+    try:
+        obj_id = ObjectId(id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid question ID")
+        
+    q = questions_collection.find_one({"_id": obj_id})
+    if not q:
+        raise HTTPException(status_code=404, detail="Question not found")
+        
+    q_text = q.get("question_text", id)
+    questions_collection.delete_one({"_id": obj_id})
+    
+    admin_user = admins_collection.find_one({"_id": ObjectId(token_payload.get("user_id"))})
+    admin_email = admin_user.get("email") if admin_user else "Admin"
+    log_action("DELETE_QUESTION", admin_email, f"Question: {q_text[:35]}...")
+    
+    return {"message": "Question deleted successfully"}
+
+# ----------------- Question Bank Stats & Seed -----------------
+
+@router.get("/question-bank/stats")
+async def get_question_bank_stats(token_payload: dict = Depends(verify_admin)):
+    total_questions = questions_collection.count_documents({})
+    active_questions = questions_collection.count_documents({"status": "active"})
+    archived_questions = questions_collection.count_documents({"status": "archived"})
+    
+    total_categories = categories_collection.count_documents({})
+    active_categories = categories_collection.count_documents({"status": "active"})
+    archived_categories = categories_collection.count_documents({"status": "archived"})
+    
+    easy_count = questions_collection.count_documents({"difficulty": "Easy"})
+    medium_count = questions_collection.count_documents({"difficulty": "Medium"})
+    hard_count = questions_collection.count_documents({"difficulty": "Hard"})
+    
+    return {
+        "total_questions": total_questions,
+        "active_questions": active_questions,
+        "archived_questions": archived_questions,
+        "total_categories": total_categories,
+        "active_categories": active_categories,
+        "archived_categories": archived_categories,
+        "difficulty_breakdown": {
+            "Easy": easy_count,
+            "Medium": medium_count,
+            "Hard": hard_count
+        }
+    }
+
+@router.post("/question-bank/seed")
+async def trigger_seed_question_bank(token_payload: dict = Depends(verify_admin)):
+    from seed_question_bank import seed_question_bank
+    res = seed_question_bank(force=True)
+    
+    admin_user = admins_collection.find_one({"_id": ObjectId(token_payload.get("user_id"))})
+    admin_email = admin_user.get("email") if admin_user else "Admin"
+    log_action("SEED_QUESTION_BANK", admin_email, "Question Bank Data", severity="info")
+    
+    return res
+

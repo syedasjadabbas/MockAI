@@ -9,6 +9,7 @@ import {
   LogOut, 
   Terminal,
   Shield,
+  BookOpen,
   X
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
@@ -21,6 +22,7 @@ const Sidebar = ({ mobileOpen = false, setMobileOpen = () => {} }) => {
     { title: 'Dashboard', icon: LayoutDashboard, path: '/admin/dashboard' },
     { title: 'Users', icon: Users, path: '/admin/users' },
     { title: 'Interviews', icon: Briefcase, path: '/admin/interviews' },
+    { title: 'Question Bank', icon: BookOpen, path: '/admin/questions' },
     { title: 'Results', icon: Award, path: '/admin/results' },
     { title: 'Logs', icon: FileText, path: '/admin/logs' },
     { title: 'Manage Admins', icon: Shield, path: '/admin/admins' },
