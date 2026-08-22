@@ -122,6 +122,57 @@ def test_candidate_auth():
     expired_resp = client.get("/candidate/me", headers={"Authorization": f"Bearer {expired_token}"})
     expect(expired_resp.status_code == 401, "GET /candidate/me with an expired token returns 401")
 
+    # 5e. Update profile successfully (PATCH /candidate/me)
+    update_resp = client.patch("/candidate/me", headers=headers, json={"name": "Updated Candidate Name"})
+    expect(update_resp.status_code == 200, f"PATCH /candidate/me returns 200 (got {update_resp.status_code}: {update_resp.text})")
+    updated_data = update_resp.json()
+    expect(updated_data["name"] == "Updated Candidate Name", "PATCH /candidate/me returns the updated name")
+    expect(updated_data["email"] == email, "PATCH /candidate/me does not change the email")
+    expect(updated_data["role"] == "user", "PATCH /candidate/me does not change the role")
+
+    persisted = users_collection.find_one({"_id": user_doc["_id"]})
+    expect(persisted["name"] == "Updated Candidate Name", "Updated name is actually persisted in MongoDB")
+
+    # 5f. Update profile without JWT -> 401
+    no_token_update = client.patch("/candidate/me", json={"name": "Should Not Apply"})
+    expect(no_token_update.status_code == 401, "PATCH /candidate/me with no token returns 401")
+
+    # 5g. Update profile with invalid JWT -> 401
+    invalid_token_update = client.patch("/candidate/me", headers={"Authorization": "Bearer garbage.token.value"}, json={"name": "Should Not Apply"})
+    expect(invalid_token_update.status_code == 401, "PATCH /candidate/me with an invalid token returns 401")
+
+    # 5h. Candidate cannot modify role: the field isn't even accepted, so a
+    # crafted payload including it is simply ignored, not rejected - name
+    # still updates, role never changes.
+    role_attempt_resp = client.patch("/candidate/me", headers=headers, json={"name": "Still Just A Candidate", "role": "admin"})
+    expect(role_attempt_resp.status_code == 200, "PATCH /candidate/me ignores unexpected extra fields like role")
+    expect(role_attempt_resp.json()["role"] == "user", "Attempting to smuggle role='admin' into the payload has no effect")
+    persisted_after_role_attempt = users_collection.find_one({"_id": user_doc["_id"]})
+    expect(persisted_after_role_attempt["role"] == "user", "Role in MongoDB is unchanged after the smuggling attempt")
+
+    # 5i. Empty name rejected
+    empty_name_resp = client.patch("/candidate/me", headers=headers, json={"name": "   "})
+    expect(empty_name_resp.status_code in (400, 422), "PATCH /candidate/me rejects a blank/whitespace-only name")
+
+    # 5j. Candidate cannot modify another user's account: register a second
+    # candidate, then confirm candidate A's token can never touch candidate
+    # B's document - there's no target-id parameter at all, the endpoint
+    # only ever acts on the caller's own token, so this proves ownership is
+    # structural, not just policy.
+    other_email = f"other.candidate.{int(time.time())}@example.com"
+    other_reg = client.post("/candidate/register", json={
+        "name": "Other Candidate",
+        "email": other_email,
+        "password": password,
+        "confirm_password": password,
+    })
+    expect(other_reg.status_code == 201, "Second candidate registers fine (setup for ownership test)")
+    other_user_doc = users_collection.find_one({"email": other_email})
+
+    client.patch("/candidate/me", headers=headers, json={"name": "Still Just A Candidate"})
+    other_user_after = users_collection.find_one({"_id": other_user_doc["_id"]})
+    expect(other_user_after["name"] == "Other Candidate", "Candidate A's PATCH /candidate/me never touches Candidate B's document")
+
     # 6. Role separation: an Admin token cannot authenticate through candidate routes
     admin_login = client.post("/admin/login", json={"email": "admin@mockai.com", "password": "admin123"})
     expect(admin_login.status_code == 200, "Admin login still works (regression check)")

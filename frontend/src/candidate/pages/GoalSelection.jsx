@@ -1,18 +1,58 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Send, Bot, Code2, Users, Compass, ArrowRight, Server, Cpu, BarChart3 } from 'lucide-react';
+import { Send, Bot, Code2, Users, Compass, ArrowRight, Server, Cpu, BarChart3, AlertCircle } from 'lucide-react';
 import InterviewFlowLayout from '../layouts/InterviewFlowLayout';
-import { CATEGORIES, INTERVIEW_TYPES, matchCategoryFromText, getCategoriesByType } from '../data/categories';
-import { startInterview } from '../services/candidateApi';
+import { INTERVIEW_TYPES } from '../data/categories';
+import { getCategories, startInterview } from '../services/candidateApi';
 
 // FR07 - Accept Interview Goal via Chatbot, FR08 - Select Interview Questions
 //
 // This is a real conversational UI (free text + quick replies), but the
 // "understanding" behind it is a small transparent keyword matcher, not
-// NLP/AI (see matchCategoryFromText in data/categories.js). Real language
-// understanding is explicit future AI-integration work (FR13/FR14).
+// NLP/AI - real language understanding is explicit future AI-integration
+// work. Categories come from the real Question Bank (GET /candidate/
+// categories) - the only thing that's presentational-only here is the
+// Technical/HR/Situational grouping: the backend's categories_collection
+// has no "interview type" field of its own (that grouping only exists at
+// the question level within a category), so inferInterviewType() below
+// derives it client-side from the category name, purely to keep this
+// page's existing chat flow working. It never invents a new category or
+// changes what's actually stored in the Question Bank.
 
-const CATEGORY_ICONS = { Code: Code2, Server, Cpu, BarChart3, Users };
+const CATEGORY_ICONS = { Code: Code2, Server, Cpu, BarChart3, Users, Folder: Code2 };
+
+// Presentational-only grouping - see file header. "Behavioral & Leadership"
+// is the only seeded category with behavioral/situational content, so both
+// of those quick-replies resolve to it; everything else defaults to
+// "technical". This never touches the backend's actual category data.
+function inferInterviewType(category) {
+  return /behav/i.test(category.name) ? 'behavioral' : 'technical';
+}
+
+function getCategoriesByType(categories, typeId) {
+  if (typeId === 'situational') {
+    return categories.filter((c) => inferInterviewType(c) === 'behavioral');
+  }
+  return categories.filter((c) => inferInterviewType(c) === typeId);
+}
+
+function matchCategoryFromText(text, categories) {
+  const t = (text || '').toLowerCase();
+  const rules = [
+    { keywords: ['frontend', 'front-end', 'react', 'css', 'javascript', 'ui', 'web'], test: (name) => /frontend/i.test(name) },
+    { keywords: ['backend', 'back-end', 'api', 'database', 'server', 'microservice'], test: (name) => /backend/i.test(name) },
+    { keywords: ['machine learning', ' ai ', 'artificial intelligence', 'nlp', 'data scien', 'model'], test: (name) => /machine learning|artificial intelligence/i.test(name) },
+    { keywords: ['data analy', 'analytics', 'sql', 'dashboard', 'reporting'], test: (name) => /data analytics|sql/i.test(name) },
+    { keywords: ['hr', 'behavioral', 'behaviour', 'leadership', 'situational', 'teamwork', 'manager', 'conflict'], test: (name) => /behavioral|leadership/i.test(name) },
+  ];
+  for (const rule of rules) {
+    if (rule.keywords.some((k) => t.includes(k))) {
+      const found = categories.find((c) => rule.test(c.name));
+      if (found) return found;
+    }
+  }
+  return null;
+}
 
 const Bubble = ({ from, children }) => (
   <div className={`flex ${from === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -36,11 +76,22 @@ const GoalSelection = () => {
   const [selectedType, setSelectedType] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [starting, setStarting] = useState(false);
+  const [startError, setStartError] = useState('');
+  const [categories, setCategories] = useState([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [categoriesError, setCategoriesError] = useState('');
   const scrollRef = useRef(null);
 
   useEffect(() => {
+    getCategories()
+      .then(setCategories)
+      .catch((err) => setCategoriesError(err.message || 'Could not load interview categories.'))
+      .finally(() => setCategoriesLoading(false));
+  }, []);
+
+  useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, categoriesLoading]);
 
   const pushBot = (text) => setMessages((m) => [...m, { from: 'bot', text }]);
   const pushUser = (text) => setMessages((m) => [...m, { from: 'user', text }]);
@@ -48,7 +99,7 @@ const GoalSelection = () => {
   const chooseCategory = (category) => {
     pushUser(category.name);
     setSelectedCategory(category);
-    setSelectedType(category.interviewType);
+    setSelectedType(inferInterviewType(category));
     pushBot(`Great choice. I'll line up a ${category.name} interview for you. Ready to continue to preparation?`);
     setStage('confirm');
   };
@@ -57,7 +108,7 @@ const GoalSelection = () => {
     const type = INTERVIEW_TYPES.find((t) => t.id === typeId);
     pushUser(type.label);
     setSelectedType(typeId);
-    const options = getCategoriesByType(typeId);
+    const options = getCategoriesByType(categories, typeId);
     if (options.length === 1) {
       chooseCategory(options[0]);
     } else {
@@ -72,14 +123,12 @@ const GoalSelection = () => {
     pushUser(text);
     setInput('');
 
-    const matched = matchCategoryFromText(text);
+    const matched = matchCategoryFromText(text, categories);
     if (matched) {
-      setSelectedType(matched.interviewType);
-      setSelectedCategory(matched);
-      pushBot(`Got it — that sounds like a ${matched.name} interview. Ready to continue to preparation?`);
-      setStage('confirm');
+      chooseCategory(matched);
     } else {
       pushBot("I didn't quite catch a specific topic. Could you pick one of the options below instead?");
+      setSelectedType(null);
       setStage('ask-type');
     }
   };
@@ -87,9 +136,12 @@ const GoalSelection = () => {
   const handleBegin = async () => {
     if (!selectedCategory) return;
     setStarting(true);
+    setStartError('');
     try {
       const interview = await startInterview({ categoryId: selectedCategory.id, interviewType: selectedType });
       navigate(`/interview/${interview.id}/prepare`);
+    } catch (err) {
+      setStartError(err.message || 'Could not start the interview. Please try again.');
     } finally {
       setStarting(false);
     }
@@ -109,6 +161,16 @@ const GoalSelection = () => {
         </div>
 
         <div className="glass-card rounded-2xl p-5 sm:p-6 flex flex-col gap-4 min-h-[360px]">
+          {categoriesLoading ? (
+            <div className="flex-1 flex items-center justify-center py-10">
+              <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : categoriesError ? (
+            <div className="flex-1 flex flex-col items-center justify-center gap-2 py-10 text-center">
+              <AlertCircle className="w-6 h-6 text-rose-500" />
+              <p className="text-sm text-[var(--text-secondary)]">{categoriesError}</p>
+            </div>
+          ) : (
           <div className="flex-1 space-y-3 overflow-y-auto max-h-[45vh] pr-1">
             {messages.map((m, i) => (
               <Bubble key={i} from={m.from}>{m.text}</Bubble>
@@ -132,27 +194,9 @@ const GoalSelection = () => {
               </div>
             )}
 
-            {stage === 'ask-type' && selectedType && (
+            {stage === 'ask-type' && (
               <div className="flex flex-wrap gap-2 pt-1">
-                {getCategoriesByType(selectedType).map((cat) => {
-                  const Icon = CATEGORY_ICONS[cat.icon] || Code2;
-                  return (
-                    <button
-                      key={cat.id}
-                      onClick={() => chooseCategory(cat)}
-                      className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-semibold theme-input border hover:border-indigo-500/60 hover:text-indigo-500 transition-all"
-                    >
-                      <Icon className="w-3.5 h-3.5" />
-                      {cat.name}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-
-            {stage === 'ask-type' && !selectedType && (
-              <div className="flex flex-wrap gap-2 pt-1">
-                {CATEGORIES.map((cat) => {
+                {(selectedType ? getCategoriesByType(categories, selectedType) : categories).map((cat) => {
                   const Icon = CATEGORY_ICONS[cat.icon] || Code2;
                   return (
                     <button
@@ -178,12 +222,18 @@ const GoalSelection = () => {
                   {starting ? 'Setting up…' : 'Continue to Preparation'}
                   {!starting && <ArrowRight className="w-4 h-4" />}
                 </button>
+                {startError && (
+                  <p className="text-xs font-semibold text-rose-500 flex items-center gap-1.5 mt-3">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" /> {startError}
+                  </p>
+                )}
               </div>
             )}
             <div ref={scrollRef} />
           </div>
+          )}
 
-          {stage !== 'confirm' && (
+          {!categoriesLoading && !categoriesError && stage !== 'confirm' && (
             <div className="flex items-center gap-2 pt-2 border-t border-[var(--border-table)]">
               <input
                 type="text"

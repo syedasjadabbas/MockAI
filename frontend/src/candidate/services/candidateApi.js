@@ -1,54 +1,70 @@
-// MOCK candidate data layer for interview setup/flow, evaluation, history,
-// and progress (FR06-FR10, FR17-FR27, FR32-FR36).
+// Candidate interview session data (FR06-FR10, FR27, FR31-FR32) - backed
+// by the real FastAPI + MongoDB backend (backend/routes/candidate_interview.py),
+// replacing the earlier localStorage mock for everything session/history
+// related. All HTTP calls go through services/api.js's fetchCandidateApi -
+// nothing here calls `fetch` directly.
 //
-// Every function here is async and returns data shaped exactly like the
-// records the FastAPI backend already stores for interviews (see
-// backend/routes/admin.py INTERVIEW_DETAIL_PROJECTION and
-// backend/database.py interviews_collection: user_id, role, status, score,
-// confidence, stress, transcript, created_at). During backend integration,
-// each function body is replaced with a `fetchWithAuth`-style call to a new
-// `/candidate/*` FastAPI route — callers do not change.
-//
-// IMPORTANT: generateMockEvaluation() below produces PLACEHOLDER scoring
-// data only. It does not run any speech, text, or facial analysis. Real
-// evaluation (FR13-FR16, FR34) is explicit future AI-integration work.
+// IMPORTANT - real data vs. placeholder evaluation, kept deliberately
+// separate:
+//   - Category, question, interview session, response, and history data
+//     below is 100% real: it comes from MongoDB via the backend and is
+//     never fabricated. score/confidence/stress/evaluation stay `null`
+//     everywhere (history, dashboard, progress) until a real Evaluation
+//     backend exists - this file never invents a number for them.
+//   - The ONE exception is getInterviewById(), used only by the Results
+//     and Feedback pages: when an interview has no real score yet (which
+//     is currently always, since Evaluation isn't built), it overlays a
+//     clearly-marked MOCK evaluation so those two pages keep working as a
+//     preview of the eventual real UI. That overlay is generated
+//     client-side, seeded by the interview's own id so it's stable across
+//     repeated views, and is NEVER sent back to the backend or reflected
+//     in history/dashboard/progress.
 
-import { CATEGORIES, getCategoryById } from '../data/categories';
-import { getSession } from './candidateAuth';
+import { fetchCandidateApi } from './api';
 
-const INTERVIEWS_KEY = 'mockai_candidate_interviews';
-const ACTIVE_INTERVIEW_KEY = 'mockai_candidate_active_interview';
-
-const delay = (ms = 300) => new Promise((resolve) => setTimeout(resolve, ms));
-
-const currentUserId = () => getSession()?.id || 'guest';
-
-function readInterviews() {
-  try {
-    return JSON.parse(localStorage.getItem(INTERVIEWS_KEY) || '[]');
-  } catch {
-    return [];
-  }
+function toFrontendQuestion(q) {
+  // The interview snapshot stored server-side uses `question_id`; the
+  // catalogue endpoint (list questions for a category) already returns
+  // `id`. Normalizing both to `id` here means InterviewSimulator.jsx and
+  // friends never need to know which shape they got.
+  return {
+    id: q.question_id || q.id,
+    question_text: q.question_text,
+    difficulty: q.difficulty,
+    type: q.type,
+    tags: q.tags || [],
+  };
 }
 
-function writeInterviews(list) {
-  localStorage.setItem(INTERVIEWS_KEY, JSON.stringify(list));
+function toFrontendInterview(doc) {
+  return {
+    id: doc.id,
+    role: doc.role,
+    categoryId: doc.category_id,
+    type: doc.type,
+    status: doc.status,
+    evaluationStatus: doc.evaluation_status,
+    score: doc.score,
+    confidence: doc.confidence,
+    stress: doc.stress,
+    createdAt: doc.created_at,
+    completedAt: doc.completed_at,
+    questions: (doc.questions || []).map(toFrontendQuestion),
+    responses: doc.responses || [],
+  };
 }
 
 // ---------------------------------------------------------------------------
-// FR07 / FR08 - Interview goal & question selection
+// FR07 / FR08 - Interview goal & question selection (real Question Bank)
 // ---------------------------------------------------------------------------
 
 export async function getCategories() {
-  await delay(200);
-  return CATEGORIES;
+  return fetchCandidateApi('/categories');
 }
 
-export async function getQuestionsForCategory(categoryId, { limit = 5 } = {}) {
-  await delay(200);
-  const category = getCategoryById(categoryId);
-  if (!category) throw new Error('Category not found.');
-  return category.questions.slice(0, limit);
+export async function getQuestionsForCategory(categoryId, { limit } = {}) {
+  const questions = await fetchCandidateApi(`/categories/${categoryId}/questions`);
+  return limit ? questions.slice(0, limit) : questions;
 }
 
 // ---------------------------------------------------------------------------
@@ -56,77 +72,50 @@ export async function getQuestionsForCategory(categoryId, { limit = 5 } = {}) {
 // ---------------------------------------------------------------------------
 
 export async function startInterview({ categoryId, interviewType }) {
-  await delay(250);
-  const category = getCategoryById(categoryId);
-  if (!category) throw new Error('Category not found.');
-
-  const interview = {
-    id: `interview-${Date.now()}`,
-    userId: currentUserId(),
-    role: category.name,
-    categoryId: category.id,
-    type: interviewType || category.interviewType,
-    status: 'In Progress',
-    score: null,
-    confidence: null,
-    stress: null,
-    transcript: [],
-    questions: category.questions.slice(0, 5),
-    responses: [],
-    createdAt: new Date().toISOString(),
-  };
-
-  localStorage.setItem(ACTIVE_INTERVIEW_KEY, JSON.stringify(interview));
-  return interview;
+  const doc = await fetchCandidateApi('/interviews', {
+    method: 'POST',
+    body: JSON.stringify({ category_id: categoryId, type: interviewType }),
+  });
+  return toFrontendInterview(doc);
 }
 
 export async function getActiveInterview(id) {
-  await delay(100);
   try {
-    const active = JSON.parse(localStorage.getItem(ACTIVE_INTERVIEW_KEY) || 'null');
-    if (active && active.id === id) return active;
+    const doc = await fetchCandidateApi(`/interviews/${id}`);
+    return toFrontendInterview(doc);
   } catch {
-    /* fall through */
+    return null;
   }
-  // Fall back to a saved (already-completed) interview if this id refers to one.
-  return readInterviews().find((i) => i.id === id) || null;
 }
 
-// FR11/FR12/FR33 - a response is recorded per question. `media` carries
-// whatever the Simulator captured (duration, and object URLs for local
-// playback only — nothing is uploaded anywhere in this phase).
+// FR11/FR12/FR33 - metadata only (duration/size), never the recording
+// itself. See backend/routes/candidate_interview.py's module docstring for
+// the documented future media-upload integration point (the `media_url`
+// field this returns, currently always null).
 export async function submitResponse(interviewId, questionId, response) {
-  await delay(150);
-  const active = JSON.parse(localStorage.getItem(ACTIVE_INTERVIEW_KEY) || 'null');
-  if (!active || active.id !== interviewId) throw new Error('No active interview session found.');
-
-  active.responses = [...(active.responses || []).filter((r) => r.questionId !== questionId), { questionId, ...response }];
-  localStorage.setItem(ACTIVE_INTERVIEW_KEY, JSON.stringify(active));
-  return active;
+  const doc = await fetchCandidateApi(`/interviews/${interviewId}/responses`, {
+    method: 'POST',
+    body: JSON.stringify({
+      question_id: questionId,
+      duration_seconds: response.durationSeconds,
+      size_bytes: response.sizeBytes,
+    }),
+  });
+  return toFrontendInterview(doc);
 }
 
-// FR10 - ends the session and hands off to the evaluation placeholder.
+// FR10 - ends the session. Returns the real, still-unevaluated interview
+// (status "Completed", evaluationStatus "pending_evaluation", score/
+// confidence/stress still null) - the mock evaluation overlay is applied
+// later, only when Results/Feedback actually load the interview for
+// display (see getInterviewById below), not here.
 export async function endInterview(interviewId) {
-  await delay(300);
-  const active = JSON.parse(localStorage.getItem(ACTIVE_INTERVIEW_KEY) || 'null');
-  if (!active || active.id !== interviewId) throw new Error('No active interview session found.');
-
-  active.status = 'Completed';
-  active.completedAt = new Date().toISOString();
-
-  const evaluation = generateMockEvaluation(active);
-  const finished = { ...active, ...evaluation };
-
-  const all = readInterviews();
-  all.unshift(finished);
-  writeInterviews(all);
-  localStorage.removeItem(ACTIVE_INTERVIEW_KEY);
-
-  return finished;
+  const doc = await fetchCandidateApi(`/interviews/${interviewId}/complete`, { method: 'POST' });
+  return toFrontendInterview(doc);
 }
 
 // ---------------------------------------------------------------------------
-// FR17-FR20 / FR21-FR23 / FR35 - Evaluation & feedback (PLACEHOLDER)
+// FR17-FR20 / FR21-FR23 / FR35 - Evaluation & feedback (PLACEHOLDER OVERLAY)
 // ---------------------------------------------------------------------------
 
 const STRENGTH_POOL = [
@@ -151,24 +140,44 @@ const SUGGESTION_POOL = [
   'Try the STAR method (Situation, Task, Action, Result) for behavioral questions.',
 ];
 
-function pick(pool, n) {
-  const shuffled = [...pool].sort(() => Math.random() - 0.5);
+// Small deterministic PRNG (mulberry32) seeded from the interview's own id,
+// so the same interview always renders the same placeholder numbers across
+// repeated views/refreshes instead of re-randomizing every load - a purely
+// cosmetic consistency detail, not a claim of real, reproducible analysis.
+function seededRandom(seedStr) {
+  let h = 1779033703 ^ seedStr.length;
+  for (let i = 0; i < seedStr.length; i++) {
+    h = Math.imul(h ^ seedStr.charCodeAt(i), 3432918353);
+    h = (h << 13) | (h >>> 19);
+  }
+  return function next() {
+    h = Math.imul(h ^ (h >>> 16), 2246822507);
+    h = Math.imul(h ^ (h >>> 13), 3266489909);
+    h ^= h >>> 16;
+    return (h >>> 0) / 4294967296;
+  };
+}
+
+function seededPick(pool, n, rand) {
+  const shuffled = [...pool].sort(() => rand() - 0.5);
   return shuffled.slice(0, n);
 }
 
 // PLACEHOLDER ONLY - replace with a real call to the multimodal evaluation
-// service once FR13-FR16/FR34 are implemented. No audio/video is analyzed
-// here; scores are structured mock data for frontend development.
+// service once FR13-FR16/FR34/FR15-19 (report numbering) are implemented.
+// No audio/video is analyzed here; scores are structured, seeded mock data
+// for frontend/demo purposes, applied only for display and never persisted.
 function generateMockEvaluation(interview) {
-  const overallScore = Math.floor(65 + Math.random() * 30); // 65-95
-  const confidenceScore = Math.floor(55 + Math.random() * 40); // 55-95
+  const rand = seededRandom(interview.id || 'seed');
+  const overallScore = Math.floor(65 + rand() * 30); // 65-95
+  const confidenceScore = Math.floor(55 + rand() * 40); // 55-95
   const stressPool = ['Low', 'Medium', 'High'];
-  const stressLevel = stressPool[Math.floor(Math.random() * stressPool.length)];
+  const stressLevel = stressPool[Math.floor(rand() * stressPool.length)];
 
   const perQuestion = (interview.questions || []).map((q) => ({
     questionId: q.id,
     questionText: q.question_text,
-    score: Math.floor(55 + Math.random() * 40),
+    score: Math.floor(55 + rand() * 40),
     note: 'Placeholder per-question note — populated by real evaluation once AI modules are integrated.',
   }));
 
@@ -176,9 +185,9 @@ function generateMockEvaluation(interview) {
     score: overallScore,
     confidence: confidenceScore,
     stress: stressLevel,
-    strengths: pick(STRENGTH_POOL, 3),
-    weaknesses: pick(WEAKNESS_POOL, 2),
-    suggestions: pick(SUGGESTION_POOL, 3),
+    strengths: seededPick(STRENGTH_POOL, 3, rand),
+    weaknesses: seededPick(WEAKNESS_POOL, 2, rand),
+    suggestions: seededPick(SUGGESTION_POOL, 3, rand),
     perQuestion,
   };
 }
@@ -187,24 +196,36 @@ function generateMockEvaluation(interview) {
 // FR24-FR27 / FR36 - Results, history, progress
 // ---------------------------------------------------------------------------
 
+// Used by EvaluationResults.jsx, Feedback.jsx, and InterviewCompletion.jsx.
+// This is the ONLY function in this file that ever attaches placeholder
+// evaluation data - see the file header and generateMockEvaluation() above.
 export async function getInterviewById(id) {
-  await delay(150);
-  return readInterviews().find((i) => i.id === id) || null;
+  try {
+    const doc = await fetchCandidateApi(`/interviews/${id}`);
+    const interview = toFrontendInterview(doc);
+    if (interview.score == null) {
+      return { ...interview, ...generateMockEvaluation(interview) };
+    }
+    return interview;
+  } catch {
+    return null;
+  }
 }
 
+// Real data only - used by History and Dashboard. score/confidence/stress
+// stay null (honest "pending evaluation") until a real Evaluation backend
+// sets them; no placeholder overlay is applied here.
 export async function getHistory() {
-  await delay(200);
-  return readInterviews()
-    .filter((i) => i.userId === currentUserId())
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  const list = await fetchCandidateApi('/interviews');
+  return list.map(toFrontendInterview);
 }
 
 export async function getDashboardSummary() {
-  await delay(200);
-  const history = readInterviews().filter((i) => i.userId === currentUserId());
+  const history = await getHistory();
   const completed = history.filter((i) => i.status === 'Completed');
-  const avgScore = completed.length
-    ? Math.round(completed.reduce((sum, i) => sum + (i.score || 0), 0) / completed.length)
+  const scored = completed.filter((i) => i.score != null);
+  const avgScore = scored.length
+    ? Math.round(scored.reduce((sum, i) => sum + i.score, 0) / scored.length)
     : null;
 
   return {
@@ -216,20 +237,28 @@ export async function getDashboardSummary() {
   };
 }
 
+// Only calculates trends from interviews that actually have a real score -
+// currently none, since Evaluation doesn't exist yet, so these arrays stay
+// empty and the existing "Not enough data yet" EmptyState in
+// ProgressTracking.jsx handles it exactly as it already does for a
+// brand-new candidate. This is the "clean API/data contract for future
+// evaluation integration" - once real scores exist, this starts populating
+// with zero changes needed in ProgressTracking.jsx itself.
 export async function getProgress() {
-  await delay(200);
-  const completed = readInterviews()
-    .filter((i) => i.userId === currentUserId() && i.status === 'Completed')
+  const history = await getHistory();
+  const completed = history
+    .filter((i) => i.status === 'Completed')
     .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+  const scored = completed.filter((i) => i.score != null);
 
   return {
-    scoreTrend: completed.map((i) => ({ date: i.createdAt, score: i.score, label: i.role })),
-    confidenceTrend: completed.map((i) => ({ date: i.createdAt, confidence: i.confidence, label: i.role })),
+    scoreTrend: scored.map((i) => ({ date: i.createdAt, score: i.score, label: i.role })),
+    confidenceTrend: scored.map((i) => ({ date: i.createdAt, confidence: i.confidence, label: i.role })),
     byCategory: Object.values(
-      completed.reduce((acc, i) => {
+      scored.reduce((acc, i) => {
         acc[i.role] = acc[i.role] || { category: i.role, count: 0, avgScore: 0, totalScore: 0 };
         acc[i.role].count += 1;
-        acc[i.role].totalScore += i.score || 0;
+        acc[i.role].totalScore += i.score;
         acc[i.role].avgScore = Math.round(acc[i.role].totalScore / acc[i.role].count);
         return acc;
       }, {})

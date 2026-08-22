@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Mic, Square, ArrowRight, ArrowLeft, PhoneOff, CheckCircle2 } from 'lucide-react';
+import { Mic, Square, ArrowRight, ArrowLeft, PhoneOff, CheckCircle2, AlertCircle } from 'lucide-react';
 import InterviewFlowLayout from '../layouts/InterviewFlowLayout';
 import { getActiveInterview, submitResponse, endInterview } from '../services/candidateApi';
 
@@ -30,6 +30,9 @@ const InterviewSimulator = () => {
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [streamReady, setStreamReady] = useState(false);
   const [streamError, setStreamError] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [endError, setEndError] = useState('');
 
   useEffect(() => {
     getActiveInterview(id).then((data) => {
@@ -89,9 +92,19 @@ const InterviewSimulator = () => {
 
   const handleStopAndSave = async () => {
     const result = await stopRecording();
-    if (result) {
-      setResponses((r) => ({ ...r, [question.id]: result }));
+    if (!result) return;
+
+    setSaveError('');
+    setSaving(true);
+    try {
       await submitResponse(id, question.id, result);
+      // Only marked as answered once the backend confirms the save, so the
+      // UI never claims a response is recorded when it wasn't.
+      setResponses((r) => ({ ...r, [question.id]: result }));
+    } catch (err) {
+      setSaveError(err.message || 'Failed to save your response. Please try again.');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -105,10 +118,16 @@ const InterviewSimulator = () => {
 
   const handleEnd = async () => {
     setEnding(true);
-    if (isRecording) await stopRecording();
-    streamRef.current?.getTracks().forEach((t) => t.stop());
-    await endInterview(id);
-    navigate(`/interview/${id}/complete`);
+    setEndError('');
+    try {
+      if (isRecording) await stopRecording();
+      await endInterview(id);
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+      navigate(`/interview/${id}/complete`);
+    } catch (err) {
+      setEndError(err.message || 'Failed to end the interview. Please try again.');
+      setEnding(false);
+    }
   };
 
   if (!interview || !question) return null;
@@ -170,16 +189,34 @@ const InterviewSimulator = () => {
                 ) : (
                   <button
                     onClick={handleStopAndSave}
-                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-sm shadow-md shadow-rose-500/20 transition-all active:scale-[0.98]"
+                    disabled={saving}
+                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-sm shadow-md shadow-rose-500/20 transition-all active:scale-[0.98] disabled:opacity-60"
                   >
-                    <Square className="w-4 h-4" /> Stop & Save Answer
+                    {saving ? (
+                      <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      <Square className="w-4 h-4" />
+                    )}
+                    {saving ? 'Saving…' : 'Stop & Save Answer'}
                   </button>
                 )}
               </div>
 
-              {answeredCurrent && !isRecording && (
+              {answeredCurrent && !isRecording && !saving && (
                 <p className="text-xs font-semibold text-emerald-500 flex items-center gap-1.5">
                   <CheckCircle2 className="w-3.5 h-3.5" /> Response recorded ({responses[question.id].durationSeconds}s)
+                </p>
+              )}
+
+              {saveError && (
+                <p className="text-xs font-semibold text-rose-500 flex items-center gap-1.5">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" /> {saveError}
+                </p>
+              )}
+
+              {endError && (
+                <p className="text-xs font-semibold text-rose-500 flex items-center gap-1.5">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" /> {endError}
                 </p>
               )}
 
@@ -192,7 +229,7 @@ const InterviewSimulator = () => {
               <div className="flex items-center gap-3">
                 <button
                   onClick={goPrev}
-                  disabled={index === 0 || isRecording}
+                  disabled={index === 0 || isRecording || saving}
                   className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-[var(--border-card)] text-[var(--text-secondary)] text-sm font-semibold hover:bg-[var(--bg-card-hover)] transition-all disabled:opacity-40"
                 >
                   <ArrowLeft className="w-4 h-4" /> Previous
@@ -200,7 +237,7 @@ const InterviewSimulator = () => {
                 {index < total - 1 ? (
                   <button
                     onClick={goNext}
-                    disabled={isRecording}
+                    disabled={isRecording || saving}
                     className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-[var(--border-card)] text-[var(--text-secondary)] text-sm font-semibold hover:bg-[var(--bg-card-hover)] transition-all disabled:opacity-40"
                   >
                     Next <ArrowRight className="w-4 h-4" />
@@ -208,7 +245,7 @@ const InterviewSimulator = () => {
                 ) : (
                   <button
                     onClick={() => setConfirmEnd(true)}
-                    disabled={isRecording}
+                    disabled={isRecording || saving}
                     className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold transition-all disabled:opacity-40"
                   >
                     Finish Interview

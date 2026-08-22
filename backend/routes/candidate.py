@@ -31,7 +31,7 @@ from email.mime.text import MIMEText
 
 from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from database import users_collection, admins_collection, invalidate_cache
 from middleware.candidate_auth import verify_candidate
@@ -156,6 +156,41 @@ def get_candidate_profile(token_payload: dict = Depends(verify_candidate)):
     if not user:
         raise HTTPException(status_code=404, detail="Account not found")
     return _public_user(user)
+
+
+# ---------------------------------------------------------------------------
+# Update profile - FR05
+#
+# Scoped to the fields the system's own data model and Profile.jsx actually
+# support today (name only) - matches the FYP report's "edit personal
+# profile information" without inventing new profile fields the report,
+# users_collection schema, and UI don't already define. Deliberately does
+# NOT accept email or role in the request body at all (not just "ignores
+# them"): the Pydantic model below has no such fields, so there is nothing
+# for a crafted payload to smuggle through, and the $set only ever touches
+# "name". Ownership is enforced structurally, not by trusting the caller -
+# the target _id comes from the verified JWT's user_id, never from the
+# request body, so a candidate can only ever update their own document.
+# ---------------------------------------------------------------------------
+
+class UpdateProfileRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=100)
+
+
+@router.patch("/me")
+def update_candidate_profile(data: UpdateProfileRequest, token_payload: dict = Depends(verify_candidate)):
+    validate_required({"name": data.name})
+    clean_name = data.name.strip()
+    if not clean_name:
+        raise HTTPException(status_code=400, detail="name is required")
+
+    user_id = ObjectId(token_payload.get("user_id"))
+    result = users_collection.update_one({"_id": user_id}, {"$set": {"name": clean_name}})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Account not found")
+
+    updated_user = users_collection.find_one({"_id": user_id})
+    return _public_user(updated_user)
 
 
 # ---------------------------------------------------------------------------
@@ -294,4 +329,17 @@ def change_candidate_password(data: ChangePasswordRequest, token_payload: dict =
         {"_id": user["_id"]},
         {"$set": {"password": hash_password(data.new_password)}},
     )
+
+    # On the existing JWT staying valid after this: it does, until its
+    # normal 24h expiry. This backend has no session store or token
+    # blocklist (verify_token only checks signature/expiry - see
+    # utils/auth.py), so there is nothing server-side to revoke, and adding
+    # one just to invalidate-on-password-change would be exactly the kind
+    # of token infrastructure this phase was told not to introduce. The
+    # practical exposure is small and standard for stateless JWT: only a
+    # token already captured before the change remains usable, and only
+    # until it naturally expires. The frontend still logs the candidate out
+    # immediately after a successful change (forcing a fresh login with the
+    # new password) as a good client-side practice, not because the old
+    # token stops working.
     return {"message": "Password updated successfully"}
