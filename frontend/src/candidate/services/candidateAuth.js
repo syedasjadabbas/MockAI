@@ -35,15 +35,28 @@ export function isTokenExpired(token) {
   }
 }
 
-function persistSession(accessToken, meResponse) {
-  const session = {
+function toSession(meResponse) {
+  return {
     id: meResponse.id,
     name: meResponse.name,
     email: meResponse.email,
     role: meResponse.role,
     createdAt: meResponse.created_at,
   };
+}
+
+function persistSession(accessToken, meResponse) {
+  const session = toSession(meResponse);
   localStorage.setItem(TOKEN_KEY, accessToken);
+  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  return session;
+}
+
+// Caches an already-authenticated response's session shape without
+// touching the token - used after a profile fetch/update so
+// CandidateHeader/CandidateSidebar (which read the cached session
+// synchronously) reflect changes immediately, without a reload.
+function cacheSession(session) {
   localStorage.setItem(SESSION_KEY, JSON.stringify(session));
   return session;
 }
@@ -105,17 +118,34 @@ export function isAuthenticated() {
   return !!getSession();
 }
 
-// MOCK for this phase only: updates the locally-cached session so the
-// Profile page's edit-name control keeps working end-to-end, but does not
-// persist to the backend. A real PATCH /candidate/me arrives in the
-// upcoming profile-integration phase - out of scope for this
-// authentication-only pass. A page refresh (or next login's fresh /me
-// fetch) will revert to the server's stored name until that lands.
-export async function updateProfile(updates) {
-  const session = getSession();
-  if (!session) throw new Error('Not authenticated.');
+// Fetches the candidate's real record from MongoDB (GET /candidate/me) and
+// refreshes the cached session so it can never drift from the backend -
+// e.g. if the name was changed from another tab/device. Profile.jsx calls
+// this on mount instead of trusting the cached session alone.
+export async function getProfile() {
+  const me = await fetchCandidateApi('/me');
+  return cacheSession(toSession(me));
+}
 
-  const updatedSession = { ...session, ...updates };
-  localStorage.setItem(SESSION_KEY, JSON.stringify(updatedSession));
-  return updatedSession;
+// Real PATCH /candidate/me - the backend only ever accepts `name` today,
+// matching the system's actual user data model (see backend/routes/
+// candidate.py); anything else in `updates` is not sent.
+export async function updateProfile({ name }) {
+  const me = await fetchCandidateApi('/me', {
+    method: 'PATCH',
+    body: JSON.stringify({ name }),
+  });
+  return cacheSession(toSession(me));
+}
+
+// Real PUT /candidate/change-password. The backend does not invalidate the
+// existing JWT (stateless, no session store - see the endpoint's own
+// comment), so the caller (Profile.jsx) logs the candidate out immediately
+// after success as a client-side best practice, not because the old token
+// stops working.
+export async function changePassword({ oldPassword, newPassword }) {
+  return fetchCandidateApi('/change-password', {
+    method: 'PUT',
+    body: JSON.stringify({ old_password: oldPassword, new_password: newPassword }),
+  });
 }
