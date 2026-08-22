@@ -32,22 +32,30 @@ def create_access_token(data: dict) -> str:
     return encoded_jwt
 
 def verify_token(token: str) -> dict:
-    """Decode and verify the JWT token."""
+    """
+    Decode and verify a JWT token's signature/expiry and return its raw payload.
+
+    This is role-agnostic by design: it only guarantees the token is validly
+    signed, unexpired, and carries a user_id. Callers that require a specific
+    role (e.g. middleware/admin_auth.py's verify_admin, or
+    middleware/candidate_auth.py's verify_candidate) must check
+    payload.get("role") themselves after calling this. This lets a single
+    shared JWT utility serve multiple roles without one role's dependency
+    silently accepting another role's token.
+    """
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    
+
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id = payload.get("user_id")
-        role = payload.get("role")
-        
-        # Require user_id to be present and role to strictly be "admin"
-        if not user_id or role != "admin":
+
+        if not user_id:
             raise credentials_exception
-            
+
         return payload
     except JWTError:
         raise credentials_exception
