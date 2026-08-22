@@ -3,6 +3,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import { routes } from './routes';
+import { candidateRoutes } from './candidate/routes';
+import { isAuthenticated as isCandidateAuthenticated } from './candidate/services/candidateAuth';
 import { ThemeProvider } from './context/ThemeContext';
 
 function PageFallback() {
@@ -16,6 +18,31 @@ function PageFallback() {
 function PrivateRoute({ children }) {
   const token = localStorage.getItem('mockai_admin_token');
   return token ? children : <Navigate to="/admin/login" />;
+}
+
+function PrivateCandidateRoute({ children }) {
+  return isCandidateAuthenticated() ? children : <Navigate to="/login" />;
+}
+
+// Wraps /login, /register, and bare / so the authenticated-redirect check
+// re-runs on every render of THIS route, exactly like PrivateCandidateRoute
+// already does for protected routes. A plain inline ternary evaluated
+// directly in App()'s render body is only recomputed when App itself
+// re-renders (effectively once per full page load, since App has no state
+// of its own) - so its result can go stale for the rest of that SPA
+// session. Concretely: reload while authenticated bakes in "redirect to
+// /dashboard" for /login; a later logout (a client-side navigate, no
+// reload) clears the token but that baked-in redirect never updates, so
+// /login bounces to /dashboard, PrivateCandidateRoute correctly bounces
+// back to /login, and the two ping-pong forever ("Maximum update depth
+// exceeded"). Wrapping in a real component fixes this the same way
+// PrivateCandidateRoute already avoids it.
+function PublicCandidateRoute({ children }) {
+  return isCandidateAuthenticated() ? <Navigate to="/dashboard" /> : children;
+}
+
+function RootRedirect() {
+  return <Navigate to={isCandidateAuthenticated() ? '/dashboard' : '/login'} />;
 }
 
 function AdminLayout({ children }) {
@@ -64,9 +91,26 @@ function App() {
                 />
               );
             })}
+
+            {/* Candidate/User Panel routes - isolated from Admin Panel routing above */}
+            {candidateRoutes.map((route, idx) => {
+              if (route.path === '/login' || route.path === '/register') {
+                return (
+                  <Route
+                    key={`candidate-${idx}`}
+                    path={route.path}
+                    element={<PublicCandidateRoute>{route.element}</PublicCandidateRoute>}
+                  />
+                );
+              }
+
+              const element = route.private ? <PrivateCandidateRoute>{route.element}</PrivateCandidateRoute> : route.element;
+              return <Route key={`candidate-${idx}`} path={route.path} element={element} />;
+            })}
+
             {/* Root Redirects */}
             <Route path="/admin" element={<Navigate to="/admin/dashboard" />} />
-            <Route path="/" element={<Navigate to="/admin/login" />} />
+            <Route path="/" element={<RootRedirect />} />
           </Routes>
         </Suspense>
       </BrowserRouter>

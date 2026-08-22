@@ -1,0 +1,178 @@
+"""
+Candidate Authentication backend test suite.
+
+Covers: registration -> MongoDB persistence with hashed password -> login ->
+JWT -> protected route -> role separation from Admin -> duplicate/invalid
+handling -> expired/garbage token rejection -> password recovery ->
+change-password -> Admin regression (still works, still rejects candidate
+tokens).
+
+Run with: ../.venv/Scripts/python.exe test_candidate_auth_api.py
+"""
+import time
+
+from fastapi.testclient import TestClient
+from jose import jwt
+
+from main import app
+from database import users_collection
+from utils.auth import SECRET_KEY, ALGORITHM
+
+client = TestClient(app)
+
+
+def expect(condition, message):
+    if not condition:
+        raise AssertionError(message)
+    print(f"[PASS] {message}")
+
+
+def test_candidate_auth():
+    print("Testing Candidate Authentication API...\n")
+
+    email = f"candidate.test.{int(time.time())}@example.com"
+    password = "SecurePass123"
+
+    # 1. Register
+    reg_resp = client.post("/candidate/register", json={
+        "name": "Test Candidate",
+        "email": email,
+        "password": password,
+        "confirm_password": password,
+    })
+    expect(reg_resp.status_code == 201, f"POST /candidate/register returns 201 (got {reg_resp.status_code}: {reg_resp.text})")
+    candidate_token = reg_resp.json()["access_token"]
+    expect(bool(candidate_token), "Registration returns an access_token")
+
+    # 2. MongoDB user created, password stored hashed (never plaintext)
+    user_doc = users_collection.find_one({"email": email})
+    expect(user_doc is not None, "User document exists in MongoDB users_collection")
+    expect(user_doc["password"] != password, "Stored password is not plaintext")
+    expect(user_doc["password"].startswith("$2b$") or user_doc["password"].startswith("$2a$"), "Stored password is a bcrypt hash")
+    expect(user_doc["role"] == "user", "New candidate has role 'user' (matches existing schema convention)")
+
+    # 3. Duplicate registration fails
+    dup_resp = client.post("/candidate/register", json={
+        "name": "Test Candidate",
+        "email": email,
+        "password": password,
+        "confirm_password": password,
+    })
+    expect(dup_resp.status_code == 400, f"Duplicate registration rejected with 400 (got {dup_resp.status_code})")
+
+    # 3b. Registering with an existing ADMIN's email also fails (cross-collection check)
+    admin_email_dup = client.post("/candidate/register", json={
+        "name": "Impersonator",
+        "email": "admin@mockai.com",
+        "password": password,
+        "confirm_password": password,
+    })
+    expect(admin_email_dup.status_code == 400, "Registering with an existing admin's email is rejected with 400")
+
+    # 3c. Mismatched confirm_password fails
+    mismatch_resp = client.post("/candidate/register", json={
+        "name": "Test Candidate 2",
+        "email": f"mismatch.{int(time.time())}@example.com",
+        "password": password,
+        "confirm_password": "DifferentPass123",
+    })
+    expect(mismatch_resp.status_code == 400, "Mismatched password/confirm_password rejected with 400")
+
+    # 3d. Weak password fails
+    weak_resp = client.post("/candidate/register", json={
+        "name": "Test Candidate 3",
+        "email": f"weak.{int(time.time())}@example.com",
+        "password": "123",
+        "confirm_password": "123",
+    })
+    expect(weak_resp.status_code == 400, "Password under 6 characters rejected with 400")
+
+    # 4. Login with correct credentials
+    login_resp = client.post("/candidate/login", json={"email": email, "password": password})
+    expect(login_resp.status_code == 200, f"POST /candidate/login returns 200 (got {login_resp.status_code})")
+    candidate_token = login_resp.json()["access_token"]
+
+    # 4b. Login fails with incorrect password
+    bad_login_resp = client.post("/candidate/login", json={"email": email, "password": "WrongPassword"})
+    expect(bad_login_resp.status_code == 401, "Login with incorrect password rejected with 401")
+
+    # 4c. Login fails for non-existent email
+    nouser_resp = client.post("/candidate/login", json={"email": "doesnotexist@example.com", "password": password})
+    expect(nouser_resp.status_code == 401, "Login with non-existent email rejected with 401 (no user enumeration)")
+
+    # 5. Protected candidate route
+    headers = {"Authorization": f"Bearer {candidate_token}"}
+    me_resp = client.get("/candidate/me", headers=headers)
+    expect(me_resp.status_code == 200, "GET /candidate/me with valid token returns 200")
+    me_data = me_resp.json()
+    expect(me_data["email"] == email, "/candidate/me returns the correct account")
+    expect("password" not in me_data, "/candidate/me never exposes the password field")
+
+    # 5b. No token -> 401
+    no_token_resp = client.get("/candidate/me")
+    expect(no_token_resp.status_code == 401, "GET /candidate/me with no token returns 401")
+
+    # 5c. Garbage/invalid token -> 401
+    garbage_resp = client.get("/candidate/me", headers={"Authorization": "Bearer not.a.real.token"})
+    expect(garbage_resp.status_code == 401, "GET /candidate/me with a garbage token returns 401")
+
+    # 5d. Expired token -> 401
+    expired_payload = {"user_id": str(user_doc["_id"]), "role": "user", "exp": int(time.time()) - 3600}
+    expired_token = jwt.encode(expired_payload, SECRET_KEY, algorithm=ALGORITHM)
+    expired_resp = client.get("/candidate/me", headers={"Authorization": f"Bearer {expired_token}"})
+    expect(expired_resp.status_code == 401, "GET /candidate/me with an expired token returns 401")
+
+    # 6. Role separation: an Admin token cannot authenticate through candidate routes
+    admin_login = client.post("/admin/login", json={"email": "admin@mockai.com", "password": "admin123"})
+    expect(admin_login.status_code == 200, "Admin login still works (regression check)")
+    admin_token = admin_login.json()["access_token"]
+
+    admin_on_candidate = client.get("/candidate/me", headers={"Authorization": f"Bearer {admin_token}"})
+    expect(admin_on_candidate.status_code == 401, "An Admin's token is REJECTED on GET /candidate/me")
+
+    # 6b. Symmetric: a Candidate token cannot authenticate through admin routes
+    candidate_on_admin = client.get("/admin/", headers=headers)
+    expect(candidate_on_admin.status_code == 401, "A Candidate's token is REJECTED on GET /admin/ (dashboard)")
+
+    admin_users_resp = client.get("/admin/users", headers={"Authorization": f"Bearer {admin_token}"})
+    expect(admin_users_resp.status_code == 200, "Admin protected route /admin/users still works with a real admin token")
+
+    candidate_on_admin_users = client.get("/admin/users", headers=headers)
+    expect(candidate_on_admin_users.status_code == 401, "A Candidate's token is REJECTED on GET /admin/users")
+
+    # 7. Change password (authenticated)
+    new_password = "NewSecurePass456"
+    change_resp = client.put("/candidate/change-password", headers=headers, json={
+        "old_password": password,
+        "new_password": new_password,
+    })
+    expect(change_resp.status_code == 200, f"PUT /candidate/change-password succeeds (got {change_resp.status_code}: {change_resp.text})")
+
+    old_pw_login = client.post("/candidate/login", json={"email": email, "password": password})
+    expect(old_pw_login.status_code == 401, "Old password no longer works after change-password")
+
+    new_pw_login = client.post("/candidate/login", json={"email": email, "password": new_password})
+    expect(new_pw_login.status_code == 200, "New password works after change-password")
+
+    wrong_old_resp = client.put("/candidate/change-password", headers=headers, json={
+        "old_password": "TotallyWrong",
+        "new_password": "Whatever123",
+    })
+    expect(wrong_old_resp.status_code == 400, "change-password rejects an incorrect current password")
+
+    # 8. Password recovery (forgot-password) - uses a fake @example.com
+    # address so no real email is ever delivered to a real inbox.
+    forgot_resp = client.post("/candidate/forgot-password", json={"email": email})
+    expect(forgot_resp.status_code == 200, "POST /candidate/forgot-password returns 200")
+    expect("message" in forgot_resp.json(), "forgot-password returns a generic message")
+
+    forgot_unknown_resp = client.post("/candidate/forgot-password", json={"email": "unknown.nobody@example.com"})
+    expect(forgot_unknown_resp.status_code == 200, "forgot-password for an unknown email ALSO returns 200")
+    expect(forgot_unknown_resp.json() == forgot_resp.json(), "forgot-password response is identical whether or not the account exists (no user enumeration)")
+
+    print("\nALL CANDIDATE AUTHENTICATION TESTS PASSED SUCCESSFULLY!")
+    return True
+
+
+if __name__ == "__main__":
+    test_candidate_auth()
