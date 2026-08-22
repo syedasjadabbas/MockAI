@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from routes.admin import router as admin_router
+from routes.candidate import router as candidate_router
 from database import admins_collection, admin_collection, client, init_db_indexes
 from utils.auth import hash_password
 
@@ -29,6 +30,9 @@ app.add_middleware(
 
 app.include_router(admin_router, prefix="/admin")
 app.include_router(admin_router, prefix="/api/v1/admin")  # versioned alias
+
+app.include_router(candidate_router, prefix="/candidate")
+app.include_router(candidate_router, prefix="/api/v1/candidate")  # versioned alias
 
 @app.on_event("startup")
 async def startup_event():
