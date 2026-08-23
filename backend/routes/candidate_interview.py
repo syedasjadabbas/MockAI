@@ -31,15 +31,19 @@ Reuses existing infrastructure rather than duplicating it:
 Mounted at prefix /candidate in main.py, alongside routes/candidate.py's
 router - same namespace, separate file for readability.
 """
+import os
+from dataclasses import asdict
 from datetime import datetime
 from typing import Optional
 
 from bson import ObjectId
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from pydantic import BaseModel
 
 from database import categories_collection, questions_collection, interviews_collection
 from middleware.candidate_auth import verify_candidate
+from services.asr_google import GoogleSpeechASRService
+from services.media_storage import get_media_storage
 
 router = APIRouter()
 
@@ -299,6 +303,123 @@ def save_response(interview_id: str, data: SaveResponseRequest, token_payload: d
         {"_id": interview["_id"]},
         {"$set": {"responses": updated_responses}},
     )
+
+    updated = interviews_collection.find_one({"_id": interview["_id"]})
+    return _public_interview(updated)
+
+
+# ---------------------------------------------------------------------------
+# Upload response media - FR12 (record & store audio), FR13 (capture &
+# store visual data), FR14 (controlled capture), FR15 (speech to text).
+#
+# This is the real counterpart to save_response() above: that endpoint
+# only ever recorded metadata a client claimed about a recording; this one
+# receives the actual recording, stores it via the storage abstraction
+# (services/media_storage.py - local filesystem today, S3-shaped interface
+# for later), and updates the SAME response entry with the real,
+# server-derived size and a genuine media_url. save_response() is left
+# entirely as-is for any caller that only has metadata (e.g. tests, or a
+# future retry-metadata-only path) - this is additive, not a replacement.
+#
+# Ownership/validation, all enforced before a single byte is written:
+#   - Candidate JWT required; interview looked up by (id, caller's own
+#     user_id) exactly like every other interview endpoint - a candidate
+#     can structurally never write into another candidate's interview.
+#   - The interview must still be "In Progress" (not yet Completed) -
+#     matches save_response()'s existing rule, and FR14's "collect data
+#     only during active interview sessions."
+#   - question_id must already exist in this interview's own question
+#     snapshot - never trusted blindly.
+#   - Content-type is checked against an allow-list (webm variants only -
+#     see the empirically-confirmed MediaRecorder output format in the
+#     accompanying report); actual byte size is checked against
+#     MAX_RESPONSE_MEDIA_MB after reading, not trusted from headers.
+#   - The stored filename is never derived from the browser-supplied
+#     filename - see media_storage.py's module docstring for the full
+#     path-traversal argument.
+#
+# After storing, this synchronously calls the real ASR service (FR15).
+# There is no background worker in this phase, so "synchronous in the
+# upload request" is the simplest honest choice available - documented as
+# a known scalability limitation in the accompanying report, not hidden.
+# The result (a real transcript, or a real "failed: not configured"/
+# "failed: <reason>" outcome - NEVER a fabricated transcript) is written
+# into interview.evaluation.per_question, without ever marking the whole
+# evaluation "completed" - ASR is stage one of many; see
+# routes/candidate_evaluation.py for why evaluation_status is left alone
+# here entirely.
+# ---------------------------------------------------------------------------
+
+ALLOWED_MEDIA_CONTENT_TYPES = ("video/webm", "audio/webm")
+
+
+def _upsert_evaluation_per_question_asr(interview: dict, question_id: str, asr_result: dict) -> None:
+    evaluation = interview.get("evaluation") or {
+        "started_at": None, "completed_at": None, "per_question": [],
+        "overall_score": None, "confidence_score": None, "stress_level": None,
+        "interpretation": None, "strengths": None, "weaknesses": None,
+        "suggestions": None, "failed_reason": None,
+    }
+    per_question = [q for q in (evaluation.get("per_question") or []) if q.get("question_id") != question_id]
+    per_question.append({"question_id": question_id, "asr": asr_result})
+    evaluation["per_question"] = per_question
+
+    interviews_collection.update_one({"_id": interview["_id"]}, {"$set": {"evaluation": evaluation}})
+
+
+@router.post("/interviews/{interview_id}/responses/{question_id}/media")
+async def upload_response_media(
+    interview_id: str,
+    question_id: str,
+    file: UploadFile = File(...),
+    duration_seconds: Optional[float] = Form(None),
+    token_payload: dict = Depends(verify_candidate),
+):
+    interview = _get_owned_interview_or_404(interview_id, token_payload.get("user_id"))
+
+    if interview.get("status") == "Completed":
+        raise HTTPException(status_code=400, detail="This interview has already been completed")
+
+    question_ids = {q["question_id"] for q in interview.get("questions", [])}
+    if question_id not in question_ids:
+        raise HTTPException(status_code=400, detail="This question does not belong to this interview")
+
+    content_type = (file.content_type or "").split(";")[0].strip().lower()
+    if content_type not in ALLOWED_MEDIA_CONTENT_TYPES:
+        raise HTTPException(status_code=400, detail=f"Unsupported media type: {file.content_type!r}. Expected webm audio/video.")
+
+    data = await file.read()
+    max_bytes = int(os.getenv("MAX_RESPONSE_MEDIA_MB", "25")) * 1024 * 1024
+    if len(data) == 0:
+        raise HTTPException(status_code=400, detail="Uploaded file is empty")
+    if len(data) > max_bytes:
+        raise HTTPException(status_code=413, detail=f"Recording exceeds the {max_bytes // (1024 * 1024)}MB limit for a single response")
+
+    media_ref = get_media_storage().save(interview_id, question_id, "webm", data)
+
+    existing_responses = interview.get("responses", [])
+    sequence = next(
+        (r["sequence"] for r in existing_responses if r["question_id"] == question_id),
+        len(existing_responses),
+    )
+    new_response = {
+        "question_id": question_id,
+        "sequence": sequence,
+        "status": "recorded",
+        "duration_seconds": duration_seconds,
+        "size_bytes": len(data),  # server-measured, never trusted from the client
+        "recorded_at": datetime.utcnow(),
+        "media_url": media_ref,
+    }
+    updated_responses = [r for r in existing_responses if r["question_id"] != question_id] + [new_response]
+    interviews_collection.update_one({"_id": interview["_id"]}, {"$set": {"responses": updated_responses}})
+
+    # Re-fetch so the ASR upsert below (and the final response) reflect the
+    # response write we just made.
+    interview = interviews_collection.find_one({"_id": interview["_id"]})
+
+    asr_result = GoogleSpeechASRService().transcribe(media_ref, duration_seconds)
+    _upsert_evaluation_per_question_asr(interview, question_id, asdict(asr_result))
 
     updated = interviews_collection.find_one({"_id": interview["_id"]})
     return _public_interview(updated)

@@ -1,0 +1,316 @@
+/*
+ * Candidate Panel design system.
+ *
+ * Everything in this file is scoped under `.candidate-app` (see
+ * components/CandidateShell.jsx, which wraps every candidate route). This
+ * is deliberate: the Admin Panel reads the SAME variable names this file
+ * would otherwise collide with (--bg-app, --text-primary, --border-card,
+ * etc.) from the global :root in src/index.css, and the redesign brief is
+ * explicit that Admin must not change. Rather than touch that shared file,
+ * this stylesheet defines an entirely new, independently-named token set
+ * (--c-*) and a matching set of utility classes (.c-*), all nested under
+ * `.candidate-app` so nothing here can ever leak onto an Admin screen -
+ * even if a class name were accidentally reused, the selector prefix means
+ * it simply would not match outside the candidate subtree.
+ *
+ * Theme switching reuses the app's existing mechanism (ThemeContext sets
+ * data-theme="light"|"dark" on <html>) - it is not reinvented here, only
+ * consumed via `html[data-theme="dark"] .candidate-app`.
+ */
+
+.candidate-app {
+  /* ---- Surfaces ---- */
+  --c-bg: #fbf7f1;              /* warm ivory page background */
+  --c-bg-soft: #f5efe4;         /* secondary page-level wash */
+  --c-surface: #ffffff;         /* cards, inputs, modals */
+  --c-surface-muted: #f2ebdf;   /* recessed / secondary surface (parchment) */
+  --c-border: #e7ddcc;
+  --c-border-strong: #d6c7ae;
+
+  /* ---- Typography ---- */
+  --c-text: #211c17;            /* near-black warm charcoal */
+  --c-text-secondary: #6b6055;
+  --c-text-muted: #9a8e7f;
+  --c-on-accent: #fbf3ec;
+
+  /* ---- Brand accent: deep burgundy / wine (the ONE accent direction) ---- */
+  --c-accent: #7a2333;
+  --c-accent-hover: #661d2a;
+  --c-accent-soft: rgba(122, 35, 51, 0.08);
+  --c-accent-soft-strong: rgba(122, 35, 51, 0.16);
+
+  /* ---- Status (semantic only - never a second brand accent) ---- */
+  --c-success: #4b6b4f;
+  --c-success-soft: rgba(75, 107, 79, 0.1);
+  --c-warning: #9c6b2e;
+  --c-warning-soft: rgba(156, 107, 46, 0.1);
+  --c-danger: #a23b2e;
+  --c-danger-soft: rgba(162, 59, 46, 0.1);
+
+  /* ---- Elevation ---- */
+  --c-shadow-sm: 0 1px 2px rgba(33, 28, 23, 0.05);
+  --c-shadow: 0 16px 40px -16px rgba(33, 28, 23, 0.18);
+  --c-shadow-lg: 0 28px 64px -20px rgba(33, 28, 23, 0.24);
+
+  /* ---- Shape ---- */
+  --c-radius-sm: 10px;
+  --c-radius: 16px;
+  --c-radius-lg: 22px;
+
+  /* ---- Type system ---- */
+  --c-font-heading: 'Fraunces', 'Iowan Old Style', Georgia, serif;
+  --c-font-body: 'Inter', -apple-system, system-ui, sans-serif;
+
+  background: var(--c-bg);
+  color: var(--c-text);
+  font-family: var(--c-font-body);
+  min-height: 100vh;
+}
+
+html[data-theme='dark'] .candidate-app {
+  --c-bg: #14100d;
+  --c-bg-soft: #1a1512;
+  --c-surface: #1c1713;
+  --c-surface-muted: #241d18;
+  --c-border: #332921;
+  --c-border-strong: #46392e;
+
+  --c-text: #f3ede3;
+  --c-text-secondary: #b6a999;
+  --c-text-muted: #83766a;
+  --c-on-accent: #1c1210;
+
+  --c-accent: #d99a7f;
+  --c-accent-hover: #e3ac95;
+  --c-accent-soft: rgba(217, 154, 127, 0.12);
+  --c-accent-soft-strong: rgba(217, 154, 127, 0.2);
+
+  --c-success: #8fb097;
+  --c-success-soft: rgba(143, 176, 151, 0.14);
+  --c-warning: #d9ac6a;
+  --c-warning-soft: rgba(217, 172, 106, 0.14);
+  --c-danger: #d98a72;
+  --c-danger-soft: rgba(217, 138, 114, 0.14);
+
+  --c-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --c-shadow: 0 20px 48px -18px rgba(0, 0, 0, 0.55);
+  --c-shadow-lg: 0 32px 72px -20px rgba(0, 0, 0, 0.6);
+}
+
+/* ===================== Typography ===================== */
+
+.candidate-app h1,
+.candidate-app h2,
+.candidate-app h3,
+.candidate-app .c-heading {
+  font-family: var(--c-font-heading);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--c-text);
+}
+
+.candidate-app .c-eyebrow {
+  font-family: var(--c-font-body);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--c-accent);
+}
+
+.candidate-app .c-serif-num {
+  font-family: var(--c-font-heading);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===================== Surfaces ===================== */
+
+.candidate-app .c-card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--c-radius);
+  box-shadow: var(--c-shadow-sm);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.candidate-app .c-card-hover:hover {
+  border-color: var(--c-border-strong);
+  box-shadow: var(--c-shadow);
+}
+
+.candidate-app .c-card-flat {
+  background: var(--c-surface-muted);
+  border: 1px solid var(--c-border);
+  border-radius: var(--c-radius);
+}
+
+.candidate-app .c-panel {
+  background: var(--c-surface);
+  border-bottom: 1px solid var(--c-border);
+}
+
+.candidate-app .c-divide > * + * {
+  border-top: 1px solid var(--c-border);
+}
+
+/* ===================== Buttons ===================== */
+
+.candidate-app .c-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  font-size: 0.875rem;
+  border-radius: var(--c-radius-sm);
+  transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease, transform 0.12s ease;
+  white-space: nowrap;
+}
+
+.candidate-app .c-btn:active {
+  transform: scale(0.98);
+}
+
+.candidate-app .c-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.candidate-app .c-btn-primary {
+  background: var(--c-accent);
+  color: var(--c-on-accent);
+}
+
+.candidate-app .c-btn-primary:hover:not(:disabled) {
+  background: var(--c-accent-hover);
+}
+
+.candidate-app .c-btn-secondary {
+  background: transparent;
+  color: var(--c-text);
+  border: 1px solid var(--c-border-strong);
+}
+
+.candidate-app .c-btn-secondary:hover:not(:disabled) {
+  background: var(--c-surface-muted);
+}
+
+.candidate-app .c-btn-ghost {
+  background: transparent;
+  color: var(--c-text-secondary);
+}
+
+.candidate-app .c-btn-ghost:hover:not(:disabled) {
+  color: var(--c-text);
+  background: var(--c-surface-muted);
+}
+
+.candidate-app .c-btn-danger {
+  background: transparent;
+  color: var(--c-danger);
+}
+
+.candidate-app .c-btn-danger:hover:not(:disabled) {
+  background: var(--c-danger-soft);
+}
+
+/* ===================== Forms ===================== */
+
+.candidate-app .c-input {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--c-radius-sm);
+  color: var(--c-text);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.candidate-app .c-input::placeholder {
+  color: var(--c-text-muted);
+}
+
+.candidate-app .c-input:focus {
+  outline: none;
+  border-color: var(--c-accent);
+  box-shadow: 0 0 0 3px var(--c-accent-soft);
+}
+
+.candidate-app .c-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--c-text-secondary);
+}
+
+/* ===================== Badges / status ===================== */
+
+.candidate-app .c-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 11px;
+  padding: 3px 10px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.candidate-app .c-badge-accent { background: var(--c-accent-soft); color: var(--c-accent); border-color: var(--c-accent-soft-strong); }
+.candidate-app .c-badge-success { background: var(--c-success-soft); color: var(--c-success); }
+.candidate-app .c-badge-warning { background: var(--c-warning-soft); color: var(--c-warning); }
+.candidate-app .c-badge-danger { background: var(--c-danger-soft); color: var(--c-danger); }
+.candidate-app .c-badge-muted { background: var(--c-surface-muted); color: var(--c-text-muted); border-color: var(--c-border); }
+
+/* ===================== Focus ===================== */
+
+.candidate-app a:focus-visible,
+.candidate-app button:focus-visible,
+.candidate-app input:focus-visible,
+.candidate-app select:focus-visible,
+.candidate-app textarea:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 2px;
+}
+
+/* ===================== Skeleton loading ===================== */
+
+.candidate-app .c-skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--c-surface-muted);
+  border-radius: var(--c-radius-sm);
+}
+
+.candidate-app .c-skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+  animation: c-shimmer 1.5s infinite;
+}
+
+html[data-theme='dark'] .candidate-app .c-skeleton::after {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+}
+
+@keyframes c-shimmer {
+  100% { transform: translateX(100%); }
+}
+
+/* ===================== Misc ===================== */
+
+.candidate-app .c-scrim {
+  background: linear-gradient(180deg, rgba(20, 16, 13, 0) 0%, rgba(20, 16, 13, 0.78) 100%);
+}
+
+.candidate-app .c-hairline {
+  border-color: var(--c-border);
+}
+
+.candidate-app ::selection {
+  background: var(--c-accent-soft-strong);
+  color: var(--c-text);
+}

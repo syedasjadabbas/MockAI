@@ -4,10 +4,10 @@
 //
 // Every exported function keeps the exact signature and return shape the
 // mock version had, so every page that already imports from this module
-// (Register.jsx, Login.jsx, Profile.jsx, CandidateHeader.jsx,
-// CandidateSidebar.jsx, App.jsx's isCandidateAuthenticated) continues to
-// work completely unchanged. All HTTP calls go through
-// services/api.js - nothing here calls `fetch` directly.
+// (Register.jsx, Login.jsx, Profile.jsx, CandidateNav.jsx, App.jsx's
+// isCandidateAuthenticated) continues to work completely unchanged. All
+// HTTP calls go through services/api.js - nothing here calls `fetch`
+// directly.
 
 import { fetchCandidateApi } from './api';
 
@@ -53,9 +53,9 @@ function persistSession(accessToken, meResponse) {
 }
 
 // Caches an already-authenticated response's session shape without
-// touching the token - used after a profile fetch/update so
-// CandidateHeader/CandidateSidebar (which read the cached session
-// synchronously) reflect changes immediately, without a reload.
+// touching the token - used after a profile fetch/update so CandidateNav
+// (which reads the cached session synchronously) reflects changes
+// immediately, without a reload.
 function cacheSession(session) {
   localStorage.setItem(SESSION_KEY, JSON.stringify(session));
   return session;

@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { TrendingUp } from 'lucide-react';
 import CandidateLayout from '../layouts/CandidateLayout';
-import EmptyState from '../../components/EmptyState';
-import { CardSkeleton } from '../../components/Skeleton';
+import CandidateEmptyState from '../components/CandidateEmptyState';
 import { ScoreTrendChart, CategoryBreakdownChart } from '../components/ProgressCharts';
 import { getProgress } from '../services/candidateApi';
 
@@ -21,18 +20,21 @@ const ProgressTracking = () => {
   return (
     <CandidateLayout>
       <div className="mb-6">
-        <h2 className="text-2xl font-extrabold text-[var(--text-primary)] tracking-tight">Progress Tracking</h2>
-        <p className="text-sm text-[var(--text-secondary)] mt-1">See how your performance and confidence trend over time.</p>
+        <p className="c-eyebrow mb-2">Progress</p>
+        <h1 className="c-heading text-2xl sm:text-3xl">Your Development Over Time</h1>
+        <p className="text-sm mt-1" style={{ color: 'var(--c-text-secondary)' }}>
+          How your performance and confidence trend across every session.
+        </p>
       </div>
 
       {loading ? (
         <div className="space-y-5">
-          <CardSkeleton />
-          <CardSkeleton />
+          <div className="c-skeleton h-72 rounded-2xl" />
+          <div className="c-skeleton h-72 rounded-2xl" />
         </div>
       ) : progress.scoreTrend.length === 0 ? (
-        <div className="glass-card rounded-2xl">
-          <EmptyState
+        <div className="c-card rounded-2xl">
+          <CandidateEmptyState
             icon={TrendingUp}
             title="Not enough data yet"
             description="Complete a few mock interviews to start seeing your progress trends here."
@@ -42,14 +44,14 @@ const ProgressTracking = () => {
         </div>
       ) : (
         <div className="space-y-6">
-          <div className="glass-card rounded-2xl p-6">
-            <h3 className="text-base font-bold text-[var(--text-primary)] mb-4">Score & Confidence Over Time</h3>
+          <div className="c-card rounded-2xl p-6">
+            <h2 className="c-heading text-base mb-4">Score & Confidence Over Time</h2>
             <ScoreTrendChart data={progress.scoreTrend.map((s, i) => ({ ...s, confidence: progress.confidenceTrend[i]?.confidence }))} />
           </div>
 
           {progress.byCategory.length > 0 && (
-            <div className="glass-card rounded-2xl p-6">
-              <h3 className="text-base font-bold text-[var(--text-primary)] mb-4">Average Score by Category</h3>
+            <div className="c-card rounded-2xl p-6">
+              <h2 className="c-heading text-base mb-4">Average Score by Category</h2>
               <CategoryBreakdownChart data={progress.byCategory} />
             </div>
           )}

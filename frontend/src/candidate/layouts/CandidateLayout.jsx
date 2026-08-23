@@ -1,22 +1,17 @@
-import React, { useState } from 'react';
-import CandidateSidebar from '../components/CandidateSidebar';
-import CandidateHeader from '../components/CandidateHeader';
+import React from 'react';
+import CandidateNav from '../components/CandidateNav';
 
-// Sidebar+header shell for the candidate's persistent app screens
-// (Dashboard, History, Progress, Profile). Parallel to AdminLayout in
-// App.jsx, not a replacement for it.
+// Single top-nav shell for the candidate's persistent app screens
+// (Dashboard, History, Progress, Profile) - replaces the old
+// sidebar+header "admin portal" composition with one slim bar plus
+// generous content width, closer to a modern consumer product.
 const CandidateLayout = ({ children }) => {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
   return (
-    <div className="flex min-h-screen bg-[var(--bg-app)] text-[var(--text-primary)] transition-colors duration-200">
-      <CandidateSidebar mobileOpen={mobileMenuOpen} setMobileOpen={setMobileMenuOpen} />
-      <div className="flex-1 lg:ml-64 flex flex-col min-w-0">
-        <CandidateHeader onToggleMobileMenu={() => setMobileMenuOpen(!mobileMenuOpen)} />
-        <main className="pt-20 px-4 sm:px-6 lg:px-8 pb-12 flex-1 w-full max-w-7xl mx-auto">
-          {children}
-        </main>
-      </div>
+    <div className="min-h-screen">
+      <CandidateNav />
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
+        {children}
+      </main>
     </div>
   );
 };

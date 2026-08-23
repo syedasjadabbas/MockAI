@@ -2,17 +2,17 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Briefcase, CheckCircle2, TrendingUp, PlayCircle, ArrowRight, Clock } from 'lucide-react';
 import CandidateLayout from '../layouts/CandidateLayout';
-import StatsCard from '../../components/StatsCard';
-import EmptyState from '../../components/EmptyState';
-import { CardSkeleton } from '../../components/Skeleton';
+import CandidateStat from '../components/CandidateStat';
+import CandidateEmptyState from '../components/CandidateEmptyState';
 import ScoreRing from '../components/ScoreRing';
 import { getDashboardSummary } from '../services/candidateApi';
 import { getSession } from '../services/candidateAuth';
 import { formatDate } from '../../utils/dateFormat';
+import { CANDIDATE_IMAGES } from '../assets/images';
 
-const STATUS_STYLES = {
-  Completed: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
-  'In Progress': 'bg-amber-500/10 text-amber-500 border-amber-500/20',
+const STATUS_TONE = {
+  Completed: 'c-badge-success',
+  'In Progress': 'c-badge-warning',
 };
 
 // Candidate Dashboard - FR04 (profile/activity summary), FR27 (history glance), FR36 (progress awareness)
@@ -28,101 +28,108 @@ const Dashboard = () => {
     });
   }, []);
 
+  const firstName = session?.name ? session.name.split(' ')[0] : '';
+
   return (
     <CandidateLayout>
       <div className="mb-8">
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] tracking-tight">
-          Welcome back{session?.name ? `, ${session.name.split(' ')[0]}` : ''}
-        </h2>
-        <p className="text-sm text-[var(--text-secondary)] mt-1">Here's a snapshot of your interview practice.</p>
+        <p className="c-eyebrow mb-2">Dashboard</p>
+        <h1 className="c-heading text-3xl sm:text-4xl">
+          Welcome back{firstName ? `, ${firstName}` : ''}.
+        </h1>
+        <p className="text-sm mt-2" style={{ color: 'var(--c-text-secondary)' }}>
+          Here's where your interview practice stands today.
+        </p>
       </div>
 
-      {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8">
-          <CardSkeleton /><CardSkeleton /><CardSkeleton />
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8">
-          <StatsCard title="Total Interviews" value={summary.totalInterviews} icon={Briefcase} subtitle="All sessions started" />
-          <StatsCard title="Completed" value={summary.completedInterviews} icon={CheckCircle2} subtitle="Fully finished sessions" />
-          <StatsCard title="Average Score" value={summary.averageScore ?? '—'} icon={TrendingUp} subtitle={summary.averageScore ? 'Across completed interviews' : 'No completed interviews yet'} />
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* Start Interview CTA */}
-        <div className="lg:col-span-2 glass-card rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
-          <div>
-            <h3 className="text-lg font-bold text-[var(--text-primary)] mb-1.5">Ready for another round?</h3>
-            <p className="text-sm text-[var(--text-secondary)] max-w-md">
-              Pick an interview goal and MockAI will line up a focused question set — technical, behavioral, or situational.
-            </p>
-          </div>
-          <Link
-            to="/interview/goal"
-            className="shrink-0 flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-500 shadow-md shadow-indigo-500/20 transition-all active:scale-[0.98]"
-          >
+      {/* Hero: primary CTA + contextual visual */}
+      <div className="c-card rounded-3xl overflow-hidden grid grid-cols-1 md:grid-cols-5 mb-6">
+        <div className="md:col-span-3 p-7 sm:p-9 flex flex-col justify-center gap-4">
+          <p className="c-eyebrow">Ready for another round?</p>
+          <h2 className="c-heading text-2xl sm:text-[1.7rem] leading-snug max-w-md">
+            Pick a focus and MockAI will line up a real question set for you.
+          </h2>
+          <p className="text-sm max-w-md" style={{ color: 'var(--c-text-secondary)' }}>
+            Technical, behavioral, or situational — every session is recorded, transcribed, and added to your history.
+          </p>
+          <Link to="/interview/goal" className="c-btn c-btn-primary w-fit px-5 py-3 mt-1">
             <PlayCircle className="w-4.5 h-4.5" />
             Start New Interview
           </Link>
         </div>
-
-        {/* Average score ring -> progress */}
-        <div className="glass-card rounded-2xl p-6 flex flex-col items-center justify-center gap-3">
-          <ScoreRing value={summary?.averageScore ?? null} label="Average Score" />
-          <Link to="/progress" className="text-xs font-semibold text-indigo-500 hover:text-indigo-600 flex items-center gap-1">
-            View progress <ArrowRight className="w-3 h-3" />
-          </Link>
+        <div className="hidden md:block md:col-span-2 relative min-h-[220px]">
+          <img src={CANDIDATE_IMAGES.dashboardHero} alt="" className="absolute inset-0 w-full h-full object-cover" />
         </div>
       </div>
 
-      {/* Recent interviews */}
-      <div className="mt-8">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold text-[var(--text-primary)]">Recent Interviews</h3>
-          <Link to="/history" className="text-xs font-semibold text-indigo-500 hover:text-indigo-600 flex items-center gap-1">
-            View all <ArrowRight className="w-3 h-3" />
-          </Link>
+      {/* Stats */}
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <div className="c-skeleton h-[104px] rounded-2xl" />
+          <div className="c-skeleton h-[104px] rounded-2xl" />
+          <div className="c-skeleton h-[104px] rounded-2xl" />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <CandidateStat label="Total Interviews" value={summary.totalInterviews} icon={Briefcase} hint="All sessions started" />
+          <CandidateStat label="Completed" value={summary.completedInterviews} icon={CheckCircle2} hint="Fully finished sessions" />
+          <CandidateStat label="Average Score" value={summary.averageScore ?? '—'} icon={TrendingUp} hint={summary.averageScore ? 'Across completed interviews' : 'No completed interviews yet'} />
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Recent interviews */}
+        <div className="lg:col-span-2">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="c-heading text-lg">Recent Interviews</h3>
+            <Link to="/history" className="text-xs font-semibold flex items-center gap-1" style={{ color: 'var(--c-accent)' }}>
+              View all <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+
+          {loading ? (
+            <div className="c-skeleton h-40 rounded-2xl" />
+          ) : summary.recent.length === 0 ? (
+            <div className="c-card rounded-2xl">
+              <CandidateEmptyState
+                icon={Briefcase}
+                title="No interviews yet"
+                description="Start your first mock interview to see your results and progress here."
+                actionLabel="Start Interview"
+                onAction={() => (window.location.href = '/interview/goal')}
+              />
+            </div>
+          ) : (
+            <div className="c-card rounded-2xl c-divide overflow-hidden">
+              {summary.recent.map((interview) => (
+                <Link
+                  key={interview.id}
+                  to={interview.status === 'Completed' ? `/interview/${interview.id}/results` : `/interview/${interview.id}/session`}
+                  className="flex items-center justify-between gap-4 px-5 py-4 transition-colors hover:bg-[var(--c-surface-muted)]"
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold truncate">{interview.role}</p>
+                    <p className="text-xs flex items-center gap-1.5 mt-0.5" style={{ color: 'var(--c-text-muted)' }}>
+                      <Clock className="w-3 h-3" /> {formatDate(interview.createdAt)}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    {interview.score != null && <span className="c-serif-num text-sm">{interview.score}%</span>}
+                    <span className={`c-badge ${STATUS_TONE[interview.status] || 'c-badge-muted'}`}>{interview.status}</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
 
-        {loading ? (
-          <CardSkeleton />
-        ) : summary.recent.length === 0 ? (
-          <div className="glass-card rounded-2xl">
-            <EmptyState
-              icon={Briefcase}
-              title="No interviews yet"
-              description="Start your first mock interview to see your results and progress here."
-              actionLabel="Start Interview"
-              onAction={() => (window.location.href = '/interview/goal')}
-            />
-          </div>
-        ) : (
-          <div className="glass-card rounded-2xl divide-y divide-[var(--border-table)] overflow-hidden">
-            {summary.recent.map((interview) => (
-              <Link
-                key={interview.id}
-                to={interview.status === 'Completed' ? `/interview/${interview.id}/results` : `/interview/${interview.id}/session`}
-                className="flex items-center justify-between gap-4 px-5 py-4 hover:bg-[var(--bg-table-row-hover)] transition-colors"
-              >
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{interview.role}</p>
-                  <p className="text-xs text-[var(--text-muted)] flex items-center gap-1.5 mt-0.5">
-                    <Clock className="w-3 h-3" /> {formatDate(interview.createdAt)}
-                  </p>
-                </div>
-                <div className="flex items-center gap-3 shrink-0">
-                  {interview.score != null && (
-                    <span className="text-sm font-bold text-[var(--text-primary)]">{interview.score}%</span>
-                  )}
-                  <span className={`text-[11px] font-bold px-2 py-1 rounded-full border ${STATUS_STYLES[interview.status] || ''}`}>
-                    {interview.status}
-                  </span>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
+        {/* Score ring -> progress */}
+        <div className="c-card rounded-2xl p-6 flex flex-col items-center justify-center gap-3">
+          <ScoreRing value={summary?.averageScore ?? null} label="Average Score" />
+          <Link to="/progress" className="text-xs font-semibold flex items-center gap-1" style={{ color: 'var(--c-accent)' }}>
+            View progress <ArrowRight className="w-3 h-3" />
+          </Link>
+        </div>
       </div>
     </CandidateLayout>
   );

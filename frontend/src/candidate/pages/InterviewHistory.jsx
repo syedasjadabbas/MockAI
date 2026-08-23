@@ -2,18 +2,19 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Briefcase, ArrowRight, Clock } from 'lucide-react';
 import CandidateLayout from '../layouts/CandidateLayout';
-import EmptyState from '../../components/EmptyState';
-import { TableSkeleton } from '../../components/Skeleton';
+import CandidateEmptyState from '../components/CandidateEmptyState';
 import { getHistory } from '../services/candidateApi';
 import { formatDate } from '../../utils/dateFormat';
 
-const STATUS_STYLES = {
-  Completed: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
-  'In Progress': 'bg-amber-500/10 text-amber-500 border-amber-500/20',
+const STATUS_TONE = {
+  Completed: 'c-badge-success',
+  'In Progress': 'c-badge-warning',
 };
 
 // FR26 - Store Interview Records (already persisted by candidateApi),
-// FR27 - View Interview History
+// FR27 - View Interview History. A polished row list rather than a
+// generic admin-style data table - every row carries the same
+// information a table column would, laid out for scanning, not auditing.
 const InterviewHistory = () => {
   const [interviews, setInterviews] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -39,25 +40,26 @@ const InterviewHistory = () => {
     <CandidateLayout>
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-extrabold text-[var(--text-primary)] tracking-tight">Interview History</h2>
-          <p className="text-sm text-[var(--text-secondary)] mt-1">Every mock interview you've taken, in one place.</p>
+          <p className="c-eyebrow mb-2">History</p>
+          <h1 className="c-heading text-2xl sm:text-3xl">Interview History</h1>
+          <p className="text-sm mt-1" style={{ color: 'var(--c-text-secondary)' }}>Every mock interview you've taken, in one place.</p>
         </div>
 
         <div className="flex items-center gap-2.5">
           <div className="relative">
-            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: 'var(--c-text-muted)' }} />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by role..."
-              className="pl-10 pr-4 py-2.5 rounded-xl text-sm theme-input border focus:outline-none focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/20 transition-all w-full sm:w-56"
+              className="c-input pl-10 pr-4 py-2.5 rounded-xl text-sm w-full sm:w-56"
             />
           </div>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3.5 py-2.5 rounded-xl text-sm theme-input border focus:outline-none focus:border-indigo-500/60 transition-all"
+            className="c-input px-3.5 py-2.5 rounded-xl text-sm"
           >
             <option value="All">All Statuses</option>
             <option value="Completed">Completed</option>
@@ -66,92 +68,57 @@ const InterviewHistory = () => {
         </div>
       </div>
 
-      <div className="glass-card rounded-2xl overflow-hidden">
-        {loading ? (
-          <TableSkeleton rows={6} cols={4} />
-        ) : filtered.length === 0 ? (
-          <EmptyState
+      {loading ? (
+        <div className="space-y-3">
+          <div className="c-skeleton h-20 rounded-2xl" />
+          <div className="c-skeleton h-20 rounded-2xl" />
+          <div className="c-skeleton h-20 rounded-2xl" />
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="c-card rounded-2xl">
+          <CandidateEmptyState
             icon={Briefcase}
             title="No interviews found"
             description="Try adjusting your search or filters, or start a new interview."
             actionLabel="Start Interview"
             onAction={() => (window.location.href = '/interview/goal')}
           />
-        ) : (
-          <>
-            {/* Card list below sm: - a 6-column table has no room on narrow
-                screens without clipping the Status/Score/action columns
-                off-screen, so mobile gets a stacked layout instead. */}
-            <div className="sm:hidden divide-y divide-[var(--border-table)]">
-              {filtered.map((i) => (
-                <Link
-                  key={i.id}
-                  to={i.status === 'Completed' ? `/interview/${i.id}/results` : `/interview/${i.id}/session`}
-                  className="block px-5 py-4 hover:bg-[var(--bg-table-row-hover)] transition-colors"
+        </div>
+      ) : (
+        <div className="c-card rounded-2xl c-divide overflow-hidden">
+          {filtered.map((i) => (
+            <Link
+              key={i.id}
+              to={i.status === 'Completed' ? `/interview/${i.id}/results` : `/interview/${i.id}/session`}
+              className="flex items-center justify-between gap-4 px-5 py-4 transition-colors hover:bg-[var(--c-surface-muted)]"
+            >
+              <div className="min-w-0 flex items-center gap-4">
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 hidden sm:flex"
+                  style={{ background: 'var(--c-accent-soft)', color: 'var(--c-accent)' }}
                 >
-                  <div className="flex items-start justify-between gap-3 mb-2">
-                    <p className="text-sm font-semibold text-[var(--text-primary)]">{i.role}</p>
-                    <span className={`shrink-0 text-[11px] font-bold px-2 py-1 rounded-full border ${STATUS_STYLES[i.status] || ''}`}>
-                      {i.status}
-                    </span>
-                  </div>
-                  <p className="text-xs text-[var(--text-muted)] capitalize mb-1">{i.type} interview</p>
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-xs text-[var(--text-muted)] flex items-center gap-1.5">
-                      <Clock className="w-3 h-3" /> {formatDate(i.createdAt)}
-                    </p>
-                    <div className="flex items-center gap-2 shrink-0">
-                      {i.score != null && <span className="text-sm font-bold text-[var(--text-primary)]">{i.score}%</span>}
-                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-500">
-                        {i.status === 'Completed' ? 'View' : 'Resume'} <ArrowRight className="w-3 h-3" />
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-
-            {/* Full table from sm: up */}
-            <div className="hidden sm:block overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-[var(--bg-table-header)] text-[var(--text-muted)] text-xs uppercase tracking-wider">
-                  <tr>
-                    <th className="text-left px-5 py-3 font-semibold">Role / Category</th>
-                    <th className="text-left px-5 py-3 font-semibold">Type</th>
-                    <th className="text-left px-5 py-3 font-semibold">Date</th>
-                    <th className="text-left px-5 py-3 font-semibold">Status</th>
-                    <th className="text-left px-5 py-3 font-semibold">Score</th>
-                    <th className="px-5 py-3" />
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[var(--border-table)]">
-                  {filtered.map((i) => (
-                    <tr key={i.id} className="hover:bg-[var(--bg-table-row-hover)] transition-colors">
-                      <td className="px-5 py-4 font-semibold text-[var(--text-primary)]">{i.role}</td>
-                      <td className="px-5 py-4 text-[var(--text-secondary)] capitalize">{i.type}</td>
-                      <td className="px-5 py-4 text-[var(--text-secondary)]">{formatDate(i.createdAt)}</td>
-                      <td className="px-5 py-4">
-                        <span className={`text-[11px] font-bold px-2 py-1 rounded-full border ${STATUS_STYLES[i.status] || ''}`}>
-                          {i.status}
-                        </span>
-                      </td>
-                      <td className="px-5 py-4 font-bold text-[var(--text-primary)]">{i.score != null ? `${i.score}%` : '—'}</td>
-                      <td className="px-5 py-4 text-right">
-                        <Link
-                          to={i.status === 'Completed' ? `/interview/${i.id}/results` : `/interview/${i.id}/session`}
-                          className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-500 hover:text-indigo-600"
-                        >
-                          {i.status === 'Completed' ? 'View Results' : 'Resume'} <ArrowRight className="w-3 h-3" />
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </>
-        )}
-      </div>
+                  <Briefcase className="w-4.5 h-4.5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold truncate">{i.role}</p>
+                  <p className="text-xs mt-0.5 flex items-center gap-1.5" style={{ color: 'var(--c-text-muted)' }}>
+                    <span className="capitalize">{i.type}</span>
+                    <span>·</span>
+                    <Clock className="w-3 h-3" /> {formatDate(i.createdAt)}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 shrink-0">
+                {i.score != null && <span className="c-serif-num text-sm hidden sm:inline">{i.score}%</span>}
+                <span className={`c-badge ${STATUS_TONE[i.status] || 'c-badge-muted'}`}>{i.status}</span>
+                <span className="hidden sm:inline-flex items-center gap-1 text-xs font-semibold" style={{ color: 'var(--c-accent)' }}>
+                  {i.status === 'Completed' ? 'View' : 'Resume'} <ArrowRight className="w-3 h-3" />
+                </span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
     </CandidateLayout>
   );
 };

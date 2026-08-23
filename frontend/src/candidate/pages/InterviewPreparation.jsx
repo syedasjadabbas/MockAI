@@ -1,8 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Camera, Mic, CheckCircle2, AlertCircle, ArrowRight, Lightbulb, Volume2 } from 'lucide-react';
+import { Camera, Mic, CheckCircle2, AlertCircle, ArrowRight, Lightbulb, Volume2, ShieldCheck } from 'lucide-react';
 import InterviewFlowLayout from '../layouts/InterviewFlowLayout';
 import { getActiveInterview } from '../services/candidateApi';
+import { CANDIDATE_IMAGES } from '../assets/images';
+
+const StatusPill = ({ status }) => {
+  if (status === 'granted') return <span className="c-badge c-badge-success">Ready</span>;
+  if (status === 'denied') return <span className="c-badge c-badge-danger">Blocked</span>;
+  return <span className="c-badge c-badge-muted">Not Enabled</span>;
+};
 
 // FR06 - Start Mock Interview (camera/mic permission), FR32 - Interview Environment Preparation
 const InterviewPreparation = () => {
@@ -84,109 +91,111 @@ const InterviewPreparation = () => {
 
   return (
     <InterviewFlowLayout step="prepare">
-      <div className="max-w-3xl mx-auto">
-        <div className="mb-6">
-          <h2 className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] tracking-tight">Let's get set up</h2>
-          <p className="text-sm text-[var(--text-secondary)] mt-1">
-            {interview.role} · {interview.questions.length} questions
-          </p>
+      <div className="max-w-4xl mx-auto">
+        {/* Header card: selected interview + a touch of visual storytelling */}
+        <div className="c-card rounded-3xl overflow-hidden grid grid-cols-1 sm:grid-cols-5 mb-6">
+          <div className="sm:col-span-3 p-7 flex flex-col justify-center gap-2">
+            <p className="c-eyebrow">Let's get set up</p>
+            <h1 className="c-heading text-2xl leading-snug">{interview.role}</h1>
+            <p className="text-sm" style={{ color: 'var(--c-text-secondary)' }}>
+              {interview.questions.length} questions · {interview.type === 'behavioral' ? 'Behavioral' : 'Technical'} interview
+            </p>
+          </div>
+          <div className="hidden sm:block sm:col-span-2 relative min-h-[140px]">
+            <img src={CANDIDATE_IMAGES.preparationHero} alt="" className="absolute inset-0 w-full h-full object-cover" />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Camera preview */}
-          <div className="glass-card rounded-2xl overflow-hidden aspect-video relative flex items-center justify-center">
+          <div className="c-card rounded-2xl overflow-hidden aspect-video relative flex items-center justify-center">
             {cameraStatus === 'granted' ? (
               <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover" />
             ) : (
-              <div className="flex flex-col items-center gap-2 text-[var(--text-muted)]">
-                <Camera className="w-10 h-10" />
+              <div className="flex flex-col items-center gap-2" style={{ color: 'var(--c-text-muted)' }}>
+                <Camera className="w-9 h-9" />
                 <span className="text-xs font-medium">Camera preview will appear here</span>
               </div>
             )}
             {cameraStatus === 'granted' && (
-              <span className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/90 text-white text-[10px] font-bold">
-                <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> LIVE PREVIEW
+              <span className="absolute top-3 left-3 c-badge c-badge-success">
+                <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: 'var(--c-success)' }} /> Live Preview
               </span>
             )}
           </div>
 
           {/* Checklist & controls */}
           <div className="flex flex-col gap-4">
-            <div className="glass-card rounded-2xl p-5">
+            <div className="c-card rounded-2xl p-5">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <Camera className="w-4 h-4 text-indigo-500" />
-                  <span className="text-sm font-semibold text-[var(--text-primary)]">Camera</span>
+                  <Camera className="w-4 h-4" style={{ color: 'var(--c-accent)' }} />
+                  <span className="text-sm font-semibold">Camera</span>
                 </div>
                 <StatusPill status={cameraStatus} />
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Mic className="w-4 h-4 text-indigo-500" />
-                  <span className="text-sm font-semibold text-[var(--text-primary)]">Microphone</span>
+                  <Mic className="w-4 h-4" style={{ color: 'var(--c-accent)' }} />
+                  <span className="text-sm font-semibold">Microphone</span>
                 </div>
                 <StatusPill status={micStatus} />
               </div>
 
               {micStatus === 'granted' && (
                 <div className="mt-3 flex items-center gap-2">
-                  <Volume2 className="w-3.5 h-3.5 text-[var(--text-muted)]" />
-                  <div className="flex-1 h-1.5 rounded-full bg-[var(--border-table)] overflow-hidden">
-                    <div className="h-full bg-emerald-500 transition-all duration-100" style={{ width: `${micLevel}%` }} />
+                  <Volume2 className="w-3.5 h-3.5" style={{ color: 'var(--c-text-muted)' }} />
+                  <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--c-border)' }}>
+                    <div className="h-full transition-all duration-100" style={{ width: `${micLevel}%`, background: 'var(--c-success)' }} />
                   </div>
                 </div>
               )}
             </div>
 
             {!readyToBegin ? (
-              <button
-                onClick={requestPermissions}
-                className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-md shadow-indigo-500/20 transition-all active:scale-[0.98]"
-              >
+              <button onClick={requestPermissions} className="c-btn c-btn-primary w-full py-3">
                 Enable Camera & Microphone
               </button>
             ) : (
-              <button
-                onClick={handleBegin}
-                className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow-md shadow-emerald-500/20 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
-              >
+              <button onClick={handleBegin} className="c-btn c-btn-primary w-full py-3">
                 Begin Interview <ArrowRight className="w-4 h-4" />
               </button>
             )}
 
             {permissionError && (
-              <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 text-xs font-semibold flex items-start gap-2">
+              <div className="c-badge-danger rounded-xl p-3.5 flex items-start gap-2 text-xs font-semibold">
                 <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
                 {permissionError}
               </div>
             )}
 
-            <div className="glass-card rounded-2xl p-5">
+            <div className="c-card rounded-2xl p-5">
               <div className="flex items-center gap-2 mb-2.5">
-                <Lightbulb className="w-4 h-4 text-amber-500" />
-                <span className="text-sm font-semibold text-[var(--text-primary)]">Before you begin</span>
+                <Lightbulb className="w-4 h-4" style={{ color: 'var(--c-warning)' }} />
+                <span className="text-sm font-semibold">Before you begin</span>
               </div>
-              <ul className="space-y-1.5 text-xs text-[var(--text-secondary)]">
-                <li className="flex items-start gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 mt-0.5 shrink-0" /> Sit in a well-lit, quiet space</li>
-                <li className="flex items-start gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 mt-0.5 shrink-0" /> Frame your face clearly in the camera</li>
-                <li className="flex items-start gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 mt-0.5 shrink-0" /> You can navigate questions manually — take your time</li>
+              <ul className="space-y-1.5 text-xs" style={{ color: 'var(--c-text-secondary)' }}>
+                <li className="flex items-start gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: 'var(--c-success)' }} /> Sit in a well-lit, quiet space</li>
+                <li className="flex items-start gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: 'var(--c-success)' }} /> Frame your face clearly in the camera</li>
+                <li className="flex items-start gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: 'var(--c-success)' }} /> You can navigate questions manually — take your time</li>
               </ul>
+            </div>
+
+            <div className="c-card-flat rounded-2xl p-5">
+              <div className="flex items-center gap-2 mb-2">
+                <ShieldCheck className="w-4 h-4" style={{ color: 'var(--c-accent)' }} />
+                <span className="text-sm font-semibold">Your privacy</span>
+              </div>
+              <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
+                Recording only happens while you're actively answering a question. It stops the moment you pause or finish,
+                nothing is captured in the background, and each response is uploaded securely for review.
+              </p>
             </div>
           </div>
         </div>
       </div>
     </InterviewFlowLayout>
   );
-};
-
-const StatusPill = ({ status }) => {
-  if (status === 'granted') {
-    return <span className="text-[11px] font-bold px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">Ready</span>;
-  }
-  if (status === 'denied') {
-    return <span className="text-[11px] font-bold px-2 py-1 rounded-full bg-rose-500/10 text-rose-500 border border-rose-500/20">Blocked</span>;
-  }
-  return <span className="text-[11px] font-bold px-2 py-1 rounded-full bg-slate-500/10 text-slate-500 border border-slate-500/20">Not Enabled</span>;
 };
 
 export default InterviewPreparation;

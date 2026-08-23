@@ -36,3 +36,11 @@ env/
 .env
 backend/.env
 frontend/.env
+
+# Interview response recordings (candidate media, never committed)
+backend/media/
+
+# Google Cloud / other service-account credential keys
+*service-account*.json
+*credentials*.json
+google-credentials*.json

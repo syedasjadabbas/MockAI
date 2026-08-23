@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Mail, Calendar, Edit2, Check, X, Briefcase, TrendingUp, Lock, Eye, EyeOff, AlertCircle, RefreshCw } from 'lucide-react';
+import { Mail, Calendar, Edit2, Check, X, Briefcase, TrendingUp, Lock, Eye, EyeOff, AlertCircle, RefreshCw } from 'lucide-react';
 import CandidateLayout from '../layouts/CandidateLayout';
-import StatsCard from '../../components/StatsCard';
-import { CardSkeleton } from '../../components/Skeleton';
+import CandidateStat from '../components/CandidateStat';
 import { getSession, getProfile, updateProfile, changePassword, logout } from '../services/candidateAuth';
 import { getDashboardSummary } from '../services/candidateApi';
 import { formatDateOnly } from '../../utils/dateFormat';
@@ -116,33 +115,34 @@ const Profile = () => {
   return (
     <CandidateLayout>
       <div className="mb-6">
-        <h2 className="text-2xl font-extrabold text-[var(--text-primary)] tracking-tight">Profile</h2>
-        <p className="text-sm text-[var(--text-secondary)] mt-1">Your account details and interview activity summary.</p>
+        <p className="c-eyebrow mb-2">Account</p>
+        <h1 className="c-heading text-2xl sm:text-3xl">Profile</h1>
+        <p className="text-sm mt-1" style={{ color: 'var(--c-text-secondary)' }}>Your account details and interview activity summary.</p>
       </div>
 
       {profileLoading ? (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <CardSkeleton />
-          <div className="lg:col-span-2"><CardSkeleton /></div>
+          <div className="c-skeleton h-64 rounded-2xl" />
+          <div className="lg:col-span-2 c-skeleton h-64 rounded-2xl" />
         </div>
       ) : profileError ? (
-        <div className="glass-card rounded-2xl p-8 flex flex-col items-center text-center gap-3">
-          <AlertCircle className="w-8 h-8 text-rose-500" />
-          <p className="text-sm font-semibold text-[var(--text-primary)]">Couldn't load your profile</p>
-          <p className="text-xs text-[var(--text-muted)]">{profileError}</p>
-          <button
-            onClick={loadProfile}
-            className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-500/20 transition-all active:scale-[0.98]"
-          >
+        <div className="c-card rounded-2xl p-8 flex flex-col items-center text-center gap-3">
+          <AlertCircle className="w-8 h-8" style={{ color: 'var(--c-danger)' }} />
+          <p className="text-sm font-semibold">Couldn't load your profile</p>
+          <p className="text-xs" style={{ color: 'var(--c-text-muted)' }}>{profileError}</p>
+          <button onClick={loadProfile} className="c-btn c-btn-primary px-4 py-2 text-xs">
             <RefreshCw className="w-3.5 h-3.5" /> Retry
           </button>
         </div>
       ) : (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Profile card */}
-        <div className="lg:col-span-1 glass-card rounded-2xl p-6 flex flex-col items-center text-center">
-          <div className="w-20 h-20 rounded-full bg-indigo-500/10 flex items-center justify-center border-2 border-indigo-500/30 mb-4">
-            <User className="w-10 h-10 text-indigo-500" />
+        {/* Identity card */}
+        <div className="lg:col-span-1 c-card rounded-2xl p-6 flex flex-col items-center text-center">
+          <div
+            className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold mb-4"
+            style={{ background: 'var(--c-accent-soft)', color: 'var(--c-accent)', fontFamily: 'var(--c-font-heading)' }}
+          >
+            {(session?.name || 'C').trim().charAt(0).toUpperCase()}
           </div>
 
           {editing ? (
@@ -152,107 +152,106 @@ const Profile = () => {
                 value={nameValue}
                 onChange={(e) => setNameValue(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSave()}
-                className="w-full text-center theme-input border rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                className="c-input w-full text-center rounded-xl px-3 py-2 text-sm font-semibold"
                 maxLength={60}
                 disabled={saving}
               />
-              {error && <p className="text-xs text-rose-500 font-medium">{error}</p>}
+              {error && <p className="text-xs font-medium" style={{ color: 'var(--c-danger)' }}>{error}</p>}
               <div className="flex gap-2 mt-1">
-                <button onClick={handleSave} disabled={saving} className="flex items-center gap-1 px-3 py-1.5 text-xs rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold shadow-sm transition-all disabled:opacity-60">
+                <button onClick={handleSave} disabled={saving} className="c-btn c-btn-primary px-3 py-1.5 text-xs">
                   <Check className="w-3.5 h-3.5" /> {saving ? 'Saving…' : 'Save'}
                 </button>
-                <button onClick={() => { setEditing(false); setNameValue(session.name); setError(''); }} disabled={saving} className="flex items-center gap-1 px-3 py-1.5 text-xs rounded-xl border border-[var(--border-card)] text-[var(--text-secondary)] font-semibold transition-all hover:bg-[var(--bg-card-hover)] disabled:opacity-60">
+                <button onClick={() => { setEditing(false); setNameValue(session.name); setError(''); }} disabled={saving} className="c-btn c-btn-secondary px-3 py-1.5 text-xs">
                   <X className="w-3.5 h-3.5" /> Cancel
                 </button>
               </div>
             </div>
           ) : (
-            <button onClick={() => setEditing(true)} title="Click to edit name" className="flex items-center gap-1.5 text-xl font-bold text-[var(--text-primary)] hover:text-indigo-500 transition-colors group">
+            <button onClick={() => setEditing(true)} title="Click to edit name" className="flex items-center gap-1.5 c-heading text-xl group">
               {session?.name}
-              <Edit2 className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 text-indigo-500 transition-opacity" />
+              <Edit2 className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: 'var(--c-accent)' }} />
             </button>
           )}
 
-          {success && <p className="text-xs text-emerald-500 font-semibold mt-2">Profile updated</p>}
+          {success && <p className="text-xs font-semibold mt-2" style={{ color: 'var(--c-success)' }}>Profile updated</p>}
 
-          <span className="px-2.5 py-0.5 mt-3 bg-indigo-500/10 text-indigo-500 text-xs font-bold rounded-full border border-indigo-500/20 uppercase tracking-wider">
-            Candidate
-          </span>
+          <span className="c-badge c-badge-accent mt-3 uppercase">Candidate</span>
 
-          <div className="w-full mt-6 pt-6 border-t border-[var(--border-panel)] space-y-3.5 text-left">
+          <div className="w-full mt-6 pt-6 space-y-3.5 text-left" style={{ borderTop: '1px solid var(--c-border)' }}>
             <div className="flex items-center gap-2.5">
-              <Mail className="w-4 h-4 text-[var(--text-muted)] shrink-0" />
-              <span className="text-sm text-[var(--text-secondary)] truncate">{session?.email}</span>
+              <Mail className="w-4 h-4 shrink-0" style={{ color: 'var(--c-text-muted)' }} />
+              <span className="text-sm truncate" style={{ color: 'var(--c-text-secondary)' }}>{session?.email}</span>
             </div>
             <div className="flex items-center gap-2.5">
-              <Calendar className="w-4 h-4 text-[var(--text-muted)] shrink-0" />
-              <span className="text-sm text-[var(--text-secondary)]">Member since {formatDateOnly(session?.createdAt)}</span>
+              <Calendar className="w-4 h-4 shrink-0" style={{ color: 'var(--c-text-muted)' }} />
+              <span className="text-sm" style={{ color: 'var(--c-text-secondary)' }}>Member since {formatDateOnly(session?.createdAt)}</span>
             </div>
           </div>
         </div>
 
         {/* Activity summary + security */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <StatsCard title="Total Interviews" value={summary?.totalInterviews ?? '—'} icon={Briefcase} subtitle="All sessions started" />
-            <StatsCard title="Average Score" value={summary?.averageScore ?? '—'} icon={TrendingUp} subtitle="Across completed interviews" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <CandidateStat label="Total Interviews" value={summary?.totalInterviews ?? '—'} icon={Briefcase} hint="All sessions started" />
+            <CandidateStat label="Average Score" value={summary?.averageScore ?? '—'} icon={TrendingUp} hint="Across completed interviews" />
           </div>
 
-          <div className="glass-card rounded-2xl p-6">
-            <h3 className="text-base font-bold text-[var(--text-primary)] mb-1 flex items-center gap-2">
-              <Lock className="w-4 h-4 text-indigo-500" /> Change Password
-            </h3>
-            <p className="text-xs text-[var(--text-secondary)] mb-5">
+          <div className="c-card rounded-2xl p-6">
+            <h2 className="c-heading text-base mb-1 flex items-center gap-2">
+              <Lock className="w-4 h-4" style={{ color: 'var(--c-accent)' }} /> Change Password
+            </h2>
+            <p className="text-xs mb-5" style={{ color: 'var(--c-text-secondary)' }}>
               Update the password used to sign in to your account.
             </p>
 
             <form onSubmit={handleChangePassword} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Current Password</label>
+                <label className="c-label block mb-1.5">Current Password</label>
                 <div className="relative">
-                  <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+                  <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: 'var(--c-text-muted)' }} />
                   <input
                     type={showPasswords ? 'text' : 'password'}
                     value={oldPassword}
                     onChange={(e) => setOldPassword(e.target.value)}
                     placeholder="••••••••"
                     disabled={pwSaving}
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm theme-input border focus:outline-none focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/20 transition-all disabled:opacity-60"
+                    className="c-input w-full pl-10 pr-4 py-2.5 rounded-xl text-sm disabled:opacity-60"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">New Password</label>
+                  <label className="c-label block mb-1.5">New Password</label>
                   <div className="relative">
-                    <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+                    <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: 'var(--c-text-muted)' }} />
                     <input
                       type={showPasswords ? 'text' : 'password'}
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       placeholder="At least 6 characters"
                       disabled={pwSaving}
-                      className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm theme-input border focus:outline-none focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/20 transition-all disabled:opacity-60"
+                      className="c-input w-full pl-10 pr-4 py-2.5 rounded-xl text-sm disabled:opacity-60"
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Confirm New Password</label>
+                  <label className="c-label block mb-1.5">Confirm New Password</label>
                   <div className="relative">
-                    <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+                    <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: 'var(--c-text-muted)' }} />
                     <input
                       type={showPasswords ? 'text' : 'password'}
                       value={confirmNewPassword}
                       onChange={(e) => setConfirmNewPassword(e.target.value)}
                       placeholder="Re-enter new password"
                       disabled={pwSaving}
-                      className="w-full pl-10 pr-11 py-2.5 rounded-xl text-sm theme-input border focus:outline-none focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/20 transition-all disabled:opacity-60"
+                      className="c-input w-full pl-10 pr-11 py-2.5 rounded-xl text-sm disabled:opacity-60"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPasswords((v) => !v)}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2"
+                      style={{ color: 'var(--c-text-muted)' }}
                       aria-label={showPasswords ? 'Hide passwords' : 'Show passwords'}
                     >
                       {showPasswords ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -262,22 +261,18 @@ const Profile = () => {
               </div>
 
               {pwError && (
-                <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 text-xs font-semibold flex items-center gap-2">
+                <div className="c-badge-danger rounded-xl px-3.5 py-3 flex items-center gap-2 text-xs font-semibold">
                   <AlertCircle className="w-4 h-4 flex-shrink-0" />
                   {pwError}
                 </div>
               )}
               {pwSuccess && (
-                <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold">
+                <div className="c-badge-success rounded-xl px-3.5 py-3 text-xs font-semibold">
                   Password updated. Signing you out to sign back in with your new password…
                 </div>
               )}
 
-              <button
-                type="submit"
-                disabled={pwSaving}
-                className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-md shadow-indigo-500/20 active:scale-[0.98] transition-all disabled:opacity-60 flex items-center justify-center gap-2"
-              >
+              <button type="submit" disabled={pwSaving} className="c-btn c-btn-primary w-full sm:w-auto px-6 py-2.5">
                 {pwSaving && <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />}
                 {pwSaving ? 'Updating…' : 'Update Password'}
               </button>

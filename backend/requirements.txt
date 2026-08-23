@@ -4,3 +4,4 @@ passlib[bcrypt]
 PyJWT
 python-multipart
 python-jose[cryptography]
+google-cloud-speech

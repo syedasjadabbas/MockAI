@@ -5,6 +5,7 @@ import Sidebar from './components/Sidebar';
 import { routes } from './routes';
 import { candidateRoutes } from './candidate/routes';
 import { isAuthenticated as isCandidateAuthenticated } from './candidate/services/candidateAuth';
+import CandidateShell from './candidate/components/CandidateShell';
 import { ThemeProvider } from './context/ThemeContext';
 
 function PageFallback() {
@@ -92,20 +93,22 @@ function App() {
               );
             })}
 
-            {/* Candidate/User Panel routes - isolated from Admin Panel routing above */}
+            {/* Candidate/User Panel routes - isolated from Admin Panel routing above.
+                CandidateShell scopes the Candidate Panel's own design tokens
+                (candidate-theme.css) so this redesign can never bleed into Admin. */}
             {candidateRoutes.map((route, idx) => {
               if (route.path === '/login' || route.path === '/register') {
                 return (
                   <Route
                     key={`candidate-${idx}`}
                     path={route.path}
-                    element={<PublicCandidateRoute>{route.element}</PublicCandidateRoute>}
+                    element={<CandidateShell><PublicCandidateRoute>{route.element}</PublicCandidateRoute></CandidateShell>}
                   />
                 );
               }
 
               const element = route.private ? <PrivateCandidateRoute>{route.element}</PrivateCandidateRoute> : route.element;
-              return <Route key={`candidate-${idx}`} path={route.path} element={element} />;
+              return <Route key={`candidate-${idx}`} path={route.path} element={<CandidateShell>{element}</CandidateShell>} />;
             })}
 
             {/* Root Redirects */}

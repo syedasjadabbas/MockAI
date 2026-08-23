@@ -88,11 +88,34 @@ export async function getActiveInterview(id) {
   }
 }
 
-// FR11/FR12/FR33 - metadata only (duration/size), never the recording
-// itself. See backend/routes/candidate_interview.py's module docstring for
-// the documented future media-upload integration point (the `media_url`
-// field this returns, currently always null).
+// FR11/FR12/FR33/FR15 - uploads the actual recorded Blob (the real
+// counterpart to the older metadata-only call kept below), then real
+// speech-to-text runs against it server-side (backend/services/
+// asr_google.py). `response.blob` is required; `durationSeconds` is sent
+// as form data since the server can't derive timing from the file alone.
+// The upload can fail (network, validation, oversized file) - this
+// throws in that case exactly like every other fetchCandidateApi call, so
+// InterviewSimulator.jsx can show a real "upload failed, retry" state
+// instead of silently treating the response as saved.
 export async function submitResponse(interviewId, questionId, response) {
+  const formData = new FormData();
+  formData.append('file', response.blob, 'response.webm');
+  if (response.durationSeconds != null) {
+    formData.append('duration_seconds', String(response.durationSeconds));
+  }
+
+  const doc = await fetchCandidateApi(`/interviews/${interviewId}/responses/${questionId}/media`, {
+    method: 'POST',
+    body: formData,
+  });
+  return toFrontendInterview(doc);
+}
+
+// Metadata-only variant, kept for any caller that only has timing/size
+// info and not the recording itself (e.g. a future retry-metadata path).
+// Not used by InterviewSimulator.jsx's normal flow anymore - see
+// submitResponse() above, which is now the real upload path.
+export async function submitResponseMetadataOnly(interviewId, questionId, response) {
   const doc = await fetchCandidateApi(`/interviews/${interviewId}/responses`, {
     method: 'POST',
     body: JSON.stringify({
@@ -109,9 +132,37 @@ export async function submitResponse(interviewId, questionId, response) {
 // confidence/stress still null) - the mock evaluation overlay is applied
 // later, only when Results/Feedback actually load the interview for
 // display (see getInterviewById below), not here.
+//
+// Also fires the real evaluation-start call (pending_evaluation ->
+// processing), matching the report's own description of this moment (Use
+// Case 12 "End Interview Session": ending the session "prepares collected
+// responses for analysis"). This is best-effort: if it fails, the
+// interview is still validly completed and the candidate still proceeds -
+// there is no actual AI pipeline behind it yet in this phase, only the
+// state transition (see backend/routes/candidate_evaluation.py).
 export async function endInterview(interviewId) {
   const doc = await fetchCandidateApi(`/interviews/${interviewId}/complete`, { method: 'POST' });
+  try {
+    await startEvaluation(interviewId);
+  } catch {
+    // Non-fatal - evaluation stays "pending_evaluation" and can be
+    // started again later (e.g. by a future retry mechanism or worker).
+  }
   return toFrontendInterview(doc);
+}
+
+// FR10-03 / FR20 prerequisite - transitions evaluation_status from
+// "pending_evaluation" to "processing". Does not run any AI; see
+// backend/routes/candidate_evaluation.py's module docstring.
+export async function startEvaluation(interviewId) {
+  return fetchCandidateApi(`/interviews/${interviewId}/evaluation/start`, { method: 'POST' });
+}
+
+// Real evaluation read - {evaluationStatus, evaluation}. evaluation is
+// null/partial until evaluationStatus is "completed". Never fabricated.
+export async function getRealEvaluation(interviewId) {
+  const data = await fetchCandidateApi(`/interviews/${interviewId}/evaluation`);
+  return { evaluationStatus: data.evaluation_status, evaluation: data.evaluation };
 }
 
 // ---------------------------------------------------------------------------
@@ -199,14 +250,43 @@ function generateMockEvaluation(interview) {
 // Used by EvaluationResults.jsx, Feedback.jsx, and InterviewCompletion.jsx.
 // This is the ONLY function in this file that ever attaches placeholder
 // evaluation data - see the file header and generateMockEvaluation() above.
+//
+// Real-first, mock-as-fallback: this always checks the real evaluation
+// (GET /candidate/interviews/{id}/evaluation) before ever touching the
+// mock overlay. The moment a real evaluation is actually "completed" -
+// which nothing in this codebase can produce yet, only the internal
+// endpoint a future AI worker calls - this starts returning genuine
+// MongoDB data with zero changes needed here or in either page. Every
+// returned object carries `evaluationSource` ("real" | "mock") and
+// `evaluationStatus` (the real pending_evaluation/processing/completed/
+// failed value) so the UI can be honest about which it's showing.
 export async function getInterviewById(id) {
   try {
     const doc = await fetchCandidateApi(`/interviews/${id}`);
     const interview = toFrontendInterview(doc);
-    if (interview.score == null) {
-      return { ...interview, ...generateMockEvaluation(interview) };
+
+    const { evaluationStatus, evaluation } = await getRealEvaluation(id).catch(() => ({
+      evaluationStatus: interview.evaluationStatus,
+      evaluation: null,
+    }));
+
+    if (evaluationStatus === 'completed' && evaluation) {
+      return {
+        ...interview,
+        evaluationSource: 'real',
+        evaluationStatus,
+        score: evaluation.overall_score,
+        confidence: evaluation.confidence_score,
+        stress: evaluation.stress_level,
+        interpretation: evaluation.interpretation,
+        strengths: evaluation.strengths,
+        weaknesses: evaluation.weaknesses,
+        suggestions: evaluation.suggestions,
+        perQuestion: evaluation.per_question,
+      };
     }
-    return interview;
+
+    return { ...interview, evaluationSource: 'mock', evaluationStatus, ...generateMockEvaluation(interview) };
   } catch {
     return null;
   }

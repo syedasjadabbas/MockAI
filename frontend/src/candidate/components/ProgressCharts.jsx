@@ -16,12 +16,21 @@ import { formatDateOnly } from '../../utils/dateFormat';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Tooltip, Legend, Filler);
 
-const gridColor = (isDark) => (isDark ? 'rgba(148, 163, 184, 0.08)' : 'rgba(100, 116, 139, 0.08)');
-const tickColor = (isDark) => (isDark ? '#94a3b8' : '#475569');
+// Canvas rendering can't resolve CSS custom properties (var(--c-accent)
+// means nothing to Chart.js) - these are the literal light/dark values of
+// the same candidate design tokens from candidate-theme.css, kept in sync
+// by hand since there are only two colors to track here.
+const ACCENT = { light: '122, 35, 51', dark: '217, 154, 127' };   // --c-accent
+const SUCCESS = { light: '75, 107, 79', dark: '143, 176, 151' };  // --c-success
+
+const gridColor = (isDark) => (isDark ? 'rgba(243, 237, 227, 0.08)' : 'rgba(33, 28, 23, 0.06)');
+const tickColor = (isDark) => (isDark ? '#b6a999' : '#6b6055');
 
 // FR36 - Progress Awareness Support: score trend over completed interviews.
 export const ScoreTrendChart = ({ data }) => {
   const { isDark } = useTheme();
+  const accent = isDark ? ACCENT.dark : ACCENT.light;
+  const success = isDark ? SUCCESS.dark : SUCCESS.light;
 
   const chartData = {
     labels: data.map((d) => formatDateOnly(d.date)),
@@ -29,22 +38,22 @@ export const ScoreTrendChart = ({ data }) => {
       {
         label: 'Overall Score',
         data: data.map((d) => d.score),
-        borderColor: 'rgba(99, 102, 241, 1)',
-        backgroundColor: 'rgba(99, 102, 241, 0.15)',
+        borderColor: `rgba(${accent}, 1)`,
+        backgroundColor: `rgba(${accent}, 0.14)`,
         fill: true,
         tension: 0.35,
         pointRadius: 4,
-        pointBackgroundColor: 'rgba(99, 102, 241, 1)',
+        pointBackgroundColor: `rgba(${accent}, 1)`,
       },
       {
         label: 'Confidence',
         data: data.map((d) => d.confidence),
-        borderColor: 'rgba(16, 185, 129, 1)',
-        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+        borderColor: `rgba(${success}, 1)`,
+        backgroundColor: `rgba(${success}, 0.1)`,
         fill: true,
         tension: 0.35,
         pointRadius: 4,
-        pointBackgroundColor: 'rgba(16, 185, 129, 1)',
+        pointBackgroundColor: `rgba(${success}, 1)`,
       },
     ],
   };
@@ -67,6 +76,7 @@ export const ScoreTrendChart = ({ data }) => {
 // Category breakdown - average score per interview category practiced.
 export const CategoryBreakdownChart = ({ data }) => {
   const { isDark } = useTheme();
+  const accent = isDark ? ACCENT.dark : ACCENT.light;
 
   const chartData = {
     labels: data.map((d) => d.category),
@@ -74,7 +84,7 @@ export const CategoryBreakdownChart = ({ data }) => {
       {
         label: 'Average Score',
         data: data.map((d) => d.avgScore),
-        backgroundColor: 'rgba(99, 102, 241, 0.75)',
+        backgroundColor: `rgba(${accent}, 0.8)`,
         borderRadius: 8,
         maxBarThickness: 40,
       },

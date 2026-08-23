@@ -19,8 +19,13 @@ const TOKEN_KEY = 'mockai_candidate_token';
 export const fetchCandidateApi = async (endpoint, options = {}) => {
   const token = localStorage.getItem(TOKEN_KEY);
 
+  // FormData (used for media uploads) must NOT get a manual Content-Type -
+  // the browser sets its own multipart boundary. JSON requests are
+  // unaffected; this only changes behavior when options.body is FormData.
+  const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
+
   const headers = {
-    'Content-Type': 'application/json',
+    ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...options.headers,
   };

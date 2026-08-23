@@ -1,14 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Send, Bot, Code2, Users, Compass, ArrowRight, Server, Cpu, BarChart3, AlertCircle } from 'lucide-react';
+import { ArrowRight, Code2, Users, Compass, Server, Cpu, BarChart3, AlertCircle } from 'lucide-react';
 import InterviewFlowLayout from '../layouts/InterviewFlowLayout';
 import { INTERVIEW_TYPES } from '../data/categories';
 import { getCategories, startInterview } from '../services/candidateApi';
 
-// FR07 - Accept Interview Goal via Chatbot, FR08 - Select Interview Questions
+// FR07 - Accept Interview Goal, FR08 - Select Interview Questions
 //
-// This is a real conversational UI (free text + quick replies), but the
-// "understanding" behind it is a small transparent keyword matcher, not
+// A small transparent keyword matcher drives the free-text fallback, not
 // NLP/AI - real language understanding is explicit future AI-integration
 // work. Categories come from the real Question Bank (GET /candidate/
 // categories) - the only thing that's presentational-only here is the
@@ -16,15 +15,16 @@ import { getCategories, startInterview } from '../services/candidateApi';
 // has no "interview type" field of its own (that grouping only exists at
 // the question level within a category), so inferInterviewType() below
 // derives it client-side from the category name, purely to keep this
-// page's existing chat flow working. It never invents a new category or
+// page's existing flow working. It never invents a new category or
 // changes what's actually stored in the Question Bank.
+//
+// Presented as a guided, step-by-step preparation flow rather than a chat
+// assistant - no avatar/bot icon, no "AI" framing. The underlying state
+// machine (ask-goal -> ask-type -> confirm) is unchanged; only how the
+// current step and prior choices are displayed has changed.
 
 const CATEGORY_ICONS = { Code: Code2, Server, Cpu, BarChart3, Users, Folder: Code2 };
 
-// Presentational-only grouping - see file header. "Behavioral & Leadership"
-// is the only seeded category with behavioral/situational content, so both
-// of those quick-replies resolve to it; everything else defaults to
-// "technical". This never touches the backend's actual category data.
 function inferInterviewType(category) {
   return /behav/i.test(category.name) ? 'behavioral' : 'technical';
 }
@@ -54,22 +54,10 @@ function matchCategoryFromText(text, categories) {
   return null;
 }
 
-const Bubble = ({ from, children }) => (
-  <div className={`flex ${from === 'user' ? 'justify-end' : 'justify-start'}`}>
-    <div className={`max-w-[85%] sm:max-w-md rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-      from === 'user'
-        ? 'bg-indigo-600 text-white rounded-br-md'
-        : 'theme-card rounded-bl-md text-[var(--text-primary)]'
-    }`}>
-      {children}
-    </div>
-  </div>
-);
-
 const GoalSelection = () => {
   const navigate = useNavigate();
   const [messages, setMessages] = useState([
-    { from: 'bot', text: "Hi! I'm here to help set up your mock interview. What role or topic would you like to practice today?" },
+    { from: 'bot', text: 'What role or topic would you like to practice today?' },
   ]);
   const [input, setInput] = useState('');
   const [stage, setStage] = useState('ask-goal'); // ask-goal -> ask-type -> confirm
@@ -100,7 +88,7 @@ const GoalSelection = () => {
     pushUser(category.name);
     setSelectedCategory(category);
     setSelectedType(inferInterviewType(category));
-    pushBot(`Great choice. I'll line up a ${category.name} interview for you. Ready to continue to preparation?`);
+    pushBot(`${category.name} it is. Ready to continue to preparation?`);
     setStage('confirm');
   };
 
@@ -127,7 +115,7 @@ const GoalSelection = () => {
     if (matched) {
       chooseCategory(matched);
     } else {
-      pushBot("I didn't quite catch a specific topic. Could you pick one of the options below instead?");
+      pushBot("I didn't catch a specific topic — pick one of the options below instead.");
       setSelectedType(null);
       setStage('ask-type');
     }
@@ -147,112 +135,107 @@ const GoalSelection = () => {
     }
   };
 
+  const trail = messages.filter((m) => m.from === 'user').map((m) => m.text);
+  const currentPrompt = [...messages].reverse().find((m) => m.from === 'bot')?.text;
+
   return (
     <InterviewFlowLayout step="goal">
       <div className="max-w-2xl mx-auto">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/30">
-            <Bot className="w-5 h-5 text-indigo-500" />
-          </div>
-          <div>
-            <h2 className="text-lg font-bold text-[var(--text-primary)]">Set Your Interview Goal</h2>
-            <p className="text-xs text-[var(--text-secondary)]">Tell us what you'd like to practice, or pick from the options.</p>
-          </div>
-        </div>
+        <p className="c-eyebrow mb-2">Set Your Goal</p>
 
-        <div className="glass-card rounded-2xl p-5 sm:p-6 flex flex-col gap-4 min-h-[360px]">
+        {trail.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 mb-5">
+            {trail.map((t, i) => (
+              <span key={i} className="c-badge c-badge-accent">{t}</span>
+            ))}
+          </div>
+        )}
+
+        <div className="c-card rounded-3xl p-7 sm:p-9">
           {categoriesLoading ? (
-            <div className="flex-1 flex items-center justify-center py-10">
-              <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+            <div className="flex items-center justify-center py-14">
+              <div className="w-6 h-6 border-2 rounded-full animate-spin" style={{ borderColor: 'var(--c-accent)', borderTopColor: 'transparent' }} />
             </div>
           ) : categoriesError ? (
-            <div className="flex-1 flex flex-col items-center justify-center gap-2 py-10 text-center">
-              <AlertCircle className="w-6 h-6 text-rose-500" />
-              <p className="text-sm text-[var(--text-secondary)]">{categoriesError}</p>
+            <div className="flex flex-col items-center gap-2 py-14 text-center">
+              <AlertCircle className="w-6 h-6" style={{ color: 'var(--c-danger)' }} />
+              <p className="text-sm" style={{ color: 'var(--c-text-secondary)' }}>{categoriesError}</p>
             </div>
           ) : (
-          <div className="flex-1 space-y-3 overflow-y-auto max-h-[45vh] pr-1">
-            {messages.map((m, i) => (
-              <Bubble key={i} from={m.from}>{m.text}</Bubble>
-            ))}
+            <>
+              <h1 className="c-heading text-2xl sm:text-[1.6rem] leading-snug mb-6">{currentPrompt}</h1>
 
-            {stage === 'ask-goal' && (
-              <div className="flex flex-wrap gap-2 pt-1">
-                {INTERVIEW_TYPES.map((type) => {
-                  const Icon = { Code2, Users, Compass }[type.icon];
-                  return (
-                    <button
-                      key={type.id}
-                      onClick={() => chooseType(type.id)}
-                      className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-semibold theme-input border hover:border-indigo-500/60 hover:text-indigo-500 transition-all"
-                    >
-                      {Icon && <Icon className="w-3.5 h-3.5" />}
-                      {type.label}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+              {stage === 'ask-goal' && (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {INTERVIEW_TYPES.map((type) => {
+                    const Icon = { Code2, Users, Compass }[type.icon];
+                    return (
+                      <button
+                        key={type.id}
+                        onClick={() => chooseType(type.id)}
+                        className="c-card c-card-hover rounded-2xl p-4 text-left flex flex-col gap-2.5"
+                      >
+                        <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: 'var(--c-accent-soft)', color: 'var(--c-accent)' }}>
+                          {Icon && <Icon className="w-4.5 h-4.5" />}
+                        </div>
+                        <span className="text-sm font-semibold">{type.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
 
-            {stage === 'ask-type' && (
-              <div className="flex flex-wrap gap-2 pt-1">
-                {(selectedType ? getCategoriesByType(categories, selectedType) : categories).map((cat) => {
-                  const Icon = CATEGORY_ICONS[cat.icon] || Code2;
-                  return (
-                    <button
-                      key={cat.id}
-                      onClick={() => chooseCategory(cat)}
-                      className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-semibold theme-input border hover:border-indigo-500/60 hover:text-indigo-500 transition-all"
-                    >
-                      <Icon className="w-3.5 h-3.5" />
-                      {cat.name}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+              {stage === 'ask-type' && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {(selectedType ? getCategoriesByType(categories, selectedType) : categories).map((cat) => {
+                    const Icon = CATEGORY_ICONS[cat.icon] || Code2;
+                    return (
+                      <button
+                        key={cat.id}
+                        onClick={() => chooseCategory(cat)}
+                        className="c-card c-card-hover rounded-2xl p-4 text-left flex flex-col gap-2.5"
+                      >
+                        <Icon className="w-4.5 h-4.5" style={{ color: 'var(--c-accent)' }} />
+                        <span className="text-sm font-semibold">{cat.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
 
-            {stage === 'confirm' && (
-              <div className="pt-1">
-                <button
-                  onClick={handleBegin}
-                  disabled={starting}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-500 shadow-md shadow-indigo-500/20 transition-all active:scale-[0.98] disabled:opacity-60"
-                >
-                  {starting ? 'Setting up…' : 'Continue to Preparation'}
-                  {!starting && <ArrowRight className="w-4 h-4" />}
-                </button>
-                {startError && (
-                  <p className="text-xs font-semibold text-rose-500 flex items-center gap-1.5 mt-3">
-                    <AlertCircle className="w-3.5 h-3.5 shrink-0" /> {startError}
-                  </p>
-                )}
-              </div>
-            )}
-            <div ref={scrollRef} />
-          </div>
-          )}
-
-          {!categoriesLoading && !categoriesError && stage !== 'confirm' && (
-            <div className="flex items-center gap-2 pt-2 border-t border-[var(--border-table)]">
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                placeholder="e.g. I want to practice a backend engineering interview"
-                className="flex-1 px-4 py-2.5 rounded-xl text-sm theme-input border focus:outline-none focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/20 transition-all"
-              />
-              <button
-                onClick={handleSend}
-                className="p-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white transition-all active:scale-[0.98]"
-                aria-label="Send"
-              >
-                <Send className="w-4 h-4" />
-              </button>
-            </div>
+              {stage === 'confirm' && (
+                <div>
+                  <button onClick={handleBegin} disabled={starting} className="c-btn c-btn-primary px-6 py-3">
+                    {starting ? 'Setting up…' : 'Continue to Preparation'}
+                    {!starting && <ArrowRight className="w-4 h-4" />}
+                  </button>
+                  {startError && (
+                    <p className="text-xs font-semibold flex items-center gap-1.5 mt-3" style={{ color: 'var(--c-danger)' }}>
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0" /> {startError}
+                    </p>
+                  )}
+                </div>
+              )}
+              <div ref={scrollRef} />
+            </>
           )}
         </div>
+
+        {!categoriesLoading && !categoriesError && stage !== 'confirm' && (
+          <div className="flex items-center gap-2 mt-4">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+              placeholder="Or describe it yourself — e.g. a backend engineering interview"
+              className="c-input flex-1 px-4 py-2.5 rounded-xl text-sm"
+            />
+            <button onClick={handleSend} className="c-btn c-btn-secondary px-4 py-2.5">
+              Go
+            </button>
+          </div>
+        )}
       </div>
     </InterviewFlowLayout>
   );
