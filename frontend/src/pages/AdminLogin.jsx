@@ -1,9 +1,71 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Terminal, Mail, Lock, AlertCircle, X, Eye, EyeOff } from 'lucide-react';
+import { Terminal, Mail, Lock, AlertCircle, ArrowLeft, ShieldCheck, Eye, EyeOff } from 'lucide-react';
 import { fetchWithAuth } from '../api';
 import ThemeToggle from '../components/ThemeToggle';
-import { useTheme } from '../context/ThemeContext';
+import '../admin-auth-theme.css';
+import { ADMIN_AUTH_HERO } from '../assets/adminAuthImages';
+
+// Brand mark shared with Sidebar.jsx's Terminal+"MockAI"+ADMIN badge
+// treatment, restyled with the auth screens' own burgundy accent instead
+// of the rest of the Admin Panel's indigo - this file's tokens are scoped
+// under .admin-auth-shell (admin-auth-theme.css) so nothing here touches
+// the shared indigo styling the rest of Admin still uses.
+const Brand = ({ tone = 'default' }) => (
+  <div className="flex items-center gap-2.5">
+    <div
+      className="w-9 h-9 rounded-xl flex items-center justify-center"
+      style={{
+        background: tone === 'onDark' ? 'rgba(251,243,236,0.12)' : 'var(--aa-accent-soft)',
+        color: tone === 'onDark' ? '#fbf3ec' : 'var(--aa-accent)',
+      }}
+    >
+      <Terminal className="w-4.5 h-4.5" />
+    </div>
+    <div className="flex items-center gap-1.5">
+      <span className="font-extrabold text-lg tracking-tight" style={{ color: tone === 'onDark' ? '#fbf3ec' : 'var(--aa-text)' }}>
+        MockAI
+      </span>
+      <span
+        className="text-[10px] font-bold px-1.5 py-0.5 rounded border tracking-wider"
+        style={
+          tone === 'onDark'
+            ? { color: '#e3ac95', borderColor: 'rgba(227,172,149,0.35)', background: 'rgba(227,172,149,0.1)' }
+            : { color: 'var(--aa-accent)', borderColor: 'var(--aa-accent-soft-strong)', background: 'var(--aa-accent-soft)' }
+        }
+      >
+        ADMIN
+      </span>
+    </div>
+  </div>
+);
+
+// Right-hand visual panel - one deliberate photo + minimal brand copy, no
+// fake dashboard mockups, no stats, no testimonials.
+const VisualPanel = () => (
+  <div className="relative hidden lg:block">
+    <img src={ADMIN_AUTH_HERO} alt="" className="absolute inset-0 w-full h-full object-cover" style={{ objectPosition: 'center 35%' }} />
+    <div className="absolute inset-0 aa-scrim" />
+    <div className="relative h-full flex flex-col justify-between p-12">
+      <Brand tone="onDark" />
+      <div className="max-w-sm">
+        <p
+          className="text-[11px] font-bold uppercase tracking-[0.14em] mb-3"
+          style={{ color: '#e3ac95' }}
+        >
+          Administrative Access
+        </p>
+        <h2 className="text-2xl font-bold leading-snug" style={{ color: '#fbf3ec' }}>
+          System management, question banks, and candidate oversight — in one secure console.
+        </h2>
+        <p className="text-sm mt-4 leading-relaxed flex items-start gap-2" style={{ color: 'rgba(251,243,236,0.72)' }}>
+          <ShieldCheck className="w-4 h-4 shrink-0 mt-0.5" />
+          Access is restricted to authorized administrators.
+        </p>
+      </div>
+    </div>
+  </div>
+);
 
 const AdminLogin = () => {
   const [email, setEmail] = useState('');
@@ -15,7 +77,6 @@ const AdminLogin = () => {
   const [forgotEmail, setForgotEmail] = useState('');
   const [resetSuccess, setResetSuccess] = useState(false);
   const navigate = useNavigate();
-  const { isDark } = useTheme();
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -42,7 +103,7 @@ const AdminLogin = () => {
     setLoading(true);
     setError('');
     setResetSuccess(false);
-    
+
     fetchWithAuth('/forgot-password', {
       method: 'POST',
       body: JSON.stringify({ email: forgotEmail })
@@ -54,163 +115,141 @@ const AdminLogin = () => {
     .finally(() => setLoading(false));
   };
 
-  if (showForgotPwd) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--bg-app)] px-4 relative transition-colors duration-300">
-        {/* Glow Effect behind card */}
-        <div className="absolute w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-[90px] -z-10 pointer-events-none" />
+  return (
+    <div className="admin-auth-shell min-h-screen grid grid-cols-1 lg:grid-cols-2">
+      <VisualPanel />
 
-        {/* Top-Right Theme Toggle */}
-        <div className="absolute top-6 right-6 z-20">
+      <div className="flex items-center justify-center px-4 sm:px-8 py-12 relative">
+        <div className="absolute top-6 right-6">
           <ThemeToggle />
         </div>
-
-        <div className="w-full max-w-md glass-card p-8 rounded-3xl relative border">
-          <button 
-            onClick={() => setShowForgotPwd(false)} 
-            className="absolute top-5 right-5 p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-          
-          <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-1 tracking-tight">Forgot Password</h2>
-          <p className="text-xs sm:text-sm text-[var(--text-secondary)] mb-6">Enter your email to receive password reset instructions.</p>
-          
-          {error && (
-            <div className="mb-5 p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 text-xs sm:text-sm font-medium flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 flex-shrink-0" />
-              {error}
-            </div>
-          )}
-          {resetSuccess && (
-            <div className="mb-5 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs sm:text-sm font-medium">
-              Password reset email sent. Please check your inbox.
-            </div>
-          )}
-          
-          <form onSubmit={handleForgotPwd} className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Email Address</label>
-              <div className="relative">
-                <Mail className="w-4 h-4 absolute left-3.5 top-1/2 transform -translate-y-1/2 text-[var(--text-muted)]" />
-                <input 
-                  type="email" 
-                  value={forgotEmail}
-                  onChange={(e) => setForgotEmail(e.target.value)}
-                  placeholder="admin@mockai.com" 
-                  required
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm theme-input border focus:outline-none focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/20 transition-all"
-                />
-              </div>
-            </div>
-            <button 
-              type="submit" 
-              disabled={loading} 
-              className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm shadow-md shadow-indigo-500/20 transition-all active:scale-[0.98]"
-            >
-              {loading ? 'Processing...' : 'Reset Password'}
-            </button>
-          </form>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-[var(--bg-app)] px-4 relative transition-colors duration-300">
-      {/* Glow Effect behind card */}
-      <div className="absolute w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-[90px] -z-10 pointer-events-none" />
-
-      {/* Top-Right Theme Toggle */}
-      <div className="absolute top-6 right-6 z-20">
-        <ThemeToggle />
-      </div>
-      
-      <div className="w-full max-w-md glass-card p-8 rounded-3xl relative border">
-        <div className="flex flex-col items-center mb-8">
-          <div className="w-13 h-13 p-3 rounded-2xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/30 mb-3.5 shadow-sm">
-            <Terminal className="w-7 h-7 text-indigo-500" />
-          </div>
-          <h2 className="text-2xl font-extrabold text-[var(--text-primary)] tracking-tight">Admin Portal</h2>
-          <p className="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">Sign in to access admin portal</p>
+        <div className="absolute top-6 left-6 lg:hidden">
+          <Brand />
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Email Address</label>
-            <div className="relative">
-              <Mail className="w-4 h-4 absolute left-3.5 top-1/2 transform -translate-y-1/2 text-[var(--text-muted)]" />
-              <input 
-                type="email" 
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@mockai.com" 
-                required
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm theme-input border focus:outline-none focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/20 transition-all"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Password</label>
-            <div className="relative">
-              <Lock className="w-4 h-4 absolute left-3.5 top-1/2 transform -translate-y-1/2 text-[var(--text-muted)]" />
-              <input 
-                type={showPassword ? 'text' : 'password'} 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••" 
-                required
-                className="w-full pl-10 pr-11 py-2.5 rounded-xl text-sm theme-input border focus:outline-none focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/20 transition-all"
-              />
+        <div className="w-full max-w-sm">
+          {showForgotPwd ? (
+            <>
               <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3.5 top-1/2 transform -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)] focus:outline-none transition-colors"
-                title={showPassword ? 'Hide password' : 'Show password'}
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                onClick={() => { setShowForgotPwd(false); setError(''); setResetSuccess(false); }}
+                className="aa-btn aa-btn-ghost gap-1.5 px-0 py-1 mb-8 text-xs"
               >
-                {showPassword ? (
-                  <EyeOff className="w-4 h-4" />
-                ) : (
-                  <Eye className="w-4 h-4" />
-                )}
+                <ArrowLeft className="w-3.5 h-3.5" /> Back to sign in
               </button>
-            </div>
-          </div>
 
-          {error && (
-            <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 text-xs font-semibold flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 flex-shrink-0" />
-              {error}
-            </div>
+              <h1 className="text-2xl font-bold tracking-tight mb-1.5">Reset admin password</h1>
+              <p className="text-sm mb-8" style={{ color: 'var(--aa-text-secondary)' }}>
+                Enter the account email and we'll send a new temporary password.
+              </p>
+
+              {error && (
+                <div className="aa-alert-danger rounded-xl px-4 py-3 mb-5 flex items-center gap-2 text-xs sm:text-sm font-medium">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" /> {error}
+                </div>
+              )}
+              {resetSuccess && (
+                <div className="aa-alert-success rounded-xl px-4 py-3 mb-5 text-xs sm:text-sm font-medium">
+                  Password reset email sent. Please check your inbox.
+                </div>
+              )}
+
+              <form onSubmit={handleForgotPwd} className="space-y-4">
+                <div>
+                  <label className="aa-label block mb-1.5">Email Address</label>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: 'var(--aa-text-muted)' }} />
+                    <input
+                      type="email"
+                      value={forgotEmail}
+                      onChange={(e) => setForgotEmail(e.target.value)}
+                      placeholder="admin@mockai.com"
+                      required
+                      className="aa-input w-full pl-10 pr-4 py-2.5 rounded-xl text-sm"
+                    />
+                  </div>
+                </div>
+                <button type="submit" disabled={loading} className="aa-btn aa-btn-primary w-full py-2.5">
+                  {loading ? 'Processing…' : 'Send Temporary Password'}
+                </button>
+              </form>
+            </>
+          ) : (
+            <>
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-1.5 mt-8 lg:mt-0">Admin Portal</h1>
+              <p className="text-sm mb-8" style={{ color: 'var(--aa-text-secondary)' }}>
+                Sign in to access the MockAI admin console.
+              </p>
+
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div>
+                  <label className="aa-label block mb-1.5">Email Address</label>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: 'var(--aa-text-muted)' }} />
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="admin@mockai.com"
+                      required
+                      className="aa-input w-full pl-10 pr-4 py-2.5 rounded-xl text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="aa-label">Password</label>
+                    <button
+                      type="button"
+                      onClick={() => { setShowForgotPwd(true); setError(''); }}
+                      className="text-xs font-semibold"
+                      style={{ color: 'var(--aa-accent)' }}
+                    >
+                      Forgot password?
+                    </button>
+                  </div>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: 'var(--aa-text-muted)' }} />
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      required
+                      className="aa-input w-full pl-10 pr-11 py-2.5 rounded-xl text-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2"
+                      style={{ color: 'var(--aa-text-muted)' }}
+                      title={showPassword ? 'Hide password' : 'Show password'}
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                {error && (
+                  <div className="aa-alert-danger rounded-xl px-3.5 py-3 flex items-center gap-2 text-xs font-semibold">
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" /> {error}
+                  </div>
+                )}
+
+                <button type="submit" disabled={loading} className="aa-btn aa-btn-primary w-full py-2.5 mt-2">
+                  {loading ? <span className="w-4.5 h-4.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Sign In'}
+                </button>
+              </form>
+
+              <div className="flex items-center gap-2 mt-8 pt-6" style={{ borderTop: '1px solid var(--aa-border)' }}>
+                <ShieldCheck className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--aa-text-muted)' }} />
+                <p className="text-[11px]" style={{ color: 'var(--aa-text-muted)' }}>
+                  Security notice: access strictly for authorized admins.
+                </p>
+              </div>
+            </>
           )}
-
-          <button 
-            type="submit" 
-            disabled={loading}
-            className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-md shadow-indigo-500/20 active:scale-[0.98] transition-all flex items-center justify-center mt-2"
-          >
-            {loading ? (
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : (
-              'Sign In'
-            )}
-          </button>
-          
-          <div className="text-right">
-            <button 
-              type="button" 
-              onClick={() => setShowForgotPwd(true)} 
-              className="text-xs font-semibold text-indigo-500 hover:text-indigo-600 transition-colors"
-            >
-              Forgot Password?
-            </button>
-          </div>
-        </form>
-
-        <div className="mt-8 text-center">
-          <p className="text-[11px] text-[var(--text-muted)]">Security notice: Access strictly for authorized admins.</p>
         </div>
       </div>
     </div>

@@ -1,0 +1,173 @@
+/*
+ * Admin authentication screens' design system (Login + Forgot Password,
+ * both live inside pages/AdminLogin.jsx).
+ *
+ * Scoped under `.admin-auth-shell` for exactly the same reason
+ * candidate-theme.css is scoped under `.candidate-app`: the rest of the
+ * Admin Panel (Sidebar, Header, Dashboard, Users, Interviews, Results,
+ * Logs, Admins, Question Bank) reads --bg-app/--text-primary/.glass-card/
+ * etc. from the shared global :root in src/index.css, and this redesign
+ * is explicitly scoped to the auth screens only. Nothing here touches
+ * that shared file, so the rest of Admin is structurally guaranteed to
+ * be unaffected regardless of what values are chosen below.
+ *
+ * Deliberately its own namespace (--aa-*) rather than reusing the
+ * Candidate Panel's --c-* tokens/.candidate-app - same brand accent
+ * direction (deep burgundy/wine), but a cooler, more graphite-leaning
+ * neutral scale and no serif heading font, so the two stay visually
+ * distinct per the redesign brief.
+ */
+
+.admin-auth-shell {
+  --aa-bg: #f5f4f1;
+  --aa-surface: #ffffff;
+  --aa-surface-muted: #ebe9e4;
+  --aa-border: #ddd9d1;
+  --aa-border-strong: #c8c2b5;
+
+  --aa-text: #1c1a17;
+  --aa-text-secondary: #5c584f;
+  --aa-text-muted: #918b7d;
+  --aa-on-accent: #fbf3ec;
+
+  --aa-accent: #7a2333;
+  --aa-accent-hover: #661d2a;
+  --aa-accent-soft: rgba(122, 35, 51, 0.08);
+  --aa-accent-soft-strong: rgba(122, 35, 51, 0.16);
+
+  --aa-danger: #a23b2e;
+  --aa-danger-soft: rgba(162, 59, 46, 0.1);
+  --aa-success: #4b6b4f;
+  --aa-success-soft: rgba(75, 107, 79, 0.1);
+
+  --aa-shadow: 0 20px 48px -18px rgba(20, 18, 15, 0.2);
+  --aa-radius-sm: 10px;
+  --aa-radius: 16px;
+  --aa-font: 'Inter', -apple-system, system-ui, sans-serif;
+
+  background: var(--aa-bg);
+  color: var(--aa-text);
+  font-family: var(--aa-font);
+  min-height: 100vh;
+}
+
+html[data-theme='dark'] .admin-auth-shell {
+  --aa-bg: #0e0d0c;
+  --aa-surface: #17140f;
+  --aa-surface-muted: #1e1a15;
+  --aa-border: #2c2620;
+  --aa-border-strong: #3d352b;
+
+  --aa-text: #f1ede5;
+  --aa-text-secondary: #ab9f8f;
+  --aa-text-muted: #746a5c;
+  --aa-on-accent: #1a1210;
+
+  --aa-accent: #d99a7f;
+  --aa-accent-hover: #e3ac95;
+  --aa-accent-soft: rgba(217, 154, 127, 0.12);
+  --aa-accent-soft-strong: rgba(217, 154, 127, 0.2);
+
+  --aa-danger: #d98a72;
+  --aa-danger-soft: rgba(217, 138, 114, 0.14);
+  --aa-success: #8fb097;
+  --aa-success-soft: rgba(143, 176, 151, 0.14);
+
+  --aa-shadow: 0 24px 56px -18px rgba(0, 0, 0, 0.6);
+}
+
+.admin-auth-shell .aa-panel {
+  background: var(--aa-surface);
+  border: 1px solid var(--aa-border);
+}
+
+.admin-auth-shell .aa-input {
+  background: var(--aa-surface);
+  border: 1px solid var(--aa-border-strong);
+  border-radius: var(--aa-radius-sm);
+  color: var(--aa-text);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.admin-auth-shell .aa-input::placeholder {
+  color: var(--aa-text-muted);
+}
+
+.admin-auth-shell .aa-input:focus {
+  outline: none;
+  border-color: var(--aa-accent);
+  box-shadow: 0 0 0 3px var(--aa-accent-soft);
+}
+
+.admin-auth-shell .aa-input:disabled {
+  opacity: 0.6;
+}
+
+.admin-auth-shell .aa-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--aa-text-secondary);
+}
+
+.admin-auth-shell .aa-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  font-size: 0.875rem;
+  border-radius: var(--aa-radius-sm);
+  transition: background-color 0.18s ease, transform 0.12s ease;
+}
+
+.admin-auth-shell .aa-btn:active {
+  transform: scale(0.985);
+}
+
+.admin-auth-shell .aa-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.admin-auth-shell .aa-btn-primary {
+  background: var(--aa-accent);
+  color: var(--aa-on-accent);
+}
+
+.admin-auth-shell .aa-btn-primary:hover:not(:disabled) {
+  background: var(--aa-accent-hover);
+}
+
+.admin-auth-shell .aa-btn-ghost {
+  background: transparent;
+  color: var(--aa-text-secondary);
+}
+
+.admin-auth-shell .aa-btn-ghost:hover:not(:disabled) {
+  color: var(--aa-text);
+  background: var(--aa-surface-muted);
+}
+
+.admin-auth-shell .aa-alert-danger {
+  background: var(--aa-danger-soft);
+  color: var(--aa-danger);
+  border: 1px solid transparent;
+}
+
+.admin-auth-shell .aa-alert-success {
+  background: var(--aa-success-soft);
+  color: var(--aa-success);
+  border: 1px solid transparent;
+}
+
+.admin-auth-shell .aa-scrim {
+  background: linear-gradient(180deg, rgba(14, 13, 12, 0.15) 0%, rgba(14, 13, 12, 0.88) 100%);
+}
+
+.admin-auth-shell a:focus-visible,
+.admin-auth-shell button:focus-visible,
+.admin-auth-shell input:focus-visible {
+  outline: 2px solid var(--aa-accent);
+  outline-offset: 2px;
+}
