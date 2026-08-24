@@ -35,6 +35,19 @@
   --aa-accent-soft: rgba(122, 35, 51, 0.08);
   --aa-accent-soft-strong: rgba(122, 35, 51, 0.16);
 
+  /* Deliberately NOT the same as --aa-accent above. --aa-accent gets
+     lightened in dark mode so it stays legible as TEXT against a
+     near-black page - but a button provides its own background, so it
+     doesn't need that lightening, and reusing the lightened value there
+     is exactly what produced the washed-out "peach" CTA this redesign is
+     fixing. The button fill stays this same rich, deep wine in both
+     themes; only its text/hover shift. */
+  --aa-cta-from: #7d2738;
+  --aa-cta-to: #5c1c28;
+  --aa-cta-hover-from: #8f2e40;
+  --aa-cta-hover-to: #6b2130;
+  --aa-cta-text: #fbf3ec;
+
   --aa-danger: #a23b2e;
   --aa-danger-soft: rgba(162, 59, 46, 0.1);
   --aa-success: #4b6b4f;
@@ -131,12 +144,14 @@ html[data-theme='dark'] .admin-auth-shell {
 }
 
 .admin-auth-shell .aa-btn-primary {
-  background: var(--aa-accent);
-  color: var(--aa-on-accent);
+  background: linear-gradient(135deg, var(--aa-cta-from) 0%, var(--aa-cta-to) 100%);
+  color: var(--aa-cta-text);
+  box-shadow: 0 8px 20px -8px rgba(92, 28, 40, 0.55);
 }
 
 .admin-auth-shell .aa-btn-primary:hover:not(:disabled) {
-  background: var(--aa-accent-hover);
+  background: linear-gradient(135deg, var(--aa-cta-hover-from) 0%, var(--aa-cta-hover-to) 100%);
+  box-shadow: 0 10px 24px -8px rgba(92, 28, 40, 0.65);
 }
 
 .admin-auth-shell .aa-btn-ghost {
@@ -161,9 +176,40 @@ html[data-theme='dark'] .admin-auth-shell {
   border: 1px solid transparent;
 }
 
-.admin-auth-shell .aa-scrim {
-  background: linear-gradient(180deg, rgba(14, 13, 12, 0.15) 0%, rgba(14, 13, 12, 0.88) 100%);
+/* Full-bleed hero: a duotone wash over the (already monochrome) photo so
+   it reads as MockAI's own photography treatment rather than dropped-in
+   stock art, plus a directional scrim (strong lower-left, where the
+   wordmark/headline sit; easing off toward the upper-right) instead of a
+   flat top-to-bottom gradient. */
+.admin-auth-shell .aa-duotone {
+  background: linear-gradient(135deg, rgba(122, 35, 51, 0.55) 0%, rgba(20, 16, 14, 0.85) 100%);
+  mix-blend-mode: multiply;
 }
+
+.admin-auth-shell .aa-scrim {
+  background:
+    linear-gradient(90deg, rgba(14, 12, 11, 0.75) 0%, rgba(14, 12, 11, 0.28) 55%, rgba(14, 12, 11, 0.06) 100%),
+    linear-gradient(0deg, rgba(14, 12, 11, 0.55) 0%, rgba(14, 12, 11, 0) 38%);
+}
+
+/* Floating access-panel surface for the form, distinct from a plain
+   card - a hairline border plus restrained corner brackets, echoing the
+   Terminal/console brand mark instead of a generic rounded rectangle. */
+.admin-auth-shell .aa-console-panel {
+  background: var(--aa-surface);
+  border: 1px solid var(--aa-border);
+  box-shadow: var(--aa-shadow);
+}
+
+.admin-auth-shell .aa-bracket {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-color: var(--aa-accent-soft-strong);
+  opacity: 0.9;
+}
+.admin-auth-shell .aa-bracket-tl { top: -1px; left: -1px; border-top: 2px solid; border-left: 2px solid; border-top-left-radius: 4px; }
+.admin-auth-shell .aa-bracket-br { bottom: -1px; right: -1px; border-bottom: 2px solid; border-right: 2px solid; border-bottom-right-radius: 4px; }
 
 .admin-auth-shell a:focus-visible,
 .admin-auth-shell button:focus-visible,
