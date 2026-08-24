@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, User as UserIcon, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import ThemeToggle from '../../components/ThemeToggle';
 import { register } from '../services/candidateAuth';
-import { CANDIDATE_IMAGES } from '../assets/images';
+import AuthVisualPanel from '../components/AuthVisualPanel';
 
 // FR01 - User Registration
 const Register = () => {
@@ -37,26 +37,8 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2">
-      <div className="relative hidden lg:block">
-        <img src={CANDIDATE_IMAGES.authHero} alt="" className="absolute inset-0 w-full h-full object-cover" />
-        <div className="absolute inset-0 c-scrim" />
-        <div className="relative h-full flex flex-col justify-between p-12">
-          <span className="flex items-baseline gap-0.5">
-            <span className="c-heading text-xl" style={{ color: '#fbf3ec' }}>Mock</span>
-            <span className="c-heading text-xl" style={{ color: '#e3ac95' }}>AI</span>
-          </span>
-          <div className="max-w-sm">
-            <p className="c-eyebrow mb-3" style={{ color: '#e3ac95' }}>Career Development</p>
-            <h2 className="c-heading text-3xl leading-snug" style={{ color: '#fbf3ec' }}>
-              Every interview is practice for the one that matters.
-            </h2>
-            <p className="text-sm mt-4 leading-relaxed" style={{ color: 'rgba(251,243,236,0.75)' }}>
-              Create your account to start building a personal record of how you interview — and how you're getting better.
-            </p>
-          </div>
-        </div>
-      </div>
+    <div className="min-h-screen grid grid-cols-1 lg:grid-cols-[1.2fr_1fr]">
+      <AuthVisualPanel />
 
       <div className="flex items-center justify-center px-4 sm:px-8 py-12 relative">
         <div className="absolute top-6 right-6">
@@ -65,7 +47,7 @@ const Register = () => {
 
         <div className="w-full max-w-sm">
           <p className="c-eyebrow mb-3 lg:hidden">MockAI</p>
-          <h1 className="c-heading text-3xl mb-1.5">Create your account</h1>
+          <h2 className="c-heading text-3xl mb-1.5">Create your account</h2>
           <p className="text-sm mb-8" style={{ color: 'var(--c-text-secondary)' }}>
             Start practicing interviews and tracking your progress.
           </p>
@@ -146,7 +128,7 @@ const Register = () => {
               </div>
             )}
 
-            <button type="submit" disabled={loading} className="c-btn c-btn-primary w-full py-2.5 mt-2">
+            <button type="submit" disabled={loading} className="c-btn c-btn-cta w-full py-2.5 mt-2">
               {loading ? <span className="w-4.5 h-4.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Create Account'}
             </button>
           </form>

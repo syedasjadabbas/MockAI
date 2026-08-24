@@ -10,11 +10,13 @@
 // environment) and to sit naturally alongside the deep burgundy/wine
 // accent used throughout - never a generic "business people" filler shot,
 // never AI/robot/tech imagery.
+// Login/Register/Forgot Password deliberately do NOT use a photo from
+// here - see AuthVisualPanel.jsx (candidate/components) for why: an
+// abstract, on-brand composition (typography + a waveform motif tied to
+// MockAI's actual product - recorded spoken interview answers) instead of
+// stock photography, after repeated feedback that photo choices for
+// authentication screens kept reading as generic stock art.
 export const CANDIDATE_IMAGES = {
-  // Login / Register split panel - a composed, confident portrait whose
-  // tie color echoes the panel's own accent, tying the photography to the
-  // palette instead of looking like unrelated stock art.
-  authHero: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=1200&q=80',
   // Dashboard - a small editorial visual section conveying momentum/
   // confidence rather than a literal "AI" or "interview" cliche.
   dashboardHero: 'https://images.unsplash.com/photo-1580894732444-8ecded7900cd?auto=format&fit=crop&w=1200&q=80',

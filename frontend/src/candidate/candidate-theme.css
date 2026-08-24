@@ -39,6 +39,21 @@
   --c-accent-soft: rgba(122, 35, 51, 0.08);
   --c-accent-soft-strong: rgba(122, 35, 51, 0.16);
 
+  /* Fixed-wine CTA fill, distinct from --c-accent above. --c-accent is
+     lightened in dark mode so it stays legible as TEXT/icons against a
+     near-black page - but a button provides its own background and never
+     needed that lightening. Reusing the lightened value as a solid button
+     fill is what produced the washed-out peach/orange primary buttons on
+     the auth screens; this is used ONLY by .c-btn-cta (auth screens),
+     added alongside the existing .c-btn-primary rather than changing it,
+     so Dashboard/Simulator/etc. keep rendering exactly as already
+     approved. */
+  --c-cta-from: #7d2738;
+  --c-cta-to: #5c1c28;
+  --c-cta-hover-from: #8f2e40;
+  --c-cta-hover-to: #6b2130;
+  --c-cta-text: #fbf3ec;
+
   /* ---- Status (semantic only - never a second brand accent) ---- */
   --c-success: #4b6b4f;
   --c-success-soft: rgba(75, 107, 79, 0.1);
@@ -186,6 +201,20 @@ html[data-theme='dark'] .candidate-app {
 
 .candidate-app .c-btn-primary:hover:not(:disabled) {
   background: var(--c-accent-hover);
+}
+
+/* Auth-screens-only CTA (Login/Register/Forgot Password) - see the
+   --c-cta-* token comment above for why this isn't just .c-btn-primary
+   with different values. */
+.candidate-app .c-btn-cta {
+  background: linear-gradient(135deg, var(--c-cta-from) 0%, var(--c-cta-to) 100%);
+  color: var(--c-cta-text);
+  box-shadow: 0 8px 20px -8px rgba(92, 28, 40, 0.5);
+}
+
+.candidate-app .c-btn-cta:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--c-cta-hover-from) 0%, var(--c-cta-hover-to) 100%);
+  box-shadow: 0 10px 24px -8px rgba(92, 28, 40, 0.6);
 }
 
 .candidate-app .c-btn-secondary {

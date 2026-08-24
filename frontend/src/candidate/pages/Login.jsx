@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, AlertCircle, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import ThemeToggle from '../../components/ThemeToggle';
 import { login, requestPasswordReset } from '../services/candidateAuth';
-import { CANDIDATE_IMAGES } from '../assets/images';
+import AuthVisualPanel from '../components/AuthVisualPanel';
 
 // FR02 - User Login, FR03 - Password Recovery
 const Login = () => {
@@ -47,29 +47,10 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2">
-      {/* Visual panel - hidden on small screens to keep mobile focused on the form */}
-      <div className="relative hidden lg:block">
-        <img src={CANDIDATE_IMAGES.authHero} alt="" className="absolute inset-0 w-full h-full object-cover" />
-        <div className="absolute inset-0 c-scrim" />
-        <div className="relative h-full flex flex-col justify-between p-12">
-          <span className="flex items-baseline gap-0.5">
-            <span className="c-heading text-xl" style={{ color: '#fbf3ec' }}>Mock</span>
-            <span className="c-heading text-xl" style={{ color: '#e3ac95' }}>AI</span>
-          </span>
-          <div className="max-w-sm">
-            <p className="c-eyebrow mb-3" style={{ color: '#e3ac95' }}>Interview Preparation</p>
-            <h2 className="c-heading text-3xl leading-snug" style={{ color: '#fbf3ec' }}>
-              Walk in prepared. Walk out confident.
-            </h2>
-            <p className="text-sm mt-4 leading-relaxed" style={{ color: 'rgba(251,243,236,0.75)' }}>
-              Practice real interview questions, record your responses, and track how you improve — session by session.
-            </p>
-          </div>
-        </div>
-      </div>
+    <div className="min-h-screen grid grid-cols-1 lg:grid-cols-[1.2fr_1fr]">
+      <AuthVisualPanel />
 
-      {/* Form panel */}
+      {/* Form column */}
       <div className="flex items-center justify-center px-4 sm:px-8 py-12 relative">
         <div className="absolute top-6 right-6">
           <ThemeToggle />
@@ -86,7 +67,7 @@ const Login = () => {
                 <ArrowLeft className="w-3.5 h-3.5" /> Back to sign in
               </button>
 
-              <h1 className="c-heading text-2xl mb-1.5">Reset your password</h1>
+              <h2 className="c-heading text-2xl mb-1.5">Reset your password</h2>
               <p className="text-sm mb-8" style={{ color: 'var(--c-text-secondary)' }}>
                 Enter your email and we'll send you instructions.
               </p>
@@ -117,7 +98,7 @@ const Login = () => {
                     />
                   </div>
                 </div>
-                <button type="submit" disabled={loading} className="c-btn c-btn-primary w-full py-2.5">
+                <button type="submit" disabled={loading} className="c-btn c-btn-cta w-full py-2.5">
                   {loading ? 'Sending…' : 'Send Reset Instructions'}
                 </button>
               </form>
@@ -125,7 +106,7 @@ const Login = () => {
           ) : (
             <>
               <p className="c-eyebrow mb-3 lg:hidden">MockAI</p>
-              <h1 className="c-heading text-3xl mb-1.5">Welcome back</h1>
+              <h2 className="c-heading text-3xl mb-1.5">Welcome back</h2>
               <p className="text-sm mb-8" style={{ color: 'var(--c-text-secondary)' }}>
                 Sign in to continue your interview practice.
               </p>
@@ -186,7 +167,7 @@ const Login = () => {
                   </div>
                 )}
 
-                <button type="submit" disabled={loading} className="c-btn c-btn-primary w-full py-2.5 mt-2">
+                <button type="submit" disabled={loading} className="c-btn c-btn-cta w-full py-2.5 mt-2">
                   {loading ? <span className="w-4.5 h-4.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Sign In'}
                 </button>
               </form>
@@ -194,7 +175,7 @@ const Login = () => {
               <p className="text-sm mt-7 text-center" style={{ color: 'var(--c-text-secondary)' }}>
                 Don't have an account?{' '}
                 <Link to="/register" className="font-semibold" style={{ color: 'var(--c-accent)' }}>
-                  Create one
+                  Start practicing
                 </Link>
               </p>
             </>
