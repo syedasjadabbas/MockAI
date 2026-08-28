@@ -606,7 +606,8 @@ def get_all_admins(token_payload: dict = Depends(verify_admin)):
     return [
         {
             "name": admin.get("name", "Unknown Admin"),
-            "email": admin.get("email")
+            "email": admin.get("email"),
+            "role": admin.get("role", "admin")
         }
         for admin in admins
     ]

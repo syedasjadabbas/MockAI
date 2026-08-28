@@ -45,29 +45,74 @@ app.include_router(candidate_evaluation_router, prefix="/api/v1/candidate")  # v
 
 app.include_router(internal_evaluation_router, prefix="/internal")
 
+DEFAULT_ADMINS = [
+    {
+        "name": "System Admin",
+        "email": "admin@mockai.com",
+        "default_password": "admin123",
+        "role": "admin",
+    },
+    {
+        "name": "Asjad Abbas",
+        "email": "asjadabbaszaidi@gmail.com",
+        "default_password": "admin123",
+        "role": "admin",
+    },
+    {
+        "name": "Hassan Kazmi",
+        "email": "hassankazmi2004@gmail.com",
+        "default_password": "admin",
+        "role": "admin",
+    },
+]
+
+def ensure_default_admins():
+    """
+    Idempotently ensure standard admin accounts exist in admins_collection.
+    - Creates missing admin accounts.
+    - Leaves existing admin accounts and passwords completely unchanged.
+    - Never downgrades an admin.
+    - Never touches users_collection or deletes data.
+    """
+    from datetime import datetime
+    for adm in DEFAULT_ADMINS:
+        normalized_email = adm["email"].strip().lower()
+        existing = admins_collection.find_one({"email": normalized_email})
+        if not existing:
+            new_doc = {
+                "name": adm["name"],
+                "email": normalized_email,
+                "password": hash_password(adm["default_password"]),
+                "role": adm["role"],
+                "created_at": datetime.utcnow(),
+            }
+            admins_collection.insert_one(new_doc)
+            print(f"Startup check: Created admin account '{normalized_email}'")
+        else:
+            if existing.get("role") != "admin":
+                admins_collection.update_one(
+                    {"_id": existing["_id"]},
+                    {"$set": {"role": "admin"}}
+                )
+            print(f"Startup check: Standard admin '{normalized_email}' verified.")
+
 @app.on_event("startup")
 async def startup_event():
     """
-    Verify database connectivity on startup, ensure default admin exists,
+    Verify database connectivity on startup, ensure standard admins exist,
     initialize database indexes, and initialize default categories & questions if empty.
     """
+    # 1. Ensure standard admin accounts exist (Highest Priority)
+    try:
+        ensure_default_admins()
+    except Exception as admin_err:
+        print(f"Startup Admin Seeding Error: {admin_err}")
+
+    # 2. Verify database connectivity & initialize indexes/questions
     try:
         client.admin.command('ping')
         # Create database indexes for maximum query performance
         init_db_indexes()
-
-        # Check if default admin exists
-        admin = admin_collection.find_one({"email": "admin@mockai.com"})
-        if not admin:
-            admin_collection.insert_one({
-                "email": "admin@mockai.com",
-                "password": hash_password("admin123"),
-                "role": "admin",
-                "name": "System Admin"
-            })
-            print("Initialized default admin: admin@mockai.com")
-        else:
-            print(f"Startup check: admin@mockai.com found in database.")
 
         # Ensure question bank default categories and questions
         try:
