@@ -76,6 +76,11 @@
   --c-font-heading: 'Fraunces', 'Iowan Old Style', Georgia, serif;
   --c-font-body: 'Inter', -apple-system, system-ui, sans-serif;
 
+  /* ---- Input field colors ---- */
+  --c-input-bg: #f5efe4;           /* warm ivory / soft cream background */
+  --c-input-border: #d6c7ae;       /* subtle warm neutral border */
+  --c-input-border-focus: #7a2333; /* brand burgundy focus border */
+
   background: var(--c-bg);
   color: var(--c-text);
   font-family: var(--c-font-body);
@@ -110,6 +115,11 @@ html[data-theme='dark'] .candidate-app {
   --c-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
   --c-shadow: 0 20px 48px -18px rgba(0, 0, 0, 0.55);
   --c-shadow-lg: 0 32px 72px -20px rgba(0, 0, 0, 0.6);
+
+  /* ---- Input field colors ---- */
+  --c-input-bg: #1c1713;           /* deep charcoal background */
+  --c-input-border: #332921;       /* subtle warm border */
+  --c-input-border-focus: #d99a7f; /* warm accent focus border */
 }
 
 /* ===================== Typography ===================== */
@@ -249,11 +259,11 @@ html[data-theme='dark'] .candidate-app {
 /* ===================== Forms ===================== */
 
 .candidate-app .c-input {
-  background: var(--c-surface);
-  border: 1px solid var(--c-border-strong);
+  background: var(--c-input-bg);
+  border: 1px solid var(--c-input-border);
   border-radius: var(--c-radius-sm);
   color: var(--c-text);
-  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
 }
 
 .candidate-app .c-input::placeholder {
@@ -262,8 +272,29 @@ html[data-theme='dark'] .candidate-app {
 
 .candidate-app .c-input:focus {
   outline: none;
-  border-color: var(--c-accent);
+  border-color: var(--c-input-border-focus);
   box-shadow: 0 0 0 3px var(--c-accent-soft);
+}
+
+/* Override browser autofill pale blue appearance to use candidate app theme */
+.candidate-app input:-webkit-autofill,
+.candidate-app input:-webkit-autofill:hover, 
+.candidate-app input:-webkit-autofill:focus, 
+.candidate-app input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px var(--c-input-bg) inset !important;
+  -webkit-text-fill-color: var(--c-text) !important;
+  caret-color: var(--c-text) !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Staggered voiceprint breathing shimmer animation keyframe */
+@keyframes waveform-shimmer {
+  0%, 100% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(0.76);
+  }
 }
 
 .candidate-app .c-label {

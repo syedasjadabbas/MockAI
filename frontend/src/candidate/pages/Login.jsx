@@ -51,24 +51,24 @@ const Login = () => {
       <AuthVisualPanel />
 
       {/* Form column */}
-      <div className="flex items-center justify-center px-4 sm:px-8 py-12 relative">
+      <div className="flex items-center justify-center px-6 sm:px-10 py-16 relative bg-[var(--c-bg)]">
         <div className="absolute top-6 right-6">
           <ThemeToggle />
         </div>
 
-        <div className="w-full max-w-sm">
+        <div className="w-full max-w-[26rem] px-2 sm:px-4">
           {showForgotPwd ? (
             <>
               <button
                 onClick={() => setShowForgotPwd(false)}
-                className="flex items-center gap-1.5 text-xs font-semibold mb-8"
+                className="flex items-center gap-1.5 text-xs font-semibold mb-8 hover:opacity-85 transition-opacity"
                 style={{ color: 'var(--c-text-muted)' }}
               >
                 <ArrowLeft className="w-3.5 h-3.5" /> Back to sign in
               </button>
 
               <h2 className="c-heading text-2xl mb-1.5">Reset your password</h2>
-              <p className="text-sm mb-8" style={{ color: 'var(--c-text-secondary)' }}>
+              <p className="text-sm mb-6" style={{ color: 'var(--c-text-secondary)' }}>
                 Enter your email and we'll send you instructions.
               </p>
 
@@ -83,46 +83,51 @@ const Login = () => {
                 </div>
               )}
 
-              <form onSubmit={handleForgotPwd} className="space-y-4">
+              <form onSubmit={handleForgotPwd} className="space-y-5">
                 <div>
                   <label className="c-label block mb-1.5">Email Address</label>
                   <div className="relative">
-                    <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: 'var(--c-text-muted)' }} />
+                    <Mail className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2" style={{ color: 'var(--c-text-muted)' }} />
                     <input
                       type="email"
                       value={forgotEmail}
                       onChange={(e) => setForgotEmail(e.target.value)}
                       placeholder="jane@example.com"
                       required
-                      className="c-input w-full pl-10 pr-4 py-2.5 rounded-xl text-sm"
+                      className="c-input w-full pl-11 pr-4 py-3 rounded-xl text-sm"
                     />
                   </div>
                 </div>
-                <button type="submit" disabled={loading} className="c-btn c-btn-cta w-full py-2.5">
+                <button type="submit" disabled={loading} className="c-btn c-btn-cta w-full py-3 mt-2">
                   {loading ? 'Sending…' : 'Send Reset Instructions'}
                 </button>
               </form>
             </>
           ) : (
             <>
-              <p className="c-eyebrow mb-3 lg:hidden">MockAI</p>
+              {/* Elegant Mobile Wordmark */}
+              <div className="flex items-baseline gap-0.5 mb-3 lg:hidden select-none">
+                <span className="c-heading text-xl tracking-tight">Mock</span>
+                <span className="c-heading text-xl tracking-tight" style={{ color: 'var(--c-accent)' }}>AI</span>
+              </div>
+              
               <h2 className="c-heading text-3xl mb-1.5">Welcome back</h2>
-              <p className="text-sm mb-8" style={{ color: 'var(--c-text-secondary)' }}>
+              <p className="text-sm mb-6" style={{ color: 'var(--c-text-secondary)' }}>
                 Sign in to continue your interview practice.
               </p>
 
-              <form onSubmit={handleLogin} className="space-y-4">
+              <form onSubmit={handleLogin} className="space-y-5">
                 <div>
                   <label className="c-label block mb-1.5">Email Address</label>
                   <div className="relative">
-                    <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: 'var(--c-text-muted)' }} />
+                    <Mail className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2" style={{ color: 'var(--c-text-muted)' }} />
                     <input
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="jane@example.com"
                       required
-                      className="c-input w-full pl-10 pr-4 py-2.5 rounded-xl text-sm"
+                      className="c-input w-full pl-11 pr-4 py-3 rounded-xl text-sm"
                     />
                   </div>
                 </div>
@@ -133,26 +138,26 @@ const Login = () => {
                     <button
                       type="button"
                       onClick={() => setShowForgotPwd(true)}
-                      className="text-xs font-semibold"
+                      className="text-xs font-semibold hover:opacity-85 transition-opacity"
                       style={{ color: 'var(--c-accent)' }}
                     >
                       Forgot password?
                     </button>
                   </div>
                   <div className="relative">
-                    <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: 'var(--c-text-muted)' }} />
+                    <Lock className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2" style={{ color: 'var(--c-text-muted)' }} />
                     <input
                       type={showPassword ? 'text' : 'password'}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
                       required
-                      className="c-input w-full pl-10 pr-11 py-2.5 rounded-xl text-sm"
+                      className="c-input w-full pl-11 pr-11 py-3 rounded-xl text-sm"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2"
+                      className="absolute right-4 top-1/2 -translate-y-1/2"
                       style={{ color: 'var(--c-text-muted)' }}
                       aria-label={showPassword ? 'Hide password' : 'Show password'}
                     >
@@ -167,14 +172,14 @@ const Login = () => {
                   </div>
                 )}
 
-                <button type="submit" disabled={loading} className="c-btn c-btn-cta w-full py-2.5 mt-2">
+                <button type="submit" disabled={loading} className="c-btn c-btn-cta w-full py-3 mt-2">
                   {loading ? <span className="w-4.5 h-4.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Sign In'}
                 </button>
               </form>
 
               <p className="text-sm mt-7 text-center" style={{ color: 'var(--c-text-secondary)' }}>
                 Don't have an account?{' '}
-                <Link to="/register" className="font-semibold" style={{ color: 'var(--c-accent)' }}>
+                <Link to="/register" className="font-semibold hover:opacity-85 transition-opacity" style={{ color: 'var(--c-accent)' }}>
                   Start practicing
                 </Link>
               </p>
