@@ -275,40 +275,132 @@ def get_admin_dashboard(token_payload: dict = Depends(verify_admin)):
     total_users = users_collection.count_documents({"role": {"$ne": "admin"}})
     total_interviews = interviews_collection.count_documents({})
     
+    # Single facet query to compute averages, score ranges, and status buckets in one pass
     pipeline = [
         {
-            "$group": {
-                "_id": None,
-                "avg_score": {"$avg": "$score"},
-                "avg_confidence": {"$avg": "$confidence"},
-                "avg_stress": {"$avg": "$stress"}
+            "$facet": {
+                "averages": [
+                    {
+                        "$group": {
+                            "_id": None,
+                            "avg_score": {"$avg": "$score"},
+                            "avg_confidence": {"$avg": "$confidence"},
+                            "avg_stress": {"$avg": "$stress"}
+                        }
+                    }
+                ],
+                "score_groups": [
+                    {
+                        "$group": {
+                            "_id": {
+                                "$cond": [
+                                    {"$eq": ["$score", None]}, "none",
+                                    {"$cond": [
+                                        {"$gte": ["$score", 80]}, "high",
+                                        {"$cond": [{"$gte": ["$score", 60]}, "medium", "low"]}
+                                    ]}
+                                ]
+                            },
+                            "count": {"$sum": 1}
+                        }
+                    }
+                ],
+                "status_groups": [
+                    {
+                        "$group": {
+                            "_id": "$status",
+                            "count": {"$sum": 1}
+                        }
+                    }
+                ],
+                "high_stress_completed": [
+                    {
+                        "$match": {
+                            "status": "Completed",
+                            "stress": "High"
+                        }
+                    },
+                    {"$count": "count"}
+                ],
+                "total_completed": [
+                    {
+                        "$match": {
+                            "status": "Completed"
+                        }
+                    },
+                    {"$count": "count"}
+                ]
             }
         }
     ]
     
-    aggr = list(interviews_collection.aggregate(pipeline))
-    if aggr:
-        stats = aggr[0]
-        average_score = round(stats.get("avg_score") or 0, 1)
-        average_confidence = round(stats.get("avg_confidence") or 0, 1)
-        average_stress = round(stats.get("avg_stress") or 0, 1)
+    aggr_res = list(interviews_collection.aggregate(pipeline))
+    res = aggr_res[0] if aggr_res else {}
+    
+    averages = res.get("averages", [{}])
+    avg_data = averages[0] if averages else {}
+    average_score = round(avg_data.get("avg_score") or 0, 1)
+    average_confidence = round(avg_data.get("avg_confidence") or 0, 1)
+    average_stress = round(avg_data.get("avg_stress") or 0, 1)
+    
+    score_buckets = {"high": 0, "medium": 0, "low": 0, "none": 0}
+    for item in res.get("score_groups", []):
+        s_id = item.get("_id")
+        if s_id in score_buckets:
+            score_buckets[s_id] = item.get("count", 0)
+            
+    status_buckets = {"completed": 0, "progress": 0, "pending": 0}
+    for item in res.get("status_groups", []):
+        status_name = str(item.get("_id", "")).lower()
+        if "completed" in status_name:
+            status_buckets["completed"] = item.get("count", 0)
+        elif "progress" in status_name or "in progress" in status_name:
+            status_buckets["progress"] = item.get("count", 0)
+        elif "pending" in status_name:
+            status_buckets["pending"] = item.get("count", 0)
+            
+    high_stress_count = res.get("high_stress_completed", [{}])
+    high_stress_val = high_stress_count[0].get("count", 0) if high_stress_count else 0
+    
+    completed_count = res.get("total_completed", [{}])
+    completed_val = completed_count[0].get("count", 0) if completed_count else 0
+    
+    insights = []
+    if completed_val == 0:
+        insights.append("No completed interviews recorded yet.")
     else:
-        average_score = 0
-        average_confidence = 0
-        average_stress = 0
+        if average_score < 60:
+            insights.append("Average performance score is below 60%. Candidates require improvement.")
+        if high_stress_val > completed_val * 0.4:
+            insights.append("High stress levels recorded across multiple interview sessions.")
+            
+    if status_buckets["pending"] > status_buckets["completed"]:
+        insights.append("Pending interviews exceed completed evaluations.")
         
+    if not insights:
+        insights.append("Overall candidate evaluation metrics are stable.")
+        
+    insights = insights[:3]
+    
     result = {
         "total_users": total_users,
         "total_interviews": total_interviews,
         "average_score": average_score,
         "average_confidence": average_confidence,
-        "average_stress": average_stress
+        "average_stress": average_stress,
+        "score_buckets": score_buckets,
+        "status_buckets": status_buckets,
+        "insights": insights
     }
     set_cached("dashboard_stats", result, ttl_seconds=15)
     return result
 
 @router.get("/users")
 def get_users(token_payload: dict = Depends(verify_admin)):
+    cached = get_cached("users_list")
+    if cached:
+        return cached
+
     users = list(users_collection.find({"role": {"$ne": "admin"}}, {"password": 0}).sort("created_at", -1))
     
     # 1 single aggregation to get interview counts for all users simultaneously
@@ -321,7 +413,9 @@ def get_users(token_payload: dict = Depends(verify_admin)):
     for user in users:
         user["interview_count"] = counts_map.get(str(user["_id"]), 0)
         
-    return [serialize_mongo(user) for user in users]
+    result = [serialize_mongo(user) for user in users]
+    set_cached("users_list", result, ttl_seconds=10)
+    return result
 
 class CreateUserRequest(BaseModel):
     name: str
@@ -359,6 +453,7 @@ def create_user(user_data: CreateUserRequest, token_payload: dict = Depends(veri
     }
     result = users_collection.insert_one(new_user)
     invalidate_cache("dashboard_stats")
+    invalidate_cache("users_list")
     
     admin_user = admins_collection.find_one({"_id": ObjectId(token_payload.get("user_id"))})
     admin_email = admin_user.get("email") if admin_user else "Unknown Admin"
@@ -443,6 +538,7 @@ def get_interviews(
     role: Optional[str] = None, 
     status_filter: Optional[str] = None, 
     date: Optional[str] = None, 
+    limit: Optional[int] = None,
     token_payload: dict = Depends(verify_admin)
 ):
     query = {}
@@ -451,7 +547,11 @@ def get_interviews(
     if status_filter and status_filter != 'All':
         query["status"] = status_filter
         
-    interviews = list(interviews_collection.find(query, INTERVIEW_LIST_PROJECTION).sort("created_at", -1))
+    if limit:
+        interviews = list(interviews_collection.find(query, INTERVIEW_LIST_PROJECTION).sort("created_at", -1).limit(limit))
+    else:
+        interviews = list(interviews_collection.find(query, INTERVIEW_LIST_PROJECTION).sort("created_at", -1))
+        
     attach_candidate_names(interviews)
             
     # Filter by date exactly if provided (matching YYYY-MM-DD prefix)

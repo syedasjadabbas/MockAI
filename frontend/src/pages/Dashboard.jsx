@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Users, Briefcase, Award, TrendingUp, Clock, CheckCircle2, AlertCircle, Activity, ArrowRight, Info } from 'lucide-react';
 import StatsCard from '../components/StatsCard';
@@ -11,7 +11,11 @@ import { useTheme } from '../context/ThemeContext';
 const Dashboard = () => {
   const [stats, setStats] = useState({ totalUsers: 0, totalInterviews: 0, totalResponses: 0, averageScore: 0 });
   const [recentInterviews, setRecentInterviews] = useState([]);
-  const [allInterviews, setAllInterviews] = useState([]);
+  const [chartsData, setChartsData] = useState({
+    scoreBuckets: { high: 0, medium: 0, low: 0, none: 0 },
+    statusBuckets: { completed: 0, progress: 0, pending: 0 },
+    insights: []
+  });
   const [loading, setLoading] = useState(true);
   const { isDark } = useTheme();
 
@@ -23,7 +27,7 @@ const Dashboard = () => {
       try {
         const [statsData, interviewsData] = await Promise.all([
           fetchWithAuth('/').catch(() => ({})),
-          fetchWithAuth('/interviews').catch(() => [])
+          fetchWithAuth('/interviews?limit=5').catch(() => [])
         ]);
 
         if (!isMounted) return;
@@ -35,16 +39,16 @@ const Dashboard = () => {
             totalResponses: statsData.total_interviews || 0,
             averageScore: statsData.average_score || 0
           });
+          setChartsData({
+            scoreBuckets: statsData.score_buckets || { high: 0, medium: 0, low: 0, none: 0 },
+            statusBuckets: statsData.status_buckets || { completed: 0, progress: 0, pending: 0 },
+            insights: statsData.insights || ["Overall candidate evaluation metrics are stable."]
+          });
         }
 
         if (Array.isArray(interviewsData)) {
-          setAllInterviews(interviewsData);
-          const latest = [...interviewsData]
-            .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
-            .slice(0, 5);
-
           setRecentInterviews(
-            latest.map(interview => ({
+            interviewsData.map(interview => ({
               id: `INT-${String(interview._id || Math.random().toString(36)).slice(-6).toUpperCase()}`,
               candidate: interview.candidate_name || 'Deleted User',
               type: interview.role || '-',
@@ -69,55 +73,6 @@ const Dashboard = () => {
       isMounted = false;
     };
   }, []);
-
-  const chartsData = useMemo(() => {
-    const data = allInterviews;
-    const completed = data.filter(r => r.score !== null);
-    
-    let avgScore = 0;
-    let avgConfidence = 0;
-    let highStressCount = 0;
-
-    if (completed.length > 0) {
-      avgScore = completed.reduce((a, b) => a + b.score, 0) / completed.length;
-      avgConfidence = completed.reduce((a, b) => a + (b.confidence || 0), 0) / completed.length;
-      highStressCount = completed.filter(r => r.stress === 'High').length;
-    }
-
-    const scoreBuckets = {
-      high: completed.filter(r => r.score >= 80).length,
-      medium: completed.filter(r => r.score >= 60 && r.score < 80).length,
-      low: completed.filter(r => r.score < 60).length,
-      none: data.filter(r => r.score === null).length
-    };
-
-    const statusBuckets = {
-      completed: data.filter(i => i.status === "Completed").length,
-      progress: data.filter(i => i.status === "In Progress").length,
-      pending: data.filter(i => i.status === "Pending").length
-    };
-
-    let insights = [];
-
-    if (completed.length === 0) {
-      insights.push("No completed interviews recorded yet.");
-    } else {
-      if (avgScore < 60) insights.push("Average performance score is below 60%. Candidates require improvement.");
-      if (highStressCount > completed.length * 0.4) insights.push("High stress levels recorded across multiple interview sessions.");
-    }
-
-    if (statusBuckets.pending > statusBuckets.completed) {
-      insights.push("Pending interviews exceed completed evaluations.");
-    }
-
-    if (insights.length === 0) {
-      insights.push("Overall candidate evaluation metrics are stable.");
-    }
-
-    insights = insights.slice(0, 3);
-
-    return { scoreBuckets, statusBuckets, insights };
-  }, [allInterviews]);
 
   const { totalUsers, totalInterviews, totalResponses, averageScore: avgPerformance } = stats;
 
