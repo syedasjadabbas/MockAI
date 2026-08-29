@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import candidateBg from '../../assets/candidate_bg.jpg';
 
 // Shared visual identity panel for Login / Register / Forgot Password.
 //
@@ -32,20 +33,23 @@ const AuthVisualPanel = () => {
 
   return (
     <div
-      className="relative hidden lg:flex lg:flex-col lg:justify-between h-full overflow-hidden p-12 xl:p-16 select-none"
+      className="relative hidden lg:flex lg:flex-col lg:justify-between h-full overflow-hidden p-12 xl:p-16 select-none bg-cover bg-center"
       style={{
-        background: 'linear-gradient(165deg, var(--c-bg-soft) 0%, var(--c-surface-muted) 100%)',
+        backgroundImage: `url(${candidateBg})`,
         borderRight: '1px solid var(--c-border)',
       }}
     >
-      {/* Restrained decorative geometry - a single thin ring, not a motif overload */}
+      {/* Dynamic Dark/Warm Overlay matching --c-bg */}
+      <div className="absolute inset-0 bg-[var(--c-bg)]/90 sm:bg-[var(--c-bg)]/88 backdrop-blur-[1px] transition-colors duration-300 pointer-events-none" />
+
+      {/* Restrained decorative geometry */}
       <div
-        className="absolute -right-24 -top-24 w-72 h-72 rounded-full pointer-events-none"
+        className="absolute -right-24 -top-24 w-72 h-72 rounded-full pointer-events-none z-0"
         style={{ border: '1px solid var(--c-border-strong)', opacity: 0.35 }}
       />
 
       {/* Brand logo in top-left */}
-      <span className="relative flex items-baseline gap-0.5 shrink-0">
+      <span className="relative z-10 flex items-baseline gap-0.5 shrink-0">
         <span className="c-heading text-2xl tracking-tight select-none">Mock</span>
         <span className="c-heading text-2xl tracking-tight select-none" style={{ color: 'var(--c-accent)' }}>AI</span>
       </span>
@@ -91,7 +95,7 @@ const AuthVisualPanel = () => {
       </div>
 
       {/* Silent spacer to align the grid layout nicely */}
-      <div className="h-6 shrink-0" />
+      <div className="h-6 shrink-0 relative z-10" />
     </div>
   );
 };
