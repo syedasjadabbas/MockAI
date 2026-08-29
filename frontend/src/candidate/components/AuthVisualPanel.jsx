@@ -51,7 +51,7 @@ const AuthVisualPanel = () => {
 
       {/* Brand logo in top-left */}
       <div className="relative z-10 shrink-0 select-none">
-        <img src={logo} alt="MockAI Logo" className="h-10 w-auto object-contain" />
+        <img src={logo} alt="MockAI Logo" className="h-14 w-auto object-contain" />
       </div>
 
       {/* Flagship vertically centered composition */}

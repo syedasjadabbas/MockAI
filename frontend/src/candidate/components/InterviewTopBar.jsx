@@ -24,7 +24,7 @@ const InterviewTopBar = ({ activeStep, onExit }) => {
     <header className="sticky top-0 z-30 c-panel">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
         <Link to="/dashboard" className="shrink-0 flex items-center select-none">
-          <img src={logo} alt="MockAI Logo" className="h-7 w-auto object-contain" />
+          <img src={logo} alt="MockAI Logo" className="h-10 w-auto object-contain" />
         </Link>
 
         <div className="hidden lg:flex items-center gap-1.5 flex-1 min-w-0 justify-center overflow-x-auto">

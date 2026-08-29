@@ -33,7 +33,7 @@ const CandidateNav = () => {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
         <div className="flex items-center gap-8 min-w-0">
           <Link to="/dashboard" className="shrink-0 flex items-center select-none">
-            <img src={logo} alt="MockAI Logo" className="h-8 w-auto object-contain" />
+            <img src={logo} alt="MockAI Logo" className="h-11 w-auto object-contain" />
           </Link>
 
           <nav className="hidden lg:flex items-center gap-1">

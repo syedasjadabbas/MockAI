@@ -66,7 +66,7 @@ const Register = () => {
         <div className="w-full max-w-[26rem] px-2 sm:px-4 relative z-10">
           {/* Elegant Mobile Logo */}
           <div className="mb-4 lg:hidden select-none">
-            <img src={logo} alt="MockAI Logo" className="h-9 w-auto object-contain" />
+            <img src={logo} alt="MockAI Logo" className="h-12 w-auto object-contain" />
           </div>
           
           <h2 className="c-heading text-3xl mb-1.5">Create your account</h2>
