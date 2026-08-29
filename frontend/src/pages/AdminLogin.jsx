@@ -19,7 +19,7 @@ const Brand = ({ large = false }) => (
     onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
     className="flex items-center gap-3 select-none hover:opacity-90 transition-opacity"
   >
-    <img src={logo} alt="MockAI Logo" className={large ? 'h-14 w-auto object-contain' : 'h-11 w-auto object-contain'} />
+    <img src={logo} alt="MockAI Logo" className={large ? 'h-18 w-auto object-contain' : 'h-14 w-auto object-contain'} />
     <span
       className={`font-bold rounded border tracking-widest ${large ? 'text-[11px] px-2 py-0.5' : 'text-[10px] px-1.5 py-0.5'}`}
       style={{ color: '#e9b39c', borderColor: 'rgba(233,179,156,0.4)', background: 'rgba(233,179,156,0.12)' }}

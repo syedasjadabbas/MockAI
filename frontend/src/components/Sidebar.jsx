@@ -50,7 +50,7 @@ const Sidebar = ({ mobileOpen = false, setMobileOpen = () => {} }) => {
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} 
             className="flex items-center gap-2.5 group select-none hover:opacity-95 transition-opacity"
           >
-            <img src={logo} alt="MockAI Logo" className="h-11 w-auto object-contain group-hover:scale-105 transition-transform" />
+            <img src={logo} alt="MockAI Logo" className="h-14 w-auto object-contain group-hover:scale-105 transition-transform" />
             <span className="text-[10px] bg-indigo-500/10 text-indigo-500 font-bold px-1.5 py-0.5 rounded border border-indigo-500/20">
               ADMIN
             </span>
