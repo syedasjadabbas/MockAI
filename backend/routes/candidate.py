@@ -70,6 +70,7 @@ def _public_user(user: dict) -> dict:
         "name": user.get("name"),
         "email": user.get("email"),
         "role": user.get("role", "user"),
+        "avatar": user.get("avatar"),
         "created_at": user.get("created_at"),
     }
 
@@ -174,21 +175,41 @@ def get_candidate_profile(token_payload: dict = Depends(verify_candidate)):
 # ---------------------------------------------------------------------------
 
 class UpdateProfileRequest(BaseModel):
-    name: str = Field(min_length=1, max_length=100)
+    name: str = Field(None, min_length=1, max_length=100)
+    email: str = Field(None)
+    avatar: str = Field(None)
 
 
 @router.patch("/me")
 def update_candidate_profile(data: UpdateProfileRequest, token_payload: dict = Depends(verify_candidate)):
-    validate_required({"name": data.name})
-    clean_name = data.name.strip()
-    if not clean_name:
-        raise HTTPException(status_code=400, detail="name is required")
-
     user_id = ObjectId(token_payload.get("user_id"))
-    result = users_collection.update_one({"_id": user_id}, {"$set": {"name": clean_name}})
+    update_fields = {}
+    
+    if data.name is not None:
+        clean_name = data.name.strip()
+        if not clean_name:
+            raise HTTPException(status_code=400, detail="name is required")
+        update_fields["name"] = clean_name
+        
+    if data.email is not None:
+        normalized_email = data.email.strip().lower()
+        validate_email(normalized_email)
+        existing = users_collection.find_one({"email": normalized_email, "_id": {"$ne": user_id}})
+        existing_admin = admins_collection.find_one({"email": normalized_email})
+        if existing or existing_admin:
+            raise HTTPException(status_code=400, detail="Email is already taken")
+        update_fields["email"] = normalized_email
+        
+    if data.avatar is not None:
+        update_fields["avatar"] = data.avatar
+        
+    if not update_fields:
+        raise HTTPException(status_code=400, detail="No fields to update")
+        
+    result = users_collection.update_one({"_id": user_id}, {"$set": update_fields})
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Account not found")
-
+        
     updated_user = users_collection.find_one({"_id": user_id})
     return _public_user(updated_user)
 

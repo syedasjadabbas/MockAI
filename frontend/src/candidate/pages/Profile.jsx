@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Calendar, Edit2, Check, X, Briefcase, TrendingUp, Lock, Eye, EyeOff, AlertCircle, RefreshCw } from 'lucide-react';
+import { Mail, Calendar, Edit2, Check, X, Briefcase, TrendingUp, Lock, Eye, EyeOff, AlertCircle, RefreshCw, User as UserIcon } from 'lucide-react';
 import CandidateLayout from '../layouts/CandidateLayout';
 import CandidateStat from '../components/CandidateStat';
 import { getSession, getProfile, updateProfile, changePassword, logout } from '../services/candidateAuth';
@@ -18,12 +18,16 @@ const Profile = () => {
 
   const [summary, setSummary] = useState(null);
 
-  // Name edit state
-  const [editing, setEditing] = useState(false);
+  // Profile fields edit state
   const [nameValue, setNameValue] = useState(session?.name || '');
+  const [emailValue, setEmailValue] = useState(session?.email || '');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+
+  // Avatar upload state
+  const [avatarSaving, setAvatarSaving] = useState(false);
+  const [avatarError, setAvatarError] = useState('');
 
   // Change password state
   const [oldPassword, setOldPassword] = useState('');
@@ -41,6 +45,7 @@ const Profile = () => {
       .then((data) => {
         setSession(data);
         setNameValue(data.name || '');
+        setEmailValue(data.email || '');
       })
       .catch((err) => setProfileError(err.message || 'Failed to load profile.'))
       .finally(() => setProfileLoading(false));
@@ -52,24 +57,64 @@ const Profile = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleSave = async () => {
+  const handleProfileSubmit = async (e) => {
+    e.preventDefault();
     if (!nameValue.trim()) {
       setError('Name cannot be empty.');
       return;
     }
+    if (!emailValue.trim()) {
+      setError('Email cannot be empty.');
+      return;
+    }
     setSaving(true);
     setError('');
+    setSuccess(false);
     try {
-      const updated = await updateProfile({ name: nameValue.trim() });
+      const updated = await updateProfile({ name: nameValue.trim(), email: emailValue.trim() });
       setSession(updated);
-      setEditing(false);
       setSuccess(true);
-      setTimeout(() => setSuccess(false), 2500);
+      // Trigger header updates
+      window.dispatchEvent(new Event('storage'));
+      setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
       setError(err.message || 'Failed to update profile.');
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      setAvatarError('Image size must be less than 2MB.');
+      return;
+    }
+
+    setAvatarSaving(true);
+    setAvatarError('');
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
+        const base64Data = reader.result;
+        const updated = await updateProfile({ avatar: base64Data });
+        setSession(updated);
+        // Trigger header updates
+        window.dispatchEvent(new Event('storage'));
+      } catch (err) {
+        setAvatarError(err.message || 'Failed to upload photo.');
+      } finally {
+        setAvatarSaving(false);
+      }
+    };
+    reader.onerror = () => {
+      setAvatarError('Failed to read image file.');
+      setAvatarSaving(false);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleChangePassword = async (e) => {
@@ -97,10 +142,6 @@ const Profile = () => {
       setOldPassword('');
       setNewPassword('');
       setConfirmNewPassword('');
-      // The backend can't invalidate the old JWT (stateless, no session
-      // store) - logging out here is a client-side best practice so the
-      // candidate immediately re-authenticates with the new password,
-      // not because the old token stops working.
       setTimeout(() => {
         logout();
         navigate('/login');
@@ -138,49 +179,57 @@ const Profile = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Identity card */}
         <div className="lg:col-span-1 c-card rounded-2xl p-6 flex flex-col items-center text-center">
-          <div
-            className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold mb-4"
-            style={{ background: 'var(--c-accent-soft)', color: 'var(--c-accent)', fontFamily: 'var(--c-font-heading)' }}
-          >
-            {(session?.name || 'C').trim().charAt(0).toUpperCase()}
-          </div>
-
-          {editing ? (
-            <div className="w-full flex flex-col items-center gap-2">
-              <input
-                autoFocus
-                value={nameValue}
-                onChange={(e) => setNameValue(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSave()}
-                className="c-input w-full text-center rounded-xl px-3 py-2 text-sm font-semibold"
-                maxLength={60}
-                disabled={saving}
+          <div className="relative group mb-4 select-none">
+            {session?.avatar ? (
+              <img
+                src={session.avatar}
+                alt={session.name}
+                className="w-24 h-24 rounded-full object-cover border-2"
+                style={{ borderColor: 'var(--c-border-strong)' }}
               />
-              {error && <p className="text-xs font-medium" style={{ color: 'var(--c-danger)' }}>{error}</p>}
-              <div className="flex gap-2 mt-1">
-                <button onClick={handleSave} disabled={saving} className="c-btn c-btn-primary px-3 py-1.5 text-xs">
-                  <Check className="w-3.5 h-3.5" /> {saving ? 'Saving…' : 'Save'}
-                </button>
-                <button onClick={() => { setEditing(false); setNameValue(session.name); setError(''); }} disabled={saving} className="c-btn c-btn-secondary px-3 py-1.5 text-xs">
-                  <X className="w-3.5 h-3.5" /> Cancel
-                </button>
+            ) : (
+              <div
+                className="w-24 h-24 rounded-full flex items-center justify-center text-3xl font-bold border-2"
+                style={{
+                  background: 'var(--c-accent-soft)',
+                  color: 'var(--c-accent)',
+                  borderColor: 'var(--c-border-strong)',
+                  fontFamily: 'var(--c-font-heading)'
+                }}
+              >
+                {(session?.name || 'C').trim().charAt(0).toUpperCase()}
               </div>
-            </div>
-          ) : (
-            <button onClick={() => setEditing(true)} title="Click to edit name" className="flex items-center gap-1.5 c-heading text-xl group">
-              {session?.name}
-              <Edit2 className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: 'var(--c-accent)' }} />
-            </button>
-          )}
+            )}
+            
+            {/* Edit Photo Overlay */}
+            <label className="absolute inset-0 w-full h-full rounded-full bg-black/45 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-white">
+              {avatarSaving ? (
+                <RefreshCw className="w-5 h-5 animate-spin" />
+              ) : (
+                <>
+                  <Edit2 className="w-4.5 h-4.5 mb-1 text-white" />
+                  <span className="text-[10px] font-bold text-white uppercase tracking-wider">Change</span>
+                </>
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarUpload}
+                disabled={avatarSaving}
+                className="hidden"
+              />
+            </label>
+          </div>
+          
+          {avatarError && <p className="text-xs font-semibold text-[var(--c-danger)] mt-1 mb-2">{avatarError}</p>}
 
-          {success && <p className="text-xs font-semibold mt-2" style={{ color: 'var(--c-success)' }}>Profile updated</p>}
-
-          <span className="c-badge c-badge-accent mt-3 uppercase">Candidate</span>
+          <h3 className="c-heading text-xl">{session?.name}</h3>
+          <span className="c-badge c-badge-accent mt-2.5 uppercase text-[10px] tracking-widest font-extrabold">Candidate</span>
 
           <div className="w-full mt-6 pt-6 space-y-3.5 text-left" style={{ borderTop: '1px solid var(--c-border)' }}>
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2.5 min-w-0">
               <Mail className="w-4 h-4 shrink-0" style={{ color: 'var(--c-text-muted)' }} />
-              <span className="text-sm truncate" style={{ color: 'var(--c-text-secondary)' }}>{session?.email}</span>
+              <span className="text-sm truncate" style={{ color: 'var(--c-text-secondary)' }} title={session?.email}>{session?.email}</span>
             </div>
             <div className="flex items-center gap-2.5">
               <Calendar className="w-4 h-4 shrink-0" style={{ color: 'var(--c-text-muted)' }} />
@@ -189,13 +238,76 @@ const Profile = () => {
           </div>
         </div>
 
-        {/* Activity summary + security */}
+        {/* Activity summary + settings edit */}
         <div className="lg:col-span-2 space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <CandidateStat label="Total Interviews" value={summary?.totalInterviews ?? '—'} icon={Briefcase} hint="All sessions started" />
             <CandidateStat label="Average Score" value={summary?.averageScore ?? '—'} icon={TrendingUp} hint="Across completed interviews" />
           </div>
 
+          {/* Profile settings form */}
+          <div className="c-card rounded-2xl p-6">
+            <h2 className="c-heading text-base mb-1 flex items-center gap-2">
+              <UserIcon className="w-4 h-4" style={{ color: 'var(--c-accent)' }} /> Profile Details
+            </h2>
+            <p className="text-xs mb-5" style={{ color: 'var(--c-text-secondary)' }}>
+              Update your account name and email address.
+            </p>
+
+            <form onSubmit={handleProfileSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="c-label block mb-1.5">Full Name</label>
+                  <div className="relative">
+                    <UserIcon className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: 'var(--c-text-muted)' }} />
+                    <input
+                      type="text"
+                      value={nameValue}
+                      onChange={(e) => setNameValue(e.target.value)}
+                      placeholder="Jane Doe"
+                      disabled={saving}
+                      required
+                      className="c-input w-full pl-10 pr-4 py-2.5 rounded-xl text-sm disabled:opacity-60"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="c-label block mb-1.5">Email Address</label>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: 'var(--c-text-muted)' }} />
+                    <input
+                      type="email"
+                      value={emailValue}
+                      onChange={(e) => setEmailValue(e.target.value)}
+                      placeholder="jane@example.com"
+                      disabled={saving}
+                      required
+                      className="c-input w-full pl-10 pr-4 py-2.5 rounded-xl text-sm disabled:opacity-60"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {error && (
+                <div className="c-badge-danger rounded-xl px-3.5 py-3 flex items-center gap-2 text-xs font-semibold">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  {error}
+                </div>
+              )}
+              {success && (
+                <div className="c-badge-success rounded-xl px-3.5 py-3 text-xs font-semibold">
+                  Profile updated successfully.
+                </div>
+              )}
+
+              <button type="submit" disabled={saving} className="c-btn c-btn-primary w-full sm:w-auto px-6 py-2.5">
+                {saving && <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />}
+                {saving ? 'Saving…' : 'Save Changes'}
+              </button>
+            </form>
+          </div>
+
+          {/* Change Password form */}
           <div className="c-card rounded-2xl p-6">
             <h2 className="c-heading text-base mb-1 flex items-center gap-2">
               <Lock className="w-4 h-4" style={{ color: 'var(--c-accent)' }} /> Change Password

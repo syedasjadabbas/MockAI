@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Terminal, Mail, Lock, AlertCircle, ArrowLeft, ShieldCheck, Eye, EyeOff } from 'lucide-react';
 import { fetchWithAuth } from '../api';
 import ThemeToggle from '../components/ThemeToggle';
@@ -14,7 +14,11 @@ import logo from '../assets/logo.png';
 // (admin-auth-theme.css) so nothing here touches the shared indigo
 // styling the rest of Admin still uses.
 const Brand = ({ large = false }) => (
-  <div className="flex items-center gap-3 select-none">
+  <Link 
+    to="/admin/login" 
+    onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+    className="flex items-center gap-3 select-none hover:opacity-90 transition-opacity"
+  >
     <img src={logo} alt="MockAI Logo" className={large ? 'h-14 w-auto object-contain' : 'h-11 w-auto object-contain'} />
     <span
       className={`font-bold rounded border tracking-widest ${large ? 'text-[11px] px-2 py-0.5' : 'text-[10px] px-1.5 py-0.5'}`}
@@ -22,7 +26,7 @@ const Brand = ({ large = false }) => (
     >
       ADMIN
     </span>
-  </div>
+  </Link>
 );
 
 const AdminLogin = () => {

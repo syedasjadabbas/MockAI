@@ -23,7 +23,11 @@ const InterviewTopBar = ({ activeStep, onExit }) => {
   return (
     <header className="sticky top-0 z-30 c-panel">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
-        <Link to="/dashboard" className="shrink-0 flex items-center select-none">
+        <Link 
+          to="/dashboard" 
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} 
+          className="shrink-0 flex items-center select-none hover:opacity-95 transition-opacity"
+        >
           <img src={logo} alt="MockAI Logo" className="h-10 w-auto object-contain" />
         </Link>
 

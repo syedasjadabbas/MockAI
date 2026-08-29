@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import candidateBg from '../../assets/candidate_bg.jpg';
 import logo from '../../assets/logo.png';
 
@@ -50,9 +51,13 @@ const AuthVisualPanel = () => {
       />
 
       {/* Brand logo in top-left */}
-      <div className="relative z-10 shrink-0 select-none">
+      <Link 
+        to="/" 
+        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} 
+        className="relative z-10 shrink-0 select-none block hover:opacity-90 transition-opacity"
+      >
         <img src={logo} alt="MockAI Logo" className="h-20 w-auto object-contain" />
-      </div>
+      </Link>
 
       {/* Flagship vertically centered composition */}
       <div className="relative z-10 flex-1 flex flex-col justify-center max-w-md py-12">

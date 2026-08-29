@@ -32,7 +32,11 @@ const CandidateNav = () => {
     <header className="sticky top-0 z-40 c-panel">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
         <div className="flex items-center gap-8 min-w-0">
-          <Link to="/dashboard" className="shrink-0 flex items-center select-none">
+          <Link 
+            to="/dashboard" 
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} 
+            className="shrink-0 flex items-center select-none hover:opacity-95 transition-opacity"
+          >
             <img src={logo} alt="MockAI Logo" className="h-11 w-auto object-contain" />
           </Link>
 
@@ -73,15 +77,23 @@ const CandidateNav = () => {
           <div className="relative hidden md:block">
             <button
               onClick={() => setMenuOpen((v) => !v)}
-              className="flex items-center gap-2 pl-2.5 pr-1 py-1.5 rounded-full border transition-colors"
+              className="flex items-center gap-2 pl-2.5 pr-1.5 py-1.5 rounded-full border transition-colors"
               style={{ borderColor: 'var(--c-border)' }}
             >
-              <span
-                className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
-                style={{ background: 'var(--c-accent-soft)', color: 'var(--c-accent)' }}
-              >
-                {(session?.name || 'C').trim().charAt(0).toUpperCase()}
-              </span>
+              {session?.avatar ? (
+                <img
+                  src={session.avatar}
+                  alt={session.name}
+                  className="w-7 h-7 rounded-full object-cover"
+                />
+              ) : (
+                <span
+                  className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
+                  style={{ background: 'var(--c-accent-soft)', color: 'var(--c-accent)' }}
+                >
+                  {(session?.name || 'C').trim().charAt(0).toUpperCase()}
+                </span>
+              )}
               <ChevronDown className="w-3.5 h-3.5" style={{ color: 'var(--c-text-muted)' }} />
             </button>
 

@@ -41,6 +41,7 @@ function toSession(meResponse) {
     name: meResponse.name,
     email: meResponse.email,
     role: meResponse.role,
+    avatar: meResponse.avatar,
     createdAt: meResponse.created_at,
   };
 }
@@ -127,13 +128,11 @@ export async function getProfile() {
   return cacheSession(toSession(me));
 }
 
-// Real PATCH /candidate/me - the backend only ever accepts `name` today,
-// matching the system's actual user data model (see backend/routes/
-// candidate.py); anything else in `updates` is not sent.
-export async function updateProfile({ name }) {
+// Real PATCH /candidate/me - updates name, email, and/or avatar.
+export async function updateProfile({ name, email, avatar }) {
   const me = await fetchCandidateApi('/me', {
     method: 'PATCH',
-    body: JSON.stringify({ name }),
+    body: JSON.stringify({ name, email, avatar }),
   });
   return cacheSession(toSession(me));
 }
