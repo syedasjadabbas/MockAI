@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, User, LogOut, PlayCircle, ChevronDown } from 'lucide-react';
 import ThemeToggle from '../../components/ThemeToggle';
 import { getSession, logout } from '../services/candidateAuth';
+import logo from '../../assets/logo.png';
 
 const NAV_LINKS = [
   { label: 'Dashboard', path: '/dashboard' },
@@ -31,9 +32,8 @@ const CandidateNav = () => {
     <header className="sticky top-0 z-40 c-panel">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
         <div className="flex items-center gap-8 min-w-0">
-          <Link to="/dashboard" className="shrink-0 flex items-baseline gap-0.5">
-            <span className="c-heading text-lg tracking-tight" style={{ color: 'var(--c-text)' }}>Mock</span>
-            <span className="c-heading text-lg tracking-tight" style={{ color: 'var(--c-accent)' }}>AI</span>
+          <Link to="/dashboard" className="shrink-0 flex items-center select-none">
+            <img src={logo} alt="MockAI Logo" className="h-8 w-auto object-contain" />
           </Link>
 
           <nav className="hidden lg:flex items-center gap-1">

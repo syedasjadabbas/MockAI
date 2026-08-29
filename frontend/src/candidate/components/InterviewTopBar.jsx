@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Check, X } from 'lucide-react';
 import ThemeToggle from '../../components/ThemeToggle';
+import logo from '../../assets/logo.png';
 
 export const FLOW_STEPS = [
   { key: 'goal', label: 'Goal' },
@@ -22,9 +23,8 @@ const InterviewTopBar = ({ activeStep, onExit }) => {
   return (
     <header className="sticky top-0 z-30 c-panel">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
-        <Link to="/dashboard" className="shrink-0 flex items-baseline gap-0.5">
-          <span className="c-heading text-lg tracking-tight" style={{ color: 'var(--c-text)' }}>Mock</span>
-          <span className="c-heading text-lg tracking-tight" style={{ color: 'var(--c-accent)' }}>AI</span>
+        <Link to="/dashboard" className="shrink-0 flex items-center select-none">
+          <img src={logo} alt="MockAI Logo" className="h-7 w-auto object-contain" />
         </Link>
 
         <div className="hidden lg:flex items-center gap-1.5 flex-1 min-w-0 justify-center overflow-x-auto">

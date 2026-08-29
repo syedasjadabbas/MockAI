@@ -5,6 +5,7 @@ import { fetchWithAuth } from '../api';
 import ThemeToggle from '../components/ThemeToggle';
 import '../admin-auth-theme.css';
 import { ADMIN_AUTH_HERO } from '../assets/adminAuthImages';
+import logo from '../assets/logo.png';
 
 // Brand mark shared conceptually with Sidebar.jsx's Terminal+"MockAI"+
 // ADMIN badge treatment (same icon, same wordmark), restyled at a much
@@ -13,24 +14,14 @@ import { ADMIN_AUTH_HERO } from '../assets/adminAuthImages';
 // (admin-auth-theme.css) so nothing here touches the shared indigo
 // styling the rest of Admin still uses.
 const Brand = ({ large = false }) => (
-  <div className="flex items-center gap-3">
-    <div
-      className={`rounded-xl flex items-center justify-center ${large ? 'w-12 h-12' : 'w-9 h-9'}`}
-      style={{ background: 'rgba(251,243,236,0.14)', color: '#fbf3ec' }}
+  <div className="flex items-center gap-3 select-none">
+    <img src={logo} alt="MockAI Logo" className={large ? 'h-10 w-auto object-contain' : 'h-8 w-auto object-contain'} />
+    <span
+      className={`font-bold rounded border tracking-widest ${large ? 'text-[11px] px-2 py-0.5' : 'text-[10px] px-1.5 py-0.5'}`}
+      style={{ color: '#e9b39c', borderColor: 'rgba(233,179,156,0.4)', background: 'rgba(233,179,156,0.12)' }}
     >
-      <Terminal className={large ? 'w-6 h-6' : 'w-4.5 h-4.5'} />
-    </div>
-    <div className="flex items-center gap-2">
-      <span className={`font-extrabold tracking-tight ${large ? 'text-2xl' : 'text-lg'}`} style={{ color: '#fbf3ec' }}>
-        MockAI
-      </span>
-      <span
-        className={`font-bold rounded border tracking-widest ${large ? 'text-[11px] px-2 py-0.5' : 'text-[10px] px-1.5 py-0.5'}`}
-        style={{ color: '#e9b39c', borderColor: 'rgba(233,179,156,0.4)', background: 'rgba(233,179,156,0.12)' }}
-      >
-        ADMIN
-      </span>
-    </div>
+      ADMIN
+    </span>
   </div>
 );
 

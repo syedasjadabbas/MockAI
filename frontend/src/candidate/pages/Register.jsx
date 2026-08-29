@@ -5,6 +5,7 @@ import ThemeToggle from '../../components/ThemeToggle';
 import { register } from '../services/candidateAuth';
 import AuthVisualPanel from '../components/AuthVisualPanel';
 import workspaceBg from '../../assets/workspace_bg.jpg';
+import logo from '../../assets/logo.png';
 
 const GoogleIcon = () => (
   <svg className="w-4 h-4 mr-2.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -63,10 +64,9 @@ const Register = () => {
         </div>
 
         <div className="w-full max-w-[26rem] px-2 sm:px-4 relative z-10">
-          {/* Elegant Mobile Wordmark */}
-          <div className="flex items-baseline gap-0.5 mb-3 lg:hidden select-none">
-            <span className="c-heading text-xl tracking-tight">Mock</span>
-            <span className="c-heading text-xl tracking-tight" style={{ color: 'var(--c-accent)' }}>AI</span>
+          {/* Elegant Mobile Logo */}
+          <div className="mb-4 lg:hidden select-none">
+            <img src={logo} alt="MockAI Logo" className="h-9 w-auto object-contain" />
           </div>
           
           <h2 className="c-heading text-3xl mb-1.5">Create your account</h2>

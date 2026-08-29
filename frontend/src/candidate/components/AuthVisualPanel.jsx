@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import candidateBg from '../../assets/candidate_bg.jpg';
+import logo from '../../assets/logo.png';
 
 // Shared visual identity panel for Login / Register / Forgot Password.
 //
@@ -49,10 +50,9 @@ const AuthVisualPanel = () => {
       />
 
       {/* Brand logo in top-left */}
-      <span className="relative z-10 flex items-baseline gap-0.5 shrink-0">
-        <span className="c-heading text-2xl tracking-tight select-none">Mock</span>
-        <span className="c-heading text-2xl tracking-tight select-none" style={{ color: 'var(--c-accent)' }}>AI</span>
-      </span>
+      <div className="relative z-10 shrink-0 select-none">
+        <img src={logo} alt="MockAI Logo" className="h-10 w-auto object-contain" />
+      </div>
 
       {/* Flagship vertically centered composition */}
       <div className="relative z-10 flex-1 flex flex-col justify-center max-w-md py-12">

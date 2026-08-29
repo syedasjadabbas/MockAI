@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import logo from '../assets/logo.png';
 import { 
   LayoutDashboard, 
   Users, 
@@ -44,16 +45,11 @@ const Sidebar = ({ mobileOpen = false, setMobileOpen = () => {} }) => {
       }`}>
         {/* Logo */}
         <div className="h-16 flex items-center justify-between px-6 border-b border-[var(--border-panel)]">
-          <Link to="/admin/dashboard" className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 rounded-xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/30 group-hover:scale-105 transition-transform">
-              <Terminal className="w-5 h-5 text-indigo-500" />
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="font-extrabold text-xl tracking-tight grad-text">MockAI</span>
-              <span className="text-[10px] bg-indigo-500/10 text-indigo-500 font-bold px-1.5 py-0.5 rounded border border-indigo-500/20">
-                ADMIN
-              </span>
-            </div>
+          <Link to="/admin/dashboard" className="flex items-center gap-2.5 group select-none">
+            <img src={logo} alt="MockAI Logo" className="h-8 w-auto object-contain group-hover:scale-105 transition-transform" />
+            <span className="text-[10px] bg-indigo-500/10 text-indigo-500 font-bold px-1.5 py-0.5 rounded border border-indigo-500/20">
+              ADMIN
+            </span>
           </Link>
           <button 
             onClick={() => setMobileOpen(false)}
