@@ -176,7 +176,6 @@ def get_candidate_profile(token_payload: dict = Depends(verify_candidate)):
 
 class UpdateProfileRequest(BaseModel):
     name: str = Field(None, min_length=1, max_length=100)
-    email: str = Field(None)
     avatar: str = Field(None)
 
 
@@ -190,15 +189,6 @@ def update_candidate_profile(data: UpdateProfileRequest, token_payload: dict = D
         if not clean_name:
             raise HTTPException(status_code=400, detail="name is required")
         update_fields["name"] = clean_name
-        
-    if data.email is not None:
-        normalized_email = data.email.strip().lower()
-        validate_email(normalized_email)
-        existing = users_collection.find_one({"email": normalized_email, "_id": {"$ne": user_id}})
-        existing_admin = admins_collection.find_one({"email": normalized_email})
-        if existing or existing_admin:
-            raise HTTPException(status_code=400, detail="Email is already taken")
-        update_fields["email"] = normalized_email
         
     if data.avatar is not None:
         update_fields["avatar"] = data.avatar

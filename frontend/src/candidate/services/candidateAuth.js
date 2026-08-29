@@ -128,11 +128,11 @@ export async function getProfile() {
   return cacheSession(toSession(me));
 }
 
-// Real PATCH /candidate/me - updates name, email, and/or avatar.
-export async function updateProfile({ name, email, avatar }) {
+// Real PATCH /candidate/me - updates name and/or avatar.
+export async function updateProfile({ name, avatar }) {
   const me = await fetchCandidateApi('/me', {
     method: 'PATCH',
-    body: JSON.stringify({ name, email, avatar }),
+    body: JSON.stringify({ name, avatar }),
   });
   return cacheSession(toSession(me));
 }

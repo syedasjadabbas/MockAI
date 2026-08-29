@@ -63,15 +63,11 @@ const Profile = () => {
       setError('Name cannot be empty.');
       return;
     }
-    if (!emailValue.trim()) {
-      setError('Email cannot be empty.');
-      return;
-    }
     setSaving(true);
     setError('');
     setSuccess(false);
     try {
-      const updated = await updateProfile({ name: nameValue.trim(), email: emailValue.trim() });
+      const updated = await updateProfile({ name: nameValue.trim() });
       setSession(updated);
       setSuccess(true);
       // Trigger header updates
@@ -251,7 +247,7 @@ const Profile = () => {
               <UserIcon className="w-4 h-4" style={{ color: 'var(--c-accent)' }} /> Profile Details
             </h2>
             <p className="text-xs mb-5" style={{ color: 'var(--c-text-secondary)' }}>
-              Update your account name and email address.
+              Update your account name (email address is read-only).
             </p>
 
             <form onSubmit={handleProfileSubmit} className="space-y-4">
@@ -278,11 +274,9 @@ const Profile = () => {
                     <input
                       type="email"
                       value={emailValue}
-                      onChange={(e) => setEmailValue(e.target.value)}
-                      placeholder="jane@example.com"
-                      disabled={saving}
-                      required
-                      className="c-input w-full pl-10 pr-4 py-2.5 rounded-xl text-sm disabled:opacity-60"
+                      disabled
+                      className="c-input w-full pl-10 pr-4 py-2.5 rounded-xl text-sm opacity-50 cursor-not-allowed select-none bg-[var(--c-bg-soft)]"
+                      style={{ background: 'rgba(0,0,0,0.03)', borderColor: 'var(--c-border)' }}
                     />
                   </div>
                 </div>
