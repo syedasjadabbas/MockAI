@@ -153,10 +153,10 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* Right Editorial Photograph Area (~42% on Desktop) */}
-            <div className="lg:col-span-5 relative w-full">
+            {/* Right Editorial Photograph Area (~42% on Desktop, refined +7% visual balance) */}
+            <div className="lg:col-span-5 relative w-full flex items-center justify-center">
               <div
-                className="relative w-full rounded-2xl sm:rounded-3xl overflow-hidden"
+                className="relative w-full rounded-2xl sm:rounded-3xl overflow-hidden lg:scale-[1.07] lg:origin-center transition-transform"
                 style={{
                   aspectRatio: '4/3.3',
                   boxShadow: 'var(--c-shadow)',
