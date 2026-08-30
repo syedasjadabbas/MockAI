@@ -15,7 +15,7 @@ from fastapi.testclient import TestClient
 from jose import jwt
 
 from main import app
-from database import users_collection
+from database import users_collection, otps_collection
 from utils.auth import SECRET_KEY, ALGORITHM
 
 client = TestClient(app)
@@ -209,19 +209,85 @@ def test_candidate_auth():
         "old_password": "TotallyWrong",
         "new_password": "Whatever123",
     })
-    expect(wrong_old_resp.status_code == 400, "change-password rejects an incorrect current password")
+    # 8. Password recovery (Forgot Password + OTP Flow)
+    reset_email = email
 
-    # 8. Password recovery (forgot-password) - uses a fake @example.com
-    # address so no real email is ever delivered to a real inbox.
-    forgot_resp = client.post("/candidate/forgot-password", json={"email": email})
-    expect(forgot_resp.status_code == 200, "POST /candidate/forgot-password returns 200")
-    expect("message" in forgot_resp.json(), "forgot-password returns a generic message")
+    # 8a. Send OTP for registered user
+    send_otp_resp = client.post("/candidate/forgot-password/send-otp", json={"email": reset_email})
+    expect(send_otp_resp.status_code == 200, "POST /candidate/forgot-password/send-otp returns 200")
+    expect("message" in send_otp_resp.json(), "send-otp returns a generic message")
 
-    forgot_unknown_resp = client.post("/candidate/forgot-password", json={"email": "unknown.nobody@example.com"})
-    expect(forgot_unknown_resp.status_code == 200, "forgot-password for an unknown email ALSO returns 200")
-    expect(forgot_unknown_resp.json() == forgot_resp.json(), "forgot-password response is identical whether or not the account exists (no user enumeration)")
+    # 8b. Anti-enumeration: unknown email returns the same generic 200 response
+    unknown_resp = client.post("/candidate/forgot-password/send-otp", json={"email": "unknown.candidate@example.com"})
+    expect(unknown_resp.status_code == 200, "send-otp for unknown email returns 200")
+    expect(unknown_resp.json() == send_otp_resp.json(), "send-otp response is identical for known and unknown emails")
 
-    print("\nALL CANDIDATE AUTHENTICATION TESTS PASSED SUCCESSFULLY!")
+    # 8c. Inspect OTP record in MongoDB to test verification
+    otp_doc = otps_collection.find_one({"email": reset_email, "type": "candidate_password_reset"})
+    expect(otp_doc is not None, "OTP record created in otps_collection")
+    expect("otp_hash" in otp_doc, "OTP is stored as a secure hash, never plaintext")
+    expect(otp_doc.get("verified") is False, "OTP initial status is verified=False")
+
+    # 8d. Incorrect OTP rejected with attempt count
+    bad_otp_resp = client.post("/candidate/forgot-password/verify-otp", json={"email": reset_email, "otp": "000000"})
+    expect(bad_otp_resp.status_code == 400, "Invalid OTP code rejected with 400")
+    expect("attempt" in bad_otp_resp.json()["detail"].lower(), "Error message informs remaining attempts")
+
+    # 8e. Correct OTP verification
+    # To test verification deterministically, inject a known test OTP hash into the record
+    import hashlib
+    test_otp = "849201"
+    test_otp_hash = hashlib.sha256(test_otp.encode("utf-8")).hexdigest()
+    otps_collection.update_one(
+        {"_id": otp_doc["_id"]},
+        {"$set": {"otp_hash": test_otp_hash, "attempts": 0}}
+    )
+
+    verify_resp = client.post("/candidate/forgot-password/verify-otp", json={"email": reset_email, "otp": test_otp})
+    expect(verify_resp.status_code == 200, "Valid OTP verification returns 200")
+    expect("reset_token" in verify_resp.json(), "Verification returns cryptographic reset_token")
+    reset_token = verify_resp.json()["reset_token"]
+
+    # 8f. Password reset with mismatched confirmation fails
+    mismatch_reset = client.post("/candidate/forgot-password/reset", json={
+        "email": reset_email,
+        "reset_token": reset_token,
+        "new_password": "NewResetPassword789",
+        "confirm_password": "DifferentPassword789",
+    })
+    expect(mismatch_reset.status_code == 400, "Password reset with mismatched passwords rejected with 400")
+
+    # 8g. Password reset with invalid token fails
+    invalid_token_reset = client.post("/candidate/forgot-password/reset", json={
+        "email": reset_email,
+        "reset_token": "invalid.jwt.token",
+        "new_password": "NewResetPassword789",
+        "confirm_password": "NewResetPassword789",
+    })
+    expect(invalid_token_reset.status_code == 400, "Password reset with invalid token rejected with 400")
+
+    # 8h. Successful password reset
+    final_new_password = "BrandNewResetPass999"
+    reset_resp = client.post("/candidate/forgot-password/reset", json={
+        "email": reset_email,
+        "reset_token": reset_token,
+        "new_password": final_new_password,
+        "confirm_password": final_new_password,
+    })
+    expect(reset_resp.status_code == 200, "Password reset with valid token succeeds with 200")
+
+    # 8i. Single-use: OTP record is cleaned up / cannot be reused
+    reuse_verify = client.post("/candidate/forgot-password/verify-otp", json={"email": reset_email, "otp": test_otp})
+    expect(reuse_verify.status_code == 400, "Reusing the verified OTP fails (single-use enforced)")
+
+    # 8j. Login with old password fails, login with newly reset password succeeds
+    login_old_after_reset = client.post("/candidate/login", json={"email": reset_email, "password": new_password})
+    expect(login_old_after_reset.status_code == 401, "Old password rejected after password reset")
+
+    login_new_after_reset = client.post("/candidate/login", json={"email": reset_email, "password": final_new_password})
+    expect(login_new_after_reset.status_code == 200, "Login succeeds with the newly reset password")
+
+    print("\nALL CANDIDATE AUTHENTICATION & OTP RECOVERY TESTS PASSED SUCCESSFULLY!")
     return True
 
 

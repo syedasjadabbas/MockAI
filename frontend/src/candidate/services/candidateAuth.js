@@ -86,14 +86,41 @@ export async function login({ email, password }) {
   return persistSession(access_token, me);
 }
 
-export async function requestPasswordReset(email) {
+export async function sendPasswordResetOtp(email) {
   if (!email?.trim()) throw new Error('Please enter your email address.');
-  // Backend always returns the same generic message whether or not the
-  // account exists, and only actually changes the password if it could
-  // send the reset email - see backend/routes/candidate.py.
-  return fetchCandidateApi('/forgot-password', {
+  return fetchCandidateApi('/forgot-password/send-otp', {
     method: 'POST',
-    body: JSON.stringify({ email }),
+    body: JSON.stringify({ email: email.trim() }),
+  });
+}
+
+export async function requestPasswordReset(email) {
+  return sendPasswordResetOtp(email);
+}
+
+export async function verifyPasswordResetOtp({ email, otp }) {
+  if (!email?.trim()) throw new Error('Please enter your email address.');
+  if (!otp?.trim() || otp.trim().length !== 6) throw new Error('Please enter a valid 6-digit verification code.');
+  return fetchCandidateApi('/forgot-password/verify-otp', {
+    method: 'POST',
+    body: JSON.stringify({ email: email.trim(), otp: otp.trim() }),
+  });
+}
+
+export async function resetPasswordWithOtp({ email, resetToken, newPassword, confirmPassword }) {
+  if (!email?.trim()) throw new Error('Please enter your email address.');
+  if (!resetToken) throw new Error('Reset session expired. Please request a new code.');
+  if (!newPassword || newPassword.length < 8) throw new Error('Password must be at least 8 characters.');
+  if (newPassword !== confirmPassword) throw new Error('Passwords do not match.');
+
+  return fetchCandidateApi('/forgot-password/reset', {
+    method: 'POST',
+    body: JSON.stringify({
+      email: email.trim(),
+      reset_token: resetToken,
+      new_password: newPassword,
+      confirm_password: confirmPassword,
+    }),
   });
 }
 
