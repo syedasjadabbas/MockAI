@@ -11,13 +11,13 @@ import {
   FileText,
   BarChart2,
   Compass,
-  Radio,
 } from 'lucide-react';
 import CandidateNav from '../components/CandidateNav';
 import { getDashboardSummary, getCategories, startInterview } from '../services/candidateApi';
 import { getSession } from '../services/candidateAuth';
 import { formatDate } from '../../utils/dateFormat';
 import { CANDIDATE_IMAGES } from '../assets/images';
+import logo from '../../assets/logo.png';
 
 const STATUS_TONE = {
   Completed: 'c-badge-success',
@@ -66,7 +66,7 @@ const Dashboard = () => {
     }
   };
 
-  const firstName = session?.name ? session.name.split(' ')[0] : '';
+  const displayName = session?.name || 'Candidate';
   const hasInterviews = !loading && summary?.recent?.length > 0;
   const hasScore = !loading && summary?.averageScore != null;
 
@@ -75,170 +75,110 @@ const Dashboard = () => {
       {/* Global Candidate Navigation Bar */}
       <CandidateNav />
 
-      {/* ─── WORKSPACE CONTAINER ─────────────────────────────────────────── */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-        
-        {/* ══════════════════════════════════════════════════════════════════
-            FLAGSHIP EDITORIAL HERO — Asymmetric, Integrated Visual Studio
-        ══════════════════════════════════════════════════════════════════ */}
-        <section
-          aria-label="Interview Practice Studio"
-          className="relative overflow-hidden rounded-3xl mb-12 sm:mb-16"
+      {/* ══════════════════════════════════════════════════════════════════
+          CINEMATIC EDITORIAL HERO — Exact Composition from Reference
+      ══════════════════════════════════════════════════════════════════ */}
+      <section
+        aria-label="Practice Workspace Hero"
+        className="relative overflow-hidden w-full select-none"
+        style={{
+          background: '#130f0c',
+          color: '#f3ede3',
+          minHeight: 'clamp(540px, 68vh, 720px)',
+        }}
+      >
+        {/* Background Photograph — Aligned Right */}
+        <div
+          className="absolute inset-y-0 right-0 w-full md:w-3/4 lg:w-[68%] bg-no-repeat bg-cover"
           style={{
-            background: 'var(--c-surface)',
-            border: '1px solid var(--c-border)',
-            minHeight: '480px',
+            backgroundImage: `url(${CANDIDATE_IMAGES.dashboardHero})`,
+            backgroundPosition: 'right 20% center',
           }}
+          aria-hidden="true"
         >
-          {/* Integrated Editorial Visual Background */}
+          {/* Multi-stage horizontal scrim smoothly blending photo into left solid dark tone */}
           <div
-            className="absolute inset-y-0 right-0 w-full lg:w-3/5 select-none pointer-events-none hidden md:block overflow-hidden"
-            aria-hidden="true"
-          >
-            <img
-              src={CANDIDATE_IMAGES.dashboardHero}
-              alt=""
-              className="w-full h-full object-cover object-center scale-105 opacity-90 transition-transform duration-1000"
-            />
-            
-            {/* Multi-layered directional scrim to melt photograph into page surface */}
-            <div
-              className="absolute inset-0"
-              style={{
-                background:
-                  'linear-gradient(to right, var(--c-surface) 0%, var(--c-surface) 18%, rgba(28, 23, 19, 0.4) 70%, transparent 100%)',
-              }}
-            />
-            <div
-              className="absolute inset-0"
-              style={{
-                background:
-                  'linear-gradient(to top, var(--c-surface) 0%, transparent 40%)',
-              }}
-            />
-            <div
-              className="absolute inset-0"
-              style={{
-                background:
-                  'linear-gradient(to bottom, var(--c-surface) 0%, transparent 20%)',
-              }}
-            />
+            className="absolute inset-0"
+            style={{
+              background:
+                'linear-gradient(to right, #130f0c 0%, #130f0c 18%, rgba(19, 15, 12, 0.94) 38%, rgba(19, 15, 12, 0.65) 60%, rgba(19, 15, 12, 0.2) 80%, transparent 100%)',
+            }}
+          />
+          {/* Top subtle fade */}
+          <div
+            className="absolute inset-x-0 top-0 h-24"
+            style={{
+              background: 'linear-gradient(180deg, #130f0c 0%, transparent 100%)',
+              opacity: 0.5,
+            }}
+          />
+          {/* Bottom fade */}
+          <div
+            className="absolute inset-x-0 bottom-0 h-28"
+            style={{
+              background: 'linear-gradient(0deg, #130f0c 0%, transparent 100%)',
+            }}
+          />
+        </div>
 
-            {/* Subtle practice telemetry tag overlay on photography */}
-            <div
-              className="absolute bottom-6 right-6 hidden lg:flex items-center gap-3 px-4 py-2.5 rounded-xl border backdrop-blur-md"
+        {/* Foreground Content Container */}
+        <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 lg:py-24 flex flex-col justify-center min-h-[clamp(540px,68vh,720px)]">
+          
+          {/* Main Copy Block */}
+          <div className="max-w-xl">
+            
+            {/* Context Greeting Block */}
+            <div className="mb-6">
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#d98a72]" />
+                <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.18em] uppercase text-neutral-400">
+                  PRACTICE WORKSPACE
+                </span>
+              </div>
+              <p className="text-lg sm:text-xl font-medium text-[#f3ede3]">
+                Welcome back, {displayName}
+              </p>
+            </div>
+
+            {/* Dominant Fraunces Display Headline */}
+            <h1
+              className="c-heading text-4xl sm:text-5xl lg:text-[4.25rem] font-medium leading-[1.03] tracking-[-0.03em] mb-5 text-[#fbf7f1]"
               style={{
-                background: 'rgba(28, 23, 19, 0.75)',
-                borderColor: 'rgba(231, 221, 204, 0.2)',
-                color: '#f3ede3',
+                fontFamily: 'var(--c-font-heading)',
               }}
             >
-              <div className="flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-[11px] font-bold tracking-wider uppercase text-neutral-300">
-                  Live Simulation Ready
-                </span>
-              </div>
-              <span className="text-neutral-500">•</span>
-              <span className="text-xs text-neutral-300">5 Questions • Video & Mic</span>
+              Practice before<br />it matters.
+            </h1>
+
+            {/* Short, Confident Subtitle */}
+            <p className="text-sm sm:text-base leading-relaxed mb-8 text-neutral-300 max-w-[40ch]">
+              Simulate realistic interviews with timed questions, live speech and camera capture, and objective feedback.
+            </p>
+
+            {/* Primary Start Interview CTA */}
+            <div className="flex items-center gap-4">
+              <Link
+                to="/interview/goal"
+                className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-xl text-sm sm:text-base font-bold text-[#1a110e] transition-all hover:scale-[1.02] active:scale-[0.98]"
+                style={{
+                  background: 'linear-gradient(135deg, #df9b85 0%, #cf826c 100%)',
+                  boxShadow: '0 8px 24px -6px rgba(207, 130, 108, 0.4)',
+                }}
+              >
+                <PlayCircle className="w-5 h-5 fill-current" />
+                <span>Start Interview</span>
+              </Link>
             </div>
           </div>
 
-          {/* Hero Foreground Content */}
-          <div className="relative z-10 p-7 sm:p-10 lg:p-14 flex flex-col justify-between max-w-2xl">
-            <div>
-              {/* Practice Eyebrow */}
-              <div className="flex items-center gap-2.5 mb-4">
-                <span
-                  className="w-2 h-2 rounded-full"
-                  style={{ background: 'var(--c-accent)' }}
-                />
-                <span className="c-eyebrow">
-                  Practice Studio
-                </span>
-                {firstName && (
-                  <>
-                    <span style={{ color: 'var(--c-border-strong)' }}>•</span>
-                    <span className="text-xs font-semibold" style={{ color: 'var(--c-text-muted)' }}>
-                      Welcome back, {firstName}
-                    </span>
-                  </>
-                )}
-              </div>
+        </div>
 
-              {/* Confident Large Display Headline */}
-              <h1
-                className="c-heading text-3xl sm:text-4xl lg:text-[3.25rem] leading-[1.08] tracking-[-0.025em] mb-4"
-              >
-                Prepare for the interview you actually want to ace.
-              </h1>
+        {/* Crisp bottom hairline border */}
+        <div className="absolute inset-x-0 bottom-0 h-px bg-white/10" />
+      </section>
 
-              {/* Short, refined supporting copy */}
-              <p
-                className="text-sm sm:text-base leading-relaxed mb-8"
-                style={{ color: 'var(--c-text-secondary)', maxWidth: '38ch' }}
-              >
-                Simulate authentic interview pressure with timed prompts, camera and spoken recording, and structured evaluation.
-              </p>
-
-              {/* Primary Launch Action */}
-              <div className="flex flex-wrap items-center gap-3.5 mb-8">
-                <Link
-                  to="/interview/goal"
-                  className="c-btn c-btn-primary inline-flex items-center justify-center gap-2.5 px-7 py-3.5 text-base font-bold rounded-xl shadow-md transition-transform hover:-translate-y-0.5"
-                  style={{
-                    boxShadow: '0 8px 20px -6px rgba(122, 35, 51, 0.35)',
-                  }}
-                >
-                  <PlayCircle className="w-5 h-5" />
-                  Start Interview
-                </Link>
-
-                {hasInterviews && (
-                  <Link
-                    to="/history"
-                    className="c-btn c-btn-secondary inline-flex items-center justify-center gap-2 px-5 py-3.5 text-sm font-semibold rounded-xl"
-                  >
-                    View History
-                    <ArrowRight className="w-4 h-4" />
-                  </Link>
-                )}
-              </div>
-            </div>
-
-            {/* Focus Domain Quick Jump */}
-            {categories.length > 0 && (
-              <div className="pt-6 border-t" style={{ borderColor: 'var(--c-border)' }}>
-                <p className="text-[11px] font-bold uppercase tracking-widest mb-2.5" style={{ color: 'var(--c-text-muted)' }}>
-                  Or pick a focus track:
-                </p>
-                <div className="flex flex-wrap items-center gap-2">
-                  {categories.slice(0, 4).map((cat) => (
-                    <button
-                      key={cat.id}
-                      onClick={() => handleLaunchCategory(cat)}
-                      disabled={launchingId === cat.id}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all hover:border-[var(--c-accent)] hover:text-[var(--c-accent)]"
-                      style={{
-                        background: 'var(--c-surface-muted)',
-                        borderColor: 'var(--c-border)',
-                        color: 'var(--c-text)',
-                      }}
-                    >
-                      <Layers className="w-3 h-3 shrink-0" style={{ color: 'var(--c-accent)' }} />
-                      <span>{cat.name}</span>
-                      {launchingId === cat.id ? (
-                        <span className="w-2.5 h-2.5 border-2 border-t-transparent rounded-full animate-spin ml-0.5" />
-                      ) : (
-                        <ChevronRight className="w-3 h-3 opacity-50" />
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </section>
+      {/* ─── WORKSPACE MAIN CONTENT ───────────────────────────────────────── */}
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
 
         {/* ─── SECTION 2: PRACTICE TELEMETRY & PROGRESS OVERVIEW ───────────── */}
         <section
@@ -311,82 +251,85 @@ const Dashboard = () => {
             <div className="c-skeleton h-20 rounded-2xl" />
           </div>
         ) : summary.recent.length === 0 ? (
-          /* ── ZERO INTERVIEW STATE: HOW PRACTICE WORKS ─────────────────── */
-          <section aria-label="First Interview Onboarding" className="mb-12">
-            <div className="mb-8">
-              <p className="c-eyebrow mb-1">Getting Started</p>
-              <h2 className="c-heading text-2xl sm:text-3xl mb-2">
-                Your first session starts here.
+          /* ── ZERO INTERVIEW STATE: HOW YOUR PRACTICE WORKS ────────────── */
+          <section aria-label="How Practice Works" className="mb-14 sm:mb-20">
+            <div className="max-w-2xl mb-10">
+              <p className="c-eyebrow mb-2">Methodology</p>
+              <h2 className="c-heading text-2xl sm:text-3xl lg:text-4xl mb-3">
+                How your practice works.
               </h2>
-              <p className="text-sm sm:text-base max-w-xl" style={{ color: 'var(--c-text-secondary)' }}>
-                MockAI is built for active practice, not passive reading. Here is what happens when you begin your first round:
+              <p className="text-sm sm:text-base leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
+                MockAI is built for active practice under realistic constraints. Every session follows a deliberate three-step workflow engineered to build interview muscle memory.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              {/* Step 1 */}
+            {/* Open 3-Column Editorial Grid with Hairline Dividers */}
+            <div
+              className="grid grid-cols-1 md:grid-cols-3 border-t border-b mb-10"
+              style={{ borderColor: 'var(--c-border)' }}
+            >
+              {/* Column 01 */}
               <div
-                className="p-6 sm:p-7 rounded-2xl flex flex-col justify-between"
-                style={{
-                  background: 'var(--c-surface)',
-                  border: '1px solid var(--c-border)',
-                }}
+                className="py-8 md:py-10 md:pr-8 flex flex-col justify-between border-b md:border-b-0 md:border-r"
+                style={{ borderColor: 'var(--c-border)' }}
               >
                 <div>
-                  <div className="c-serif-num text-2xl font-bold mb-3" style={{ color: 'var(--c-accent)' }}>
+                  <div className="c-serif-num text-3xl sm:text-4xl font-semibold mb-4" style={{ color: 'var(--c-accent)' }}>
                     01
                   </div>
-                  <h3 className="c-heading text-lg mb-2">Target Domain & Role</h3>
-                  <p className="text-sm leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                    Select your focus area from technical domains, system design, or leadership behavioral tracks.
+                  <h3 className="c-heading text-lg sm:text-xl mb-2.5">
+                    Target Domain & Role
+                  </h3>
+                  <p className="text-sm leading-relaxed mb-6" style={{ color: 'var(--c-text-secondary)' }}>
+                    Select your focus area from technical domains, system design, or leadership behavioral tracks calibrated to real hiring bars.
                   </p>
                 </div>
-                <div className="mt-6 flex items-center gap-2 text-xs font-semibold" style={{ color: 'var(--c-text-muted)' }}>
-                  <Compass className="w-4 h-4" /> Role Calibration
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--c-text-muted)' }}>
+                  <Compass className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--c-accent)' }} />
+                  <span>Role Calibration</span>
                 </div>
               </div>
 
-              {/* Step 2 */}
+              {/* Column 02 */}
               <div
-                className="p-6 sm:p-7 rounded-2xl flex flex-col justify-between"
-                style={{
-                  background: 'var(--c-surface)',
-                  border: '1px solid var(--c-border)',
-                }}
+                className="py-8 md:py-10 md:px-8 flex flex-col justify-between border-b md:border-b-0 md:border-r"
+                style={{ borderColor: 'var(--c-border)' }}
               >
                 <div>
-                  <div className="c-serif-num text-2xl font-bold mb-3" style={{ color: 'var(--c-accent)' }}>
+                  <div className="c-serif-num text-3xl sm:text-4xl font-semibold mb-4" style={{ color: 'var(--c-accent)' }}>
                     02
                   </div>
-                  <h3 className="c-heading text-lg mb-2">Real Interview Environment</h3>
-                  <p className="text-sm leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                    Answer timed questions out loud with speech and camera capture, simulating a live hiring interview.
+                  <h3 className="c-heading text-lg sm:text-xl mb-2.5">
+                    Real Interview Environment
+                  </h3>
+                  <p className="text-sm leading-relaxed mb-6" style={{ color: 'var(--c-text-secondary)' }}>
+                    Answer timed questions out loud with speech and camera capture, simulating the pressure of a live conversation.
                   </p>
                 </div>
-                <div className="mt-6 flex items-center gap-2 text-xs font-semibold" style={{ color: 'var(--c-text-muted)' }}>
-                  <Mic className="w-4 h-4" /> Live Spoken Flow
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--c-text-muted)' }}>
+                  <Mic className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--c-accent)' }} />
+                  <span>Live Spoken Flow</span>
                 </div>
               </div>
 
-              {/* Step 3 */}
+              {/* Column 03 */}
               <div
-                className="p-6 sm:p-7 rounded-2xl flex flex-col justify-between"
-                style={{
-                  background: 'var(--c-surface)',
-                  border: '1px solid var(--c-border)',
-                }}
+                className="py-8 md:py-10 md:pl-8 flex flex-col justify-between"
               >
                 <div>
-                  <div className="c-serif-num text-2xl font-bold mb-3" style={{ color: 'var(--c-accent)' }}>
+                  <div className="c-serif-num text-3xl sm:text-4xl font-semibold mb-4" style={{ color: 'var(--c-accent)' }}>
                     03
                   </div>
-                  <h3 className="c-heading text-lg mb-2">In-Depth Evaluation</h3>
-                  <p className="text-sm leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                    Receive actionable feedback on technical accuracy, structure, clarity, and pacing.
+                  <h3 className="c-heading text-lg sm:text-xl mb-2.5">
+                    In-Depth Evaluation
+                  </h3>
+                  <p className="text-sm leading-relaxed mb-6" style={{ color: 'var(--c-text-secondary)' }}>
+                    Receive structured breakdowns on technical accuracy, structure, delivery clarity, and areas for improvement.
                   </p>
                 </div>
-                <div className="mt-6 flex items-center gap-2 text-xs font-semibold" style={{ color: 'var(--c-text-muted)' }}>
-                  <FileText className="w-4 h-4" /> Structured Insights
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--c-text-muted)' }}>
+                  <FileText className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--c-accent)' }} />
+                  <span>Structured Insights</span>
                 </div>
               </div>
             </div>
@@ -394,7 +337,7 @@ const Dashboard = () => {
             <div className="flex items-center gap-4">
               <Link
                 to="/interview/goal"
-                className="c-btn c-btn-primary inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold"
+                className="c-btn c-btn-primary inline-flex items-center gap-2.5 px-7 py-3.5 rounded-xl text-sm font-bold shadow-sm transition-transform hover:-translate-y-0.5"
               >
                 <PlayCircle className="w-4 h-4" />
                 Launch First Session
@@ -491,13 +434,71 @@ const Dashboard = () => {
           </section>
         )}
 
-        {/* ─── FOOTER TELEMETRY NOTE ───────────────────────────────────────── */}
+        {/* ══════════════════════════════════════════════════════════════════
+            PREMIUM EDITORIAL FOOTER
+        ══════════════════════════════════════════════════════════════════ */}
         <footer
-          className="pt-6 border-t flex flex-col sm:flex-row items-center justify-between gap-3 text-xs"
-          style={{ borderColor: 'var(--c-border)', color: 'var(--c-text-muted)' }}
+          className="border-t mt-16 sm:mt-24 pt-12 sm:pt-16 pb-12"
+          style={{ borderColor: 'var(--c-border)' }}
         >
-          <p>MockAI Interview Practice Workspace</p>
-          <p>Real Question Banks & Evaluation Pipeline</p>
+          {/* Top footer row: Brand statement + Navigation + Action */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 pb-10">
+            
+            {/* Brand & Mission Statement */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
+              <Link
+                to="/dashboard"
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                className="shrink-0 inline-flex items-center hover:opacity-90 transition-opacity select-none"
+              >
+                <img src={logo} alt="MockAI Logo" className="h-10 sm:h-12 w-auto object-contain" />
+              </Link>
+              <span className="hidden sm:inline-block w-px h-6" style={{ background: 'var(--c-border)' }} />
+              <p className="text-xs sm:text-sm max-w-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
+                AI-powered interview practice for serious preparation.
+              </p>
+            </div>
+
+            {/* Navigation Links & Direct Start Action */}
+            <div className="flex flex-wrap items-center gap-5 sm:gap-8 text-xs sm:text-sm font-semibold">
+              {[
+                { label: 'Dashboard', path: '/dashboard' },
+                { label: 'History', path: '/history' },
+                { label: 'Progress', path: '/progress' },
+                { label: 'Profile', path: '/profile' },
+              ].map((link) => (
+                <Link
+                  key={link.path}
+                  to={link.path}
+                  onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                  className="transition-colors hover:text-[var(--c-accent)]"
+                  style={{ color: 'var(--c-text-secondary)' }}
+                >
+                  {link.label}
+                </Link>
+              ))}
+
+              <Link
+                to="/interview/goal"
+                className="inline-flex items-center gap-1.5 font-bold transition-colors hover:opacity-80 ml-1"
+                style={{ color: 'var(--c-accent)' }}
+              >
+                <span>Start Interview</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          </div>
+
+          {/* Bottom hairline & copyright */}
+          <div
+            className="pt-8 border-t flex flex-col sm:flex-row items-center justify-between gap-4 text-xs"
+            style={{ borderColor: 'var(--c-border)', color: 'var(--c-text-muted)' }}
+          >
+            <p>© 2026 MockAI</p>
+            <p className="text-[11px] font-medium tracking-wider uppercase">
+              Real Question Bank & Evaluation Engine
+            </p>
+          </div>
         </footer>
 
       </main>
