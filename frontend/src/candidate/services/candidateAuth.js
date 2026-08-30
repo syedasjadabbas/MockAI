@@ -114,6 +114,41 @@ export async function login({ email, password }) {
   return persistSession(access_token, me);
 }
 
+export async function loginWithGoogle(idToken) {
+  if (!idToken) throw new Error('Google ID token is required.');
+  console.log('[GoogleAuth Flow] Step 3: Sending token to POST /candidate/auth/google');
+  
+  const startTime = Date.now();
+  const response = await fetchCandidateApi('/auth/google', {
+    method: 'POST',
+    body: JSON.stringify({ id_token: idToken }),
+    timeout: 10000, // Explicit 10-second timeout for Google verification
+  });
+
+  const elapsed = Date.now() - startTime;
+  console.log(`[GoogleAuth Flow] Step 7: Received JWT access token from backend (${elapsed}ms):`, {
+    hasToken: !!response?.access_token,
+    hasUser: !!response?.user,
+  });
+
+  const { access_token, user } = response || {};
+  if (!access_token) {
+    throw new Error('Server did not return a valid authentication token.');
+  }
+
+  localStorage.setItem(TOKEN_KEY, access_token);
+
+  let sessionUser = user;
+  if (!sessionUser) {
+    console.log('[GoogleAuth Flow] Step 7c: Fallback fetching /candidate/me to construct user session');
+    sessionUser = await fetchCandidateApi('/me', { timeout: 8000 });
+  }
+
+  const session = persistSession(access_token, sessionUser);
+  console.log('[GoogleAuth Flow] Step 8a: Candidate session persisted for:', session?.email);
+  return session;
+}
+
 export async function sendPasswordResetOtp(email) {
   if (!email?.trim()) throw new Error('Please enter your email address.');
   return fetchCandidateApi('/forgot-password/send-otp', {

@@ -22,6 +22,11 @@ const CandidateNav = () => {
   const session = getSession();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [navImgError, setNavImgError] = useState(false);
+
+  React.useEffect(() => {
+    setNavImgError(false);
+  }, [session?.avatar]);
 
   const handleLogout = () => {
     logout();
@@ -80,10 +85,12 @@ const CandidateNav = () => {
               className="flex items-center gap-2 pl-2.5 pr-1.5 py-1.5 rounded-full border transition-colors"
               style={{ borderColor: 'var(--c-border)' }}
             >
-              {session?.avatar ? (
+              {session?.avatar && !navImgError ? (
                 <img
                   src={session.avatar}
-                  alt={session.name}
+                  alt={session.name || 'Candidate'}
+                  referrerPolicy="no-referrer"
+                  onError={() => setNavImgError(true)}
                   className="w-7 h-7 rounded-full object-cover"
                 />
               ) : (

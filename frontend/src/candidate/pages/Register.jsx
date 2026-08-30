@@ -20,6 +20,7 @@ import {
   resendRegistrationOtp,
 } from '../services/candidateAuth';
 import AuthVisualPanel from '../components/AuthVisualPanel';
+import GoogleAuthButton from '../components/GoogleAuthButton';
 import logo from '../../assets/logo.png';
 
 const GoogleIcon = () => (
@@ -259,19 +260,12 @@ const Register = () => {
               </div>
 
               {/* Continue with Google button */}
-              <button
-                type="button"
-                onClick={() => setError('Google sign-up is not configured yet. Please use email and password.')}
-                className="w-full flex items-center justify-center py-3 px-4 rounded-xl text-sm font-semibold border transition-all duration-200 hover:opacity-90 active:scale-[0.98]"
-                style={{
-                  backgroundColor: 'var(--c-input-bg)',
-                  borderColor: 'var(--c-input-border)',
-                  color: 'var(--c-text)'
-                }}
-              >
-                <GoogleIcon />
-                Continue with Google
-              </button>
+              <GoogleAuthButton
+                mode="register"
+                label="Continue with Google"
+                onError={(msg) => setError(msg)}
+                disabled={loading}
+              />
 
               <p className="text-sm mt-7 text-center" style={{ color: 'var(--c-text-secondary)' }}>
                 Already have an account?{' '}

@@ -17,9 +17,10 @@ os.environ["TESTING"] = "1"
 from fastapi.testclient import TestClient
 from jose import jwt
 
+from datetime import datetime
 from main import app
 from database import users_collection, otps_collection
-from utils.auth import SECRET_KEY, ALGORITHM
+from utils.auth import SECRET_KEY, ALGORITHM, hash_password
 
 client = TestClient(app)
 
@@ -300,7 +301,101 @@ def test_candidate_auth():
     login_new_after_reset = client.post("/candidate/login", json={"email": reset_email, "password": final_new_password})
     expect(login_new_after_reset.status_code == 200, "Login succeeds with the newly reset password")
 
-    print("\nALL CANDIDATE AUTHENTICATION & OTP RECOVERY TESTS PASSED SUCCESSFULLY!")
+    # 9. Google OAuth2 Sign-In Flow - Complete Scenarios (1-6)
+    print("\nTesting Google OAuth2 Sign-In API Scenarios...")
+
+    # Scenario 5: Invalid/failed Google authentication
+    # 5a. Missing or empty id_token rejected
+    empty_google = client.post("/candidate/auth/google", json={"id_token": ""})
+    expect(empty_google.status_code == 400, "Scenario 5a: Google auth with empty id_token rejected with 400")
+
+    # 5b. Malformed mock token rejected
+    bad_mock_google = client.post("/candidate/auth/google", json={"id_token": "mock-google-token:bad"})
+    expect(bad_mock_google.status_code == 401, "Scenario 5b: Malformed mock Google token rejected with 401")
+
+    # 5c. Admin email attempting Google Sign-In as candidate is rejected
+    admin_google_token = f"mock-google-token:admin_sub_123:admin@mockai.com:Admin Person"
+    admin_g_resp = client.post("/candidate/auth/google", json={"id_token": admin_google_token})
+    expect(admin_g_resp.status_code == 400, "Scenario 5c: Admin email attempting candidate Google auth rejected with 400")
+
+    # Scenario 2: New Google account registration with profile picture
+    google_sub_1 = f"sub_google_new_{int(time.time())}"
+    google_email_1 = f"new.google.{int(time.time())}@gmail.com"
+    google_name_1 = "New Google User"
+    google_avatar_1 = "https://lh3.googleusercontent.com/a/initial_photo_123"
+    new_mock_token_1 = f"mock-google-token:{google_sub_1}:{google_email_1}:{google_name_1}:{google_avatar_1}"
+
+    new_google_resp = client.post("/candidate/auth/google", json={"id_token": new_mock_token_1})
+    expect(new_google_resp.status_code == 200, f"Scenario 2: POST /candidate/auth/google creates new candidate account (status: {new_google_resp.status_code})")
+    new_google_data = new_google_resp.json()
+    expect("access_token" in new_google_data, "Scenario 2: Google auth returns access_token")
+    expect(new_google_data.get("user", {}).get("email") == google_email_1, "Scenario 2: User profile returned with matching email")
+    expect(new_google_data.get("user", {}).get("avatar") == google_avatar_1, "Scenario 2: Google profile picture returned in auth response")
+
+    g1_user_doc = users_collection.find_one({"email": google_email_1})
+    expect(g1_user_doc is not None, "Scenario 2: Document saved in MongoDB users_collection")
+    expect(g1_user_doc.get("google_id") == google_sub_1, "Scenario 2: google_id stored")
+    expect(g1_user_doc.get("avatar") == google_avatar_1, "Scenario 2: Google profile picture stored in MongoDB")
+    expect(g1_user_doc.get("is_verified") is True, "Scenario 2: Account is marked is_verified=True")
+
+    # Verify GET /candidate/me returns the Google profile picture
+    g1_headers = {"Authorization": f"Bearer {new_google_data['access_token']}"}
+    g1_me_resp = client.get("/candidate/me", headers=g1_headers)
+    expect(g1_me_resp.status_code == 200, "GET /candidate/me returns 200 for Google candidate")
+    expect(g1_me_resp.json().get("avatar") == google_avatar_1, "GET /candidate/me returns Google avatar URL")
+
+    # Scenario 1 & 2b: Existing Google account login with refreshed profile picture
+    refreshed_avatar = "https://lh3.googleusercontent.com/a/refreshed_photo_456"
+    refreshed_mock_token = f"mock-google-token:{google_sub_1}:{google_email_1}:{google_name_1}:{refreshed_avatar}"
+    login_google_resp = client.post("/candidate/auth/google", json={"id_token": refreshed_mock_token})
+    expect(login_google_resp.status_code == 200, "Scenario 1: Existing Google account successfully logs in (status: 200)")
+    expect(login_google_resp.json()["user"]["id"] == str(g1_user_doc["_id"]), "Scenario 1: Existing candidate document ID preserved")
+    expect(login_google_resp.json()["user"]["avatar"] == refreshed_avatar, "Scenario 1: Stored Google avatar refreshed on subsequent login")
+    g1_refreshed_doc = users_collection.find_one({"_id": g1_user_doc["_id"]})
+    expect(g1_refreshed_doc.get("avatar") == refreshed_avatar, "Scenario 1: Refreshed avatar persisted in MongoDB")
+
+    # Scenario 3: Google account already associated with a pre-existing email candidate
+    pre_email = f"preexisting.{int(time.time())}@example.com"
+    pre_user = {
+        "name": "Pre Existing",
+        "email": pre_email,
+        "password": hash_password("Password123!"),
+        "role": "user",
+        "is_verified": True,
+        "created_at": datetime.utcnow(),
+    }
+    pre_res = users_collection.insert_one(pre_user)
+    pre_sub = f"sub_pre_{int(time.time())}"
+    pre_google_avatar = "https://lh3.googleusercontent.com/a/pre_photo_789"
+    link_mock_token = f"mock-google-token:{pre_sub}:{pre_email}:Pre Existing:{pre_google_avatar}"
+
+    link_resp = client.post("/candidate/auth/google", json={"id_token": link_mock_token})
+    expect(link_resp.status_code == 200, "Scenario 3: Pre-existing candidate seamlessly links Google account")
+    expect(link_resp.json()["user"]["id"] == str(pre_res.inserted_id), "Scenario 3: User ID matches pre-existing candidate ID")
+    expect(link_resp.json()["user"]["avatar"] == pre_google_avatar, "Scenario 3: Google avatar applied to pre-existing candidate")
+    updated_pre = users_collection.find_one({"_id": pre_res.inserted_id})
+    expect(updated_pre.get("google_id") == pre_sub, "Scenario 3: google_id linked to existing document")
+    expect(updated_pre.get("avatar") == pre_google_avatar, "Scenario 3: Avatar saved in document")
+
+    # Scenario 4: Google account without picture (avatar is None)
+    google_sub_2 = f"sub_diff_{int(time.time())}"
+    google_email_2 = f"no.avatar.{int(time.time())}@gmail.com"
+    no_avatar_mock_token = f"mock-google-token:{google_sub_2}:{google_email_2}:No Avatar User"
+
+    no_avatar_resp = client.post("/candidate/auth/google", json={"id_token": no_avatar_mock_token})
+    expect(no_avatar_resp.status_code == 200, "Scenario 4: Google sign-in without picture succeeds")
+    expect(no_avatar_resp.json()["user"]["avatar"] is None, "Scenario 4: Avatar is None when Google provides no picture")
+    expect(no_avatar_resp.json()["user"]["email"] == google_email_2, "Scenario 4: Distinct email matches")
+
+    # Scenario 6: Normal email/password login still works and has no invented Google avatar
+    standard_login = client.post("/candidate/login", json={"email": pre_email, "password": "Password123!"})
+    expect(standard_login.status_code == 200, "Scenario 6: Normal email/password login still works after Google linking")
+
+    # Verify alias route /candidate/google-auth
+    alias_resp = client.post("/candidate/google-auth", json={"id_token": new_mock_token_1})
+    expect(alias_resp.status_code == 200, "POST /candidate/google-auth alias route works identically")
+
+    print("\nALL CANDIDATE AUTHENTICATION, OTP RECOVERY & GOOGLE SIGN-IN TESTS PASSED SUCCESSFULLY!")
     return True
 
 

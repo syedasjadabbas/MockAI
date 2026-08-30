@@ -28,6 +28,7 @@ const Profile = () => {
   // Avatar upload state
   const [avatarSaving, setAvatarSaving] = useState(false);
   const [avatarError, setAvatarError] = useState('');
+  const [imgError, setImgError] = useState(false);
 
   // Change password state
   const [oldPassword, setOldPassword] = useState('');
@@ -37,6 +38,10 @@ const Profile = () => {
   const [pwSaving, setPwSaving] = useState(false);
   const [pwError, setPwError] = useState('');
   const [pwSuccess, setPwSuccess] = useState(false);
+
+  useEffect(() => {
+    setImgError(false);
+  }, [session?.avatar]);
 
   const loadProfile = () => {
     setProfileLoading(true);
@@ -176,10 +181,12 @@ const Profile = () => {
         {/* Identity card */}
         <div className="lg:col-span-1 c-card rounded-2xl p-6 flex flex-col items-center text-center">
           <div className="relative group mb-4 select-none">
-            {session?.avatar ? (
+            {session?.avatar && !imgError ? (
               <img
                 src={session.avatar}
-                alt={session.name}
+                alt={session.name || 'Candidate'}
+                referrerPolicy="no-referrer"
+                onError={() => setImgError(true)}
                 className="w-24 h-24 rounded-full object-cover border-2"
                 style={{ borderColor: 'var(--c-border-strong)' }}
               />

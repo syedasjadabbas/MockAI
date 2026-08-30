@@ -30,18 +30,47 @@ export const fetchCandidateApi = async (endpoint, options = {}) => {
     ...options.headers,
   };
 
-  const response = await fetch(`${CANDIDATE_API_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
+  const method = (options.method || 'GET').toUpperCase();
+  const url = `${CANDIDATE_API_URL}${endpoint}`;
+  const timeoutMs = options.timeout || 12000; // 12-second default timeout
 
-  if (!response.ok) {
-    const errorBody = await response.json().catch(() => ({}));
-    const error = new Error(errorBody.detail || 'Request failed');
-    error.status = response.status;
-    throw error;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  const startTime = Date.now();
+
+  console.log(`[CandidateAPI Request] ${method} ${url} (timeout: ${timeoutMs}ms)`);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers,
+      signal: options.signal || controller.signal,
+    });
+
+    const elapsed = Date.now() - startTime;
+    console.log(`[CandidateAPI Response] ${response.status} ${method} ${url} (${elapsed}ms)`);
+
+    if (!response.ok) {
+      const errorBody = await response.json().catch(() => ({}));
+      const errorMsg = errorBody.detail || response.statusText || 'Request failed';
+      console.error(`[CandidateAPI Error] ${response.status} ${url}:`, errorMsg);
+      const error = new Error(errorMsg);
+      error.status = response.status;
+      throw error;
+    }
+
+    const text = await response.text();
+    return text ? JSON.parse(text) : null;
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      const elapsed = Date.now() - startTime;
+      console.error(`[CandidateAPI Timeout] ${method} ${url} timed out after ${elapsed}ms`);
+      const timeoutError = new Error(`Request timed out after ${timeoutMs / 1000}s. Please check that the server is running.`);
+      timeoutError.status = 408;
+      throw timeoutError;
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
   }
-
-  const text = await response.text();
-  return text ? JSON.parse(text) : null;
 };

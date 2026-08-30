@@ -25,8 +25,14 @@ def expect(condition, message):
     print(f"[PASS] {message}")
 
 
+import hashlib
+import os
+os.environ["TESTING"] = "1"
+
+from database import otps_collection
+
 def register_and_login(label: str):
-    email = f"interview.{label}.{int(time.time() * 1000)}@example.com"
+    email = f"interview.{label.lower()}.{int(time.time() * 1000)}@example.com"
     password = "InterviewTest123"
     reg = client.post("/candidate/register", json={
         "name": f"Interview Candidate {label}",
@@ -34,8 +40,15 @@ def register_and_login(label: str):
         "password": password,
         "confirm_password": password,
     })
-    expect(reg.status_code == 201, f"Candidate {label} registers successfully")
-    token = reg.json()["access_token"]
+    expect(reg.status_code == 200, f"Candidate {label} initiate registration returns 200")
+    otp_doc = otps_collection.find_one({"email": email.lower(), "type": "candidate_registration"})
+    test_hash = hashlib.sha256(b"123456").hexdigest()
+    otps_collection.update_one({"_id": otp_doc["_id"]}, {"$set": {"otp_hash": test_hash}})
+    verify_resp = client.post("/candidate/register/verify-otp", json={"email": email, "otp": "123456"})
+    expect(verify_resp.status_code == 201, f"Candidate {label} verifies successfully")
+    login_resp = client.post("/candidate/login", json={"email": email, "password": password})
+    expect(login_resp.status_code == 200, f"Candidate {label} logs in successfully")
+    token = login_resp.json()["access_token"]
     return token, email
 
 

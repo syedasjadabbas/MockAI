@@ -46,6 +46,7 @@ from utils.validators import (
     validate_password_strength,
     validate_required,
 )
+from utils.google_auth import verify_google_id_token
 
 router = APIRouter()
 
@@ -58,6 +59,8 @@ RATE_LIMIT_MAX = 10
 
 
 def _check_login_rate_limit(ip: str):
+    if os.getenv("TESTING") == "1":
+        return
     now = time.time()
     attempts = [t for t in _login_attempts[ip] if now - t < RATE_LIMIT_WINDOW]
     _login_attempts[ip] = attempts
@@ -340,6 +343,89 @@ def login_candidate(data: LoginRequest, request: Request):
     access_token = create_access_token(token_payload)
 
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+# ---------------------------------------------------------------------------
+# Google OAuth2 Authentication - FR01/FR02 Social Sign-In
+# ---------------------------------------------------------------------------
+
+class GoogleAuthRequest(BaseModel):
+    id_token: str
+
+
+@router.post("/google-auth")
+@router.post("/auth/google")
+def google_candidate_auth(data: GoogleAuthRequest, request: Request):
+    req_start = time.time()
+    client_ip = request.client.host if request.client else "unknown"
+    print(f"[GoogleAuth Flow] Step 4: FastAPI received POST /candidate/auth/google from IP={client_ip}")
+    _check_login_rate_limit(client_ip)
+
+    # Step 5: Verify Google ID token (handled in verify_google_id_token with timeout & timing)
+    google_user = verify_google_id_token(data.id_token)
+    email = google_user["email"]
+    sub = google_user["sub"]
+    name = google_user["name"]
+    avatar = google_user.get("avatar")
+
+    print(f"[GoogleAuth Flow] Step 6: Querying MongoDB collections for email={email}")
+
+    # Cross-collection check: admin accounts must not authenticate as candidate
+    admin = admins_collection.find_one({"email": email})
+    if admin:
+        print(f"[GoogleAuth Warning] Email {email} is registered as an Admin. Rejecting candidate sign-in.")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This email is registered as an administrator. Please sign in via the Admin portal."
+        )
+
+    user = users_collection.find_one({"email": email})
+    if user:
+        print(f"[GoogleAuth Flow] Step 6b: Found existing candidate account (ID: {user['_id']})")
+        if user.get("role") != "user":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Account does not have candidate permissions."
+            )
+        update_fields = {"is_verified": True}
+        if not user.get("google_id"):
+            update_fields["google_id"] = sub
+        if avatar:
+            update_fields["avatar"] = avatar
+        if name and not user.get("name"):
+            update_fields["name"] = name
+        if update_fields:
+            users_collection.update_one({"_id": user["_id"]}, {"$set": update_fields})
+        user_id = str(user["_id"])
+        final_user = users_collection.find_one({"_id": user["_id"]})
+    else:
+        print(f"[GoogleAuth Flow] Step 6c: Creating new candidate account in MongoDB for email={email}")
+        new_user = {
+            "name": name,
+            "email": email,
+            "google_id": sub,
+            "role": "user",
+            "is_verified": True,
+            "avatar": avatar,
+            "created_at": datetime.utcnow(),
+        }
+        result = users_collection.insert_one(new_user)
+        user_id = str(result.inserted_id)
+        final_user = users_collection.find_one({"_id": result.inserted_id})
+        invalidate_cache("dashboard_stats")
+
+    # Step 7: Issue Candidate JWT Access Token
+    print(f"[GoogleAuth Flow] Step 7: Generating Candidate JWT for user_id={user_id}")
+    token_payload = {"user_id": user_id, "role": "user"}
+    access_token = create_access_token(token_payload)
+
+    total_elapsed = round((time.time() - req_start) * 1000, 2)
+    print(f"[GoogleAuth Flow] Step 7b: Auth successful in {total_elapsed}ms! Returning token & profile to frontend for {email}")
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": _public_user(final_user),
+    }
 
 
 # ---------------------------------------------------------------------------

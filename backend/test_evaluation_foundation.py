@@ -33,14 +33,23 @@ def expect(condition, message):
 
 
 def register_and_login(label: str):
-    email = f"eval.{label}.{int(time.time() * 1000)}@example.com"
+    import hashlib
+    from database import otps_collection
+    email = f"eval.{label.lower()}.{int(time.time() * 1000)}@example.com"
     password = "EvalTest123"
     reg = client.post("/candidate/register", json={
         "name": f"Eval Candidate {label}", "email": email,
         "password": password, "confirm_password": password,
     })
-    expect(reg.status_code == 201, f"Candidate {label} registers successfully")
-    return reg.json()["access_token"]
+    expect(reg.status_code == 200, f"Candidate {label} initiate registration returns 200")
+    otp_doc = otps_collection.find_one({"email": email.lower(), "type": "candidate_registration"})
+    test_hash = hashlib.sha256(b"123456").hexdigest()
+    otps_collection.update_one({"_id": otp_doc["_id"]}, {"$set": {"otp_hash": test_hash}})
+    verify_resp = client.post("/candidate/register/verify-otp", json={"email": email, "otp": "123456"})
+    expect(verify_resp.status_code == 201, f"Candidate {label} verifies successfully")
+    login_resp = client.post("/candidate/login", json={"email": email, "password": password})
+    expect(login_resp.status_code == 200, f"Candidate {label} logs in successfully")
+    return login_resp.json()["access_token"]
 
 
 def complete_a_real_interview(headers):
