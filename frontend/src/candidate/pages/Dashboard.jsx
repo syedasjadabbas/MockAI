@@ -11,11 +11,13 @@ import {
   FileText,
   BarChart2,
   Compass,
+  Radio,
 } from 'lucide-react';
 import CandidateNav from '../components/CandidateNav';
 import { getDashboardSummary, getCategories, startInterview } from '../services/candidateApi';
 import { getSession } from '../services/candidateAuth';
 import { formatDate } from '../../utils/dateFormat';
+import { CANDIDATE_IMAGES } from '../assets/images';
 
 const STATUS_TONE = {
   Completed: 'c-badge-success',
@@ -76,156 +78,159 @@ const Dashboard = () => {
       {/* ─── WORKSPACE CONTAINER ─────────────────────────────────────────── */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         
-        {/* ─── SECTION 1: PRIMARY PRACTICE STAGE (THE WORKSPACE) ─────────── */}
+        {/* ══════════════════════════════════════════════════════════════════
+            FLAGSHIP EDITORIAL HERO — Asymmetric, Integrated Visual Studio
+        ══════════════════════════════════════════════════════════════════ */}
         <section
-          aria-label="Interview Practice Stage"
-          className="relative rounded-3xl overflow-hidden mb-12 sm:mb-16"
+          aria-label="Interview Practice Studio"
+          className="relative overflow-hidden rounded-3xl mb-12 sm:mb-16"
           style={{
             background: 'var(--c-surface)',
             border: '1px solid var(--c-border)',
-            boxShadow: 'var(--c-shadow-sm)',
+            minHeight: '480px',
           }}
         >
-          {/* Subtle top accent highlight */}
+          {/* Integrated Editorial Visual Background */}
           <div
-            className="h-1.5 w-full"
-            style={{
-              background: 'linear-gradient(90deg, var(--c-accent) 0%, transparent 60%)',
-            }}
-          />
+            className="absolute inset-y-0 right-0 w-full lg:w-3/5 select-none pointer-events-none hidden md:block overflow-hidden"
+            aria-hidden="true"
+          >
+            <img
+              src={CANDIDATE_IMAGES.dashboardHero}
+              alt=""
+              className="w-full h-full object-cover object-center scale-105 opacity-90 transition-transform duration-1000"
+            />
+            
+            {/* Multi-layered directional scrim to melt photograph into page surface */}
+            <div
+              className="absolute inset-0"
+              style={{
+                background:
+                  'linear-gradient(to right, var(--c-surface) 0%, var(--c-surface) 18%, rgba(28, 23, 19, 0.4) 70%, transparent 100%)',
+              }}
+            />
+            <div
+              className="absolute inset-0"
+              style={{
+                background:
+                  'linear-gradient(to top, var(--c-surface) 0%, transparent 40%)',
+              }}
+            />
+            <div
+              className="absolute inset-0"
+              style={{
+                background:
+                  'linear-gradient(to bottom, var(--c-surface) 0%, transparent 20%)',
+              }}
+            />
 
-          <div className="p-6 sm:p-10 lg:p-12">
-            {/* Context meta bar */}
-            <div className="flex flex-wrap items-center justify-between gap-3 mb-6 pb-5 border-b" style={{ borderColor: 'var(--c-border)' }}>
-              <div className="flex items-center gap-2">
+            {/* Subtle practice telemetry tag overlay on photography */}
+            <div
+              className="absolute bottom-6 right-6 hidden lg:flex items-center gap-3 px-4 py-2.5 rounded-xl border backdrop-blur-md"
+              style={{
+                background: 'rgba(28, 23, 19, 0.75)',
+                borderColor: 'rgba(231, 221, 204, 0.2)',
+                color: '#f3ede3',
+              }}
+            >
+              <div className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-[11px] font-bold tracking-wider uppercase text-neutral-300">
+                  Live Simulation Ready
+                </span>
+              </div>
+              <span className="text-neutral-500">•</span>
+              <span className="text-xs text-neutral-300">5 Questions • Video & Mic</span>
+            </div>
+          </div>
+
+          {/* Hero Foreground Content */}
+          <div className="relative z-10 p-7 sm:p-10 lg:p-14 flex flex-col justify-between max-w-2xl">
+            <div>
+              {/* Practice Eyebrow */}
+              <div className="flex items-center gap-2.5 mb-4">
                 <span
                   className="w-2 h-2 rounded-full"
                   style={{ background: 'var(--c-accent)' }}
                 />
-                <span
-                  className="text-xs font-bold uppercase tracking-widest"
-                  style={{ color: 'var(--c-text-muted)' }}
-                >
-                  Candidate Practice Workspace
+                <span className="c-eyebrow">
+                  Practice Studio
                 </span>
+                {firstName && (
+                  <>
+                    <span style={{ color: 'var(--c-border-strong)' }}>•</span>
+                    <span className="text-xs font-semibold" style={{ color: 'var(--c-text-muted)' }}>
+                      Welcome back, {firstName}
+                    </span>
+                  </>
+                )}
               </div>
-              {firstName && (
-                <span
-                  className="text-xs font-semibold"
-                  style={{ color: 'var(--c-text-secondary)' }}
-                >
-                  Signed in as <strong style={{ color: 'var(--c-text)' }}>{session?.name}</strong>
-                </span>
-              )}
-            </div>
 
-            {/* Stage Hero Content */}
-            <div className="max-w-3xl mb-8">
+              {/* Confident Large Display Headline */}
               <h1
-                className="c-heading text-3xl sm:text-4xl lg:text-5xl leading-tight mb-4"
-                style={{ letterSpacing: '-0.02em' }}
+                className="c-heading text-3xl sm:text-4xl lg:text-[3.25rem] leading-[1.08] tracking-[-0.025em] mb-4"
               >
                 Prepare for the interview you actually want to ace.
               </h1>
+
+              {/* Short, refined supporting copy */}
               <p
-                className="text-base sm:text-lg leading-relaxed"
-                style={{ color: 'var(--c-text-secondary)', maxWidth: '42ch' }}
+                className="text-sm sm:text-base leading-relaxed mb-8"
+                style={{ color: 'var(--c-text-secondary)', maxWidth: '38ch' }}
               >
-                Real question sets calibrated for technical, behavioral, and leadership domains. Practice spoken answers on camera and calibrate under authentic pressure.
+                Simulate authentic interview pressure with timed prompts, camera and spoken recording, and structured evaluation.
               </p>
-            </div>
 
-            {/* Launchpad Actions & Session Specs */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-8">
-              <Link
-                to="/interview/goal"
-                className="c-btn c-btn-primary inline-flex items-center justify-center gap-2.5 px-7 py-3.5 text-base font-bold rounded-xl"
-                style={{
-                  boxShadow: '0 4px 14px -2px rgba(122, 35, 51, 0.25)',
-                }}
-              >
-                <PlayCircle className="w-5 h-5" />
-                Start New Interview
-              </Link>
-
-              {hasInterviews && (
+              {/* Primary Launch Action */}
+              <div className="flex flex-wrap items-center gap-3.5 mb-8">
                 <Link
-                  to="/history"
-                  className="c-btn c-btn-secondary inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-semibold rounded-xl"
+                  to="/interview/goal"
+                  className="c-btn c-btn-primary inline-flex items-center justify-center gap-2.5 px-7 py-3.5 text-base font-bold rounded-xl shadow-md transition-transform hover:-translate-y-0.5"
+                  style={{
+                    boxShadow: '0 8px 20px -6px rgba(122, 35, 51, 0.35)',
+                  }}
                 >
-                  View All Sessions
-                  <ArrowRight className="w-4 h-4" />
+                  <PlayCircle className="w-5 h-5" />
+                  Start Interview
                 </Link>
-              )}
-            </div>
 
-            {/* Practice Format Specifications */}
-            <div
-              className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-6 border-t"
-              style={{ borderColor: 'var(--c-border)' }}
-            >
-              <div>
-                <span className="block text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--c-text-muted)' }}>
-                  Questions
-                </span>
-                <span className="text-sm font-semibold" style={{ color: 'var(--c-text)' }}>
-                  5 Calibrated Prompts
-                </span>
-              </div>
-
-              <div>
-                <span className="block text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--c-text-muted)' }}>
-                  Response Mode
-                </span>
-                <span className="text-sm font-semibold" style={{ color: 'var(--c-text)' }}>
-                  Camera & Voice
-                </span>
-              </div>
-
-              <div>
-                <span className="block text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--c-text-muted)' }}>
-                  Estimated Time
-                </span>
-                <span className="text-sm font-semibold" style={{ color: 'var(--c-text)' }}>
-                  ~12–15 Minutes
-                </span>
-              </div>
-
-              <div>
-                <span className="block text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--c-text-muted)' }}>
-                  Feedback
-                </span>
-                <span className="text-sm font-semibold" style={{ color: 'var(--c-text)' }}>
-                  Structured Evaluation
-                </span>
+                {hasInterviews && (
+                  <Link
+                    to="/history"
+                    className="c-btn c-btn-secondary inline-flex items-center justify-center gap-2 px-5 py-3.5 text-sm font-semibold rounded-xl"
+                  >
+                    View History
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                )}
               </div>
             </div>
 
-            {/* Available Tracks Direct Launchpad */}
+            {/* Focus Domain Quick Jump */}
             {categories.length > 0 && (
-              <div className="mt-8 pt-6 border-t" style={{ borderColor: 'var(--c-border)' }}>
-                <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--c-text-muted)' }}>
-                  Choose Focus Domain
+              <div className="pt-6 border-t" style={{ borderColor: 'var(--c-border)' }}>
+                <p className="text-[11px] font-bold uppercase tracking-widest mb-2.5" style={{ color: 'var(--c-text-muted)' }}>
+                  Or pick a focus track:
                 </p>
                 <div className="flex flex-wrap items-center gap-2">
-                  {categories.map((cat) => (
+                  {categories.slice(0, 4).map((cat) => (
                     <button
                       key={cat.id}
                       onClick={() => handleLaunchCategory(cat)}
                       disabled={launchingId === cat.id}
-                      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold border transition-all hover:border-[var(--c-accent)] hover:text-[var(--c-accent)]"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all hover:border-[var(--c-accent)] hover:text-[var(--c-accent)]"
                       style={{
                         background: 'var(--c-surface-muted)',
                         borderColor: 'var(--c-border)',
                         color: 'var(--c-text)',
                       }}
                     >
-                      <Layers className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--c-accent)' }} />
+                      <Layers className="w-3 h-3 shrink-0" style={{ color: 'var(--c-accent)' }} />
                       <span>{cat.name}</span>
                       {launchingId === cat.id ? (
-                        <span className="w-3 h-3 border-2 border-t-transparent rounded-full animate-spin ml-1" />
+                        <span className="w-2.5 h-2.5 border-2 border-t-transparent rounded-full animate-spin ml-0.5" />
                       ) : (
-                        <ArrowRight className="w-3 h-3 opacity-60 ml-0.5" />
+                        <ChevronRight className="w-3 h-3 opacity-50" />
                       )}
                     </button>
                   ))}
