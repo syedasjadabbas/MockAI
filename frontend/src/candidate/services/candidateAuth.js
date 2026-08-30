@@ -62,18 +62,46 @@ function cacheSession(session) {
   return session;
 }
 
-export async function register({ name, email, password }) {
-  // The frontend form already validates password === confirmPassword before
-  // calling this; confirm_password is sent as the same validated value so
-  // the backend's own defensive check (for any direct API caller bypassing
-  // the form) trivially agrees.
-  const { access_token } = await fetchCandidateApi('/register', {
+export async function initiateRegistration({ name, email, password, confirmPassword }) {
+  if (!name?.trim()) throw new Error('Please enter your full name.');
+  if (!email?.trim()) throw new Error('Please enter your email address.');
+  if (!password || password.length < 8) throw new Error('Password must be at least 8 characters.');
+  if (password !== confirmPassword) throw new Error('Passwords do not match.');
+
+  return fetchCandidateApi('/register/send-otp', {
     method: 'POST',
-    body: JSON.stringify({ name, email, password, confirm_password: password }),
+    body: JSON.stringify({
+      name: name.trim(),
+      email: email.trim(),
+      password,
+      confirm_password: confirmPassword,
+    }),
   });
-  localStorage.setItem(TOKEN_KEY, access_token);
-  const me = await fetchCandidateApi('/me');
-  return persistSession(access_token, me);
+}
+
+export async function register(params) {
+  return initiateRegistration({
+    ...params,
+    confirmPassword: params.confirmPassword || params.password,
+  });
+}
+
+export async function verifyRegistrationOtp({ email, otp }) {
+  if (!email?.trim()) throw new Error('Please enter your email address.');
+  if (!otp?.trim() || otp.trim().length !== 6) throw new Error('Please enter a valid 6-digit verification code.');
+
+  return fetchCandidateApi('/register/verify-otp', {
+    method: 'POST',
+    body: JSON.stringify({ email: email.trim(), otp: otp.trim() }),
+  });
+}
+
+export async function resendRegistrationOtp(email) {
+  if (!email?.trim()) throw new Error('Please enter your email address.');
+  return fetchCandidateApi('/register/resend-otp', {
+    method: 'POST',
+    body: JSON.stringify({ email: email.trim() }),
+  });
 }
 
 export async function login({ email, password }) {

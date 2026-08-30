@@ -33,16 +33,37 @@ def test_candidate_auth():
     email = f"candidate.test.{int(time.time())}@example.com"
     password = "SecurePass123"
 
-    # 1. Register
+    # 1. Initiate Registration (sends OTP)
     reg_resp = client.post("/candidate/register", json={
         "name": "Test Candidate",
         "email": email,
         "password": password,
         "confirm_password": password,
     })
-    expect(reg_resp.status_code == 201, f"POST /candidate/register returns 201 (got {reg_resp.status_code}: {reg_resp.text})")
-    candidate_token = reg_resp.json()["access_token"]
-    expect(bool(candidate_token), "Registration returns an access_token")
+    expect(reg_resp.status_code == 200, f"POST /candidate/register returns 200 (got {reg_resp.status_code}: {reg_resp.text})")
+    expect("message" in reg_resp.json(), "Registration returns verification message")
+
+    # 1b. Inspect pending registration OTP record in MongoDB
+    reg_otp_doc = otps_collection.find_one({"email": email, "type": "candidate_registration"})
+    expect(reg_otp_doc is not None, "Pending registration OTP record exists in otps_collection")
+    expect("otp_hash" in reg_otp_doc, "Registration OTP is stored hashed, never plaintext")
+
+    # 1c. Invalid OTP verification fails
+    bad_verify_resp = client.post("/candidate/register/verify-otp", json={"email": email, "otp": "000000"})
+    expect(bad_verify_resp.status_code == 400, "Invalid registration OTP is rejected with 400")
+
+    # 1d. Valid OTP verification activates candidate account
+    import hashlib
+    test_reg_otp = "123456"
+    test_reg_hash = hashlib.sha256(test_reg_otp.encode("utf-8")).hexdigest()
+    otps_collection.update_one(
+        {"_id": reg_otp_doc["_id"]},
+        {"$set": {"otp_hash": test_reg_hash, "attempts": 0}}
+    )
+
+    verify_reg_resp = client.post("/candidate/register/verify-otp", json={"email": email, "otp": test_reg_otp})
+    expect(verify_reg_resp.status_code == 201, f"POST /candidate/register/verify-otp returns 201 (got {verify_reg_resp.status_code})")
+    expect(verify_reg_resp.json().get("user_id") is not None, "Account created with valid user_id")
 
     # 2. MongoDB user created, password stored hashed (never plaintext)
     user_doc = users_collection.find_one({"email": email})
@@ -51,7 +72,7 @@ def test_candidate_auth():
     expect(user_doc["password"].startswith("$2b$") or user_doc["password"].startswith("$2a$"), "Stored password is a bcrypt hash")
     expect(user_doc["role"] == "user", "New candidate has role 'user' (matches existing schema convention)")
 
-    # 3. Duplicate registration fails
+    # 3. Duplicate registration fails (account already exists)
     dup_resp = client.post("/candidate/register", json={
         "name": "Test Candidate",
         "email": email,
@@ -100,65 +121,50 @@ def test_candidate_auth():
     nouser_resp = client.post("/candidate/login", json={"email": "doesnotexist@example.com", "password": password})
     expect(nouser_resp.status_code == 401, "Login with non-existent email rejected with 401 (no user enumeration)")
 
-    # 5. Protected candidate route
+    # 5. Protected route (/candidate/me) with the JWT
     headers = {"Authorization": f"Bearer {candidate_token}"}
     me_resp = client.get("/candidate/me", headers=headers)
     expect(me_resp.status_code == 200, "GET /candidate/me with valid token returns 200")
-    me_data = me_resp.json()
-    expect(me_data["email"] == email, "/candidate/me returns the correct account")
-    expect("password" not in me_data, "/candidate/me never exposes the password field")
+    expect(me_resp.json()["email"] == email, "/candidate/me returns the correct account")
+    expect("password" not in me_resp.json(), "/candidate/me never exposes the password field")
 
-    # 5b. No token -> 401
-    no_token_resp = client.get("/candidate/me")
-    expect(no_token_resp.status_code == 401, "GET /candidate/me with no token returns 401")
+    # 5b. Protected route fails without token / invalid token / expired token
+    no_token = client.get("/candidate/me")
+    expect(no_token.status_code == 401, "GET /candidate/me with no token returns 401")
 
-    # 5c. Garbage/invalid token -> 401
-    garbage_resp = client.get("/candidate/me", headers={"Authorization": "Bearer not.a.real.token"})
-    expect(garbage_resp.status_code == 401, "GET /candidate/me with a garbage token returns 401")
+    bad_token = client.get("/candidate/me", headers={"Authorization": "Bearer not-a-real-jwt"})
+    expect(bad_token.status_code == 401, "GET /candidate/me with a garbage token returns 401")
 
-    # 5d. Expired token -> 401
-    expired_payload = {"user_id": str(user_doc["_id"]), "role": "user", "exp": int(time.time()) - 3600}
-    expired_token = jwt.encode(expired_payload, SECRET_KEY, algorithm=ALGORITHM)
-    expired_resp = client.get("/candidate/me", headers={"Authorization": f"Bearer {expired_token}"})
-    expect(expired_resp.status_code == 401, "GET /candidate/me with an expired token returns 401")
+    expired_jwt = jwt.encode({"user_id": str(user_doc["_id"]), "role": "user", "exp": int(time.time()) - 100}, SECRET_KEY, algorithm=ALGORITHM)
+    exp_resp = client.get("/candidate/me", headers={"Authorization": f"Bearer {expired_jwt}"})
+    expect(exp_resp.status_code == 401, "GET /candidate/me with an expired token returns 401")
 
-    # 5e. Update profile successfully (PATCH /candidate/me)
-    update_resp = client.patch("/candidate/me", headers=headers, json={"name": "Updated Candidate Name"})
-    expect(update_resp.status_code == 200, f"PATCH /candidate/me returns 200 (got {update_resp.status_code}: {update_resp.text})")
-    updated_data = update_resp.json()
-    expect(updated_data["name"] == "Updated Candidate Name", "PATCH /candidate/me returns the updated name")
-    expect(updated_data["email"] == email, "PATCH /candidate/me does not change the email")
-    expect(updated_data["role"] == "user", "PATCH /candidate/me does not change the role")
+    # 5c. Profile updates via PATCH /candidate/me
+    patch_resp = client.patch("/candidate/me", headers=headers, json={"name": "Updated Candidate Name"})
+    expect(patch_resp.status_code == 200, f"PATCH /candidate/me returns 200 (got {patch_resp.status_code}: {patch_resp.text})")
+    expect(patch_resp.json()["name"] == "Updated Candidate Name", "PATCH /candidate/me returns the updated name")
+    expect(patch_resp.json()["email"] == email, "PATCH /candidate/me does not change the email")
+    expect(patch_resp.json()["role"] == "user", "PATCH /candidate/me does not change the role")
 
-    persisted = users_collection.find_one({"_id": user_doc["_id"]})
-    expect(persisted["name"] == "Updated Candidate Name", "Updated name is actually persisted in MongoDB")
+    refreshed_user = users_collection.find_one({"_id": user_doc["_id"]})
+    expect(refreshed_user["name"] == "Updated Candidate Name", "Updated name is actually persisted in MongoDB")
 
-    # 5f. Update profile without JWT -> 401
-    no_token_update = client.patch("/candidate/me", json={"name": "Should Not Apply"})
-    expect(no_token_update.status_code == 401, "PATCH /candidate/me with no token returns 401")
+    # 5d. Profile update validation and security
+    patch_no_token = client.patch("/candidate/me", json={"name": "No Token"})
+    expect(patch_no_token.status_code == 401, "PATCH /candidate/me with no token returns 401")
 
-    # 5g. Update profile with invalid JWT -> 401
-    invalid_token_update = client.patch("/candidate/me", headers={"Authorization": "Bearer garbage.token.value"}, json={"name": "Should Not Apply"})
-    expect(invalid_token_update.status_code == 401, "PATCH /candidate/me with an invalid token returns 401")
+    patch_bad_token = client.patch("/candidate/me", headers={"Authorization": "Bearer bad"}, json={"name": "Bad Token"})
+    expect(patch_bad_token.status_code == 401, "PATCH /candidate/me with an invalid token returns 401")
 
-    # 5h. Candidate cannot modify role: the field isn't even accepted, so a
-    # crafted payload including it is simply ignored, not rejected - name
-    # still updates, role never changes.
-    role_attempt_resp = client.patch("/candidate/me", headers=headers, json={"name": "Still Just A Candidate", "role": "admin"})
-    expect(role_attempt_resp.status_code == 200, "PATCH /candidate/me ignores unexpected extra fields like role")
-    expect(role_attempt_resp.json()["role"] == "user", "Attempting to smuggle role='admin' into the payload has no effect")
-    persisted_after_role_attempt = users_collection.find_one({"_id": user_doc["_id"]})
-    expect(persisted_after_role_attempt["role"] == "user", "Role in MongoDB is unchanged after the smuggling attempt")
+    patch_smuggle = client.patch("/candidate/me", headers=headers, json={"name": "Smuggler", "role": "admin"})
+    expect(patch_smuggle.status_code == 200, "PATCH /candidate/me ignores unexpected extra fields like role")
+    expect(patch_smuggle.json()["role"] == "user", "Attempting to smuggle role='admin' into the payload has no effect")
+    expect(users_collection.find_one({"_id": user_doc["_id"]})["role"] == "user", "Role in MongoDB is unchanged after the smuggling attempt")
 
-    # 5i. Empty name rejected
-    empty_name_resp = client.patch("/candidate/me", headers=headers, json={"name": "   "})
-    expect(empty_name_resp.status_code in (400, 422), "PATCH /candidate/me rejects a blank/whitespace-only name")
+    patch_blank = client.patch("/candidate/me", headers=headers, json={"name": "   "})
+    expect(patch_blank.status_code == 400, "PATCH /candidate/me rejects a blank/whitespace-only name")
 
-    # 5j. Candidate cannot modify another user's account: register a second
-    # candidate, then confirm candidate A's token can never touch candidate
-    # B's document - there's no target-id parameter at all, the endpoint
-    # only ever acts on the caller's own token, so this proves ownership is
-    # structural, not just policy.
+    # 5e. Cross-user isolation on PATCH: candidate A cannot modify candidate B's profile
     other_email = f"other.candidate.{int(time.time())}@example.com"
     other_reg = client.post("/candidate/register", json={
         "name": "Other Candidate",
@@ -166,7 +172,11 @@ def test_candidate_auth():
         "password": password,
         "confirm_password": password,
     })
-    expect(other_reg.status_code == 201, "Second candidate registers fine (setup for ownership test)")
+    other_otp_doc = otps_collection.find_one({"email": other_email, "type": "candidate_registration"})
+    test_other_hash = hashlib.sha256(b"654321").hexdigest()
+    otps_collection.update_one({"_id": other_otp_doc["_id"]}, {"$set": {"otp_hash": test_other_hash}})
+    other_verify = client.post("/candidate/register/verify-otp", json={"email": other_email, "otp": "654321"})
+    expect(other_verify.status_code == 201, "Second candidate registers and verifies fine (setup for ownership test)")
     other_user_doc = users_collection.find_one({"email": other_email})
 
     client.patch("/candidate/me", headers=headers, json={"name": "Still Just A Candidate"})

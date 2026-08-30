@@ -79,7 +79,7 @@ def _public_user(user: dict) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# Registration - FR01
+# Registration - FR01 (Production Email OTP Verification Flow)
 # ---------------------------------------------------------------------------
 
 class RegisterRequest(BaseModel):
@@ -88,9 +88,103 @@ class RegisterRequest(BaseModel):
     password: str
     confirm_password: str
 
+class VerifyRegisterOtpRequest(BaseModel):
+    email: str
+    otp: str
 
-@router.post("/register", status_code=status.HTTP_201_CREATED)
-def register_candidate(data: RegisterRequest):
+class ResendRegisterOtpRequest(BaseModel):
+    email: str
+
+
+def _send_candidate_registration_otp_email(to_email: str, name: str, otp: str) -> bool:
+    sender_email = os.getenv("SMTP_EMAIL")
+    sender_password = os.getenv("SMTP_PASSWORD")
+    smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
+    smtp_port = int(os.getenv("SMTP_PORT", "587"))
+
+    if not sender_email or not sender_password:
+        print(f"[DEBUG] SMTP not configured. Candidate registration OTP for {to_email} ({name}) is: {otp}")
+        return False
+
+    try:
+        msg = MIMEMultipart()
+        msg["From"] = f"MockAI <{sender_email}>"
+        msg["To"] = to_email
+        msg["Subject"] = "MockAI - Verify Your Email Address"
+
+        first_name = name.strip().split()[0] if name and name.strip() else "there"
+
+        html_body = f"""<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MockAI Email Verification</title>
+  </head>
+  <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #14100d; padding: 40px 15px; margin: 0; color: #f3ede3;">
+    <div style="max-width: 500px; margin: 0 auto; background-color: #1e1814; border: 1px solid #332921; padding: 36px 32px; border-radius: 16px; box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.6);">
+      
+      <!-- Brand Header -->
+      <div style="text-align: center; margin-bottom: 28px;">
+        <div style="font-size: 26px; font-weight: 700; color: #df9b85; letter-spacing: -0.5px;">
+          Mock<span style="color: #f3ede3;">AI</span>
+        </div>
+        <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; color: #8e8070; margin-top: 4px;">
+          Interview Practice Workspace
+        </div>
+      </div>
+
+      <!-- Main Card Content -->
+      <h2 style="color: #f3ede3; margin: 0 0 12px 0; font-size: 20px; font-weight: 600; text-align: center;">
+        Verify your email
+      </h2>
+      <p style="color: #b6a999; font-size: 14px; line-height: 1.6; margin: 0 0 24px 0; text-align: center;">
+        Hi {first_name}, welcome to MockAI! Please enter the 6-digit verification code below to complete your registration.
+      </p>
+
+      <!-- 6-Digit OTP Box -->
+      <div style="background-color: #14100d; border: 1px solid #7a2333; padding: 20px; text-align: center; border-radius: 12px; margin: 24px 0;">
+        <div style="font-family: 'Courier New', Courier, monospace; font-size: 36px; font-weight: 700; color: #df9b85; letter-spacing: 8px; margin-left: 8px;">
+          {otp}
+        </div>
+      </div>
+
+      <!-- Expiry Alert -->
+      <div style="background-color: rgba(223, 155, 133, 0.08); border-left: 3px solid #df9b85; padding: 12px 16px; border-radius: 4px; margin-bottom: 24px;">
+        <p style="margin: 0; color: #e5ab97; font-size: 13px; font-weight: 600;">
+          ⏱ This code expires in 5 minutes.
+        </p>
+      </div>
+
+      <!-- Security Notice -->
+      <p style="color: #8e8070; font-size: 12px; line-height: 1.5; margin: 0; border-top: 1px solid #332921; padding-top: 20px;">
+        <strong>Security Notice:</strong> If you did not create a MockAI account, you can safely ignore this email. Never share this code with anyone.
+      </p>
+    </div>
+
+    <!-- Footer -->
+    <div style="text-align: center; margin-top: 24px; color: #6b6055; font-size: 12px;">
+      &copy; 2026 MockAI. AI-Powered Interview Practice.
+    </div>
+  </body>
+</html>"""
+        msg.attach(MIMEText(html_body, "html"))
+
+        server = smtplib.SMTP(smtp_server, smtp_port, timeout=5)
+        server.starttls()
+        server.login(sender_email, sender_password)
+        server.send_message(msg)
+        server.quit()
+        return True
+    except Exception as exc:
+        print(f"Candidate registration email failed for {to_email}: {type(exc).__name__}")
+        print(f"[DEBUG] Candidate registration OTP for {to_email} is: {otp}")
+        return False
+
+
+@router.post("/register/send-otp")
+@router.post("/register")
+def initiate_candidate_registration(data: RegisterRequest):
     normalized_email = data.email.strip().lower()
 
     validate_required({"name": data.name, "email": data.email, "password": data.password})
@@ -102,20 +196,143 @@ def register_candidate(data: RegisterRequest):
 
     check_duplicate_email(normalized_email)
 
-    new_user = {
-        "name": data.name.strip(),
+    # Check cooldown on resending (minimum 45s between attempts)
+    existing = otps_collection.find_one({"email": normalized_email, "type": "candidate_registration"})
+    if existing and existing.get("created_at"):
+        elapsed = (datetime.utcnow() - existing["created_at"]).total_seconds()
+        if elapsed < 45:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail=f"Please wait {int(45 - elapsed)}s before requesting another verification code."
+            )
+
+    # Generate secure 6-digit OTP
+    otp = "".join(secrets.choice(string.digits) for _ in range(6))
+    otp_hash = hashlib.sha256(otp.encode("utf-8")).hexdigest()
+    hashed_pwd = hash_password(data.password)
+
+    # Store pending registration in otps_collection with 5-minute TTL
+    otps_collection.update_one(
+        {"email": normalized_email, "type": "candidate_registration"},
+        {
+            "$set": {
+                "email": normalized_email,
+                "type": "candidate_registration",
+                "name": data.name.strip(),
+                "password_hash": hashed_pwd,
+                "otp_hash": otp_hash,
+                "expires_at": datetime.utcnow() + timedelta(minutes=5),
+                "created_at": datetime.utcnow(),
+                "verified": False,
+                "attempts": 0,
+            }
+        },
+        upsert=True,
+    )
+
+    _send_candidate_registration_otp_email(normalized_email, data.name, otp)
+
+    return {"message": "Verification code sent to your email address."}
+
+
+@router.post("/register/verify-otp", status_code=status.HTTP_201_CREATED)
+def verify_candidate_registration_otp(data: VerifyRegisterOtpRequest):
+    normalized_email = data.email.strip().lower()
+    otp_input = data.otp.strip()
+
+    if len(otp_input) != 6 or not otp_input.isdigit():
+        raise HTTPException(status_code=400, detail="Please enter a valid 6-digit verification code.")
+
+    record = otps_collection.find_one({
         "email": normalized_email,
-        "password": hash_password(data.password),
+        "type": "candidate_registration",
+    })
+
+    if not record or not record.get("expires_at"):
+        raise HTTPException(status_code=400, detail="Verification code has expired or is invalid. Please sign up again.")
+
+    if datetime.utcnow() > record["expires_at"]:
+        otps_collection.delete_one({"_id": record["_id"]})
+        raise HTTPException(status_code=400, detail="Verification code has expired. Please request a new code.")
+
+    # Max 5 attempts to protect against brute force
+    attempts = record.get("attempts", 0)
+    if attempts >= 5:
+        otps_collection.delete_one({"_id": record["_id"]})
+        raise HTTPException(status_code=400, detail="Too many failed attempts. Please register again to receive a new code.")
+
+    computed_hash = hashlib.sha256(otp_input.encode("utf-8")).hexdigest()
+    if computed_hash != record.get("otp_hash"):
+        otps_collection.update_one({"_id": record["_id"]}, {"$inc": {"attempts": 1}})
+        remaining = 5 - (attempts + 1)
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid verification code. {remaining} attempt{'s' if remaining != 1 else ''} remaining."
+        )
+
+    # Re-verify duplicate email before activating account
+    check_duplicate_email(normalized_email)
+
+    # Create fully activated candidate account
+    new_user = {
+        "name": record["name"],
+        "email": normalized_email,
+        "password": record["password_hash"],
         "role": "user",
+        "is_verified": True,
         "created_at": datetime.utcnow(),
     }
     result = users_collection.insert_one(new_user)
     invalidate_cache("dashboard_stats")
 
-    token_payload = {"user_id": str(result.inserted_id), "role": "user"}
-    access_token = create_access_token(token_payload)
+    # Invalidate OTP record immediately
+    otps_collection.delete_one({"_id": record["_id"]})
 
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {
+        "message": "Email verified successfully. Account created.",
+        "user_id": str(result.inserted_id),
+    }
+
+
+@router.post("/register/resend-otp")
+def resend_candidate_registration_otp(data: ResendRegisterOtpRequest):
+    normalized_email = data.email.strip().lower()
+
+    record = otps_collection.find_one({
+        "email": normalized_email,
+        "type": "candidate_registration",
+    })
+
+    if not record:
+        raise HTTPException(status_code=400, detail="No pending registration found. Please sign up again.")
+
+    # Check cooldown (minimum 45s between requests)
+    if record.get("created_at"):
+        elapsed = (datetime.utcnow() - record["created_at"]).total_seconds()
+        if elapsed < 45:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail=f"Please wait {int(45 - elapsed)}s before requesting another verification code."
+            )
+
+    otp = "".join(secrets.choice(string.digits) for _ in range(6))
+    otp_hash = hashlib.sha256(otp.encode("utf-8")).hexdigest()
+
+    otps_collection.update_one(
+        {"_id": record["_id"]},
+        {
+            "$set": {
+                "otp_hash": otp_hash,
+                "expires_at": datetime.utcnow() + timedelta(minutes=5),
+                "created_at": datetime.utcnow(),
+                "attempts": 0,
+            }
+        }
+    )
+
+    _send_candidate_registration_otp_email(normalized_email, record.get("name", ""), otp)
+
+    return {"message": "A new verification code has been sent."}
 
 
 # ---------------------------------------------------------------------------
@@ -330,7 +547,7 @@ def _send_candidate_otp_email(to_email: str, otp: str) -> bool:
 </html>"""
         msg.attach(MIMEText(html_body, "html"))
 
-        server = smtplib.SMTP(smtp_server, smtp_port)
+        server = smtplib.SMTP(smtp_server, smtp_port, timeout=5)
         server.starttls()
         server.login(sender_email, sender_password)
         server.send_message(msg)
