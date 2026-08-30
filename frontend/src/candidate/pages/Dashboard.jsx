@@ -6,728 +6,496 @@ import {
   Clock,
   ChevronRight,
   CheckCircle2,
+  Layers,
+  Mic,
+  FileText,
   BarChart2,
+  Compass,
 } from 'lucide-react';
 import CandidateNav from '../components/CandidateNav';
-import ScoreRing from '../components/ScoreRing';
-import { getDashboardSummary } from '../services/candidateApi';
+import { getDashboardSummary, getCategories, startInterview } from '../services/candidateApi';
 import { getSession } from '../services/candidateAuth';
 import { formatDate } from '../../utils/dateFormat';
-import { CANDIDATE_IMAGES } from '../assets/images';
 
 const STATUS_TONE = {
   Completed: 'c-badge-success',
   'In Progress': 'c-badge-warning',
 };
 
-/* ─── tiny inline skeleton ──────────────────────────────────────────────── */
-const Sk = ({ className = '' }) => (
-  <span className={`c-skeleton inline-block rounded ${className}`} />
-);
-
-/* ─── Dashboard ─────────────────────────────────────────────────────────── */
-// Candidate Dashboard - FR04 (profile/activity summary), FR27 (history glance), FR36 (progress awareness)
 const Dashboard = () => {
   const [summary, setSummary] = useState(null);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [launchingId, setLaunchingId] = useState(null);
   const session = getSession();
   const navigate = useNavigate();
 
   useEffect(() => {
-    getDashboardSummary().then((data) => {
-      setSummary(data);
+    Promise.all([
+      getDashboardSummary().catch(() => ({
+        totalInterviews: 0,
+        completedInterviews: 0,
+        averageScore: null,
+        lastInterview: null,
+        recent: [],
+      })),
+      getCategories().catch(() => []),
+    ]).then(([sumData, catData]) => {
+      setSummary(sumData);
+      setCategories(catData || []);
       setLoading(false);
     });
   }, []);
+
+  const handleLaunchCategory = async (category) => {
+    if (launchingId) return;
+    setLaunchingId(category.id);
+    try {
+      const type = /behav/i.test(category.name) ? 'behavioral' : 'technical';
+      const interview = await startInterview({
+        categoryId: category.id,
+        interviewType: type,
+      });
+      navigate(`/interview/${interview.id}/prepare`);
+    } catch {
+      navigate('/interview/goal');
+    } finally {
+      setLaunchingId(null);
+    }
+  };
 
   const firstName = session?.name ? session.name.split(' ')[0] : '';
   const hasInterviews = !loading && summary?.recent?.length > 0;
   const hasScore = !loading && summary?.averageScore != null;
 
   return (
-    /* The dashboard controls its own layout: no CandidateLayout wrapper
-       so the hero can bleed to viewport edges while inner sections re-
-       apply a sensible column constraint. Nav is kept exactly as-is. */
     <div className="candidate-app min-h-screen" style={{ background: 'var(--c-bg)' }}>
+      {/* Global Candidate Navigation Bar */}
       <CandidateNav />
 
-      {/* ══════════════════════════════════════════════════════════════════
-          HERO — full-viewport-width, image on the right, copy on the left.
-          No card border, no rounded container. Bleeds edge-to-edge.
-      ══════════════════════════════════════════════════════════════════ */}
-      <section
-        className="relative overflow-hidden"
-        style={{
-          borderBottom: '1px solid var(--c-border)',
-          minHeight: 'clamp(420px, 55vh, 680px)',
-        }}
-        aria-label="Welcome"
-      >
-        {/* Right-side editorial image — clips off the right edge intentionally */}
-        <div
-          className="absolute inset-y-0 right-0 hidden md:block"
-          style={{ width: 'clamp(340px, 45vw, 720px)' }}
-          aria-hidden="true"
-        >
-          <img
-            src={CANDIDATE_IMAGES.dashboardHero}
-            alt=""
-            className="w-full h-full object-cover"
-            style={{ objectPosition: 'center 30%' }}
-          />
-          {/* Left-side gradient: image dissolves into page background */}
-          <div
-            className="absolute inset-0"
-            style={{
-              background:
-                'linear-gradient(to right, var(--c-bg) 0%, var(--c-bg) 6%, transparent 42%)',
-            }}
-          />
-          {/* Optional: subtle bottom scrim so text below doesn't clash */}
-          <div
-            className="absolute inset-0"
-            style={{
-              background:
-                'linear-gradient(to top, var(--c-bg) 0%, transparent 28%)',
-            }}
-          />
-        </div>
-
-        {/* Copy — anchored left, never touches the image on desktop */}
-        <div
-          className="relative z-10 mx-auto flex flex-col justify-center"
+      {/* ─── WORKSPACE CONTAINER ─────────────────────────────────────────── */}
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        
+        {/* ─── SECTION 1: PRIMARY PRACTICE STAGE (THE WORKSPACE) ─────────── */}
+        <section
+          aria-label="Interview Practice Stage"
+          className="relative rounded-3xl overflow-hidden mb-12 sm:mb-16"
           style={{
-            maxWidth: '1152px',
-            padding: 'clamp(48px, 8vw, 96px) clamp(16px, 4vw, 40px)',
-            minHeight: 'clamp(420px, 55vh, 680px)',
+            background: 'var(--c-surface)',
+            border: '1px solid var(--c-border)',
+            boxShadow: 'var(--c-shadow-sm)',
           }}
         >
-          {/* Context label */}
-          {firstName && (
-            <p
-              className="text-sm font-semibold mb-5"
-              style={{ color: 'var(--c-text-muted)', letterSpacing: '0.01em' }}
-            >
-              Welcome back, {firstName}
-            </p>
-          )}
-
-          {/* Primary editorial headline — the brand message, not the greeting */}
-          <h1
-            className="c-heading"
+          {/* Subtle top accent highlight */}
+          <div
+            className="h-1.5 w-full"
             style={{
-              fontSize: 'clamp(2.4rem, 5.5vw, 4.5rem)',
-              lineHeight: 1.04,
-              letterSpacing: '-0.025em',
-              maxWidth: '16ch',
-              marginBottom: '1.5rem',
+              background: 'linear-gradient(90deg, var(--c-accent) 0%, transparent 60%)',
             }}
-          >
-            Prepare for the
-            <br />
-            interview you
-            <br />
-            actually want to ace.
-          </h1>
+          />
 
-          {/* Supporting copy */}
-          <p
-            style={{
-              color: 'var(--c-text-secondary)',
-              fontSize: '1rem',
-              lineHeight: 1.75,
-              maxWidth: '38ch',
-              marginBottom: '2.25rem',
-            }}
-          >
-            Real question sets. Recorded answers. Honest feedback. Every
-            session builds the edge you need.
-          </p>
+          <div className="p-6 sm:p-10 lg:p-12">
+            {/* Context meta bar */}
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-6 pb-5 border-b" style={{ borderColor: 'var(--c-border)' }}>
+              <div className="flex items-center gap-2">
+                <span
+                  className="w-2 h-2 rounded-full"
+                  style={{ background: 'var(--c-accent)' }}
+                />
+                <span
+                  className="text-xs font-bold uppercase tracking-widest"
+                  style={{ color: 'var(--c-text-muted)' }}
+                >
+                  Candidate Practice Workspace
+                </span>
+              </div>
+              {firstName && (
+                <span
+                  className="text-xs font-semibold"
+                  style={{ color: 'var(--c-text-secondary)' }}
+                >
+                  Signed in as <strong style={{ color: 'var(--c-text)' }}>{session?.name}</strong>
+                </span>
+              )}
+            </div>
 
-          {/* Primary CTA */}
-          <div className="flex flex-wrap items-center gap-3">
-            <Link
-              to="/interview/goal"
-              className="c-btn c-btn-primary inline-flex items-center gap-2.5 font-bold"
-              style={{
-                padding: '0.875rem 1.75rem',
-                fontSize: '0.9375rem',
-                borderRadius: '10px',
-              }}
-            >
-              <PlayCircle style={{ width: '17px', height: '17px' }} />
-              Start Interview
-            </Link>
+            {/* Stage Hero Content */}
+            <div className="max-w-3xl mb-8">
+              <h1
+                className="c-heading text-3xl sm:text-4xl lg:text-5xl leading-tight mb-4"
+                style={{ letterSpacing: '-0.02em' }}
+              >
+                Prepare for the interview you actually want to ace.
+              </h1>
+              <p
+                className="text-base sm:text-lg leading-relaxed"
+                style={{ color: 'var(--c-text-secondary)', maxWidth: '42ch' }}
+              >
+                Real question sets calibrated for technical, behavioral, and leadership domains. Practice spoken answers on camera and calibrate under authentic pressure.
+              </p>
+            </div>
 
-            {hasInterviews && (
+            {/* Launchpad Actions & Session Specs */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-8">
               <Link
-                to="/history"
-                className="c-btn c-btn-secondary inline-flex items-center gap-2"
+                to="/interview/goal"
+                className="c-btn c-btn-primary inline-flex items-center justify-center gap-2.5 px-7 py-3.5 text-base font-bold rounded-xl"
                 style={{
-                  padding: '0.875rem 1.5rem',
-                  fontSize: '0.9375rem',
-                  borderRadius: '10px',
+                  boxShadow: '0 4px 14px -2px rgba(122, 35, 51, 0.25)',
                 }}
               >
-                View History
-                <ArrowRight style={{ width: '15px', height: '15px' }} />
+                <PlayCircle className="w-5 h-5" />
+                Start New Interview
               </Link>
+
+              {hasInterviews && (
+                <Link
+                  to="/history"
+                  className="c-btn c-btn-secondary inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-semibold rounded-xl"
+                >
+                  View All Sessions
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              )}
+            </div>
+
+            {/* Practice Format Specifications */}
+            <div
+              className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-6 border-t"
+              style={{ borderColor: 'var(--c-border)' }}
+            >
+              <div>
+                <span className="block text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--c-text-muted)' }}>
+                  Questions
+                </span>
+                <span className="text-sm font-semibold" style={{ color: 'var(--c-text)' }}>
+                  5 Calibrated Prompts
+                </span>
+              </div>
+
+              <div>
+                <span className="block text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--c-text-muted)' }}>
+                  Response Mode
+                </span>
+                <span className="text-sm font-semibold" style={{ color: 'var(--c-text)' }}>
+                  Camera & Voice
+                </span>
+              </div>
+
+              <div>
+                <span className="block text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--c-text-muted)' }}>
+                  Estimated Time
+                </span>
+                <span className="text-sm font-semibold" style={{ color: 'var(--c-text)' }}>
+                  ~12–15 Minutes
+                </span>
+              </div>
+
+              <div>
+                <span className="block text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--c-text-muted)' }}>
+                  Feedback
+                </span>
+                <span className="text-sm font-semibold" style={{ color: 'var(--c-text)' }}>
+                  Structured Evaluation
+                </span>
+              </div>
+            </div>
+
+            {/* Available Tracks Direct Launchpad */}
+            {categories.length > 0 && (
+              <div className="mt-8 pt-6 border-t" style={{ borderColor: 'var(--c-border)' }}>
+                <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--c-text-muted)' }}>
+                  Choose Focus Domain
+                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  {categories.map((cat) => (
+                    <button
+                      key={cat.id}
+                      onClick={() => handleLaunchCategory(cat)}
+                      disabled={launchingId === cat.id}
+                      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold border transition-all hover:border-[var(--c-accent)] hover:text-[var(--c-accent)]"
+                      style={{
+                        background: 'var(--c-surface-muted)',
+                        borderColor: 'var(--c-border)',
+                        color: 'var(--c-text)',
+                      }}
+                    >
+                      <Layers className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--c-accent)' }} />
+                      <span>{cat.name}</span>
+                      {launchingId === cat.id ? (
+                        <span className="w-3 h-3 border-2 border-t-transparent rounded-full animate-spin ml-1" />
+                      ) : (
+                        <ArrowRight className="w-3 h-3 opacity-60 ml-0.5" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ══════════════════════════════════════════════════════════════════
-          STATS — large numeral typography, hairline dividers, no cards
-      ══════════════════════════════════════════════════════════════════ */}
-      <section
-        style={{
-          borderBottom: '1px solid var(--c-border)',
-        }}
-        aria-label="Activity overview"
-      >
-        <div
-          className="mx-auto"
-          style={{ maxWidth: '1152px', padding: '0 clamp(16px, 4vw, 40px)' }}
+        {/* ─── SECTION 2: PRACTICE TELEMETRY & PROGRESS OVERVIEW ───────────── */}
+        <section
+          aria-label="Practice Telemetry"
+          className="mb-12 sm:mb-16 pb-8 border-b"
+          style={{ borderColor: 'var(--c-border)' }}
         >
-          <div
-            className="grid"
-            style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}
-          >
-            {/* Stat: Sessions */}
-            <div
-              className="py-10 pr-8"
-              style={{ borderRight: '1px solid var(--c-border)' }}
-            >
-              <div
-                className="c-serif-num"
-                style={{
-                  fontSize: 'clamp(2.5rem, 4vw, 3.75rem)',
-                  lineHeight: 1,
-                  letterSpacing: '-0.03em',
-                  marginBottom: '0.5rem',
-                  color: 'var(--c-text)',
-                }}
-              >
-                {loading ? <Sk className="w-16 h-10" /> : (summary.totalInterviews ?? '—')}
-              </div>
-              <p
-                style={{
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.14em',
-                  color: 'var(--c-text-muted)',
-                }}
-              >
-                Sessions
-              </p>
+          <div className="flex flex-col md:flex-row md:items-baseline justify-between gap-6">
+            <div>
+              <p className="c-eyebrow mb-1">Telemetry</p>
+              <h2 className="c-heading text-xl sm:text-2xl">
+                Practice Record
+              </h2>
             </div>
 
-            {/* Stat: Completed */}
-            <div
-              className="py-10 px-8"
-              style={{ borderRight: '1px solid var(--c-border)' }}
-            >
-              <div
-                className="c-serif-num"
-                style={{
-                  fontSize: 'clamp(2.5rem, 4vw, 3.75rem)',
-                  lineHeight: 1,
-                  letterSpacing: '-0.03em',
-                  marginBottom: '0.5rem',
-                  color: 'var(--c-text)',
-                }}
-              >
-                {loading ? <Sk className="w-16 h-10" /> : (summary.completedInterviews ?? '—')}
+            {/* Restrained horizontal metrics */}
+            <div className="flex flex-wrap items-center gap-6 sm:gap-10">
+              <div>
+                <span className="block text-xs font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--c-text-muted)' }}>
+                  Total Sessions
+                </span>
+                <div className="c-serif-num text-2xl sm:text-3xl font-semibold" style={{ color: 'var(--c-text)' }}>
+                  {loading ? '—' : (summary?.totalInterviews ?? 0)}
+                </div>
               </div>
-              <p
-                style={{
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.14em',
-                  color: 'var(--c-text-muted)',
-                }}
-              >
-                Completed
-              </p>
-            </div>
 
-            {/* Stat: Average Score */}
-            <div className="py-10 pl-8">
-              <div
-                className="c-serif-num"
-                style={{
-                  fontSize: 'clamp(2.5rem, 4vw, 3.75rem)',
-                  lineHeight: 1,
-                  letterSpacing: '-0.03em',
-                  marginBottom: '0.5rem',
-                  color: hasScore ? 'var(--c-text)' : 'var(--c-border-strong)',
-                }}
-              >
-                {loading ? (
-                  <Sk className="w-16 h-10" />
-                ) : hasScore ? (
-                  `${summary.averageScore}%`
-                ) : (
-                  '—'
-                )}
+              <div className="h-8 w-px" style={{ background: 'var(--c-border)' }} />
+
+              <div>
+                <span className="block text-xs font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--c-text-muted)' }}>
+                  Completed
+                </span>
+                <div className="c-serif-num text-2xl sm:text-3xl font-semibold" style={{ color: 'var(--c-text)' }}>
+                  {loading ? '—' : (summary?.completedInterviews ?? 0)}
+                </div>
               </div>
-              <p
-                style={{
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.14em',
-                  color: 'var(--c-text-muted)',
-                }}
-              >
-                Avg Score
-              </p>
+
+              <div className="h-8 w-px" style={{ background: 'var(--c-border)' }} />
+
+              <div>
+                <span className="block text-xs font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--c-text-muted)' }}>
+                  Average Score
+                </span>
+                <div
+                  className="c-serif-num text-2xl sm:text-3xl font-semibold"
+                  style={{ color: hasScore ? 'var(--c-text)' : 'var(--c-text-muted)' }}
+                >
+                  {loading ? '—' : hasScore ? `${summary.averageScore}%` : '—'}
+                </div>
+              </div>
+
+              {hasScore && (
+                <Link
+                  to="/progress"
+                  className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider ml-auto md:ml-4"
+                  style={{ color: 'var(--c-accent)' }}
+                >
+                  <BarChart2 className="w-4 h-4" />
+                  Full Breakdown
+                </Link>
+              )}
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ══════════════════════════════════════════════════════════════════
-          MAIN BODY — two-column on desktop: history left, progress right
-      ══════════════════════════════════════════════════════════════════ */}
-      <section
-        className="mx-auto"
-        style={{
-          maxWidth: '1152px',
-          padding: 'clamp(48px, 6vw, 80px) clamp(16px, 4vw, 40px)',
-        }}
-      >
-        <div
-          className="grid gap-16"
-          style={{ gridTemplateColumns: '1fr', alignItems: 'start' }}
-        >
-          {/* ── Larger viewport: side-by-side ── */}
-          <div
-            className="grid gap-16"
-            style={{
-              gridTemplateColumns: 'minmax(0, 1fr)',
-              alignItems: 'start',
-            }}
-          >
-            <style>{`
-              @media (min-width: 900px) {
-                .dash-body-grid {
-                  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) !important;
-                  gap: 4rem !important;
-                }
-              }
-            `}</style>
+        {/* ─── SECTION 3: RECENT SESSIONS OR FIRST-SESSION ARCHITECTURE ────── */}
+        {loading ? (
+          <div className="space-y-4 py-8">
+            <div className="c-skeleton h-20 rounded-2xl" />
+            <div className="c-skeleton h-20 rounded-2xl" />
+          </div>
+        ) : summary.recent.length === 0 ? (
+          /* ── ZERO INTERVIEW STATE: HOW PRACTICE WORKS ─────────────────── */
+          <section aria-label="First Interview Onboarding" className="mb-12">
+            <div className="mb-8">
+              <p className="c-eyebrow mb-1">Getting Started</p>
+              <h2 className="c-heading text-2xl sm:text-3xl mb-2">
+                Your first session starts here.
+              </h2>
+              <p className="text-sm sm:text-base max-w-xl" style={{ color: 'var(--c-text-secondary)' }}>
+                MockAI is built for active practice, not passive reading. Here is what happens when you begin your first round:
+              </p>
+            </div>
 
-            <div className="dash-body-grid grid gap-12" style={{ alignItems: 'start' }}>
-
-              {/* ── LEFT: Recent Sessions ─────────────────────────────────── */}
-              <div>
-                <div
-                  className="flex items-baseline justify-between"
-                  style={{ marginBottom: '1.75rem' }}
-                >
-                  <h2
-                    className="c-heading"
-                    style={{ fontSize: '1.25rem', letterSpacing: '-0.01em' }}
-                  >
-                    Recent Sessions
-                  </h2>
-                  {hasInterviews && (
-                    <Link
-                      to="/history"
-                      className="inline-flex items-center gap-1"
-                      style={{
-                        fontSize: '0.75rem',
-                        fontWeight: 700,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.12em',
-                        color: 'var(--c-accent)',
-                      }}
-                    >
-                      All history <ArrowRight style={{ width: '13px', height: '13px' }} />
-                    </Link>
-                  )}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              {/* Step 1 */}
+              <div
+                className="p-6 sm:p-7 rounded-2xl flex flex-col justify-between"
+                style={{
+                  background: 'var(--c-surface)',
+                  border: '1px solid var(--c-border)',
+                }}
+              >
+                <div>
+                  <div className="c-serif-num text-2xl font-bold mb-3" style={{ color: 'var(--c-accent)' }}>
+                    01
+                  </div>
+                  <h3 className="c-heading text-lg mb-2">Target Domain & Role</h3>
+                  <p className="text-sm leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
+                    Select your focus area from technical domains, system design, or leadership behavioral tracks.
+                  </p>
                 </div>
-
-                {/* Loading skeleton */}
-                {loading && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
-                    {[...Array(4)].map((_, i) => (
-                      <div
-                        key={i}
-                        style={{
-                          borderTop: i > 0 ? '1px solid var(--c-border)' : undefined,
-                          borderBottom: i === 3 ? '1px solid var(--c-border)' : undefined,
-                          padding: '1.125rem 0',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '1rem',
-                        }}
-                      >
-                        <Sk className="w-7 h-5" />
-                        <div style={{ flex: 1 }}>
-                          <Sk className="w-40 h-4 mb-2" />
-                          <Sk className="w-24 h-3" />
-                        </div>
-                        <Sk className="w-16 h-5 rounded-full" />
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Empty state — no card, just typography */}
-                {!loading && summary.recent.length === 0 && (
-                  <div style={{ paddingTop: '0.5rem', paddingBottom: '2rem' }}>
-                    {/* Decorative large numeral */}
-                    <div
-                      className="c-serif-num"
-                      style={{
-                        fontSize: 'clamp(5rem, 10vw, 8rem)',
-                        lineHeight: 1,
-                        color: 'var(--c-border)',
-                        marginBottom: '1.5rem',
-                        letterSpacing: '-0.04em',
-                        userSelect: 'none',
-                      }}
-                      aria-hidden="true"
-                    >
-                      0
-                    </div>
-                    <h3
-                      className="c-heading"
-                      style={{ fontSize: '1.125rem', marginBottom: '0.625rem' }}
-                    >
-                      Your first session starts here.
-                    </h3>
-                    <p
-                      style={{
-                        color: 'var(--c-text-secondary)',
-                        fontSize: '0.9375rem',
-                        lineHeight: 1.7,
-                        maxWidth: '36ch',
-                        marginBottom: '1.75rem',
-                      }}
-                    >
-                      Sessions, scores, and feedback appear once you complete
-                      your first mock interview. It takes less than ten minutes.
-                    </p>
-                    <Link
-                      to="/interview/goal"
-                      className="c-btn c-btn-primary inline-flex items-center gap-2"
-                      style={{
-                        padding: '0.75rem 1.5rem',
-                        fontSize: '0.875rem',
-                        borderRadius: '10px',
-                      }}
-                    >
-                      <PlayCircle style={{ width: '16px', height: '16px' }} />
-                      Begin First Interview
-                    </Link>
-                  </div>
-                )}
-
-                {/* Interview list — editorial rows, no cards */}
-                {!loading && summary.recent.length > 0 && (
-                  <div
-                    role="list"
-                    style={{
-                      borderTop: '1px solid var(--c-border)',
-                    }}
-                  >
-                    {summary.recent.map((interview, index) => (
-                      <Link
-                        key={interview.id}
-                        role="listitem"
-                        to={
-                          interview.status === 'Completed'
-                            ? `/interview/${interview.id}/results`
-                            : `/interview/${interview.id}/session`
-                        }
-                        className="group"
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '1rem',
-                          padding: '1.125rem 0',
-                          borderBottom: '1px solid var(--c-border)',
-                          textDecoration: 'none',
-                          transition: 'background 0.15s ease',
-                          marginLeft: '-8px',
-                          marginRight: '-8px',
-                          paddingLeft: '8px',
-                          paddingRight: '8px',
-                          borderRadius: '6px',
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.background = 'var(--c-surface-muted)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.background = '';
-                        }}
-                      >
-                        {/* Ordinal index */}
-                        <span
-                          className="c-serif-num shrink-0"
-                          style={{
-                            fontSize: '1rem',
-                            color: 'var(--c-border-strong)',
-                            width: '1.5rem',
-                            textAlign: 'right',
-                            userSelect: 'none',
-                          }}
-                          aria-hidden="true"
-                        >
-                          {index + 1}
-                        </span>
-
-                        {/* Role + date */}
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <p
-                            style={{
-                              fontSize: '0.9375rem',
-                              fontWeight: 600,
-                              whiteSpace: 'nowrap',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              color: 'var(--c-text)',
-                              marginBottom: '2px',
-                            }}
-                          >
-                            {interview.role}
-                          </p>
-                          <p
-                            className="flex items-center gap-1.5"
-                            style={{
-                              fontSize: '0.75rem',
-                              color: 'var(--c-text-muted)',
-                            }}
-                          >
-                            <Clock style={{ width: '11px', height: '11px', flexShrink: 0 }} />
-                            {formatDate(interview.createdAt)}
-                          </p>
-                        </div>
-
-                        {/* Score */}
-                        {interview.score != null && (
-                          <span
-                            className="c-serif-num shrink-0"
-                            style={{
-                              fontSize: '0.9375rem',
-                              fontWeight: 600,
-                              color: 'var(--c-text-secondary)',
-                            }}
-                          >
-                            {interview.score}%
-                          </span>
-                        )}
-
-                        {/* Status badge */}
-                        <span
-                          className={`c-badge shrink-0 ${STATUS_TONE[interview.status] || 'c-badge-muted'}`}
-                        >
-                          {interview.status}
-                        </span>
-
-                        {/* Hover chevron */}
-                        <ChevronRight
-                          style={{
-                            width: '15px',
-                            height: '15px',
-                            color: 'var(--c-text-muted)',
-                            flexShrink: 0,
-                            opacity: 0,
-                            transition: 'opacity 0.15s ease',
-                          }}
-                          className="group-hover:opacity-100"
-                        />
-                      </Link>
-                    ))}
-                  </div>
-                )}
+                <div className="mt-6 flex items-center gap-2 text-xs font-semibold" style={{ color: 'var(--c-text-muted)' }}>
+                  <Compass className="w-4 h-4" /> Role Calibration
+                </div>
               </div>
 
-              {/* ── RIGHT: Score Progress ─────────────────────────────────── */}
-              <div>
-                <div
-                  style={{ marginBottom: '1.75rem' }}
-                  className="flex items-baseline justify-between"
-                >
-                  <h2
-                    className="c-heading"
-                    style={{ fontSize: '1.25rem', letterSpacing: '-0.01em' }}
-                  >
-                    Performance
-                  </h2>
-                  <Link
-                    to="/progress"
-                    className="inline-flex items-center gap-1"
-                    style={{
-                      fontSize: '0.75rem',
-                      fontWeight: 700,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.12em',
-                      color: 'var(--c-accent)',
-                    }}
-                  >
-                    Full progress <ArrowRight style={{ width: '13px', height: '13px' }} />
-                  </Link>
+              {/* Step 2 */}
+              <div
+                className="p-6 sm:p-7 rounded-2xl flex flex-col justify-between"
+                style={{
+                  background: 'var(--c-surface)',
+                  border: '1px solid var(--c-border)',
+                }}
+              >
+                <div>
+                  <div className="c-serif-num text-2xl font-bold mb-3" style={{ color: 'var(--c-accent)' }}>
+                    02
+                  </div>
+                  <h3 className="c-heading text-lg mb-2">Real Interview Environment</h3>
+                  <p className="text-sm leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
+                    Answer timed questions out loud with speech and camera capture, simulating a live hiring interview.
+                  </p>
                 </div>
+                <div className="mt-6 flex items-center gap-2 text-xs font-semibold" style={{ color: 'var(--c-text-muted)' }}>
+                  <Mic className="w-4 h-4" /> Live Spoken Flow
+                </div>
+              </div>
 
-                {/* Score Ring — contained, not in a bordered card */}
-                {loading ? (
-                  <div className="flex flex-col items-center gap-4" style={{ paddingTop: '1rem', paddingBottom: '2rem' }}>
-                    <Sk className="w-32 h-32 rounded-full" />
-                    <Sk className="w-20 h-3" />
+              {/* Step 3 */}
+              <div
+                className="p-6 sm:p-7 rounded-2xl flex flex-col justify-between"
+                style={{
+                  background: 'var(--c-surface)',
+                  border: '1px solid var(--c-border)',
+                }}
+              >
+                <div>
+                  <div className="c-serif-num text-2xl font-bold mb-3" style={{ color: 'var(--c-accent)' }}>
+                    03
                   </div>
-                ) : hasScore ? (
-                  <div
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: '1.25rem',
-                      paddingTop: '1rem',
-                      paddingBottom: '2.5rem',
-                    }}
-                  >
-                    <ScoreRing
-                      value={summary.averageScore}
-                      label="Average Score"
-                      size={148}
-                      strokeWidth={10}
-                    />
-                    <p
-                      style={{
-                        fontSize: '0.8125rem',
-                        color: 'var(--c-text-muted)',
-                        textAlign: 'center',
-                        maxWidth: '22ch',
-                        lineHeight: 1.6,
-                      }}
-                    >
-                      Across {summary.completedInterviews} completed session{summary.completedInterviews !== 1 ? 's' : ''}.
-                    </p>
-                  </div>
-                ) : (
-                  /* No data yet — editorial typography, no empty-state card */
-                  <div style={{ paddingTop: '0.5rem', paddingBottom: '2rem' }}>
-                    {/* Decorative ring outline (empty) */}
-                    <div
-                      style={{
-                        width: '96px',
-                        height: '96px',
-                        borderRadius: '50%',
-                        border: '2px solid var(--c-border)',
-                        marginBottom: '1.25rem',
-                      }}
-                      aria-hidden="true"
-                    />
-                    <h3
-                      className="c-heading"
-                      style={{ fontSize: '1rem', marginBottom: '0.5rem' }}
-                    >
-                      No scores yet
-                    </h3>
-                    <p
-                      style={{
-                        color: 'var(--c-text-secondary)',
-                        fontSize: '0.875rem',
-                        lineHeight: 1.7,
-                        maxWidth: '28ch',
-                        marginBottom: '1.5rem',
-                      }}
-                    >
-                      Complete your first interview to start tracking
-                      your score trend.
-                    </p>
-                    <Link
-                      to="/progress"
-                      className="inline-flex items-center gap-1.5"
-                      style={{
-                        fontSize: '0.8125rem',
-                        fontWeight: 700,
-                        color: 'var(--c-accent)',
-                      }}
-                    >
-                      <BarChart2 style={{ width: '14px', height: '14px' }} />
-                      View Progress Page
-                    </Link>
-                  </div>
-                )}
+                  <h3 className="c-heading text-lg mb-2">In-Depth Evaluation</h3>
+                  <p className="text-sm leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
+                    Receive actionable feedback on technical accuracy, structure, clarity, and pacing.
+                  </p>
+                </div>
+                <div className="mt-6 flex items-center gap-2 text-xs font-semibold" style={{ color: 'var(--c-text-muted)' }}>
+                  <FileText className="w-4 h-4" /> Structured Insights
+                </div>
+              </div>
+            </div>
 
-                {/* Divider */}
-                <div
+            <div className="flex items-center gap-4">
+              <Link
+                to="/interview/goal"
+                className="c-btn c-btn-primary inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold"
+              >
+                <PlayCircle className="w-4 h-4" />
+                Launch First Session
+              </Link>
+            </div>
+          </section>
+        ) : (
+          /* ── ACTIVE HISTORY STATE: REFINED RECENT ACTIVITY LIST ────────── */
+          <section aria-label="Recent Interview Activity" className="mb-12">
+            <div className="flex items-baseline justify-between mb-6">
+              <div>
+                <p className="c-eyebrow mb-1">Activity</p>
+                <h2 className="c-heading text-2xl">Recent Sessions</h2>
+              </div>
+              <Link
+                to="/history"
+                className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider"
+                style={{ color: 'var(--c-accent)' }}
+              >
+                Full History <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+
+            <div
+              className="rounded-2xl overflow-hidden"
+              style={{
+                background: 'var(--c-surface)',
+                border: '1px solid var(--c-border)',
+              }}
+            >
+              {summary.recent.map((interview, index) => (
+                <Link
+                  key={interview.id}
+                  to={
+                    interview.status === 'Completed'
+                      ? `/interview/${interview.id}/results`
+                      : `/interview/${interview.id}/session`
+                  }
+                  className="group flex items-center justify-between gap-4 px-6 py-5 transition-colors"
                   style={{
-                    borderTop: '1px solid var(--c-border)',
-                    paddingTop: '1.5rem',
-                    marginTop: '0.5rem',
+                    borderTop: index > 0 ? '1px solid var(--c-border)' : undefined,
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'var(--c-surface-muted)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = '';
                   }}
                 >
-                  <p
-                    style={{
-                      fontSize: '0.75rem',
-                      fontWeight: 700,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.12em',
-                      color: 'var(--c-text-muted)',
-                      marginBottom: '1rem',
-                    }}
-                  >
-                    Quick actions
-                  </p>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
-                    {[
-                      { label: 'Start New Interview', to: '/interview/goal', icon: PlayCircle },
-                      { label: 'Interview History', to: '/history', icon: Clock },
-                      { label: 'Progress Tracking', to: '/progress', icon: BarChart2 },
-                    ].map(({ label, to, icon: Icon }, i, arr) => (
-                      <Link
-                        key={to}
-                        to={to}
-                        className="group flex items-center justify-between"
-                        style={{
-                          padding: '0.75rem 0',
-                          borderBottom: i < arr.length - 1 ? '1px solid var(--c-border)' : undefined,
-                          textDecoration: 'none',
-                          transition: 'color 0.15s ease',
-                          color: 'var(--c-text-secondary)',
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.color = 'var(--c-text)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.color = 'var(--c-text-secondary)';
-                        }}
-                      >
-                        <span
-                          className="flex items-center gap-2.5"
-                          style={{ fontSize: '0.875rem', fontWeight: 600 }}
-                        >
-                          <Icon style={{ width: '14px', height: '14px', flexShrink: 0, color: 'var(--c-accent)' }} />
-                          {label}
+                  {/* Left: Role & Date */}
+                  <div className="min-w-0 flex items-center gap-4">
+                    <span
+                      className="c-serif-num text-lg font-semibold shrink-0 w-6 text-center select-none"
+                      style={{ color: 'var(--c-border-strong)' }}
+                    >
+                      {index + 1}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-base font-semibold truncate" style={{ color: 'var(--c-text)' }}>
+                        {interview.role}
+                      </p>
+                      <p className="text-xs flex items-center gap-2 mt-1" style={{ color: 'var(--c-text-muted)' }}>
+                        <span className="capitalize">{interview.type}</span>
+                        <span>•</span>
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {formatDate(interview.createdAt)}
                         </span>
-                        <ChevronRight
-                          style={{
-                            width: '14px',
-                            height: '14px',
-                            color: 'var(--c-border-strong)',
-                            flexShrink: 0,
-                          }}
-                        />
-                      </Link>
-                    ))}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              </div>
 
+                  {/* Right: Score, Badge & Action link */}
+                  <div className="flex items-center gap-4 shrink-0">
+                    {interview.score != null && (
+                      <span className="c-serif-num text-sm sm:text-base font-bold" style={{ color: 'var(--c-text)' }}>
+                        {interview.score}%
+                      </span>
+                    )}
+                    <span className={`c-badge ${STATUS_TONE[interview.status] || 'c-badge-muted'}`}>
+                      {interview.status}
+                    </span>
+                    <span
+                      className="hidden sm:inline-flex items-center gap-1 text-xs font-bold transition-transform group-hover:translate-x-0.5"
+                      style={{ color: 'var(--c-accent)' }}
+                    >
+                      {interview.status === 'Completed' ? 'View Results' : 'Resume'}
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </span>
+                  </div>
+                </Link>
+              ))}
             </div>
-          </div>
-        </div>
-      </section>
+          </section>
+        )}
+
+        {/* ─── FOOTER TELEMETRY NOTE ───────────────────────────────────────── */}
+        <footer
+          className="pt-6 border-t flex flex-col sm:flex-row items-center justify-between gap-3 text-xs"
+          style={{ borderColor: 'var(--c-border)', color: 'var(--c-text-muted)' }}
+        >
+          <p>MockAI Interview Practice Workspace</p>
+          <p>Real Question Banks & Evaluation Pipeline</p>
+        </footer>
+
+      </main>
     </div>
   );
 };
