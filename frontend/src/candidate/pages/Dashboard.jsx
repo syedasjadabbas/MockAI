@@ -5,12 +5,10 @@ import {
   ArrowRight,
   Clock,
   ChevronRight,
-  CheckCircle2,
-  Layers,
+  Compass,
   Mic,
   FileText,
   BarChart2,
-  Compass,
 } from 'lucide-react';
 import CandidateNav from '../components/CandidateNav';
 import { getDashboardSummary, getCategories, startInterview } from '../services/candidateApi';
@@ -76,105 +74,114 @@ const Dashboard = () => {
       <CandidateNav />
 
       {/* ══════════════════════════════════════════════════════════════════
-          CINEMATIC EDITORIAL HERO — Exact Composition from Reference
+          FLAGSHIP EDITORIAL HERO — Native Light & Dark Mode Architecture
       ══════════════════════════════════════════════════════════════════ */}
       <section
         aria-label="Practice Workspace Hero"
-        className="relative overflow-hidden w-full select-none"
+        className="relative w-full border-b overflow-hidden"
         style={{
-          background: '#130f0c',
-          color: '#f3ede3',
-          minHeight: 'clamp(540px, 68vh, 720px)',
+          background: 'var(--c-bg)',
+          borderColor: 'var(--c-border)',
         }}
       >
-        {/* Background Photograph — Aligned Right */}
-        <div
-          className="absolute inset-y-0 right-0 w-full md:w-3/4 lg:w-[68%] bg-no-repeat bg-cover"
-          style={{
-            backgroundImage: `url(${CANDIDATE_IMAGES.dashboardHero})`,
-            backgroundPosition: 'right 20% center',
-          }}
-          aria-hidden="true"
-        >
-          {/* Multi-stage horizontal scrim smoothly blending photo into left solid dark tone */}
-          <div
-            className="absolute inset-0"
-            style={{
-              background:
-                'linear-gradient(to right, #130f0c 0%, #130f0c 18%, rgba(19, 15, 12, 0.94) 38%, rgba(19, 15, 12, 0.65) 60%, rgba(19, 15, 12, 0.2) 80%, transparent 100%)',
-            }}
-          />
-          {/* Top subtle fade */}
-          <div
-            className="absolute inset-x-0 top-0 h-24"
-            style={{
-              background: 'linear-gradient(180deg, #130f0c 0%, transparent 100%)',
-              opacity: 0.5,
-            }}
-          />
-          {/* Bottom fade */}
-          <div
-            className="absolute inset-x-0 bottom-0 h-28"
-            style={{
-              background: 'linear-gradient(0deg, #130f0c 0%, transparent 100%)',
-            }}
-          />
-        </div>
-
-        {/* Foreground Content Container */}
-        <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 lg:py-24 flex flex-col justify-center min-h-[clamp(540px,68vh,720px)]">
-          
-          {/* Main Copy Block */}
-          <div className="max-w-xl">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
             
-            {/* Context Greeting Block */}
-            <div className="mb-6">
-              <div className="flex items-center gap-2 mb-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#d98a72]" />
-                <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.18em] uppercase text-neutral-400">
-                  PRACTICE WORKSPACE
-                </span>
+            {/* Left Content Area (~58% on Desktop) */}
+            <div className="lg:col-span-7 flex flex-col justify-center z-10">
+              
+              {/* Standalone Prominent Welcome Greeting */}
+              <div className="flex items-center gap-2.5 mb-4 sm:mb-5">
+                <span
+                  className="w-2 h-2 rounded-full shrink-0"
+                  style={{ background: 'var(--c-accent)' }}
+                />
+                <p
+                  className="text-lg sm:text-xl font-medium tracking-tight"
+                  style={{
+                    fontFamily: 'var(--c-font-heading)',
+                    color: 'var(--c-accent)',
+                  }}
+                >
+                  Welcome back, {displayName}
+                </p>
               </div>
-              <p className="text-lg sm:text-xl font-medium text-[#f3ede3]">
-                Welcome back, {displayName}
-              </p>
-            </div>
 
-            {/* Dominant Fraunces Display Headline */}
-            <h1
-              className="c-heading text-4xl sm:text-5xl lg:text-[4.25rem] font-medium leading-[1.03] tracking-[-0.03em] mb-5 text-[#fbf7f1]"
-              style={{
-                fontFamily: 'var(--c-font-heading)',
-              }}
-            >
-              Practice before<br />it matters.
-            </h1>
-
-            {/* Short, Confident Subtitle */}
-            <p className="text-sm sm:text-base leading-relaxed mb-8 text-neutral-300 max-w-[40ch]">
-              Simulate realistic interviews with timed questions, live speech and camera capture, and objective feedback.
-            </p>
-
-            {/* Primary Start Interview CTA */}
-            <div className="flex items-center gap-4">
-              <Link
-                to="/interview/goal"
-                className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-xl text-sm sm:text-base font-bold text-[#1a110e] transition-all hover:scale-[1.02] active:scale-[0.98]"
+              {/* Dominant Fraunces Display Headline */}
+              <h1
+                className="c-heading text-4xl sm:text-5xl lg:text-[4.25rem] font-medium leading-[1.03] tracking-[-0.03em] mb-5 sm:mb-6"
                 style={{
-                  background: 'linear-gradient(135deg, #df9b85 0%, #cf826c 100%)',
-                  boxShadow: '0 8px 24px -6px rgba(207, 130, 108, 0.4)',
+                  fontFamily: 'var(--c-font-heading)',
+                  color: 'var(--c-text)',
                 }}
               >
-                <PlayCircle className="w-5 h-5 fill-current" />
-                <span>Start Interview</span>
-              </Link>
+                Practice before<br />it matters.
+              </h1>
+
+              {/* Short, Confident Subtitle */}
+              <p
+                className="text-sm sm:text-base leading-relaxed mb-8 sm:mb-10 max-w-[40ch]"
+                style={{ color: 'var(--c-text-secondary)' }}
+              >
+                Simulate realistic interviews with timed questions, live speech and camera capture, and objective feedback.
+              </p>
+
+              {/* Primary Start Interview CTA */}
+              <div className="flex flex-wrap items-center gap-4">
+                <Link
+                  to="/interview/goal"
+                  className="c-btn c-btn-primary inline-flex items-center gap-2.5 px-8 py-4 text-base font-bold rounded-xl shadow-md transition-transform hover:-translate-y-0.5"
+                  style={{
+                    background: 'var(--c-accent)',
+                    color: 'var(--c-on-accent)',
+                  }}
+                >
+                  <PlayCircle className="w-5 h-5 fill-current" />
+                  <span>Start Interview</span>
+                </Link>
+
+                {hasInterviews && (
+                  <Link
+                    to="/history"
+                    className="inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-4 rounded-xl transition-colors hover:bg-[var(--c-surface-muted)]"
+                    style={{ color: 'var(--c-text)' }}
+                  >
+                    <span>View Past Sessions</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                )}
+              </div>
             </div>
+
+            {/* Right Editorial Photograph Area (~42% on Desktop) */}
+            <div className="lg:col-span-5 relative w-full">
+              <div
+                className="relative w-full rounded-2xl sm:rounded-3xl overflow-hidden"
+                style={{
+                  aspectRatio: '4/3.3',
+                  boxShadow: 'var(--c-shadow)',
+                  border: '1px solid var(--c-border)',
+                }}
+              >
+                <img
+                  src={CANDIDATE_IMAGES.dashboardHero}
+                  alt="Candidate preparing for interview"
+                  className="w-full h-full object-cover object-center"
+                />
+
+                {/* Subtle soft edge scrim blending seamlessly with page background */}
+                <div
+                  className="absolute inset-y-0 left-0 w-16 hidden lg:block pointer-events-none"
+                  style={{
+                    background: 'linear-gradient(to right, var(--c-bg) 0%, transparent 100%)',
+                    opacity: 0.8,
+                  }}
+                />
+              </div>
+            </div>
+
           </div>
-
         </div>
-
-        {/* Crisp bottom hairline border */}
-        <div className="absolute inset-x-0 bottom-0 h-px bg-white/10" />
       </section>
 
       {/* ─── WORKSPACE MAIN CONTENT ───────────────────────────────────────── */}
@@ -435,69 +442,30 @@ const Dashboard = () => {
         )}
 
         {/* ══════════════════════════════════════════════════════════════════
-            PREMIUM EDITORIAL FOOTER
+            MINIMAL EDITORIAL FOOTER
         ══════════════════════════════════════════════════════════════════ */}
         <footer
-          className="border-t mt-16 sm:mt-24 pt-12 sm:pt-16 pb-12"
+          className="border-t mt-16 sm:mt-20 pt-10 pb-10"
           style={{ borderColor: 'var(--c-border)' }}
         >
-          {/* Top footer row: Brand statement + Navigation + Action */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 pb-10">
-            
-            {/* Brand & Mission Statement */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
-              <Link
-                to="/dashboard"
-                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                className="shrink-0 inline-flex items-center hover:opacity-90 transition-opacity select-none"
-              >
-                <img src={logo} alt="MockAI Logo" className="h-10 sm:h-12 w-auto object-contain" />
-              </Link>
-              <span className="hidden sm:inline-block w-px h-6" style={{ background: 'var(--c-border)' }} />
-              <p className="text-xs sm:text-sm max-w-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                AI-powered interview practice for serious preparation.
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
+            {/* MockAI Logo */}
+            <Link
+              to="/dashboard"
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              className="inline-flex items-center hover:opacity-90 transition-opacity select-none"
+            >
+              <img src={logo} alt="MockAI Logo" className="h-12 sm:h-14 w-auto object-contain" />
+            </Link>
+
+            {/* Copyright & Meta */}
+            <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-6 text-xs" style={{ color: 'var(--c-text-muted)' }}>
+              <p>© 2026 MockAI</p>
+              <span className="hidden sm:inline">•</span>
+              <p className="text-[11px] font-medium tracking-wider uppercase">
+                Real Question Banks & Evaluation Engine
               </p>
             </div>
-
-            {/* Navigation Links & Direct Start Action */}
-            <div className="flex flex-wrap items-center gap-5 sm:gap-8 text-xs sm:text-sm font-semibold">
-              {[
-                { label: 'Dashboard', path: '/dashboard' },
-                { label: 'History', path: '/history' },
-                { label: 'Progress', path: '/progress' },
-                { label: 'Profile', path: '/profile' },
-              ].map((link) => (
-                <Link
-                  key={link.path}
-                  to={link.path}
-                  onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                  className="transition-colors hover:text-[var(--c-accent)]"
-                  style={{ color: 'var(--c-text-secondary)' }}
-                >
-                  {link.label}
-                </Link>
-              ))}
-
-              <Link
-                to="/interview/goal"
-                className="inline-flex items-center gap-1.5 font-bold transition-colors hover:opacity-80 ml-1"
-                style={{ color: 'var(--c-accent)' }}
-              >
-                <span>Start Interview</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-          </div>
-
-          {/* Bottom hairline & copyright */}
-          <div
-            className="pt-8 border-t flex flex-col sm:flex-row items-center justify-between gap-4 text-xs"
-            style={{ borderColor: 'var(--c-border)', color: 'var(--c-text-muted)' }}
-          >
-            <p>© 2026 MockAI</p>
-            <p className="text-[11px] font-medium tracking-wider uppercase">
-              Real Question Bank & Evaluation Engine
-            </p>
           </div>
         </footer>
 

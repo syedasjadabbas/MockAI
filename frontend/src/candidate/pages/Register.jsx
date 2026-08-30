@@ -4,7 +4,6 @@ import { Mail, Lock, User as UserIcon, AlertCircle, Eye, EyeOff } from 'lucide-r
 import ThemeToggle from '../../components/ThemeToggle';
 import { register } from '../services/candidateAuth';
 import AuthVisualPanel from '../components/AuthVisualPanel';
-import workspaceBg from '../../assets/workspace_bg.jpg';
 import logo from '../../assets/logo.png';
 
 const GoogleIcon = () => (
@@ -23,25 +22,28 @@ const Register = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-
     if (password !== confirmPassword) {
-      setError('Passwords do not match.');
+      setError('Passwords do not match');
       return;
     }
-
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters');
+      return;
+    }
     setLoading(true);
+    setError('');
     try {
       await register({ name, email, password });
       navigate('/dashboard');
     } catch (err) {
-      setError(err.message || 'Registration failed.');
+      setError(err.message || 'Registration failed');
     } finally {
       setLoading(false);
     }
@@ -51,14 +53,11 @@ const Register = () => {
     <div className="min-h-screen grid grid-cols-1 lg:grid-cols-[1.2fr_1fr]">
       <AuthVisualPanel />
 
-      {/* Form column with workspace background */}
+      {/* Form column with clean background */}
       <div 
-        className="flex items-center justify-center px-6 sm:px-10 py-16 relative bg-cover bg-center"
-        style={{ backgroundImage: `url(${workspaceBg})` }}
+        className="flex items-center justify-center px-6 sm:px-10 py-16 relative"
+        style={{ background: 'var(--c-bg)' }}
       >
-        {/* Dynamic Dark/Warm Theme Matching Overlay */}
-        <div className="absolute inset-0 bg-[var(--c-bg)]/90 sm:bg-[var(--c-bg)]/88 backdrop-blur-[1px] transition-colors duration-300 pointer-events-none" />
-
         <div className="absolute top-6 right-6 z-20">
           <ThemeToggle />
         </div>
