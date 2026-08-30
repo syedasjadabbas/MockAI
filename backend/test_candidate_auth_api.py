@@ -9,7 +9,10 @@ tokens).
 
 Run with: ../.venv/Scripts/python.exe test_candidate_auth_api.py
 """
+import os
 import time
+
+os.environ["TESTING"] = "1"
 
 from fastapi.testclient import TestClient
 from jose import jwt

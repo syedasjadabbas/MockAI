@@ -235,7 +235,6 @@ const Login = () => {
                       type="email"
                       value={forgotEmail}
                       onChange={(e) => setForgotEmail(e.target.value)}
-                      placeholder="candidate@mockai.com"
                       required
                       autoFocus
                       className="c-input w-full pl-11 pr-4 py-3 rounded-xl text-sm"
@@ -482,7 +481,6 @@ const Login = () => {
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="jane@example.com"
                       required
                       className="c-input w-full pl-11 pr-4 py-3 rounded-xl text-sm"
                     />

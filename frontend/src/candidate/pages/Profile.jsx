@@ -260,7 +260,6 @@ const Profile = () => {
                       type="text"
                       value={nameValue}
                       onChange={(e) => setNameValue(e.target.value)}
-                      placeholder="Jane Doe"
                       disabled={saving}
                       required
                       className="c-input w-full pl-10 pr-4 py-2.5 rounded-xl text-sm disabled:opacity-60"

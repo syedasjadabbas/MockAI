@@ -38,6 +38,7 @@ from pydantic import BaseModel, Field
 
 from database import users_collection, admins_collection, otps_collection, invalidate_cache
 from middleware.candidate_auth import verify_candidate
+from utils.email import send_email
 from utils.auth import SECRET_KEY, ALGORITHM, create_access_token, hash_password, verify_password
 from utils.validators import (
     check_duplicate_email,
@@ -97,24 +98,9 @@ class ResendRegisterOtpRequest(BaseModel):
 
 
 def _send_candidate_registration_otp_email(to_email: str, name: str, otp: str) -> bool:
-    sender_email = os.getenv("SMTP_EMAIL")
-    sender_password = os.getenv("SMTP_PASSWORD")
-    smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
-    smtp_port = int(os.getenv("SMTP_PORT", "587"))
+    first_name = name.strip().split()[0] if name and name.strip() else "there"
 
-    if not sender_email or not sender_password:
-        print(f"[DEBUG] SMTP not configured. Candidate registration OTP for {to_email} ({name}) is: {otp}")
-        return False
-
-    try:
-        msg = MIMEMultipart()
-        msg["From"] = f"MockAI <{sender_email}>"
-        msg["To"] = to_email
-        msg["Subject"] = "MockAI - Verify Your Email Address"
-
-        first_name = name.strip().split()[0] if name and name.strip() else "there"
-
-        html_body = f"""<!DOCTYPE html>
+    html_body = f"""<!DOCTYPE html>
 <html>
   <head>
     <meta charset="utf-8">
@@ -168,18 +154,7 @@ def _send_candidate_registration_otp_email(to_email: str, name: str, otp: str) -
     </div>
   </body>
 </html>"""
-        msg.attach(MIMEText(html_body, "html"))
-
-        server = smtplib.SMTP(smtp_server, smtp_port, timeout=5)
-        server.starttls()
-        server.login(sender_email, sender_password)
-        server.send_message(msg)
-        server.quit()
-        return True
-    except Exception as exc:
-        print(f"Candidate registration email failed for {to_email}: {type(exc).__name__}")
-        print(f"[DEBUG] Candidate registration OTP for {to_email} is: {otp}")
-        return False
+    return send_email(to_email=to_email, subject="MockAI - Verify Your Email Address", html_content=html_body)
 
 
 @router.post("/register/send-otp")
@@ -476,22 +451,7 @@ GENERIC_RESET_MESSAGE = "If an account exists for this email, a 6-digit verifica
 
 
 def _send_candidate_otp_email(to_email: str, otp: str) -> bool:
-    sender_email = os.getenv("SMTP_EMAIL")
-    sender_password = os.getenv("SMTP_PASSWORD")
-    smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
-    smtp_port = int(os.getenv("SMTP_PORT", "587"))
-
-    if not sender_email or not sender_password:
-        print(f"[DEBUG] SMTP not configured. Candidate reset OTP for {to_email} is: {otp}")
-        return False
-
-    try:
-        msg = MIMEMultipart()
-        msg["From"] = f"MockAI <{sender_email}>"
-        msg["To"] = to_email
-        msg["Subject"] = "MockAI - Password Reset Verification Code"
-
-        html_body = f"""<!DOCTYPE html>
+    html_body = f"""<!DOCTYPE html>
 <html>
   <head>
     <meta charset="utf-8">
@@ -545,18 +505,7 @@ def _send_candidate_otp_email(to_email: str, otp: str) -> bool:
     </div>
   </body>
 </html>"""
-        msg.attach(MIMEText(html_body, "html"))
-
-        server = smtplib.SMTP(smtp_server, smtp_port, timeout=5)
-        server.starttls()
-        server.login(sender_email, sender_password)
-        server.send_message(msg)
-        server.quit()
-        return True
-    except Exception as exc:
-        print(f"Candidate password reset email failed for {to_email}: {type(exc).__name__}")
-        print(f"[DEBUG] Candidate reset OTP for {to_email} is: {otp}")
-        return False
+    return send_email(to_email=to_email, subject="MockAI - Password Reset Verification Code", html_content=html_body)
 
 
 def _create_password_reset_token(user_id: str, email: str) -> str:

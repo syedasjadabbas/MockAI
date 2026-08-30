@@ -189,15 +189,7 @@ async def upload_profile_picture(file: UploadFile = File(...), token_payload: di
 class ForgotPasswordRequest(BaseModel):
     email: str
 
-import string
-import random
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
+from utils.email import send_email
 
 @router.post("/forgot-password")
 def forgot_password(data: ForgotPasswordRequest):
@@ -213,55 +205,31 @@ def forgot_password(data: ForgotPasswordRequest):
         {"$set": {"password": hashed_pw}}
     )
     
-    # Try sending email
-    try:
-        sender_email = os.getenv("SMTP_EMAIL")
-        sender_password = os.getenv("SMTP_PASSWORD")
-        smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
-        smtp_port = int(os.getenv("SMTP_PORT", "587"))
-        
-        if sender_email and sender_password:
-            msg = MIMEMultipart()
-            msg['From'] = sender_email
-            msg['To'] = data.email
-            msg['Subject'] = "MockAI Admin - Password Reset"
-            
-            html_body = f"""
-            <html>
-              <body style="font-family: 'Inter', Arial, sans-serif; background-color: #080a10; padding: 40px 20px; margin: 0;">
-                <div style="max-width: 500px; margin: 0 auto; background-color: #0f1624; border: 1px solid rgba(255, 255, 255, 0.05); padding: 30px; border-radius: 16px; box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);">
-                  <h2 style="color: #ffffff; margin-top: 0; font-size: 24px; font-weight: 700;">MockAI Password Reset</h2>
-                  <p style="color: #94a3b8; font-size: 15px; line-height: 1.5;">Hello Admin,</p>
-                  <p style="color: #94a3b8; font-size: 15px; line-height: 1.5;">Your temporary password for the MockAI Admin Portal is:</p>
-                  
-                  <div style="background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.2); padding: 16px; text-align: center; border-radius: 8px; margin: 24px 0;">
-                    <span style="font-family: monospace; font-size: 22px; font-weight: bold; color: #818cf8; letter-spacing: 2px;">
-                      {temp_password}
-                    </span>
-                  </div>
-                  
-                  <p style="color: #ef4444; font-size: 14px; margin-bottom: 0;">
-                    <strong>⚠️ Security Warning:</strong> Please change your password immediately after logging in.
-                  </p>
-                </div>
-                <div style="text-align: center; margin-top: 20px; color: #475569; font-size: 12px;">
-                  &copy; 2026 MockAI System. All rights reserved.
-                </div>
-              </body>
-            </html>
-            """
-            msg.attach(MIMEText(html_body, 'html'))
-            
-            server = smtplib.SMTP(smtp_server, smtp_port)
-            server.starttls()
-            server.login(sender_email, sender_password)
-            server.send_message(msg)
-            server.quit()
-        else:
-            print(f"[DEBUG] SMTP not configured. Temporary password for {data.email} is: {temp_password}")
-    except Exception as e:
-        print("EMAIL ERROR:", e)
-        print("Temporary password:", temp_password)
+    html_body = f"""
+    <html>
+      <body style="font-family: 'Inter', Arial, sans-serif; background-color: #080a10; padding: 40px 20px; margin: 0;">
+        <div style="max-width: 500px; margin: 0 auto; background-color: #0f1624; border: 1px solid rgba(255, 255, 255, 0.05); padding: 30px; border-radius: 16px; box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);">
+          <h2 style="color: #ffffff; margin-top: 0; font-size: 24px; font-weight: 700;">MockAI Password Reset</h2>
+          <p style="color: #94a3b8; font-size: 15px; line-height: 1.5;">Hello Admin,</p>
+          <p style="color: #94a3b8; font-size: 15px; line-height: 1.5;">Your temporary password for the MockAI Admin Portal is:</p>
+          
+          <div style="background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.2); padding: 16px; text-align: center; border-radius: 8px; margin: 24px 0;">
+            <span style="font-family: monospace; font-size: 22px; font-weight: bold; color: #818cf8; letter-spacing: 2px;">
+              {temp_password}
+            </span>
+          </div>
+          
+          <p style="color: #ef4444; font-size: 14px; margin-bottom: 0;">
+            <strong>⚠️ Security Warning:</strong> Please change your password immediately after logging in.
+          </p>
+        </div>
+        <div style="text-align: center; margin-top: 20px; color: #475569; font-size: 12px;">
+          &copy; 2026 MockAI System. All rights reserved.
+        </div>
+      </body>
+    </html>
+    """
+    send_email(to_email=data.email, subject="MockAI Admin - Password Reset", html_content=html_body, sender_display_name="MockAI Admin")
     
     log_action("UPDATE", user.get("email"), "Forgot Password Reset")
     return {"message": "Password reset email sent"}
@@ -622,47 +590,24 @@ def send_create_admin_otp(data: SendOtpRequest, token_payload: dict = Depends(ve
         upsert=True
     )
     
-    try:
-        sender_email = os.getenv("SMTP_EMAIL")
-        sender_password = os.getenv("SMTP_PASSWORD")
-        smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
-        smtp_port = int(os.getenv("SMTP_PORT", "587"))
-        
-        if sender_email and sender_password:
-            msg = MIMEMultipart()
-            msg['From'] = sender_email
-            msg['To'] = data.email
-            msg['Subject'] = "MockAI Admin - Verify Email"
-            
-            html_body = f"""
-            <html>
-              <body style="font-family: 'Inter', Arial, sans-serif; background-color: #080a10; padding: 40px 20px; margin: 0;">
-                <div style="max-width: 500px; margin: 0 auto; background-color: #0f1624; border: 1px solid rgba(255, 255, 255, 0.05); padding: 30px; border-radius: 16px; box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);">
-                  <h2 style="color: #ffffff; margin-top: 0; font-size: 24px; font-weight: 700;">Admin Verification</h2>
-                  <p style="color: #94a3b8; font-size: 15px; line-height: 1.5;">Hello {data.name},</p>
-                  <p style="color: #94a3b8; font-size: 15px; line-height: 1.5;">You are being added as an Admin to MockAI. Your verification code is:</p>
-                  
-                  <div style="background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.2); padding: 16px; text-align: center; border-radius: 8px; margin: 24px 0;">
-                    <span style="font-family: monospace; font-size: 28px; font-weight: bold; color: #818cf8; letter-spacing: 4px;">
-                      {otp}
-                    </span>
-                  </div>
-                </div>
-              </body>
-            </html>
-            """
-            msg.attach(MIMEText(html_body, 'html'))
-            
-            server = smtplib.SMTP(smtp_server, smtp_port)
-            server.starttls()
-            server.login(sender_email, sender_password)
-            server.send_message(msg)
-            server.quit()
-        else:
-            print(f"[DEBUG] SMTP not configured. OTP for {data.email} is: {otp}")
-    except Exception as e:
-        print("EMAIL ERROR:", e)
-        print("OTP:", otp)
+    html_body = f"""
+    <html>
+      <body style="font-family: 'Inter', Arial, sans-serif; background-color: #080a10; padding: 40px 20px; margin: 0;">
+        <div style="max-width: 500px; margin: 0 auto; background-color: #0f1624; border: 1px solid rgba(255, 255, 255, 0.05); padding: 30px; border-radius: 16px; box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);">
+          <h2 style="color: #ffffff; margin-top: 0; font-size: 24px; font-weight: 700;">Admin Verification</h2>
+          <p style="color: #94a3b8; font-size: 15px; line-height: 1.5;">Hello {data.name},</p>
+          <p style="color: #94a3b8; font-size: 15px; line-height: 1.5;">You are being added as an Admin to MockAI. Your verification code is:</p>
+          
+          <div style="background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.2); padding: 16px; text-align: center; border-radius: 8px; margin: 24px 0;">
+            <span style="font-family: monospace; font-size: 28px; font-weight: bold; color: #818cf8; letter-spacing: 4px;">
+              {otp}
+            </span>
+          </div>
+        </div>
+      </body>
+    </html>
+    """
+    send_email(to_email=data.email, subject="MockAI Admin - Verify Email", html_content=html_body, sender_display_name="MockAI Admin")
         
     return {"message": "OTP sent successfully"}
 
