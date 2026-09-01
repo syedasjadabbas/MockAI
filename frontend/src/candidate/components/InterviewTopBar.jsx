@@ -28,7 +28,7 @@ const InterviewTopBar = ({ activeStep, onExit }) => {
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} 
           className="shrink-0 flex items-center select-none hover:opacity-95 transition-opacity"
         >
-          <img src={logo} alt="MockAI Logo" className="h-13 w-auto object-contain" />
+          <img src={logo} alt="MockAI Logo" className="c-brand-logo" />
         </Link>
 
         <div className="hidden lg:flex items-center gap-1.5 flex-1 min-w-0 justify-center overflow-x-auto">

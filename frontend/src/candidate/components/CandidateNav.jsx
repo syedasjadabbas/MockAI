@@ -42,7 +42,7 @@ const CandidateNav = () => {
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} 
             className="shrink-0 flex items-center select-none hover:opacity-95 transition-opacity"
           >
-            <img src={logo} alt="MockAI Logo" className="h-14 w-auto object-contain" />
+            <img src={logo} alt="MockAI Logo" className="c-brand-logo" />
           </Link>
 
           <nav className="hidden lg:flex items-center gap-1">

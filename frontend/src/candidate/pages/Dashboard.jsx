@@ -455,7 +455,7 @@ const Dashboard = () => {
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
               className="inline-flex items-center hover:opacity-90 transition-opacity select-none"
             >
-              <img src={logo} alt="MockAI Logo" className="h-12 sm:h-14 w-auto object-contain" />
+              <img src={logo} alt="MockAI Logo" className="c-brand-logo opacity-85" />
             </Link>
 
             {/* Copyright & Meta */}

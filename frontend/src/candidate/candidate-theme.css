@@ -374,3 +374,27 @@ html[data-theme='dark'] .candidate-app .c-skeleton::after {
   background: var(--c-accent-soft-strong);
   color: var(--c-text);
 }
+
+/* ===================== Brand Logo Rules ===================== */
+
+.candidate-app .c-brand-logo,
+.c-brand-logo {
+  height: 2.25rem !important; /* 36px */
+  max-height: 36px !important;
+  width: auto !important;
+  max-width: 140px !important;
+  object-fit: contain !important;
+  display: block !important;
+  flex-shrink: 0 !important;
+}
+
+.candidate-app .c-brand-logo-lg,
+.c-brand-logo-lg {
+  height: 2.75rem !important; /* 44px */
+  max-height: 44px !important;
+  width: auto !important;
+  max-width: 170px !important;
+  object-fit: contain !important;
+  display: block !important;
+  flex-shrink: 0 !important;
+}

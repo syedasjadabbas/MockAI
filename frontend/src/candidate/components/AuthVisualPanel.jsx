@@ -56,7 +56,7 @@ const AuthVisualPanel = () => {
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} 
         className="relative z-10 shrink-0 select-none block hover:opacity-90 transition-opacity"
       >
-        <img src={logo} alt="MockAI Logo" className="h-28 w-auto object-contain" />
+        <img src={logo} alt="MockAI Logo" className="c-brand-logo-lg" />
       </Link>
 
       {/* Flagship vertically centered composition */}

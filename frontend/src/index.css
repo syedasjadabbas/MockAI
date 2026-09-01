@@ -147,3 +147,26 @@ html.light,
 .animate-float {
   animation: float 3s ease-in-out infinite;
 }
+
+/* Global Brand Logo Rules */
+.c-brand-logo,
+.brand-logo {
+  height: 2.25rem !important; /* 36px */
+  max-height: 36px !important;
+  width: auto !important;
+  max-width: 140px !important;
+  object-fit: contain !important;
+  display: block !important;
+  flex-shrink: 0 !important;
+}
+
+.c-brand-logo-lg,
+.brand-logo-lg {
+  height: 2.75rem !important; /* 44px */
+  max-height: 44px !important;
+  width: auto !important;
+  max-width: 170px !important;
+  object-fit: contain !important;
+  display: block !important;
+  flex-shrink: 0 !important;
+}

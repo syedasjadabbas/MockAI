@@ -465,7 +465,7 @@ const Login = () => {
             <>
               {/* Elegant Mobile Logo */}
               <div className="mb-4 lg:hidden select-none">
-                <img src={logo} alt="MockAI Logo" className="h-20 w-auto object-contain" />
+                <img src={logo} alt="MockAI Logo" className="c-brand-logo-lg" />
               </div>
               
               <h2 className="c-heading text-3xl mb-1.5">Welcome back</h2>
