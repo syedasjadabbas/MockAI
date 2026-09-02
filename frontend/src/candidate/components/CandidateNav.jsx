@@ -16,6 +16,7 @@ import { getSession, logout } from '../services/candidateAuth';
 import logo from '../../assets/logo.png';
 
 const NAV_LINKS = [
+  { label: 'Home', path: '/' },
   { label: 'Dashboard', path: '/dashboard' },
   { label: 'History', path: '/history' },
   { label: 'Progress', path: '/progress' },
