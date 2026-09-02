@@ -13,6 +13,7 @@ import {
   Briefcase,
 } from 'lucide-react';
 import CandidateNav from '../components/CandidateNav';
+import AnimatedBackground3D from '../components/AnimatedBackground3D';
 import { getDashboardSummary, getCategories, startInterview } from '../services/candidateApi';
 import { getSession } from '../services/candidateAuth';
 import { formatDate } from '../../utils/dateFormat';
@@ -112,9 +113,13 @@ const Dashboard = () => {
   const hasScore = summary?.averageScore != null;
 
   return (
-    <div className="candidate-app min-h-screen flex flex-col font-sans" style={{ background: 'var(--c-bg)' }}>
+    <div className="candidate-app min-h-screen flex flex-col font-sans relative" style={{ background: 'var(--c-bg)' }}>
+      <AnimatedBackground3D />
+      
       {/* Navigation */}
-      <CandidateNav />
+      <div className="relative z-10">
+        <CandidateNav />
+      </div>
 
       {/* Hero Section */}
       <section className="relative border-b overflow-hidden"
