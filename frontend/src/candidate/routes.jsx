@@ -1,3 +1,5 @@
+import React, { lazy } from 'react';
+
 const LandingPage = lazy(() => import('./pages/LandingPage'));
 const Register = lazy(() => import('./pages/Register'));
 const Login = lazy(() => import('./pages/Login'));
