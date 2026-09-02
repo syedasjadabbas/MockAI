@@ -181,7 +181,7 @@ const LandingPage = () => {
                     Choose your interview
                   </h3>
                   <p className="text-xs leading-relaxed mb-3" style={{ color: 'var(--c-text-secondary)' }}>
-                    Select from Frontend, Backend, AI/ML, System Design, or Behavioral tracks with calibrated difficulty.
+                    Select an interview category and difficulty, then begin a structured mock interview tailored to your selected track.
                   </p>
                 </div>
 
@@ -233,7 +233,7 @@ const LandingPage = () => {
                     Answer realistic questions
                   </h3>
                   <p className="text-xs leading-relaxed mb-3" style={{ color: 'var(--c-text-secondary)' }}>
-                    Respond under realistic time pressure with synchronized audio-visual capture and speech transcription.
+                    Respond under realistic interview conditions with synchronized audio and video capture, speech transcription, and facial-expression analysis.
                   </p>
                 </div>
 
@@ -284,7 +284,7 @@ const LandingPage = () => {
                     Review your performance
                   </h3>
                   <p className="text-xs leading-relaxed mb-3" style={{ color: 'var(--c-text-secondary)' }}>
-                    Inspect explainable scoring across technical accuracy, pacing cadence, and question-level insights.
+                    Explore explainable feedback across technical accuracy, speech delivery, facial expressions, confidence indicators, stress indicators, pacing, and answer completeness.
                   </p>
                 </div>
 
@@ -300,13 +300,14 @@ const LandingPage = () => {
                     <span className="flex items-center gap-1 text-[#FF6B35]">
                       <BarChart3 className="w-3 h-3" /> report.json
                     </span>
-                    <span className="text-[#FF9F1C]">SCORE: 92/100</span>
+                    <span className="text-[#FF9F1C]">SCORE: 93.2</span>
                   </div>
                   <pre className="overflow-x-auto text-[10.5px]">
-                    <span className="text-[#FF9F1C]">{`{\n`}</span>
-                    <span className="text-[#A3A3A3]">{`  "score": `}</span><span className="text-[#FF6B35]">92</span><span className="text-[#A3A3A3]">{`,\n`}</span>
-                    <span className="text-[#A3A3A3]">{`  "accuracy": `}</span><span className="text-[#22C55E]">"OPTIMAL"</span><span className="text-[#A3A3A3]">{`,\n`}</span>
-                    <span className="text-[#A3A3A3]">{`  "pacing_wpm": `}</span><span className="text-[#60A5FA]">138</span>
+                    <span className="text-[#FF9F1C]">{`// Multimodal Evaluation Output\n{\n`}</span>
+                    <span className="text-[#A3A3A3]">{`  "content": { "technical_accuracy": `}</span><span className="text-[#FF6B35]">94.5</span><span className="text-[#A3A3A3]">{` },\n`}</span>
+                    <span className="text-[#A3A3A3]">{`  "speech": { "clarity": `}</span><span className="text-[#60A5FA]">91.0</span><span className="text-[#A3A3A3]">{`, "pacing_wpm": `}</span><span className="text-[#FF6B35]">136</span><span className="text-[#A3A3A3]">{` },\n`}</span>
+                    <span className="text-[#A3A3A3]">{`  "vision": { "facial_expression": `}</span><span className="text-[#22C55E]">"ANALYZED"</span><span className="text-[#A3A3A3]">{` },\n`}</span>
+                    <span className="text-[#A3A3A3]">{`  "overall_score": `}</span><span className="text-[#22C55E]">93.2</span>
                     <span className="text-[#FF9F1C]">{`\n}`}</span>
                   </pre>
                 </div>
@@ -338,7 +339,7 @@ const LandingPage = () => {
               {/* Left Column: 6 Rubric Dimension Cards */}
               <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4">
                 
-                {/* Technical Accuracy */}
+                {/* 01 • CONTENT */}
                 <div className="p-4 rounded-lg border space-y-2"
                   style={{
                     background: 'var(--c-surface)',
@@ -353,11 +354,11 @@ const LandingPage = () => {
                     Technical Accuracy
                   </h3>
                   <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                    Conceptual correctness, architectural depth, code logic, and depth of technical reasoning.
+                    Conceptual correctness, technical depth, reasoning, and relevance of the response.
                   </p>
                 </div>
 
-                {/* Speech & Communication */}
+                {/* 02 • DELIVERY */}
                 <div className="p-4 rounded-lg border space-y-2"
                   style={{
                     background: 'var(--c-surface)',
@@ -372,11 +373,11 @@ const LandingPage = () => {
                     Speech & Communication
                   </h3>
                   <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                    Spoken fluency, articulation structure, and precision with domain vocabulary.
+                    Spoken fluency, articulation, clarity, and precision during the response.
                   </p>
                 </div>
 
-                {/* Clarity & Conciseness */}
+                {/* 03 • VISION */}
                 <div className="p-4 rounded-lg border space-y-2"
                   style={{
                     background: 'var(--c-surface)',
@@ -384,18 +385,18 @@ const LandingPage = () => {
                   }}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs text-[#FF6B35] font-bold">03 • STRUCTURE</span>
-                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#181818] text-[#FBBF24] border border-white/10">Weight 15%</span>
+                    <span className="font-mono text-xs text-[#FF6B35] font-bold">03 • VISION</span>
+                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#181818] text-[#FBBF24] border border-white/10">Vision Signal</span>
                   </div>
                   <h3 className="text-sm font-bold" style={{ color: 'var(--c-text)' }}>
-                    Clarity & Conciseness
+                    Facial Expression
                   </h3>
                   <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                    Elimination of filler words, direct answering, and organized thought structure.
+                    Analysis of observable facial-expression and engagement signals during the interview.
                   </p>
                 </div>
 
-                {/* Pacing Cadence */}
+                {/* 04 • BEHAVIOR */}
                 <div className="p-4 rounded-lg border space-y-2"
                   style={{
                     background: 'var(--c-surface)',
@@ -403,18 +404,18 @@ const LandingPage = () => {
                   }}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs text-[#FF6B35] font-bold">04 • TEMPO</span>
-                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#181818] text-[#A855F7] border border-white/10">WPM Metric</span>
+                    <span className="font-mono text-xs text-[#FF6B35] font-bold">04 • BEHAVIOR</span>
+                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#181818] text-[#A855F7] border border-white/10">Behavioral</span>
                   </div>
                   <h3 className="text-sm font-bold" style={{ color: 'var(--c-text)' }}>
-                    Pacing Cadence
+                    Confidence & Stress
                   </h3>
                   <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                    Words-per-minute tempo tracking to maintain composure without hesitation.
+                    Visual behavioral indicators associated with confidence and stress during responses.
                   </p>
                 </div>
 
-                {/* Response Completeness */}
+                {/* 05 • STRUCTURE */}
                 <div className="p-4 rounded-lg border space-y-2"
                   style={{
                     background: 'var(--c-surface)',
@@ -422,18 +423,18 @@ const LandingPage = () => {
                   }}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs text-[#FF6B35] font-bold">05 • SCOPE</span>
+                    <span className="font-mono text-xs text-[#FF6B35] font-bold">05 • STRUCTURE</span>
                     <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#181818] text-[#EC4899] border border-white/10">Coverage</span>
                   </div>
                   <h3 className="text-sm font-bold" style={{ color: 'var(--c-text)' }}>
-                    Completeness
+                    Completeness & Clarity
                   </h3>
                   <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                    Thoroughness in addressing all dimensions of complex multi-part questions.
+                    Directness, organization, completeness, and coverage of the question.
                   </p>
                 </div>
 
-                {/* Deterministic Score */}
+                {/* 06 • SYNTHESIS */}
                 <div className="p-4 rounded-lg border space-y-2"
                   style={{
                     background: 'var(--c-surface)',
@@ -448,7 +449,7 @@ const LandingPage = () => {
                     Overall Performance
                   </h3>
                   <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                    A calibrated composite score index calculated objectively across all facets.
+                    A multimodal performance assessment combining textual, speech, and visual signals.
                   </p>
                 </div>
 
@@ -472,17 +473,23 @@ const LandingPage = () => {
                 </div>
 
                 <pre className="font-mono text-xs leading-relaxed overflow-x-auto text-[#A3A3A3]">
-                  <span className="text-[#60A5FA]">{`// Deterministic Evaluation Output\n`}</span>
+                  <span className="text-[#60A5FA]">{`// Multimodal Evaluation Output\n`}</span>
                   <span className="text-[#FF9F1C]">{`{\n`}</span>
-                  <span className="text-[#A3A3A3]">{`  "candidate_id": `}</span><span className="text-[#22C55E]">"cand_7821"</span><span className="text-[#A3A3A3]">{`,\n`}</span>
-                  <span className="text-[#A3A3A3]">{`  "rubric_matrix": {\n`}</span>
+                  <span className="text-[#A3A3A3]">{`  "content": {\n`}</span>
                   <span className="text-[#A3A3A3]">{`    "technical_accuracy": `}</span><span className="text-[#FF6B35]">94.5</span><span className="text-[#A3A3A3]">{`,\n`}</span>
-                  <span className="text-[#A3A3A3]">{`    "clarity_wpm": `}</span><span className="text-[#FF6B35]">136</span><span className="text-[#A3A3A3]">{`,\n`}</span>
-                  <span className="text-[#A3A3A3]">{`    "filler_word_ratio": `}</span><span className="text-[#22C55E]">0.012</span><span className="text-[#A3A3A3]">{`,\n`}</span>
                   <span className="text-[#A3A3A3]">{`    "completeness": `}</span><span className="text-[#FF6B35]">96.0</span><span className="text-[#A3A3A3]">{`\n`}</span>
                   <span className="text-[#A3A3A3]">{`  },\n`}</span>
-                  <span className="text-[#A3A3A3]">{`  "overall_composite": `}</span><span className="text-[#22C55E]">93.2</span><span className="text-[#A3A3A3]">{`,\n`}</span>
-                  <span className="text-[#A3A3A3]">{`  "recommendation": `}</span><span className="text-[#22C55E]">"OPTIMAL_CADENCE"</span>
+                  <span className="text-[#A3A3A3]">{`  "speech": {\n`}</span>
+                  <span className="text-[#A3A3A3]">{`    "clarity": `}</span><span className="text-[#60A5FA]">91.0</span><span className="text-[#A3A3A3]">{`,\n`}</span>
+                  <span className="text-[#A3A3A3]">{`    "pacing_wpm": `}</span><span className="text-[#FF6B35]">136</span><span className="text-[#A3A3A3]">{`,\n`}</span>
+                  <span className="text-[#A3A3A3]">{`    "filler_word_ratio": `}</span><span className="text-[#22C55E]">0.012</span><span className="text-[#A3A3A3]">{`\n`}</span>
+                  <span className="text-[#A3A3A3]">{`  },\n`}</span>
+                  <span className="text-[#A3A3A3]">{`  "vision": {\n`}</span>
+                  <span className="text-[#A3A3A3]">{`    "facial_expression": `}</span><span className="text-[#22C55E]">"ANALYZED"</span><span className="text-[#A3A3A3]">{`,\n`}</span>
+                  <span className="text-[#A3A3A3]">{`    "confidence_indicator": `}</span><span className="text-[#22C55E]">"ANALYZED"</span><span className="text-[#A3A3A3]">{`,\n`}</span>
+                  <span className="text-[#A3A3A3]">{`    "stress_indicator": `}</span><span className="text-[#22C55E]">"ANALYZED"</span><span className="text-[#A3A3A3]">{`\n`}</span>
+                  <span className="text-[#A3A3A3]">{`  },\n`}</span>
+                  <span className="text-[#A3A3A3]">{`  "overall_composite": `}</span><span className="text-[#22C55E]">93.2</span>
                   <span className="text-[#FF9F1C]">{`\n}`}</span>
                 </pre>
 
