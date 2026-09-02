@@ -9,6 +9,7 @@ import {
   ChevronDown,
   History,
   TrendingUp,
+  Home,
 } from 'lucide-react';
 import ThemeToggle from '../../components/ThemeToggle';
 import { getSession, logout } from '../services/candidateAuth';
@@ -69,19 +70,19 @@ const CandidateNav = () => {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
         
         {/* ===================================================================
-            1. BRAND LOGO (Transparent MockAI Logo)
+            1. BRAND LOGO (Navigates to Public Landing Page /)
            =================================================================== */}
         <div className="flex items-center gap-8 shrink-0">
           <Link
-            to="/dashboard"
+            to="/"
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className="flex items-center gap-2.5 select-none focus:outline-none"
-            aria-label="MockAI Dashboard"
+            className="flex items-center gap-2.5 select-none focus:outline-none group"
+            aria-label="MockAI Home"
           >
             <img
               src={logo}
               alt="MockAI Logo"
-              className="h-8 sm:h-9 w-auto object-contain"
+              className="h-8 sm:h-9 w-auto object-contain transition-opacity group-hover:opacity-85"
             />
           </Link>
 
@@ -205,6 +206,16 @@ const CandidateNav = () => {
                 </div>
 
                 {/* Navigation Items */}
+                <Link
+                  to="/"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-2 px-3 py-2 transition-colors hover:bg-white/[0.04]"
+                  style={{ color: 'var(--c-text-secondary)' }}
+                >
+                  <Home className="w-3.5 h-3.5 text-[#FF6B35]" />
+                  <span>Landing Page</span>
+                </Link>
+
                 <Link
                   to="/profile"
                   onClick={() => setMenuOpen(false)}
