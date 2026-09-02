@@ -9,6 +9,7 @@ import {
   Server,
   Cpu,
   Users,
+  Database,
   Briefcase,
 } from 'lucide-react';
 import CandidateNav from '../components/CandidateNav';

@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Code2, Users, Compass, Server, Cpu, BarChart3, AlertCircle, CheckCircle2 } from 'lucide-react';
 import InterviewFlowLayout from '../layouts/InterviewFlowLayout';
+import { INTERVIEW_TYPES } from '../data/categories';
+import { getCategories, startInterview } from '../services/candidateApi';
 import {
   CornerReticles,
   TechnicalHUDTag,
@@ -21,7 +23,6 @@ function getDomainSchematic(categoryName = '') {
   if (str.includes('data') || str.includes('sql') || str.includes('db') || str.includes('analyt')) return SqlMatrixSchematic;
   return null;
 }
-import { getCategories, startInterview } from '../services/candidateApi';
 
 const CATEGORY_ICONS = { Code: Code2, Server, Cpu, BarChart3, Users, Folder: Code2 };
 
