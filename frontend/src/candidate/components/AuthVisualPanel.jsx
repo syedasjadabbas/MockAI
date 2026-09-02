@@ -1,8 +1,8 @@
-﻿import React, { useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { CANDIDATE_IMAGES } from '../assets/images';
 import logo from '../../assets/logo.png';
-import { CornerReticles, TechnicalHUDTag } from './TechnicalDoodles';
+import { CornerReticles } from './TechnicalDoodles';
 
 function makeWaveform(count) {
   const bars = [];
@@ -43,7 +43,6 @@ const AuthVisualPanel = () => {
         >
           <img src={logo} alt="MockAI Logo" className="c-brand-logo" />
         </Link>
-        <TechnicalHUDTag label="SECURITY" value="TLS 1.3" tone="accent" />
       </div>
 
       {/* Center Composition with Framing Reticles */}
@@ -59,7 +58,6 @@ const AuthVisualPanel = () => {
           
           <div className="flex items-center justify-between mb-2">
             <p className="c-eyebrow">Practice Platform</p>
-            <span className="c-tech-annotation text-orange-400">SESSION.AUTH</span>
           </div>
           
           <h1 className="c-heading text-2xl xl:text-3xl font-bold leading-tight mb-4 text-white">
@@ -96,14 +94,6 @@ const AuthVisualPanel = () => {
             Simulate realistic interviews with timed prompts, speech recording, and structured evaluation scoring.
           </p>
         </div>
-      </div>
-
-      {/* Bottom Telemetry Footer */}
-      <div className="relative z-10 flex items-center justify-between text-[11px] font-mono text-slate-400 border-t pt-4"
-        style={{ borderColor: 'rgba(255,255,255,0.08)' }}
-      >
-        <span>[EVALUATION ENGINE v2.4]</span>
-        <span>[SAMPLING: 44.1kHz]</span>
       </div>
     </div>
   );
