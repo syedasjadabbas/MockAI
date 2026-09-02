@@ -47,19 +47,6 @@ const LandingPage = () => {
               
               {/* Left Copy & Actions */}
               <div className="lg:col-span-7 space-y-6">
-                
-                {/* Telemetry Tag */}
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold border"
-                  style={{
-                    background: 'var(--c-surface)',
-                    borderColor: 'var(--c-border)',
-                  }}
-                >
-                  <span className="w-2 h-2 rounded-full bg-[#FF6B35] animate-pulse" />
-                  <span style={{ color: 'var(--c-text-secondary)' }}>AI Interview Intelligence</span>
-                  <span className="text-[#6B6B6B]">•</span>
-                  <span className="font-mono text-[#FF9F1C] text-[11px] font-bold">v2.4 READY</span>
-                </div>
 
                 {/* Flagship Headline */}
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.08]" style={{ color: 'var(--c-text)' }}>
