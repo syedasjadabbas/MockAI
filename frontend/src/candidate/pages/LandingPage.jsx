@@ -19,7 +19,7 @@ import PublicNav from '../components/PublicNav';
 import AnimatedBackground3D from '../components/AnimatedBackground3D';
 import { CANDIDATE_IMAGES } from '../assets/images';
 import { isAuthenticated } from '../services/candidateAuth';
-import { CornerReticles, LiveAudioWaveform } from '../components/TechnicalDoodles';
+import { CornerReticles } from '../components/TechnicalDoodles';
 
 const HeroScene3D = lazy(() => import('../components/HeroScene3D'));
 
