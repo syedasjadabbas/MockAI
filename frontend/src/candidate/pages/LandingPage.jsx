@@ -20,8 +20,121 @@ import AnimatedBackground3D from '../components/AnimatedBackground3D';
 import { CANDIDATE_IMAGES } from '../assets/images';
 import { isAuthenticated } from '../services/candidateAuth';
 import { CornerReticles, LiveAudioWaveform, LiveVideoIndicator } from '../components/TechnicalDoodles';
+import TypewriterCode from '../components/TypewriterCode';
 
 const HeroScene3D = lazy(() => import('../components/HeroScene3D'));
+
+// Typewriter Code Snippets
+const STEP1_CODE_LINES = [
+  [{ text: '{', color: '#FF9F1C' }],
+  [
+    { text: '  "track": ', color: '#A3A3A3' },
+    { text: '"distributed_systems"', color: '#22C55E' },
+    { text: ',', color: '#A3A3A3' },
+  ],
+  [
+    { text: '  "tier": ', color: '#A3A3A3' },
+    { text: '"Senior L5"', color: '#22C55E' },
+    { text: ',', color: '#A3A3A3' },
+  ],
+  [
+    { text: '  "duration": ', color: '#A3A3A3' },
+    { text: '45', color: '#FF6B35' },
+  ],
+  [{ text: '}', color: '#FF9F1C' }],
+];
+
+const STEP2_CODE_LINES = [
+  [{ text: '// Live ASR Stream', color: '#FF9F1C' }],
+  [
+    { text: 'session', color: '#60A5FA' },
+    { text: '.onAudioFrame((chunk) => {', color: '#F5F5F5' },
+  ],
+  [
+    { text: '  evaluator.', color: '#A3A3A3' },
+    { text: 'trackCadence', color: '#FBBF24' },
+    { text: '(chunk.wpm);', color: '#F5F5F5' },
+  ],
+  [{ text: '});', color: '#F5F5F5' }],
+];
+
+const STEP3_CODE_LINES = [
+  [{ text: '// Multimodal Evaluation Output', color: '#FF9F1C' }],
+  [{ text: '{', color: '#FF9F1C' }],
+  [
+    { text: '  "content": { "accuracy": ', color: '#A3A3A3' },
+    { text: '94.5', color: '#FF6B35' },
+    { text: ' },', color: '#A3A3A3' },
+  ],
+  [
+    { text: '  "speech": { "clarity": ', color: '#A3A3A3' },
+    { text: '91.0', color: '#60A5FA' },
+    { text: ' },', color: '#A3A3A3' },
+  ],
+  [
+    { text: '  "vision": { "facial": ', color: '#A3A3A3' },
+    { text: '"ANALYZED"', color: '#22C55E' },
+    { text: ' },', color: '#A3A3A3' },
+  ],
+  [
+    { text: '  "overall_score": ', color: '#A3A3A3' },
+    { text: '93.2', color: '#22C55E' },
+  ],
+  [{ text: '}', color: '#FF9F1C' }],
+];
+
+const EVALUATOR_CODE_LINES = [
+  [{ text: '// Multimodal Evaluation Output', color: '#60A5FA' }],
+  [{ text: '{', color: '#FF9F1C' }],
+  [{ text: '  "content": {', color: '#A3A3A3' }],
+  [
+    { text: '    "technical_accuracy": ', color: '#A3A3A3' },
+    { text: '94.5', color: '#FF6B35' },
+    { text: ',', color: '#A3A3A3' },
+  ],
+  [
+    { text: '    "completeness": ', color: '#A3A3A3' },
+    { text: '96.0', color: '#FF6B35' },
+  ],
+  [{ text: '  },', color: '#A3A3A3' }],
+  [{ text: '  "speech": {', color: '#A3A3A3' }],
+  [
+    { text: '    "clarity": ', color: '#A3A3A3' },
+    { text: '91.0', color: '#60A5FA' },
+    { text: ',', color: '#A3A3A3' },
+  ],
+  [
+    { text: '    "pacing_wpm": ', color: '#A3A3A3' },
+    { text: '136', color: '#FF6B35' },
+    { text: ',', color: '#A3A3A3' },
+  ],
+  [
+    { text: '    "filler_word_ratio": ', color: '#A3A3A3' },
+    { text: '0.012', color: '#22C55E' },
+  ],
+  [{ text: '  },', color: '#A3A3A3' }],
+  [{ text: '  "vision": {', color: '#A3A3A3' }],
+  [
+    { text: '    "facial_expression": ', color: '#A3A3A3' },
+    { text: '"ANALYZED"', color: '#22C55E' },
+    { text: ',', color: '#A3A3A3' },
+  ],
+  [
+    { text: '    "confidence_indicator": ', color: '#A3A3A3' },
+    { text: '"ANALYZED"', color: '#22C55E' },
+    { text: ',', color: '#A3A3A3' },
+  ],
+  [
+    { text: '    "stress_indicator": ', color: '#A3A3A3' },
+    { text: '"ANALYZED"', color: '#22C55E' },
+  ],
+  [{ text: '  },', color: '#A3A3A3' }],
+  [
+    { text: '  "overall_composite": ', color: '#A3A3A3' },
+    { text: '93.2', color: '#22C55E' },
+  ],
+  [{ text: '}', color: '#FF9F1C' }],
+];
 
 const LandingPage = () => {
   const authed = isAuthenticated();
@@ -244,13 +357,7 @@ const LandingPage = () => {
                     </span>
                     <span>REST API</span>
                   </div>
-                  <pre className="overflow-x-auto text-[10.5px]">
-                    <span className="text-[#FF9F1C]">{`{\n`}</span>
-                    <span className="text-[#A3A3A3]">{`  "track": `}</span><span className="text-[#22C55E]">"distributed_systems"</span><span className="text-[#A3A3A3]">{`,\n`}</span>
-                    <span className="text-[#A3A3A3]">{`  "tier": `}</span><span className="text-[#22C55E]">"Senior L5"</span><span className="text-[#A3A3A3]">{`,\n`}</span>
-                    <span className="text-[#A3A3A3]">{`  "duration": `}</span><span className="text-[#FF6B35]">45</span>
-                    <span className="text-[#FF9F1C]">{`\n}`}</span>
-                  </pre>
+                  <TypewriterCode lines={STEP1_CODE_LINES} duration={1800} />
                 </div>
               </div>
 
@@ -309,12 +416,7 @@ const LandingPage = () => {
                     </span>
                     <span className="text-[#22C55E]">44.1kHz REC</span>
                   </div>
-                  <pre className="overflow-x-auto text-[10.5px]">
-                    <span className="text-[#FF9F1C]">{`// Live ASR Stream\n`}</span>
-                    <span className="text-[#60A5FA]">{`session`}</span><span className="text-[#F5F5F5]">{`.onAudioFrame((chunk) => {\n`}</span>
-                    <span className="text-[#A3A3A3]">{`  evaluator.`}</span><span className="text-[#FBBF24]">{`trackCadence`}</span><span className="text-[#F5F5F5]">{`(chunk.wpm);\n`}</span>
-                    <span className="text-[#F5F5F5]">{`});`}</span>
-                  </pre>
+                  <TypewriterCode lines={STEP2_CODE_LINES} duration={1800} />
                 </div>
               </div>
 
@@ -373,14 +475,7 @@ const LandingPage = () => {
                     </span>
                     <span className="text-[#FF9F1C]">SCORE: 93.2</span>
                   </div>
-                  <pre className="overflow-x-auto text-[10.5px]">
-                    <span className="text-[#FF9F1C]">{`// Multimodal Evaluation Output\n{\n`}</span>
-                    <span className="text-[#A3A3A3]">{`  "content": { "technical_accuracy": `}</span><span className="text-[#FF6B35]">94.5</span><span className="text-[#A3A3A3]">{` },\n`}</span>
-                    <span className="text-[#A3A3A3]">{`  "speech": { "clarity": `}</span><span className="text-[#60A5FA]">91.0</span><span className="text-[#A3A3A3]">{`, "pacing_wpm": `}</span><span className="text-[#FF6B35]">136</span><span className="text-[#A3A3A3]">{` },\n`}</span>
-                    <span className="text-[#A3A3A3]">{`  "vision": { "facial_expression": `}</span><span className="text-[#22C55E]">"ANALYZED"</span><span className="text-[#A3A3A3]">{` },\n`}</span>
-                    <span className="text-[#A3A3A3]">{`  "overall_score": `}</span><span className="text-[#22C55E]">93.2</span>
-                    <span className="text-[#FF9F1C]">{`\n}`}</span>
-                  </pre>
+                  <TypewriterCode lines={STEP3_CODE_LINES} duration={1800} />
                 </div>
               </div>
 
@@ -543,26 +638,7 @@ const LandingPage = () => {
                   <span className="text-[11px] font-mono text-[#FF6B35] font-bold">REAL-TIME TELEMETRY</span>
                 </div>
 
-                <pre className="font-mono text-xs leading-relaxed overflow-x-auto text-[#A3A3A3]">
-                  <span className="text-[#60A5FA]">{`// Multimodal Evaluation Output\n`}</span>
-                  <span className="text-[#FF9F1C]">{`{\n`}</span>
-                  <span className="text-[#A3A3A3]">{`  "content": {\n`}</span>
-                  <span className="text-[#A3A3A3]">{`    "technical_accuracy": `}</span><span className="text-[#FF6B35]">94.5</span><span className="text-[#A3A3A3]">{`,\n`}</span>
-                  <span className="text-[#A3A3A3]">{`    "completeness": `}</span><span className="text-[#FF6B35]">96.0</span><span className="text-[#A3A3A3]">{`\n`}</span>
-                  <span className="text-[#A3A3A3]">{`  },\n`}</span>
-                  <span className="text-[#A3A3A3]">{`  "speech": {\n`}</span>
-                  <span className="text-[#A3A3A3]">{`    "clarity": `}</span><span className="text-[#60A5FA]">91.0</span><span className="text-[#A3A3A3]">{`,\n`}</span>
-                  <span className="text-[#A3A3A3]">{`    "pacing_wpm": `}</span><span className="text-[#FF6B35]">136</span><span className="text-[#A3A3A3]">{`,\n`}</span>
-                  <span className="text-[#A3A3A3]">{`    "filler_word_ratio": `}</span><span className="text-[#22C55E]">0.012</span><span className="text-[#A3A3A3]">{`\n`}</span>
-                  <span className="text-[#A3A3A3]">{`  },\n`}</span>
-                  <span className="text-[#A3A3A3]">{`  "vision": {\n`}</span>
-                  <span className="text-[#A3A3A3]">{`    "facial_expression": `}</span><span className="text-[#22C55E]">"ANALYZED"</span><span className="text-[#A3A3A3]">{`,\n`}</span>
-                  <span className="text-[#A3A3A3]">{`    "confidence_indicator": `}</span><span className="text-[#22C55E]">"ANALYZED"</span><span className="text-[#A3A3A3]">{`,\n`}</span>
-                  <span className="text-[#A3A3A3]">{`    "stress_indicator": `}</span><span className="text-[#22C55E]">"ANALYZED"</span><span className="text-[#A3A3A3]">{`\n`}</span>
-                  <span className="text-[#A3A3A3]">{`  },\n`}</span>
-                  <span className="text-[#A3A3A3]">{`  "overall_composite": `}</span><span className="text-[#22C55E]">93.2</span>
-                  <span className="text-[#FF9F1C]">{`\n}`}</span>
-                </pre>
+                <TypewriterCode lines={EVALUATOR_CODE_LINES} duration={2400} />
 
                 {/* Visual Level Meters */}
                 <div className="pt-3 border-t space-y-2.5 text-xs font-mono" style={{ borderColor: 'var(--c-border)' }}>
