@@ -165,29 +165,61 @@ const LandingPage = () => {
                 }}
               >
                 <div>
-                  {/* Step Image */}
-                  <div className="relative aspect-video rounded-lg overflow-hidden border mb-4 group" style={{ borderColor: 'var(--c-border)' }}>
-                    <img
-                      src={CANDIDATE_IMAGES.neuralSphere}
-                      alt="Choose your interview track"
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none" />
-                    
-                    <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded font-mono text-[10px] font-bold bg-black/80 text-[#FF6B35] border border-white/10">
-                      STEP 01
-                    </span>
-
-                    <span className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded font-mono text-[10px] font-semibold bg-black/80 text-[#A3A3A3] border border-white/10">
-                      TRACK SELECTION
-                    </span>
-
-                    <div className="absolute bottom-2 left-2.5 right-2.5 flex items-center justify-between text-[10.5px] font-mono text-white/90">
-                      <span className="flex items-center gap-1 text-[#FF9F1C]">
-                        ● Track: Distributed Systems
+                  {/* Step 1 Visual — Interactive Track Selection Matrix */}
+                  <div
+                    className="relative aspect-video rounded-lg overflow-hidden border mb-4 p-3 flex flex-col justify-between select-none group"
+                    style={{
+                      background: '#141414',
+                      borderColor: 'var(--c-border)',
+                    }}
+                  >
+                    {/* Header Tags */}
+                    <div className="flex items-center justify-between z-10">
+                      <span className="px-2 py-0.5 rounded font-mono text-[10px] font-bold bg-black/90 text-[#FF6B35] border border-white/10">
+                        STEP 01
                       </span>
-                      <span className="text-[#A3A3A3]">L5 Senior</span>
+                      <span className="px-2 py-0.5 rounded font-mono text-[10px] font-semibold bg-[#FF6B35]/15 text-[#FF9F1C] border border-[#FF6B35]/30 flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#FF6B35] animate-pulse" /> 5 TRACKS AVAILABLE
+                      </span>
                     </div>
+
+                    {/* Track Selection Card Chips */}
+                    <div className="grid grid-cols-2 gap-1.5 my-auto z-10">
+                      {/* Active Selected Track */}
+                      <div className="col-span-2 p-2 rounded-md border border-[#FF6B35] bg-[#FF6B35]/10 flex items-center justify-between transition-all">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-[#FF6B35]" />
+                          <div>
+                            <p className="text-[11px] font-bold text-[#F5F5F5] leading-none">Distributed Systems</p>
+                            <p className="text-[9.5px] font-mono text-[#A3A3A3] mt-0.5">High-Scale Backend • L5 Tier</p>
+                          </div>
+                        </div>
+                        <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#FF6B35] text-black font-extrabold uppercase">
+                          SELECTED
+                        </span>
+                      </div>
+
+                      {/* Secondary Track 1 */}
+                      <div className="p-1.5 rounded-md border border-white/10 bg-white/[0.02] flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-white/40" />
+                        <span className="text-[10px] text-[#A3A3A3] font-medium truncate">AI & Machine Learning</span>
+                      </div>
+
+                      {/* Secondary Track 2 */}
+                      <div className="p-1.5 rounded-md border border-white/10 bg-white/[0.02] flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-white/40" />
+                        <span className="text-[10px] text-[#A3A3A3] font-medium truncate">Frontend Architecture</span>
+                      </div>
+                    </div>
+
+                    {/* Footer Telemetry */}
+                    <div className="flex items-center justify-between text-[10px] font-mono text-[#888888] pt-1 border-t border-white/5 z-10">
+                      <span>⏱ 45 MIN SESSION</span>
+                      <span className="text-[#22C55E] font-semibold">READY TO LAUNCH →</span>
+                    </div>
+
+                    {/* Ambient coordinate grid watermark */}
+                    <div className="absolute inset-0 c-tech-grid opacity-25 pointer-events-none" />
                   </div>
 
                   <h3 className="text-base font-bold mb-1" style={{ color: 'var(--c-text)' }}>
