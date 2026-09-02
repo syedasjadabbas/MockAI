@@ -19,7 +19,7 @@ import PublicNav from '../components/PublicNav';
 import AnimatedBackground3D from '../components/AnimatedBackground3D';
 import { CANDIDATE_IMAGES } from '../assets/images';
 import { isAuthenticated } from '../services/candidateAuth';
-import { CornerReticles } from '../components/TechnicalDoodles';
+import { CornerReticles, LiveAudioWaveform } from '../components/TechnicalDoodles';
 
 const HeroScene3D = lazy(() => import('../components/HeroScene3D'));
 
@@ -86,6 +86,14 @@ const LandingPage = () => {
                     <span>Explore MockAI</span>
                     <ChevronRight className="w-4 h-4 text-[#A3A3A3]" />
                   </a>
+                </div>
+
+                {/* Animated Audio Waveform Indicator */}
+                <div className="pt-2 flex items-center gap-3">
+                  <LiveAudioWaveform bars={16} height={16} color="var(--c-accent)" />
+                  <span className="text-[11px] font-mono tracking-wider uppercase" style={{ color: 'var(--c-text-muted)' }}>
+                    Live Acoustic Capture
+                  </span>
                 </div>
 
               </div>
