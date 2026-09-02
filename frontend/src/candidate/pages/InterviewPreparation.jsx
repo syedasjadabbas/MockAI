@@ -10,7 +10,14 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import InterviewFlowLayout from '../layouts/InterviewFlowLayout';
+import CandidateEmptyState from '../components/CandidateEmptyState';
 import { getActiveInterview } from '../services/candidateApi';
+import {
+  CornerReticles,
+  OpticalLensReticle,
+  LiveAudioWaveform,
+  TechnicalHUDTag,
+} from '../components/TechnicalDoodles';
 
 const InterviewPreparation = () => {
   const { id } = useParams();
@@ -206,13 +213,15 @@ const InterviewPreparation = () => {
             
             {/* LEVEL 3 — Camera Viewfinder (Standalone interactive video monitor) */}
             <div 
-              className="overflow-hidden relative flex flex-col justify-between rounded-lg border shadow-sm"
+              className="overflow-hidden relative flex flex-col justify-between rounded-lg border shadow-sm group"
               style={{ 
                 aspectRatio: '16/10',
                 background: 'var(--c-surface-card)',
                 borderColor: cameraStatus === 'granted' ? 'var(--c-accent)' : 'var(--c-border)',
               }}
             >
+              <CornerReticles size={12} color={cameraStatus === 'granted' ? 'var(--c-accent)' : 'var(--c-border)'} />
+
               {cameraStatus === 'granted' ? (
                 <video 
                   ref={videoRef} 
@@ -222,16 +231,9 @@ const InterviewPreparation = () => {
                   className="w-full h-full object-cover" 
                 />
               ) : (
-                <div className="flex-1 flex flex-col items-center justify-center p-6 text-center gap-3">
-                  <div 
-                    className="w-12 h-12 rounded-lg flex items-center justify-center border"
-                    style={{ 
-                      background: 'var(--c-surface-muted)', 
-                      borderColor: 'var(--c-border)',
-                      color: 'var(--c-text-secondary)'
-                    }}
-                  >
-                    <Camera className="w-6 h-6" />
+                <div className="flex-1 flex flex-col items-center justify-center p-6 text-center gap-3 relative">
+                  <div className="text-slate-400 dark:text-slate-600 opacity-60 mb-1">
+                    <OpticalLensReticle size={56} />
                   </div>
                   <div className="space-y-0.5">
                     <p className="text-xs font-bold" style={{ color: 'var(--c-text)' }}>
@@ -257,50 +259,39 @@ const InterviewPreparation = () => {
                   {cameraStatus === 'granted' ? '● SENSOR ACTIVE' : 'OFFLINE'}
                 </span>
 
-                <span 
-                  className="px-2 py-0.5 rounded text-[10px] font-mono border"
-                  style={{
-                    background: 'var(--c-surface-card)',
-                    borderColor: 'var(--c-border)',
-                    color: 'var(--c-text)'
-                  }}
-                >
-                  1080p
-                </span>
-              </div>
-
-              {/* Audio Overlay on Live Viewfinder */}
-              {cameraStatus === 'granted' && (
-                <div className="absolute bottom-3 inset-x-3 pointer-events-none">
-                  <div 
-                    className="px-3 py-1.5 rounded-md border flex items-center gap-2.5"
+                <div className="flex items-center gap-2">
+                  {cameraStatus === 'granted' && micStatus === 'granted' && (
+                    <LiveAudioWaveform bars={8} height={14} color="var(--c-accent)" />
+                  )}
+                  <span 
+                    className="px-2 py-0.5 rounded text-[10px] font-mono border"
                     style={{
                       background: 'var(--c-surface-card)',
                       borderColor: 'var(--c-border)',
                       color: 'var(--c-text)'
                     }}
                   >
-                    <Mic className="w-3.5 h-3.5 shrink-0" style={{ color: micLevel > 15 ? 'var(--c-success)' : 'var(--c-text-muted)' }} />
-                    <div className="flex-1 flex items-center gap-1 h-2">
-                      {Array.from({ length: 24 }).map((_, i) => {
-                        const threshold = (i + 1) * 4.1;
-                        const active = micLevel >= threshold;
-                        return (
-                          <div 
-                            key={i} 
-                            className="flex-1 h-full rounded-xs transition-all duration-75"
-                            style={{
-                              background: active 
-                                ? (i > 18 ? 'var(--c-danger)' : 'var(--c-success)')
-                                : 'var(--c-surface-muted)'
-                            }}
-                          />
-                        );
-                      })}
+                    1080p
+                  </span>
+                </div>
+              </div>
+
+              {/* Audio Overlay on Live Viewfinder */}
+              {cameraStatus === 'granted' && (
+                <div className="absolute bottom-3 inset-x-3 pointer-events-none">
+                  <div 
+                    className="px-3 py-1.5 rounded-md border flex items-center justify-between gap-2.5"
+                    style={{
+                      background: 'var(--c-surface-card)',
+                      borderColor: 'var(--c-border)',
+                      color: 'var(--c-text)'
+                    }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Mic className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                      <span className="text-[10px] font-mono">INPUT LEVEL</span>
                     </div>
-                    <span className="text-[10px] font-mono font-bold w-7 text-right" style={{ color: 'var(--c-text-secondary)' }}>
-                      {micLevel}%
-                    </span>
+                    <LiveAudioWaveform bars={12} height={12} color="var(--c-accent)" />
                   </div>
                 </div>
               )}

@@ -2,7 +2,25 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Code2, Users, Compass, Server, Cpu, BarChart3, AlertCircle, CheckCircle2 } from 'lucide-react';
 import InterviewFlowLayout from '../layouts/InterviewFlowLayout';
-import { INTERVIEW_TYPES } from '../data/categories';
+import {
+  CornerReticles,
+  TechnicalHUDTag,
+  FrontendLayoutSchematic,
+  BackendClusterSchematic,
+  NeuralNodesDiagram,
+  BehavioralDialogueSchematic,
+  SqlMatrixSchematic,
+} from '../components/TechnicalDoodles';
+
+function getDomainSchematic(categoryName = '') {
+  const str = categoryName.toLowerCase();
+  if (str.includes('front') || str.includes('web') || str.includes('react') || str.includes('ui')) return FrontendLayoutSchematic;
+  if (str.includes('back') || str.includes('node') || str.includes('server') || str.includes('distribut')) return BackendClusterSchematic;
+  if (str.includes('ai') || str.includes('ml') || str.includes('learning') || str.includes('neural')) return NeuralNodesDiagram;
+  if (str.includes('behav') || str.includes('leader') || str.includes('culture') || str.includes('hr')) return BehavioralDialogueSchematic;
+  if (str.includes('data') || str.includes('sql') || str.includes('db') || str.includes('analyt')) return SqlMatrixSchematic;
+  return null;
+}
 import { getCategories, startInterview } from '../services/candidateApi';
 
 const CATEGORY_ICONS = { Code: Code2, Server, Cpu, BarChart3, Users, Folder: Code2 };
@@ -168,24 +186,34 @@ const GoalSelection = () => {
                       <button
                         key={type.id}
                         onClick={() => chooseType(type.id)}
-                        className="c-card c-card-hover rounded-lg p-5 text-left flex flex-col gap-3 transition-all group"
+                        className="c-card c-card-hover rounded-lg p-5 text-left flex flex-col justify-between gap-4 transition-all group relative overflow-hidden"
                         style={{
                           background: 'var(--c-surface-card)',
                           borderColor: 'var(--c-border)',
                         }}
                       >
-                        <div className="w-8 h-8 rounded flex items-center justify-center border"
-                          style={{
-                            background: 'var(--c-surface-muted)',
-                            borderColor: 'var(--c-border)',
-                            color: 'var(--c-text)',
-                          }}
-                        >
-                          <Icon className="w-4 h-4" />
+                        <div className="flex items-center justify-between">
+                          <div className="w-8 h-8 rounded flex items-center justify-center border transition-colors group-hover:border-blue-500/50"
+                            style={{
+                              background: 'var(--c-surface-muted)',
+                              borderColor: 'var(--c-border)',
+                              color: 'var(--c-text)',
+                            }}
+                          >
+                            <Icon className="w-4 h-4" />
+                          </div>
+                          <span className="c-tech-annotation opacity-40 group-hover:opacity-100 transition-opacity">
+                            {type.id === 'technical' ? '[CODE]' : type.id === 'behavioral' ? '[DIALOGUE]' : '[EXPLORE]'}
+                          </span>
                         </div>
-                        <span className="text-xs font-bold group-hover:text-blue-500 transition-colors" style={{ color: 'var(--c-text)' }}>
-                          {type.label}
-                        </span>
+                        <div>
+                          <span className="text-xs font-bold block group-hover:text-blue-500 transition-colors" style={{ color: 'var(--c-text)' }}>
+                            {type.label}
+                          </span>
+                          <span className="text-[11px] block mt-0.5" style={{ color: 'var(--c-text-muted)' }}>
+                            {type.id === 'technical' ? 'Algorithmic & architectural prompts' : 'Leadership & team scenarios'}
+                          </span>
+                        </div>
                       </button>
                     );
                   })}
@@ -196,28 +224,36 @@ const GoalSelection = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {(selectedType ? getCategoriesByType(categories, selectedType) : categories).map((cat) => {
                     const Icon = CATEGORY_ICONS[cat.icon] || Code2;
+                    const Schematic = getDomainSchematic(cat.name);
                     return (
                       <button
                         key={cat.id}
                         onClick={() => chooseCategory(cat)}
-                        className="c-card c-card-hover rounded-lg p-4 text-left flex items-center gap-3.5 transition-all group"
+                        className="c-card c-card-hover rounded-lg p-4 text-left flex items-center justify-between gap-3.5 transition-all group"
                         style={{
                           background: 'var(--c-surface-card)',
                           borderColor: 'var(--c-border)',
                         }}
                       >
-                        <div className="w-8 h-8 rounded flex items-center justify-center shrink-0 border"
-                          style={{
-                            background: 'var(--c-surface-muted)',
-                            borderColor: 'var(--c-border)',
-                            color: 'var(--c-text)',
-                          }}
-                        >
-                          <Icon className="w-4 h-4" />
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-8 h-8 rounded flex items-center justify-center shrink-0 border transition-colors group-hover:border-blue-500/50"
+                            style={{
+                              background: 'var(--c-surface-muted)',
+                              borderColor: 'var(--c-border)',
+                              color: 'var(--c-text)',
+                            }}
+                          >
+                            <Icon className="w-4 h-4" />
+                          </div>
+                          <span className="text-xs font-bold truncate group-hover:text-blue-500 transition-colors" style={{ color: 'var(--c-text)' }}>
+                            {cat.name}
+                          </span>
                         </div>
-                        <span className="text-xs font-bold truncate group-hover:text-blue-500 transition-colors" style={{ color: 'var(--c-text)' }}>
-                          {cat.name}
-                        </span>
+                        {Schematic && (
+                          <div className="opacity-30 group-hover:opacity-100 transition-opacity shrink-0" style={{ color: 'var(--c-text-muted)' }}>
+                            <Schematic size={20} />
+                          </div>
+                        )}
                       </button>
                     );
                   })}

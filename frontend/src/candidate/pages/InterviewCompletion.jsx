@@ -12,6 +12,11 @@ import {
 import InterviewFlowLayout from '../layouts/InterviewFlowLayout';
 import { getActiveInterview, getRealEvaluation } from '../services/candidateApi';
 import { formatDate } from '../../utils/dateFormat';
+import {
+  AssessmentDossierSeal,
+  CornerReticles,
+  TechnicalHUDTag,
+} from '../components/TechnicalDoodles';
 
 const InterviewCompletion = () => {
   const { id } = useParams();
@@ -129,14 +134,26 @@ const InterviewCompletion = () => {
         </div>
 
         {/* Hero Title Statement directly on page */}
-        <div>
-          <p className="c-eyebrow mb-1">Receipt</p>
-          <h1 className="c-heading text-2xl sm:text-3xl font-bold" style={{ color: 'var(--c-text)' }}>
-            Interview Finished
-          </h1>
-          <p className="text-xs sm:text-sm mt-1 max-w-2xl leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-            Your responses for <strong className="font-semibold" style={{ color: 'var(--c-text)' }}>{interview.role}</strong> have been finalized and recorded.
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <p className="c-eyebrow mb-1">Receipt</p>
+            <h1 className="c-heading text-2xl sm:text-3xl font-bold" style={{ color: 'var(--c-text)' }}>
+              Interview Finished
+            </h1>
+            <p className="text-xs sm:text-sm mt-1 max-w-2xl leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
+              Your responses for <strong className="font-semibold" style={{ color: 'var(--c-text)' }}>{interview.role}</strong> have been finalized and recorded.
+            </p>
+          </div>
+
+          <div className="hidden sm:flex items-center gap-3 pr-2">
+            <AssessmentDossierSeal size={40} />
+            <div className="text-left">
+              <span className="c-tech-annotation block text-[10px]">INGESTION COMPLETE</span>
+              <span className="text-xs font-mono font-bold" style={{ color: 'var(--c-text)' }}>
+                {answeredCount}/{totalQuestions} TAKES
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* Main Two-Column Summary & Evaluation Dossier */}

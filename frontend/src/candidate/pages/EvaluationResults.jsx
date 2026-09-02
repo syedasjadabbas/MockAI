@@ -15,6 +15,12 @@ import {
 import InterviewFlowLayout from '../layouts/InterviewFlowLayout';
 import { getActiveInterview, getRealEvaluation } from '../services/candidateApi';
 import { formatDate } from '../../utils/dateFormat';
+import {
+  AssessmentDossierSeal,
+  CornerReticles,
+  TechnicalHUDTag,
+  LiveAudioWaveform,
+} from '../components/TechnicalDoodles';
 
 // FR17-FR23 - Real Multimodal Evaluation Results (Assessment Report Layout)
 const EvaluationResults = () => {
@@ -123,7 +129,8 @@ const EvaluationResults = () => {
               <span className="font-mono">REF: {id.slice(-6).toUpperCase()}</span>
             </div>
 
-            <div>
+            <div className="flex items-center gap-3">
+              <AssessmentDossierSeal size={28} />
               {isCompleted && (
                 <span className="c-badge c-badge-success text-xs font-bold">
                   Evaluation Finalized
@@ -167,13 +174,21 @@ const EvaluationResults = () => {
             <p className="c-eyebrow mb-2">Overall Score</p>
             
             <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
-              <div className="md:col-span-4 flex items-baseline gap-2">
-                <span className="c-serif-num text-5xl sm:text-6xl font-bold tracking-tight" style={{ color: 'var(--c-text)' }}>
-                  {Math.round(overallScore)}%
-                </span>
-                <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--c-text-muted)' }}>
-                  Composite
-                </span>
+              <div className="md:col-span-4 space-y-2">
+                <div className="flex items-baseline gap-2">
+                  <span className="c-serif-num text-5xl sm:text-6xl font-bold tracking-tight" style={{ color: 'var(--c-text)' }}>
+                    {Math.round(overallScore)}%
+                  </span>
+                  <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--c-text-muted)' }}>
+                    Composite
+                  </span>
+                </div>
+                <div className="w-full bg-slate-500/10 h-1.5 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-blue-500 rounded-full transition-all duration-1000"
+                    style={{ width: `${Math.min(100, Math.max(0, overallScore))}%` }}
+                  />
+                </div>
               </div>
 
               <div className="md:col-span-8">
