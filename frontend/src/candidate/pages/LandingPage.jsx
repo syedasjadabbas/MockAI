@@ -19,7 +19,7 @@ import PublicNav from '../components/PublicNav';
 import AnimatedBackground3D from '../components/AnimatedBackground3D';
 import { CANDIDATE_IMAGES } from '../assets/images';
 import { isAuthenticated } from '../services/candidateAuth';
-import { CornerReticles, LiveAudioWaveform } from '../components/TechnicalDoodles';
+import { CornerReticles, LiveAudioWaveform, LiveVideoWaveform } from '../components/TechnicalDoodles';
 
 const HeroScene3D = lazy(() => import('../components/HeroScene3D'));
 
@@ -88,12 +88,25 @@ const LandingPage = () => {
                   </a>
                 </div>
 
-                {/* Animated Audio Waveform Indicator */}
-                <div className="pt-2 flex items-center gap-3">
-                  <LiveAudioWaveform bars={16} height={16} color="var(--c-accent)" />
-                  <span className="text-[11px] font-mono tracking-wider uppercase" style={{ color: 'var(--c-text-muted)' }}>
-                    Live Acoustic Capture
-                  </span>
+                {/* Dual Animated Audio & Video Waveform Indicators */}
+                <div className="pt-3 flex flex-wrap items-center gap-5 text-xs font-mono">
+                  {/* Audio Waveform */}
+                  <div className="flex items-center gap-2">
+                    <LiveAudioWaveform bars={12} height={16} color="var(--c-accent)" />
+                    <span className="text-[11px] font-mono tracking-wider uppercase" style={{ color: 'var(--c-text-secondary)' }}>
+                      Audio Stream
+                    </span>
+                  </div>
+
+                  <span className="text-[#3A3A3A]">•</span>
+
+                  {/* Video Waveform */}
+                  <div className="flex items-center gap-2">
+                    <LiveVideoWaveform bars={12} height={16} color="#FF9F1C" />
+                    <span className="text-[11px] font-mono tracking-wider uppercase text-[#FF9F1C]">
+                      Video Stream 60fps
+                    </span>
+                  </div>
                 </div>
 
               </div>

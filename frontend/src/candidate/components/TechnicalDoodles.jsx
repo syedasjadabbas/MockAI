@@ -66,6 +66,43 @@ export const LiveAudioWaveform = ({
 };
 
 /**
+ * Live Video Waveform Signal (CSS Keyframe Animated Optical Raster)
+ */
+export const LiveVideoWaveform = ({
+  bars = 12,
+  active = true,
+  height = 16,
+  color = '#FF9F1C',
+  className = '',
+}) => {
+  const delays = [0.3, 0.1, 0.45, 0.2, 0.5, 0.15, 0.35, 0.05, 0.25, 0.4, 0.12, 0.32];
+
+  return (
+    <div
+      className={`inline-flex items-center gap-[3px] h-full ${className}`}
+      style={{ height: `${height}px` }}
+      aria-label="Video waveform signal indicator"
+    >
+      {Array.from({ length: bars }).map((_, i) => (
+        <span
+          key={i}
+          className={`w-[2.5px] rounded-full transition-all ${
+            active ? 'c-waveform-bar' : ''
+          }`}
+          style={{
+            background: color,
+            height: active ? undefined : '4px',
+            animationDelay: `${delays[i % delays.length]}s`,
+            animationDuration: `${0.65 + (i % 3) * 0.25}s`,
+            minHeight: '3px',
+          }}
+        />
+      ))}
+    </div>
+  );
+};
+
+/**
  * Domain-Specific SVG Micro Schematics
  */
 
