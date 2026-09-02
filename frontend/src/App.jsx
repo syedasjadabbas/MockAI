@@ -93,9 +93,7 @@ function App() {
               );
             })}
 
-            {/* Candidate/User Panel routes - isolated from Admin Panel routing above.
-                CandidateShell scopes the Candidate Panel's own design tokens
-                (candidate-theme.css) so this redesign can never bleed into Admin. */}
+            {/* Candidate/User Panel routes */}
             {candidateRoutes.map((route, idx) => {
               if (route.path === '/login' || route.path === '/register') {
                 return (
@@ -111,9 +109,8 @@ function App() {
               return <Route key={`candidate-${idx}`} path={route.path} element={<CandidateShell>{element}</CandidateShell>} />;
             })}
 
-            {/* Root Redirects */}
+            {/* Admin Root Redirect */}
             <Route path="/admin" element={<Navigate to="/admin/dashboard" />} />
-            <Route path="/" element={<RootRedirect />} />
           </Routes>
         </Suspense>
       </BrowserRouter>

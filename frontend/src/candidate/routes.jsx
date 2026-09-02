@@ -1,5 +1,4 @@
-import React, { lazy } from 'react';
-
+const LandingPage = lazy(() => import('./pages/LandingPage'));
 const Register = lazy(() => import('./pages/Register'));
 const Login = lazy(() => import('./pages/Login'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
@@ -18,6 +17,7 @@ const Profile = lazy(() => import('./pages/Profile'));
 // for the interview journey), so this list only needs to declare which
 // routes require an authenticated candidate session.
 export const candidateRoutes = [
+  { path: '/', element: <LandingPage />, private: false },
   { path: '/register', element: <Register />, private: false },
   { path: '/login', element: <Login />, private: false },
   { path: '/dashboard', element: <Dashboard />, private: true },
