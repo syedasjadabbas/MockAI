@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowRight,
@@ -135,6 +135,77 @@ const EVALUATOR_CODE_LINES = [
   ],
   [{ text: '}', color: '#FF9F1C' }],
 ];
+
+/**
+ * Animated Score Level Meter with Counter & Fill Animation
+ */
+const AnimatedScoreMeter = ({ label, targetPercent, color = '#FF6B35' }) => {
+  const containerRef = useRef(null);
+  const [currentPercent, setCurrentPercent] = useState(0);
+  const [hasTriggered, setHasTriggered] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !hasTriggered) {
+          setHasTriggered(true);
+        }
+      },
+      { threshold: 0.3 }
+    );
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [hasTriggered]);
+
+  useEffect(() => {
+    if (!hasTriggered) return;
+
+    const duration = 1400; // 1.4s smooth animation
+    const startTime = performance.now();
+
+    const frame = (now) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      // easeOutCubic
+      const ease = 1 - Math.pow(1 - progress, 3);
+      const val = Math.round(ease * targetPercent);
+      setCurrentPercent(val);
+
+      if (progress < 1) {
+        requestAnimationFrame(frame);
+      } else {
+        setCurrentPercent(targetPercent);
+      }
+    };
+
+    const id = requestAnimationFrame(frame);
+    return () => cancelAnimationFrame(id);
+  }, [hasTriggered, targetPercent]);
+
+  return (
+    <div ref={containerRef}>
+      <div className="flex justify-between text-[11px] mb-1">
+        <span className="text-[#F5F5F5]">{label}</span>
+        <span className="font-bold font-mono transition-colors" style={{ color }}>
+          {currentPercent}%
+        </span>
+      </div>
+      <div className="w-full h-1.5 rounded-full bg-[#202020] overflow-hidden">
+        <div
+          className="h-full rounded-full transition-all duration-75"
+          style={{
+            width: `${currentPercent}%`,
+            background: color,
+          }}
+        />
+      </div>
+    </div>
+  );
+};
 
 const LandingPage = () => {
   const authed = isAuthenticated();
@@ -640,27 +711,10 @@ const LandingPage = () => {
 
                 <TypewriterCode lines={EVALUATOR_CODE_LINES} duration={2400} />
 
-                {/* Visual Level Meters */}
+                {/* Animated Visual Level Meters */}
                 <div className="pt-3 border-t space-y-2.5 text-xs font-mono" style={{ borderColor: 'var(--c-border)' }}>
-                  <div>
-                    <div className="flex justify-between text-[11px] mb-1">
-                      <span className="text-[#F5F5F5]">Technical Reasoning</span>
-                      <span className="text-[#FF6B35] font-bold">94%</span>
-                    </div>
-                    <div className="w-full h-1.5 rounded-full bg-[#202020] overflow-hidden">
-                      <div className="h-full bg-[#FF6B35] rounded-full" style={{ width: '94%' }} />
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between text-[11px] mb-1">
-                      <span className="text-[#F5F5F5]">Speech Fluency</span>
-                      <span className="text-[#FF9F1C] font-bold">91%</span>
-                    </div>
-                    <div className="w-full h-1.5 rounded-full bg-[#202020] overflow-hidden">
-                      <div className="h-full bg-[#FF9F1C] rounded-full" style={{ width: '91%' }} />
-                    </div>
-                  </div>
+                  <AnimatedScoreMeter label="Technical Reasoning" targetPercent={94} color="#FF6B35" />
+                  <AnimatedScoreMeter label="Speech Fluency" targetPercent={91} color="#FF9F1C" />
                 </div>
 
               </div>
