@@ -15,6 +15,7 @@ import {
 import InterviewFlowLayout from '../layouts/InterviewFlowLayout';
 import { getActiveInterview, getRealEvaluation } from '../services/candidateApi';
 import { formatDate } from '../../utils/dateFormat';
+import { CANDIDATE_IMAGES } from '../assets/images';
 import {
   AssessmentDossierSeal,
   CornerReticles,
@@ -173,31 +174,36 @@ const EvaluationResults = () => {
           <section aria-label="Overall Score" className="border-b pb-10" style={{ borderColor: 'var(--c-border)' }}>
             <p className="c-eyebrow mb-2">Overall Score</p>
             
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
-              <div className="md:col-span-4 space-y-2">
-                <div className="flex items-baseline gap-2">
-                  <span className="c-serif-num text-5xl sm:text-6xl font-bold tracking-tight" style={{ color: 'var(--c-text)' }}>
+            {/* 3D eval chart visual */}
+            <div className="relative rounded-lg overflow-hidden border mb-6 group" style={{ borderColor: 'var(--c-border)', aspectRatio: '21/9' }}>
+              <img
+                src={CANDIDATE_IMAGES.evalChart}
+                alt="Evaluation Analytics"
+                className="w-full h-full object-cover opacity-80 transition-transform duration-700 group-hover:scale-105"
+              />
+              <div className="absolute inset-0" style={{ background: 'linear-gradient(to right, var(--c-bg) 0%, transparent 40%, var(--c-bg) 100%)' }} />
+              <div className="absolute inset-0 flex items-center justify-start pl-8">
+                <div>
+                  <span className="block c-tech-annotation text-[10px] text-blue-400 mb-1">[ASSESSMENT ANALYTICS]</span>
+                  <span className="c-serif-num text-5xl sm:text-7xl font-bold tracking-tight" style={{ color: 'var(--c-text)' }}>
                     {Math.round(overallScore)}%
                   </span>
-                  <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--c-text-muted)' }}>
-                    Composite
-                  </span>
-                </div>
-                <div className="w-full bg-slate-500/10 h-1.5 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-blue-500 rounded-full transition-all duration-1000"
-                    style={{ width: `${Math.min(100, Math.max(0, overallScore))}%` }}
-                  />
+                  <div className="w-32 bg-slate-500/20 h-1 rounded-full overflow-hidden mt-2">
+                    <div
+                      className="h-full bg-blue-500 rounded-full transition-all duration-1000"
+                      style={{ width: `${Math.min(100, Math.max(0, overallScore))}%` }}
+                    />
+                  </div>
                 </div>
               </div>
-
-              <div className="md:col-span-8">
-                <p className="text-xs sm:text-sm leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                  {interpretation || 
-                    `This composite score is computed from response delivery, technical depth, and domain concept coverage across ${answeredCount} evaluated prompt takes.`}
-                </p>
+              <div className="absolute bottom-2 right-2">
+                <span className="c-tech-annotation px-1.5 py-0.5 rounded bg-black/60 text-blue-400 border border-white/10 text-[10px]">[COMPOSITE SCORE]</span>
               </div>
             </div>
+            <p className="text-xs sm:text-sm mt-4 leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
+              {interpretation || 
+                `This composite score is computed from response delivery, technical depth, and domain concept coverage across ${answeredCount} evaluated prompt takes.`}
+            </p>
           </section>
         ) : isFailed ? (
           <section aria-label="Evaluation Failure" className="border-b pb-8" style={{ borderColor: 'var(--c-border)' }}>

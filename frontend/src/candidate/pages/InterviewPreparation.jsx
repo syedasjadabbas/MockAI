@@ -12,6 +12,7 @@ import {
 import InterviewFlowLayout from '../layouts/InterviewFlowLayout';
 import CandidateEmptyState from '../components/CandidateEmptyState';
 import { getActiveInterview } from '../services/candidateApi';
+import { CANDIDATE_IMAGES } from '../assets/images';
 import {
   CornerReticles,
   OpticalLensReticle,
@@ -232,12 +233,21 @@ const InterviewPreparation = () => {
                 />
               ) : (
                 <div className="flex-1 flex flex-col items-center justify-center p-6 text-center gap-3 relative">
-                  <div className="text-slate-400 dark:text-slate-600 opacity-60 mb-1">
+                  {/* 3D Mic visual as idle background */}
+                  <div className="absolute inset-0 overflow-hidden rounded-lg">
+                    <img 
+                      src={CANDIDATE_IMAGES.studioMic} 
+                      alt="Studio Microphone" 
+                      className="w-full h-full object-cover opacity-25"
+                    />
+                    <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, var(--c-surface-card) 20%, transparent 80%)' }} />
+                  </div>
+                  <div className="relative z-10 text-slate-400 dark:text-slate-600 opacity-60 mb-1">
                     <OpticalLensReticle size={56} />
                   </div>
-                  <div className="space-y-0.5">
+                  <div className="relative z-10 space-y-0.5">
                     <p className="text-xs font-bold" style={{ color: 'var(--c-text)' }}>
-                      Camera & Microphone Inactive
+                      Camera &amp; Microphone Inactive
                     </p>
                     <p className="text-[11px] max-w-xs" style={{ color: 'var(--c-text-muted)' }}>
                       Authorize hardware access below to verify audio clarity and framing.

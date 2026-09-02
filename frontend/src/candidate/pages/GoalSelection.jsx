@@ -4,6 +4,7 @@ import { ArrowRight, Code2, Users, Compass, Server, Cpu, BarChart3, AlertCircle,
 import InterviewFlowLayout from '../layouts/InterviewFlowLayout';
 import { INTERVIEW_TYPES } from '../data/categories';
 import { getCategories, startInterview } from '../services/candidateApi';
+import { CANDIDATE_IMAGES } from '../assets/images';
 import {
   CornerReticles,
   TechnicalHUDTag,
@@ -141,17 +142,30 @@ const GoalSelection = () => {
 
   return (
     <InterviewFlowLayout step="goal">
-      <div className="max-w-2xl mx-auto py-6 sm:py-10 space-y-8">
+      <div className="max-w-4xl mx-auto py-6 sm:py-10 space-y-8">
         
-        {/* Header directly on page */}
-        <div>
-          <p className="c-eyebrow mb-1">Goal Setup</p>
-          <h1 className="c-heading text-2xl sm:text-3xl font-bold" style={{ color: 'var(--c-text)' }}>
-            {currentPrompt}
-          </h1>
-          <p className="text-xs sm:text-sm mt-1" style={{ color: 'var(--c-text-secondary)' }}>
-            Choose a practice track to generate tailored interview prompts and evaluation criteria.
-          </p>
+        {/* Header with 3D Visual */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+          <div className="lg:col-span-8">
+            <p className="c-eyebrow mb-1">Goal Setup</p>
+            <h1 className="c-heading text-2xl sm:text-3xl font-bold" style={{ color: 'var(--c-text)' }}>
+              {currentPrompt}
+            </h1>
+            <p className="text-xs sm:text-sm mt-1" style={{ color: 'var(--c-text-secondary)' }}>
+              Choose a practice track to generate tailored interview prompts and evaluation criteria.
+            </p>
+          </div>
+          <div className="hidden lg:block lg:col-span-4">
+            <div className="relative rounded-lg overflow-hidden border aspect-video group"
+              style={{ borderColor: 'var(--c-border)', background: 'var(--c-surface)' }}
+            >
+              <CornerReticles size={8} color="var(--c-accent)" />
+              <img src={CANDIDATE_IMAGES.neuralSphere} alt="AI Neural Network" className="w-full h-full object-cover opacity-90 transition-transform duration-700 group-hover:scale-105" />
+              <div className="absolute bottom-2 left-2">
+                <span className="c-tech-annotation px-1.5 py-0.5 rounded bg-black/60 text-blue-400 border border-white/10">[AI NETWORK]</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         {trail.length > 0 && (

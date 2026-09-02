@@ -12,6 +12,7 @@ import {
 import InterviewFlowLayout from '../layouts/InterviewFlowLayout';
 import { getActiveInterview, getRealEvaluation } from '../services/candidateApi';
 import { formatDate } from '../../utils/dateFormat';
+import { CANDIDATE_IMAGES } from '../assets/images';
 import {
   AssessmentDossierSeal,
   CornerReticles,
@@ -265,6 +266,20 @@ const InterviewCompletion = () => {
 
           {/* Right Column: Actions (5 cols) */}
           <div className="lg:col-span-5 space-y-6">
+
+            {/* 3D Completion Visual */}
+            <div className="relative rounded-lg overflow-hidden border group" style={{ borderColor: 'var(--c-border)', aspectRatio: '16/9' }}>
+              <img
+                src={CANDIDATE_IMAGES.completionSeal}
+                alt="Interview Complete"
+                className="w-full h-full object-cover opacity-90 transition-transform duration-700 group-hover:scale-105"
+              />
+              <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, var(--c-bg) 0%, transparent 60%)' }} />
+              <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between">
+                <span className="c-tech-annotation px-1.5 py-0.5 rounded bg-black/60 text-emerald-400 border border-white/10 text-[10px]">[SESSION FINALIZED]</span>
+                <span className="c-tech-annotation px-1.5 py-0.5 rounded bg-black/60 text-blue-400 border border-white/10 text-[10px]">{answeredCount}/{totalQuestions} TAKES</span>
+              </div>
+            </div>
             
             {/* Evaluation Status & Actions Panel */}
             <div className="c-card p-5 space-y-4 rounded-lg border"
