@@ -19,7 +19,7 @@ import PublicNav from '../components/PublicNav';
 import AnimatedBackground3D from '../components/AnimatedBackground3D';
 import { CANDIDATE_IMAGES } from '../assets/images';
 import { isAuthenticated } from '../services/candidateAuth';
-import { CornerReticles, LiveAudioWaveform, LiveVideoWaveform } from '../components/TechnicalDoodles';
+import { CornerReticles, LiveAudioWaveform, LiveVideoIndicator } from '../components/TechnicalDoodles';
 
 const HeroScene3D = lazy(() => import('../components/HeroScene3D'));
 
@@ -88,9 +88,9 @@ const LandingPage = () => {
                   </a>
                 </div>
 
-                {/* Dual Animated Audio & Video Waveform Indicators */}
+                {/* Dual Live Audio & Video Stream Indicators */}
                 <div className="pt-3 flex flex-wrap items-center gap-5 text-xs font-mono">
-                  {/* Audio Waveform */}
+                  {/* Live Audio Equalizer */}
                   <div className="flex items-center gap-2">
                     <LiveAudioWaveform bars={12} height={16} color="var(--c-accent)" />
                     <span className="text-[11px] font-mono tracking-wider uppercase" style={{ color: 'var(--c-text-secondary)' }}>
@@ -100,13 +100,8 @@ const LandingPage = () => {
 
                   <span className="text-[#3A3A3A]">•</span>
 
-                  {/* Video Waveform */}
-                  <div className="flex items-center gap-2">
-                    <LiveVideoWaveform bars={12} height={16} color="#FF9F1C" />
-                    <span className="text-[11px] font-mono tracking-wider uppercase text-[#FF9F1C]">
-                      Video Stream 60fps
-                    </span>
-                  </div>
+                  {/* Animated Video Optical Viewfinder & Scanner */}
+                  <LiveVideoIndicator />
                 </div>
 
               </div>

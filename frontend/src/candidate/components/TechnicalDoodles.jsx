@@ -66,41 +66,36 @@ export const LiveAudioWaveform = ({
 };
 
 /**
- * Live Video Waveform Signal (CSS Keyframe Animated Optical Raster)
+ * Animated Live Video Viewfinder & Optical Scanner
  */
-export const LiveVideoWaveform = ({
-  bars = 12,
-  active = true,
-  height = 16,
-  color = '#FF9F1C',
-  className = '',
-}) => {
-  const delays = [0.3, 0.1, 0.45, 0.2, 0.5, 0.15, 0.35, 0.05, 0.25, 0.4, 0.12, 0.32];
-
-  return (
+export const LiveVideoIndicator = ({ className = '' }) => (
+  <div className={`inline-flex items-center gap-2 select-none ${className}`}>
+    {/* Animated Viewfinder Target Box */}
     <div
-      className={`inline-flex items-center gap-[3px] h-full ${className}`}
-      style={{ height: `${height}px` }}
-      aria-label="Video waveform signal indicator"
+      className="relative rounded-[2px] border border-[#FF9F1C]/60 bg-[#FF9F1C]/10 flex items-center justify-center overflow-hidden shrink-0"
+      style={{ height: '18px', width: '24px' }}
+      aria-hidden="true"
     >
-      {Array.from({ length: bars }).map((_, i) => (
-        <span
-          key={i}
-          className={`w-[2.5px] rounded-full transition-all ${
-            active ? 'c-waveform-bar' : ''
-          }`}
-          style={{
-            background: color,
-            height: active ? undefined : '4px',
-            animationDelay: `${delays[i % delays.length]}s`,
-            animationDuration: `${0.65 + (i % 3) * 0.25}s`,
-            minHeight: '3px',
-          }}
-        />
-      ))}
+      {/* 4-corner viewfinder marks */}
+      <span className="absolute top-[1.5px] left-[1.5px] w-[3px] h-[3px] border-t border-l border-[#FF9F1C]" />
+      <span className="absolute top-[1.5px] right-[1.5px] w-[3px] h-[3px] border-t border-r border-[#FF9F1C]" />
+      <span className="absolute bottom-[1.5px] left-[1.5px] w-[3px] h-[3px] border-b border-l border-[#FF9F1C]" />
+      <span className="absolute bottom-[1.5px] right-[1.5px] w-[3px] h-[3px] border-b border-r border-[#FF9F1C]" />
+
+      {/* Optical Vertical Scanline Sweep */}
+      <div className="absolute inset-x-0 h-[1.5px] bg-[#FF9F1C] opacity-90 c-scanline" />
+
+      {/* Center Camera Target Point */}
+      <span className="w-1 h-1 rounded-full bg-[#FF6B35] c-lens-pulse" />
     </div>
-  );
-};
+
+    {/* Video Stream Status Label */}
+    <div className="flex items-center gap-1.5 text-[11px] font-mono uppercase tracking-wider text-[#FF9F1C]">
+      <span className="w-1.5 h-1.5 rounded-full bg-[#FF6B35] animate-pulse" />
+      <span>Video Stream 60fps</span>
+    </div>
+  </div>
+);
 
 /**
  * Domain-Specific SVG Micro Schematics

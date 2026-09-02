@@ -573,10 +573,30 @@ html.light .candidate-app,
 }
 
 /* Reduced motion support */
+@keyframes c-scanline-sweep {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+@keyframes c-lens-shutter {
+  0%, 100% { transform: scale(1); opacity: 0.9; }
+  50% { transform: scale(1.15); opacity: 0.5; }
+}
+
+.candidate-app .c-scanline {
+  animation: c-scanline-sweep 1.6s ease-in-out infinite alternate;
+}
+
+.candidate-app .c-lens-pulse {
+  animation: c-lens-shutter 2s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .candidate-app .c-float-slow,
   .candidate-app .c-pulse-subtle,
   .candidate-app .c-waveform-bar,
+  .candidate-app .c-scanline,
+  .candidate-app .c-lens-pulse,
   .candidate-app * {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
