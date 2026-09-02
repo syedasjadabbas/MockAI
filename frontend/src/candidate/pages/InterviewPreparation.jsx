@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+﻿import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Camera,
@@ -174,7 +174,7 @@ const InterviewPreparation = () => {
       <InterviewFlowLayout step="prepare">
         <div className="flex flex-col items-center justify-center py-20 gap-3">
           <div className="w-6 h-6 border-2 rounded-full animate-spin" style={{ borderColor: 'var(--c-accent)', borderTopColor: 'transparent' }} />
-          <p className="text-xs font-medium" style={{ color: 'var(--c-text-muted)' }}>Preparing studio…</p>
+          <p className="text-xs font-medium" style={{ color: 'var(--c-text-muted)' }}>Preparing studioâ€¦</p>
         </div>
       </InterviewFlowLayout>
     );
@@ -212,7 +212,7 @@ const InterviewPreparation = () => {
           {/* Left Column: Live Video Monitor & Sensor Auth (7 cols) */}
           <div className="lg:col-span-7 space-y-6">
             
-            {/* LEVEL 3 — Camera Viewfinder (Standalone interactive video monitor) */}
+            {/* LEVEL 3 â€” Camera Viewfinder (Standalone interactive video monitor) */}
             <div 
               className="overflow-hidden relative flex flex-col justify-between rounded-lg border shadow-sm group"
               style={{ 
@@ -266,7 +266,7 @@ const InterviewPreparation = () => {
                     borderColor: 'var(--c-border)'
                   }}
                 >
-                  {cameraStatus === 'granted' ? '● SENSOR ACTIVE' : 'OFFLINE'}
+                  {cameraStatus === 'granted' ? 'â— SENSOR ACTIVE' : 'OFFLINE'}
                 </span>
 
                 <div className="flex items-center gap-2">
@@ -298,7 +298,7 @@ const InterviewPreparation = () => {
                     }}
                   >
                     <div className="flex items-center gap-2">
-                      <Mic className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                      <Mic className="w-3.5 h-3.5 text-yellow-500 shrink-0" />
                       <span className="text-[10px] font-mono">INPUT LEVEL</span>
                     </div>
                     <LiveAudioWaveform bars={12} height={12} color="var(--c-accent)" />
@@ -307,7 +307,7 @@ const InterviewPreparation = () => {
               )}
             </div>
 
-            {/* LEVEL 2 — Equipment Verification Rows (No nested box container) */}
+            {/* LEVEL 2 â€” Equipment Verification Rows (No nested box container) */}
             <div className="space-y-3">
               <h3 className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--c-text-muted)' }}>
                 Equipment Status
@@ -416,7 +416,7 @@ const InterviewPreparation = () => {
             </div>
           </div>
 
-          {/* Right Column: Session Ledger & Protocol (5 cols) — Open editorial layout */}
+          {/* Right Column: Session Ledger & Protocol (5 cols) â€” Open editorial layout */}
           <div className="lg:col-span-5 space-y-6">
             
             {/* Session Specifications Ledger */}
@@ -444,7 +444,7 @@ const InterviewPreparation = () => {
 
                 <div className="py-2.5 flex items-center justify-between">
                   <dt style={{ color: 'var(--c-text-secondary)' }}>Estimated Runtime</dt>
-                  <dd className="font-bold text-right font-mono" style={{ color: 'var(--c-text)' }}>~{minDuration}–{maxDuration} Min</dd>
+                  <dd className="font-bold text-right font-mono" style={{ color: 'var(--c-text)' }}>~{minDuration}â€“{maxDuration} Min</dd>
                 </div>
               </dl>
             </div>
@@ -506,3 +506,4 @@ const InterviewPreparation = () => {
 };
 
 export default InterviewPreparation;
+

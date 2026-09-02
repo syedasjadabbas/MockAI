@@ -1,59 +1,60 @@
-/*
- * MockAI Candidate Panel — Premium Professional Software Design System
+﻿/*
+ * MockAI Candidate Panel â€” Charcoal + Gold Design System
  *
  * Scoped strictly under `.candidate-app` to prevent collision with Admin Panel.
- * Supports seamless Dark Mode (Midnight Navy #070B16) and Light Mode (Clean Slate #F8FAFC).
+ * Dark Theme: Charcoal (#111111) base with Primary Gold (#D4A72C) accents.
+ * Light Theme: Warm parchment base with Gold accents.
  */
 
-/* ─── DARK THEME (Default) ─── */
+/* â”€â”€â”€ DARK THEME (Default) â”€â”€â”€ */
 .candidate-app,
 html.dark .candidate-app,
 [data-theme='dark'] .candidate-app {
   /* Surfaces */
-  --c-bg: #070B16;                  /* Solid midnight navy base */
-  --c-bg-subtle: #0B1020;           /* Solid secondary background / header */
-  --c-surface: #111827;             /* Solid primary panel surface */
-  --c-surface-card: #121A2A;        /* Solid card surface */
-  --c-surface-muted: #1A2333;       /* Solid recessed/metric surface */
-  
+  --c-bg: #111111;                  /* Solid charcoal base */
+  --c-bg-subtle: #191919;           /* Secondary background / header */
+  --c-surface: #222222;             /* Primary panel surface */
+  --c-surface-card: #222222;        /* Card surface */
+  --c-surface-muted: #1C1C1C;       /* Recessed/metric surface */
+
   /* Borders */
-  --c-border: #243044;              /* Subtle solid border */
-  --c-border-strong: #334155;       /* Emphasized structural border */
+  --c-border: #2A2A2A;              /* Subtle solid border */
+  --c-border-strong: #383838;       /* Emphasized structural border */
 
   /* Typography */
-  --c-text: #FFFFFF;                /* Crisp pure white text */
-  --c-text-secondary: #94A3B8;      /* Cool slate secondary body */
-  --c-text-muted: #64748B;          /* Technical captions */
-  --c-on-accent: #FFFFFF;
+  --c-text: #F5F5F5;                /* Warm near-white text */
+  --c-text-secondary: #A3A3A3;      /* Muted secondary body */
+  --c-text-muted: #6B6B6B;          /* Technical captions */
+  --c-on-accent: #111111;           /* Text on gold â€” dark for contrast */
 
-  /* Primary Actions */
-  --c-accent: #0066FF;              /* Solid Electric Blue */
-  --c-accent-hover: #0052CC;        /* Solid Darker Blue hover */
-  --c-accent-cyan: #38BDF8;         /* Sparingly used status accent */
-  --c-accent-soft: rgba(0, 102, 255, 0.12);
-  --c-accent-soft-strong: rgba(0, 102, 255, 0.2);
+  /* Primary Actions â€” Gold */
+  --c-accent: #D4A72C;              /* Primary Gold */
+  --c-accent-hover: #C49520;        /* Darker Gold hover */
+  --c-accent-highlight: #E8C766;    /* Lighter Gold highlight */
+  --c-accent-soft: rgba(212, 167, 44, 0.10);
+  --c-accent-soft-strong: rgba(212, 167, 44, 0.18);
 
   /* Secondary Button */
-  --c-btn-secondary-bg: #1A2234;
-  --c-btn-secondary-hover: #243044;
-  --c-btn-secondary-text: #FFFFFF;
+  --c-btn-secondary-bg: #2A2A2A;
+  --c-btn-secondary-hover: #333333;
+  --c-btn-secondary-text: #F5F5F5;
 
   /* Status Indicators */
-  --c-success: #10B981;             /* Emerald */
-  --c-success-soft: rgba(16, 185, 129, 0.15);
-  --c-warning: #F59E0B;             /* Amber */
-  --c-warning-soft: rgba(245, 158, 11, 0.15);
-  --c-danger: #EF4444;              /* Rose red */
-  --c-danger-soft: rgba(239, 68, 68, 0.15);
+  --c-success: #22C55E;
+  --c-success-soft: rgba(34, 197, 94, 0.12);
+  --c-warning: #F59E0B;
+  --c-warning-soft: rgba(245, 158, 11, 0.12);
+  --c-danger: #EF4444;
+  --c-danger-soft: rgba(239, 68, 68, 0.12);
 
   /* Badges */
-  --c-badge-accent-bg: rgba(0, 102, 255, 0.08);
-  --c-badge-accent-text: #60A5FA;
-  --c-badge-accent-border: rgba(0, 102, 255, 0.2);
+  --c-badge-accent-bg: rgba(212, 167, 44, 0.08);
+  --c-badge-accent-text: #E8C766;
+  --c-badge-accent-border: rgba(212, 167, 44, 0.22);
 
-  --c-badge-success-bg: rgba(16, 185, 129, 0.08);
-  --c-badge-success-text: #34D399;
-  --c-badge-success-border: rgba(16, 185, 129, 0.2);
+  --c-badge-success-bg: rgba(34, 197, 94, 0.08);
+  --c-badge-success-text: #4ADE80;
+  --c-badge-success-border: rgba(34, 197, 94, 0.2);
 
   --c-badge-warning-bg: rgba(245, 158, 11, 0.08);
   --c-badge-warning-text: #FBBF24;
@@ -64,72 +65,72 @@ html.dark .candidate-app,
   --c-badge-danger-border: rgba(239, 68, 68, 0.2);
 
   --c-badge-muted-bg: rgba(255, 255, 255, 0.04);
-  --c-badge-muted-text: #94A3B8;
-  --c-badge-muted-border: #243044;
+  --c-badge-muted-text: #A3A3A3;
+  --c-badge-muted-border: #2A2A2A;
 
   /* Shadows */
-  --c-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
-  --c-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-  --c-shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.5);
+  --c-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --c-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+  --c-shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.7);
 
   /* Inputs */
-  --c-input-bg: #0E1524;
-  --c-input-border: #243044;
-  --c-input-border-focus: #0066FF;
+  --c-input-bg: #191919;
+  --c-input-border: #2A2A2A;
+  --c-input-border-focus: #D4A72C;
 
   /* Table / List hover */
   --c-hover-bg: rgba(255, 255, 255, 0.03);
 }
 
-/* ─── LIGHT THEME ─── */
+/* â”€â”€â”€ LIGHT THEME â”€â”€â”€ */
 html.light .candidate-app,
 [data-theme='light'] .candidate-app,
 .light .candidate-app {
   /* Surfaces */
-  --c-bg: #F8FAFC;                  /* Slate-50 base */
-  --c-bg-subtle: #FFFFFF;           /* Pure white header / secondary background */
-  --c-surface: #FFFFFF;             /* Pure white primary panel */
-  --c-surface-card: #FFFFFF;        /* Pure white card surface */
-  --c-surface-muted: #F1F5F9;       /* Slate-100 recessed surface */
-  
+  --c-bg: #FAF9F7;
+  --c-bg-subtle: #FFFFFF;
+  --c-surface: #FFFFFF;
+  --c-surface-card: #FFFFFF;
+  --c-surface-muted: #F4F2EE;
+
   /* Borders */
-  --c-border: #E2E8F0;              /* Slate-200 border */
-  --c-border-strong: #CBD5E1;       /* Slate-300 border */
+  --c-border: #E5E2DB;
+  --c-border-strong: #D0CBC0;
 
   /* Typography */
-  --c-text: #0F172A;                /* Slate-900 primary text */
-  --c-text-secondary: #475569;      /* Slate-600 secondary body */
-  --c-text-muted: #64748B;          /* Slate-500 captions */
-  --c-on-accent: #FFFFFF;
+  --c-text: #1A1A1A;
+  --c-text-secondary: #5A5A5A;
+  --c-text-muted: #8A8A8A;
+  --c-on-accent: #111111;
 
-  /* Primary Actions */
-  --c-accent: #0066FF;              /* Solid Electric Blue */
-  --c-accent-hover: #0052CC;        /* Darker Blue hover */
-  --c-accent-cyan: #0284C7;         /* Sky-600 */
-  --c-accent-soft: rgba(0, 102, 255, 0.08);
-  --c-accent-soft-strong: rgba(0, 102, 255, 0.15);
+  /* Primary Actions â€” Gold (darker for light mode contrast) */
+  --c-accent: #B8860B;
+  --c-accent-hover: #9A7009;
+  --c-accent-highlight: #D4A72C;
+  --c-accent-soft: rgba(184, 134, 11, 0.08);
+  --c-accent-soft-strong: rgba(184, 134, 11, 0.14);
 
   /* Secondary Button */
-  --c-btn-secondary-bg: #F1F5F9;
-  --c-btn-secondary-hover: #E2E8F0;
-  --c-btn-secondary-text: #0F172A;
+  --c-btn-secondary-bg: #F4F2EE;
+  --c-btn-secondary-hover: #E8E4DC;
+  --c-btn-secondary-text: #1A1A1A;
 
   /* Status Indicators */
-  --c-success: #059669;             /* Emerald-600 */
-  --c-success-soft: rgba(5, 150, 105, 0.1);
-  --c-warning: #D97706;             /* Amber-600 */
-  --c-warning-soft: rgba(217, 119, 6, 0.1);
-  --c-danger: #DC2626;              /* Red-600 */
-  --c-danger-soft: rgba(220, 38, 38, 0.1);
+  --c-success: #16A34A;
+  --c-success-soft: rgba(22, 163, 74, 0.08);
+  --c-warning: #D97706;
+  --c-warning-soft: rgba(217, 119, 6, 0.08);
+  --c-danger: #DC2626;
+  --c-danger-soft: rgba(220, 38, 38, 0.08);
 
   /* Badges */
-  --c-badge-accent-bg: #EFF6FF;
-  --c-badge-accent-text: #1D4ED8;
-  --c-badge-accent-border: #BFDBFE;
+  --c-badge-accent-bg: rgba(184, 134, 11, 0.08);
+  --c-badge-accent-text: #92660A;
+  --c-badge-accent-border: rgba(184, 134, 11, 0.2);
 
-  --c-badge-success-bg: #ECFDF5;
-  --c-badge-success-text: #047857;
-  --c-badge-success-border: #A7F3D0;
+  --c-badge-success-bg: #F0FDF4;
+  --c-badge-success-text: #15803D;
+  --c-badge-success-border: #BBF7D0;
 
   --c-badge-warning-bg: #FFFBEB;
   --c-badge-warning-text: #B45309;
@@ -139,22 +140,22 @@ html.light .candidate-app,
   --c-badge-danger-text: #B91C1C;
   --c-badge-danger-border: #FECACA;
 
-  --c-badge-muted-bg: #F1F5F9;
-  --c-badge-muted-text: #475569;
-  --c-badge-muted-border: #E2E8F0;
+  --c-badge-muted-bg: #F4F2EE;
+  --c-badge-muted-text: #5A5A5A;
+  --c-badge-muted-border: #E5E2DB;
 
   /* Shadows */
-  --c-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
-  --c-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
-  --c-shadow-lg: 0 10px 25px rgba(15, 23, 42, 0.08);
+  --c-shadow-sm: 0 1px 2px rgba(26, 26, 26, 0.06);
+  --c-shadow: 0 4px 12px rgba(26, 26, 26, 0.07);
+  --c-shadow-lg: 0 10px 25px rgba(26, 26, 26, 0.09);
 
   /* Inputs */
   --c-input-bg: #FFFFFF;
-  --c-input-border: #CBD5E1;
-  --c-input-border-focus: #0066FF;
+  --c-input-border: #D0CBC0;
+  --c-input-border-focus: #B8860B;
 
   /* Table / List hover */
-  --c-hover-bg: rgba(15, 23, 42, 0.03);
+  --c-hover-bg: rgba(26, 26, 26, 0.03);
 }
 
 .candidate-app {
@@ -192,7 +193,7 @@ html.light .candidate-app,
   letter-spacing: 0.08em;
   font-size: 11px;
   font-weight: 700;
-  color: var(--c-text-secondary);
+  color: var(--c-accent);
 }
 
 .candidate-app .c-serif-num {
@@ -321,8 +322,8 @@ html.light .candidate-app,
 }
 
 .candidate-app input:-webkit-autofill,
-.candidate-app input:-webkit-autofill:hover, 
-.candidate-app input:-webkit-autofill:focus, 
+.candidate-app input:-webkit-autofill:hover,
+.candidate-app input:-webkit-autofill:focus,
 .candidate-app input:-webkit-autofill:active {
   -webkit-box-shadow: 0 0 0 1000px var(--c-input-bg) inset !important;
   -webkit-text-fill-color: var(--c-text) !important;
@@ -350,30 +351,30 @@ html.light .candidate-app,
   white-space: nowrap;
 }
 
-.candidate-app .c-badge-accent { 
-  background: var(--c-badge-accent-bg); 
-  color: var(--c-badge-accent-text); 
-  border-color: var(--c-badge-accent-border); 
+.candidate-app .c-badge-accent {
+  background: var(--c-badge-accent-bg);
+  color: var(--c-badge-accent-text);
+  border-color: var(--c-badge-accent-border);
 }
-.candidate-app .c-badge-success { 
-  background: var(--c-badge-success-bg); 
-  color: var(--c-badge-success-text); 
-  border-color: var(--c-badge-success-border); 
+.candidate-app .c-badge-success {
+  background: var(--c-badge-success-bg);
+  color: var(--c-badge-success-text);
+  border-color: var(--c-badge-success-border);
 }
-.candidate-app .c-badge-warning { 
-  background: var(--c-badge-warning-bg); 
-  color: var(--c-badge-warning-text); 
-  border-color: var(--c-badge-warning-border); 
+.candidate-app .c-badge-warning {
+  background: var(--c-badge-warning-bg);
+  color: var(--c-badge-warning-text);
+  border-color: var(--c-badge-warning-border);
 }
-.candidate-app .c-badge-danger { 
-  background: var(--c-badge-danger-bg); 
-  color: var(--c-badge-danger-text); 
-  border-color: var(--c-badge-danger-border); 
+.candidate-app .c-badge-danger {
+  background: var(--c-badge-danger-bg);
+  color: var(--c-badge-danger-text);
+  border-color: var(--c-badge-danger-border);
 }
-.candidate-app .c-badge-muted { 
-  background: var(--c-badge-muted-bg); 
-  color: var(--c-badge-muted-text); 
-  border-color: var(--c-badge-muted-border); 
+.candidate-app .c-badge-muted {
+  background: var(--c-badge-muted-bg);
+  color: var(--c-badge-muted-text);
+  border-color: var(--c-badge-muted-border);
 }
 
 /* ===================== Focus Ring ===================== */
@@ -401,7 +402,7 @@ html.light .candidate-app,
   position: absolute;
   inset: 0;
   transform: translateX(-100%);
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+  background: linear-gradient(90deg, transparent, rgba(212, 167, 44, 0.06), transparent);
   animation: c-shimmer 1.5s infinite;
 }
 
@@ -424,7 +425,7 @@ html.light .candidate-app,
 
 .candidate-app .c-brand-logo,
 .c-brand-logo {
-  height: 2.25rem !important; /* 36px */
+  height: 2.25rem !important;
   max-height: 36px !important;
   width: auto !important;
   max-width: 140px !important;
@@ -435,7 +436,7 @@ html.light .candidate-app,
 
 .candidate-app .c-brand-logo-lg,
 .c-brand-logo-lg {
-  height: 2.75rem !important; /* 44px */
+  height: 2.75rem !important;
   max-height: 44px !important;
   width: auto !important;
   max-width: 170px !important;
@@ -528,7 +529,7 @@ html.light .candidate-app,
   position: absolute;
   width: 8px;
   height: 8px;
-  border-color: var(--c-border-strong);
+  border-color: var(--c-accent);
   pointer-events: none;
 }
 .candidate-app .c-hud-tl { top: -1px; left: -1px; border-top: 1.5px solid; border-left: 1.5px solid; }
@@ -539,7 +540,7 @@ html.light .candidate-app,
 /* Subtle coordinate grid watermark */
 .candidate-app .c-tech-grid {
   background-size: 24px 24px;
-  background-image: 
+  background-image:
     linear-gradient(to right, var(--c-border) 1px, transparent 1px),
     linear-gradient(to bottom, var(--c-border) 1px, transparent 1px);
   opacity: 0.25;
@@ -551,8 +552,19 @@ html.light .candidate-app,
   font-size: 10px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--c-text-muted);
+  color: var(--c-accent);
   user-select: none;
+}
+
+/* Gold accent rule â€” eyebrow decoration */
+.candidate-app .c-gold-rule {
+  display: inline-block;
+  width: 2rem;
+  height: 2px;
+  background: var(--c-accent);
+  border-radius: 1px;
+  vertical-align: middle;
+  margin-right: 0.5rem;
 }
 
 /* Reduced motion support */
@@ -566,4 +578,5 @@ html.light .candidate-app,
     transition-duration: 0.01ms !important;
   }
 }
+
 

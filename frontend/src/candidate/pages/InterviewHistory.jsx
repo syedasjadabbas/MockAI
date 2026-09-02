@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+﻿import React, { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Search,
@@ -132,7 +132,7 @@ const InterviewHistory = () => {
           </Link>
         </div>
 
-        {/* LEVEL 1 — Telemetry Metrics (Directly on page with clean typography and dividers) */}
+        {/* LEVEL 1 â€” Telemetry Metrics (Directly on page with clean typography and dividers) */}
         <section aria-label="History Telemetry" className="border-b pb-8" style={{ borderColor: 'var(--c-border)' }}>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-10">
             <div>
@@ -167,13 +167,13 @@ const InterviewHistory = () => {
                 Average Score
               </p>
               <p className="c-serif-num text-3xl font-bold" style={{ color: 'var(--c-text)' }}>
-                {stats.avgScore != null ? `${stats.avgScore}%` : '—'}
+                {stats.avgScore != null ? `${stats.avgScore}%` : 'â€”'}
               </p>
             </div>
           </div>
         </section>
 
-        {/* LEVEL 2 — Filter Controls & Search Bar */}
+        {/* LEVEL 2 â€” Filter Controls & Search Bar */}
         <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 pt-1">
           {/* Segmented Filter Tabs */}
           <div className="flex items-center gap-1 overflow-x-auto pb-1 md:pb-0">
@@ -246,7 +246,7 @@ const InterviewHistory = () => {
           </div>
         </div>
 
-        {/* LEVEL 2 — Main Data Ledger Table (Open, structured table with dividers) */}
+        {/* LEVEL 2 â€” Main Data Ledger Table (Open, structured table with dividers) */}
         {loading ? (
           <div className="space-y-2">
             <div className="c-skeleton h-14 rounded-lg" />
@@ -335,7 +335,7 @@ const InterviewHistory = () => {
                       {/* 1. Track & Role (4 cols) */}
                       <div className="col-span-4 flex items-center gap-3 min-w-0 pr-2">
                         <div
-                          className="w-8 h-8 rounded flex items-center justify-center shrink-0 border transition-colors group-hover:border-blue-500/40"
+                          className="w-8 h-8 rounded flex items-center justify-center shrink-0 border transition-colors group-hover:border-yellow-500/40"
                           style={{
                             background: 'var(--c-surface-muted)',
                             borderColor: 'var(--c-border)',
@@ -347,7 +347,7 @@ const InterviewHistory = () => {
                         <div className="min-w-0">
                           <Link
                             to={targetUrl}
-                            className="text-xs font-bold truncate block group-hover:text-blue-500 transition-colors"
+                            className="text-xs font-bold truncate block group-hover:text-yellow-500 transition-colors"
                             style={{ color: 'var(--c-text)' }}
                           >
                             {session.role || 'Practice Session'}
@@ -383,7 +383,7 @@ const InterviewHistory = () => {
                           </span>
                         ) : (
                           <span className="text-xs font-mono" style={{ color: 'var(--c-text-muted)' }}>
-                            —
+                            â€”
                           </span>
                         )}
                       </div>
@@ -404,7 +404,7 @@ const InterviewHistory = () => {
                       <div className="col-span-1 text-right">
                         <Link
                           to={targetUrl}
-                          className="inline-flex items-center gap-1 text-xs font-semibold group-hover:text-blue-500 transition-colors"
+                          className="inline-flex items-center gap-1 text-xs font-semibold group-hover:text-yellow-500 transition-colors"
                           style={{ color: 'var(--c-accent)' }}
                         >
                           <span>{isCompleted ? 'Results' : 'Resume'}</span>
@@ -455,7 +455,7 @@ const InterviewHistory = () => {
                               {Math.round(session.score)}%
                             </span>
                           ) : (
-                            <span className="text-xs font-mono" style={{ color: 'var(--c-text-muted)' }}>—</span>
+                            <span className="text-xs font-mono" style={{ color: 'var(--c-text-muted)' }}>â€”</span>
                           )}
                           <Link
                             to={targetUrl}
@@ -487,3 +487,4 @@ const InterviewHistory = () => {
 };
 
 export default InterviewHistory;
+

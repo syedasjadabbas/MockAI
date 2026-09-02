@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import {
   RotateCcw,
@@ -67,7 +67,7 @@ const EvaluationResults = () => {
         <div className="max-w-4xl mx-auto py-20 flex flex-col items-center justify-center gap-3 text-center">
           <div className="w-6 h-6 border-2 rounded-full animate-spin" style={{ borderColor: 'var(--c-accent)', borderTopColor: 'transparent' }} />
           <p className="text-xs font-medium" style={{ color: 'var(--c-text-secondary)' }}>
-            Generating executive assessment dossier…
+            Generating executive assessment dossierâ€¦
           </p>
         </div>
       </InterviewFlowLayout>
@@ -157,7 +157,7 @@ const EvaluationResults = () => {
                 {interview.role}
               </h1>
               <p className="text-xs sm:text-sm mt-1" style={{ color: 'var(--c-text-secondary)' }}>
-                Track: <span className="capitalize font-semibold" style={{ color: 'var(--c-text)' }}>{interview.type || 'Technical'}</span> • Completed on {formatDate(interview.completedAt || interview.createdAt)}
+                Track: <span className="capitalize font-semibold" style={{ color: 'var(--c-text)' }}>{interview.type || 'Technical'}</span> â€¢ Completed on {formatDate(interview.completedAt || interview.createdAt)}
               </p>
             </div>
 
@@ -184,20 +184,20 @@ const EvaluationResults = () => {
               <div className="absolute inset-0" style={{ background: 'linear-gradient(to right, var(--c-bg) 0%, transparent 40%, var(--c-bg) 100%)' }} />
               <div className="absolute inset-0 flex items-center justify-start pl-8">
                 <div>
-                  <span className="block c-tech-annotation text-[10px] text-blue-400 mb-1">[ASSESSMENT ANALYTICS]</span>
+                  <span className="block c-tech-annotation text-[10px] text-yellow-400 mb-1">[ASSESSMENT ANALYTICS]</span>
                   <span className="c-serif-num text-5xl sm:text-7xl font-bold tracking-tight" style={{ color: 'var(--c-text)' }}>
                     {Math.round(overallScore)}%
                   </span>
                   <div className="w-32 bg-slate-500/20 h-1 rounded-full overflow-hidden mt-2">
                     <div
-                      className="h-full bg-blue-500 rounded-full transition-all duration-1000"
+                      className="h-full bg-yellow-500 rounded-full transition-all duration-1000"
                       style={{ width: `${Math.min(100, Math.max(0, overallScore))}%` }}
                     />
                   </div>
                 </div>
               </div>
               <div className="absolute bottom-2 right-2">
-                <span className="c-tech-annotation px-1.5 py-0.5 rounded bg-black/60 text-blue-400 border border-white/10 text-[10px]">[COMPOSITE SCORE]</span>
+                <span className="c-tech-annotation px-1.5 py-0.5 rounded bg-black/60 text-yellow-400 border border-white/10 text-[10px]">[COMPOSITE SCORE]</span>
               </div>
             </div>
             <p className="text-xs sm:text-sm mt-4 leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
@@ -303,13 +303,13 @@ const EvaluationResults = () => {
                         <span className="font-mono text-xs font-bold" style={{ color: 'var(--c-text-muted)' }}>
                           Question {(idx + 1).toString().padStart(2, '0')}
                         </span>
-                        <span className="text-[11px]" style={{ color: 'var(--c-border)' }}>•</span>
+                        <span className="text-[11px]" style={{ color: 'var(--c-border)' }}>â€¢</span>
                         <span className="text-[11px] capitalize font-medium" style={{ color: 'var(--c-text-secondary)' }}>
                           {q.type || 'Technical'} ({q.difficulty || 'Medium'})
                         </span>
                         {wpm != null && (
                           <>
-                            <span className="text-[11px]" style={{ color: 'var(--c-border)' }}>•</span>
+                            <span className="text-[11px]" style={{ color: 'var(--c-border)' }}>â€¢</span>
                             <span className="text-[11px] font-mono" style={{ color: 'var(--c-text-muted)' }}>
                               {Math.round(wpm)} WPM ({pacing})
                             </span>
@@ -453,3 +453,4 @@ const EvaluationResults = () => {
 };
 
 export default EvaluationResults;
+

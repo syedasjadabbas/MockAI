@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { 
   Check, 
@@ -62,7 +62,7 @@ const InterviewCompletion = () => {
         <div className="max-w-5xl mx-auto py-16 flex flex-col items-center justify-center gap-3 text-center">
           <div className="w-6 h-6 border-2 rounded-full animate-spin" style={{ borderColor: 'var(--c-accent)', borderTopColor: 'transparent' }} />
           <p className="text-xs font-medium" style={{ color: 'var(--c-text-secondary)' }}>
-            Retrieving interview completion receipt…
+            Retrieving interview completion receiptâ€¦
           </p>
         </div>
       </InterviewFlowLayout>
@@ -160,7 +160,7 @@ const InterviewCompletion = () => {
         {/* Main Two-Column Summary & Evaluation Dossier */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
-          {/* Left Column: Summary & Prompts (7 cols) — Open editorial ledger */}
+          {/* Left Column: Summary & Prompts (7 cols) â€” Open editorial ledger */}
           <div className="lg:col-span-7 space-y-8">
             
             {/* Session Ledger */}
@@ -277,7 +277,7 @@ const InterviewCompletion = () => {
               <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, var(--c-bg) 0%, transparent 60%)' }} />
               <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between">
                 <span className="c-tech-annotation px-1.5 py-0.5 rounded bg-black/60 text-emerald-400 border border-white/10 text-[10px]">[SESSION FINALIZED]</span>
-                <span className="c-tech-annotation px-1.5 py-0.5 rounded bg-black/60 text-blue-400 border border-white/10 text-[10px]">{answeredCount}/{totalQuestions} TAKES</span>
+                <span className="c-tech-annotation px-1.5 py-0.5 rounded bg-black/60 text-yellow-400 border border-white/10 text-[10px]">{answeredCount}/{totalQuestions} TAKES</span>
               </div>
             </div>
             
@@ -367,3 +367,4 @@ const InterviewCompletion = () => {
 };
 
 export default InterviewCompletion;
+

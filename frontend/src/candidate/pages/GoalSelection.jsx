@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+﻿import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Code2, Users, Compass, Server, Cpu, BarChart3, AlertCircle, CheckCircle2 } from 'lucide-react';
 import InterviewFlowLayout from '../layouts/InterviewFlowLayout';
@@ -117,7 +117,7 @@ const GoalSelection = () => {
     if (matched) {
       chooseCategory(matched);
     } else {
-      pushBot("I didn't catch an exact track — pick one of the options below to get started.");
+      pushBot("I didn't catch an exact track â€” pick one of the options below to get started.");
       setSelectedType(null);
       setStage('ask-type');
     }
@@ -162,7 +162,7 @@ const GoalSelection = () => {
               <CornerReticles size={8} color="var(--c-accent)" />
               <img src={CANDIDATE_IMAGES.neuralSphere} alt="AI Neural Network" className="w-full h-full object-cover opacity-90 transition-transform duration-700 group-hover:scale-105" />
               <div className="absolute bottom-2 left-2">
-                <span className="c-tech-annotation px-1.5 py-0.5 rounded bg-black/60 text-blue-400 border border-white/10">[AI NETWORK]</span>
+                <span className="c-tech-annotation px-1.5 py-0.5 rounded bg-black/60 text-yellow-400 border border-white/10">[AI NETWORK]</span>
               </div>
             </div>
           </div>
@@ -192,7 +192,7 @@ const GoalSelection = () => {
             </div>
           ) : (
             <>
-              {/* LEVEL 3 — Standalone Selectable Track Cards */}
+              {/* LEVEL 3 â€” Standalone Selectable Track Cards */}
               {stage === 'ask-goal' && (
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                   {INTERVIEW_TYPES.map((type) => {
@@ -208,7 +208,7 @@ const GoalSelection = () => {
                         }}
                       >
                         <div className="flex items-center justify-between">
-                          <div className="w-8 h-8 rounded flex items-center justify-center border transition-colors group-hover:border-blue-500/50"
+                          <div className="w-8 h-8 rounded flex items-center justify-center border transition-colors group-hover:border-yellow-500/50"
                             style={{
                               background: 'var(--c-surface-muted)',
                               borderColor: 'var(--c-border)',
@@ -222,7 +222,7 @@ const GoalSelection = () => {
                           </span>
                         </div>
                         <div>
-                          <span className="text-xs font-bold block group-hover:text-blue-500 transition-colors" style={{ color: 'var(--c-text)' }}>
+                          <span className="text-xs font-bold block group-hover:text-yellow-500 transition-colors" style={{ color: 'var(--c-text)' }}>
                             {type.label}
                           </span>
                           <span className="text-[11px] block mt-0.5" style={{ color: 'var(--c-text-muted)' }}>
@@ -251,7 +251,7 @@ const GoalSelection = () => {
                         }}
                       >
                         <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-8 h-8 rounded flex items-center justify-center shrink-0 border transition-colors group-hover:border-blue-500/50"
+                          <div className="w-8 h-8 rounded flex items-center justify-center shrink-0 border transition-colors group-hover:border-yellow-500/50"
                             style={{
                               background: 'var(--c-surface-muted)',
                               borderColor: 'var(--c-border)',
@@ -260,7 +260,7 @@ const GoalSelection = () => {
                           >
                             <Icon className="w-4 h-4" />
                           </div>
-                          <span className="text-xs font-bold truncate group-hover:text-blue-500 transition-colors" style={{ color: 'var(--c-text)' }}>
+                          <span className="text-xs font-bold truncate group-hover:text-yellow-500 transition-colors" style={{ color: 'var(--c-text)' }}>
                             {cat.name}
                           </span>
                         </div>
@@ -295,7 +295,7 @@ const GoalSelection = () => {
                     disabled={starting}
                     className="c-btn c-btn-primary px-6 py-3 text-xs font-bold rounded-md w-full sm:w-auto flex items-center justify-center gap-2"
                   >
-                    <span>{starting ? 'Initializing Session…' : 'Continue to Preparation'}</span>
+                    <span>{starting ? 'Initializing Sessionâ€¦' : 'Continue to Preparation'}</span>
                     {!starting && <ArrowRight className="w-3.5 h-3.5" />}
                   </button>
 
@@ -319,7 +319,7 @@ const GoalSelection = () => {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-              placeholder="Or enter a specific topic — e.g., React, System Architecture, Leadership..."
+              placeholder="Or enter a specific topic â€” e.g., React, System Architecture, Leadership..."
               className="c-input flex-1 px-3.5 py-2.5 rounded-md text-xs"
             />
             <button onClick={handleSend} className="c-btn c-btn-secondary px-4 py-2.5 rounded-md text-xs font-semibold">
@@ -333,3 +333,4 @@ const GoalSelection = () => {
 };
 
 export default GoalSelection;
+
