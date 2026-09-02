@@ -202,16 +202,6 @@ const Dashboard = () => {
                 >
                   <HeroScene3D />
                 </Suspense>
-
-                {/* Floating Technical HUD Badge */}
-                <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between pointer-events-none z-10">
-                  <span className="c-tech-annotation px-2 py-0.5 rounded bg-black/70 backdrop-blur-sm text-slate-300 border border-white/10">
-                    [MOCK AI 3D LAB]
-                  </span>
-                  <span className="c-tech-annotation px-2 py-0.5 rounded bg-black/70 backdrop-blur-sm text-orange-400 border border-white/10">
-                    44.1kHz SAMPLING
-                  </span>
-                </div>
               </div>
             </div>
 
