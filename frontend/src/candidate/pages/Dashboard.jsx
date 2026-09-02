@@ -320,8 +320,9 @@ const Dashboard = () => {
               >
                 <div className="col-span-5">Track & Role</div>
                 <div className="col-span-3">Date & Time</div>
-                <div className="col-span-2 text-center">Score</div>
-                <div className="col-span-2 text-right">Status / Action</div>
+                <div className="col-span-1 text-center">Score</div>
+                <div className="col-span-2 text-center">Status</div>
+                <div className="col-span-1 text-right">Action</div>
               </div>
 
               {/* Table Body Rows */}
@@ -374,10 +375,10 @@ const Dashboard = () => {
                         <span className="sm:inline block">{displayDate && displayDate !== '-' ? displayDate : 'Recent Session'}</span>
                       </div>
 
-                      {/* Score (2 cols) */}
-                      <div className="sm:col-span-2 flex items-center sm:justify-center">
+                      {/* Score (1 col) */}
+                      <div className="sm:col-span-1 flex items-center sm:justify-center">
                         {isScored ? (
-                          <span className="c-badge c-badge-accent text-xs font-mono font-bold px-2 py-0.5 rounded">
+                          <span className="font-mono text-xs font-bold" style={{ color: 'var(--c-text)' }}>
                             {Math.round(interview.score)}%
                           </span>
                         ) : (
@@ -385,12 +386,21 @@ const Dashboard = () => {
                         )}
                       </div>
 
-                      {/* Status & Action (2 cols) */}
-                      <div className="sm:col-span-2 flex items-center justify-between sm:justify-end gap-2.5">
-                        <span className={`c-badge ${STATUS_TONE[interview.status] || 'c-badge-muted'} text-[10px]`}>
-                          {interview.status}
+                      {/* Status (2 cols) - Minimalist status dot */}
+                      <div className="sm:col-span-2 flex items-center sm:justify-center">
+                        <span className="inline-flex items-center gap-1.5 text-xs font-medium" style={{ color: 'var(--c-text-secondary)' }}>
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                              isCompleted ? 'bg-emerald-500' : 'bg-amber-500'
+                            }`}
+                          />
+                          <span>{interview.status || 'In Progress'}</span>
                         </span>
-                        <span className="text-xs font-medium group-hover:text-blue-500 flex items-center gap-0.5" style={{ color: 'var(--c-text-secondary)' }}>
+                      </div>
+
+                      {/* Action (1 col) */}
+                      <div className="sm:col-span-1 flex items-center justify-end">
+                        <span className="text-xs font-semibold group-hover:text-blue-500 flex items-center gap-1 transition-colors" style={{ color: 'var(--c-accent)' }}>
                           <span>{isCompleted ? 'Results' : 'Resume'}</span>
                           <ChevronRight className="w-3.5 h-3.5" />
                         </span>

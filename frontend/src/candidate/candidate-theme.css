@@ -47,23 +47,23 @@ html.dark .candidate-app,
   --c-danger-soft: rgba(239, 68, 68, 0.15);
 
   /* Badges */
-  --c-badge-accent-bg: #132238;
+  --c-badge-accent-bg: rgba(0, 102, 255, 0.08);
   --c-badge-accent-text: #60A5FA;
-  --c-badge-accent-border: #1E3A5F;
+  --c-badge-accent-border: rgba(0, 102, 255, 0.2);
 
-  --c-badge-success-bg: #0D281E;
+  --c-badge-success-bg: rgba(16, 185, 129, 0.08);
   --c-badge-success-text: #34D399;
-  --c-badge-success-border: #164E38;
+  --c-badge-success-border: rgba(16, 185, 129, 0.2);
 
-  --c-badge-warning-bg: #2D2006;
+  --c-badge-warning-bg: rgba(245, 158, 11, 0.08);
   --c-badge-warning-text: #FBBF24;
-  --c-badge-warning-border: #5C4308;
+  --c-badge-warning-border: rgba(245, 158, 11, 0.2);
 
-  --c-badge-danger-bg: #2E1114;
+  --c-badge-danger-bg: rgba(239, 68, 68, 0.08);
   --c-badge-danger-text: #F87171;
-  --c-badge-danger-border: #5C1D24;
+  --c-badge-danger-border: rgba(239, 68, 68, 0.2);
 
-  --c-badge-muted-bg: #1A2333;
+  --c-badge-muted-bg: rgba(255, 255, 255, 0.04);
   --c-badge-muted-text: #94A3B8;
   --c-badge-muted-border: #243044;
 

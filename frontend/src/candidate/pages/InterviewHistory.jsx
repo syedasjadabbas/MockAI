@@ -306,11 +306,11 @@ const InterviewHistory = () => {
                 color: 'var(--c-text-muted)',
               }}
             >
-              <div className="col-span-5">Track & Role</div>
+              <div className="col-span-4">Track & Role</div>
               <div className="col-span-2">Domain</div>
               <div className="col-span-2">Date & Time</div>
               <div className="col-span-1 text-center">Score</div>
-              <div className="col-span-1 text-center">Status</div>
+              <div className="col-span-2 text-center">Status</div>
               <div className="col-span-1 text-right">Action</div>
             </div>
 
@@ -332,8 +332,8 @@ const InterviewHistory = () => {
                   >
                     {/* Desktop Grid Layout */}
                     <div className="hidden md:grid grid-cols-12 items-center gap-3">
-                      {/* 1. Track & Role (5 cols) */}
-                      <div className="col-span-5 flex items-center gap-3 min-w-0 pr-2">
+                      {/* 1. Track & Role (4 cols) */}
+                      <div className="col-span-4 flex items-center gap-3 min-w-0 pr-2">
                         <div
                           className="w-8 h-8 rounded flex items-center justify-center shrink-0 border transition-colors group-hover:border-blue-500/40"
                           style={{
@@ -378,7 +378,7 @@ const InterviewHistory = () => {
                       {/* 4. Score (1 col) */}
                       <div className="col-span-1 text-center">
                         {session.score != null ? (
-                          <span className="c-badge c-badge-accent font-mono text-xs font-bold px-2 py-0.5 rounded">
+                          <span className="font-mono text-xs font-bold" style={{ color: 'var(--c-text)' }}>
                             {Math.round(session.score)}%
                           </span>
                         ) : (
@@ -388,14 +388,15 @@ const InterviewHistory = () => {
                         )}
                       </div>
 
-                      {/* 5. Status (1 col) */}
-                      <div className="col-span-1 text-center">
-                        <span
-                          className={`c-badge text-[10px] font-semibold ${
-                            isCompleted ? 'c-badge-success' : 'c-badge-warning'
-                          }`}
-                        >
-                          {session.status || 'In Progress'}
+                      {/* 5. Status (2 cols) - Minimalist status dot */}
+                      <div className="col-span-2 flex items-center justify-center">
+                        <span className="inline-flex items-center gap-1.5 text-xs font-medium" style={{ color: 'var(--c-text-secondary)' }}>
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                              isCompleted ? 'bg-emerald-500' : 'bg-amber-500'
+                            }`}
+                          />
+                          <span>{session.status || 'In Progress'}</span>
                         </span>
                       </div>
 
@@ -403,8 +404,8 @@ const InterviewHistory = () => {
                       <div className="col-span-1 text-right">
                         <Link
                           to={targetUrl}
-                          className="inline-flex items-center gap-0.5 text-xs font-bold transition-opacity hover:opacity-80 group-hover:text-blue-500"
-                          style={{ color: isCompleted ? 'var(--c-accent)' : 'var(--c-accent)' }}
+                          className="inline-flex items-center gap-1 text-xs font-semibold group-hover:text-blue-500 transition-colors"
+                          style={{ color: 'var(--c-accent)' }}
                         >
                           <span>{isCompleted ? 'Results' : 'Resume'}</span>
                           <ChevronRight className="w-3.5 h-3.5" />
@@ -436,12 +437,13 @@ const InterviewHistory = () => {
                           </div>
                         </div>
 
-                        <span
-                          className={`c-badge text-[10px] font-semibold ${
-                            isCompleted ? 'c-badge-success' : 'c-badge-warning'
-                          }`}
-                        >
-                          {session.status || 'In Progress'}
+                        <span className="inline-flex items-center gap-1.5 text-xs font-medium" style={{ color: 'var(--c-text-secondary)' }}>
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                              isCompleted ? 'bg-emerald-500' : 'bg-amber-500'
+                            }`}
+                          />
+                          <span>{session.status || 'In Progress'}</span>
                         </span>
                       </div>
 
@@ -449,7 +451,7 @@ const InterviewHistory = () => {
                         <span style={{ color: 'var(--c-text-secondary)' }}>{dateStr}</span>
                         <div className="flex items-center gap-3">
                           {session.score != null ? (
-                            <span className="c-badge c-badge-accent font-mono text-xs font-bold">
+                            <span className="font-mono text-xs font-bold" style={{ color: 'var(--c-text)' }}>
                               {Math.round(session.score)}%
                             </span>
                           ) : (
@@ -457,11 +459,11 @@ const InterviewHistory = () => {
                           )}
                           <Link
                             to={targetUrl}
-                            className="text-xs font-bold flex items-center gap-0.5"
+                            className="text-xs font-semibold flex items-center gap-1"
                             style={{ color: 'var(--c-accent)' }}
                           >
                             <span>{isCompleted ? 'Results' : 'Resume'}</span>
-                            <ChevronRight className="w-3 h-3" />
+                            <ChevronRight className="w-3.5 h-3.5" />
                           </Link>
                         </div>
                       </div>
