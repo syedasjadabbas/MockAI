@@ -59,7 +59,7 @@ const AuthVisualPanel = () => {
           
           <div className="flex items-center justify-between mb-2">
             <p className="c-eyebrow">Practice Platform</p>
-            <span className="c-tech-annotation text-yellow-400">SESSION.AUTH</span>
+            <span className="c-tech-annotation text-orange-400">SESSION.AUTH</span>
           </div>
           
           <h1 className="c-heading text-2xl xl:text-3xl font-bold leading-tight mb-4 text-white">
@@ -110,4 +110,5 @@ const AuthVisualPanel = () => {
 };
 
 export default AuthVisualPanel;
+
 

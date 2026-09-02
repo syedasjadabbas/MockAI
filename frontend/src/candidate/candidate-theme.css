@@ -1,64 +1,64 @@
-﻿/*
- * MockAI Candidate Panel â€” Charcoal + Gold Design System
+/*
+ * MockAI Candidate Panel — Charcoal + Orange Design System
  *
  * Scoped strictly under `.candidate-app` to prevent collision with Admin Panel.
- * Dark Theme: Charcoal (#111111) base with Primary Gold (#D4A72C) accents.
- * Light Theme: Warm parchment base with Gold accents.
+ * Dark Theme: Charcoal (#111111) base with Primary Orange (#FF6B35) & Highlight Orange (#FF9F1C).
+ * Light Theme: Clean warm slate with vibrant orange accents.
  */
 
-/* â”€â”€â”€ DARK THEME (Default) â”€â”€â”€ */
+/* ─── DARK THEME (Default) ─── */
 .candidate-app,
 html.dark .candidate-app,
 [data-theme='dark'] .candidate-app {
   /* Surfaces */
   --c-bg: #111111;                  /* Solid charcoal base */
-  --c-bg-subtle: #191919;           /* Secondary background / header */
-  --c-surface: #222222;             /* Primary panel surface */
-  --c-surface-card: #222222;        /* Card surface */
-  --c-surface-muted: #1C1C1C;       /* Recessed/metric surface */
+  --c-bg-subtle: #181818;           /* Secondary background / header */
+  --c-surface: #202020;             /* Primary panel surface */
+  --c-surface-card: #202020;        /* Card surface */
+  --c-surface-muted: #181818;       /* Recessed/metric surface */
 
   /* Borders */
   --c-border: #2A2A2A;              /* Subtle solid border */
   --c-border-strong: #383838;       /* Emphasized structural border */
 
   /* Typography */
-  --c-text: #F5F5F5;                /* Warm near-white text */
+  --c-text: #F5F5F5;                /* Crisp near-white text */
   --c-text-secondary: #A3A3A3;      /* Muted secondary body */
   --c-text-muted: #6B6B6B;          /* Technical captions */
-  --c-on-accent: #111111;           /* Text on gold â€” dark for contrast */
+  --c-on-accent: #FFFFFF;           /* Text on primary orange */
 
-  /* Primary Actions â€” Gold */
-  --c-accent: #D4A72C;              /* Primary Gold */
-  --c-accent-hover: #C49520;        /* Darker Gold hover */
-  --c-accent-highlight: #E8C766;    /* Lighter Gold highlight */
-  --c-accent-soft: rgba(212, 167, 44, 0.10);
-  --c-accent-soft-strong: rgba(212, 167, 44, 0.18);
+  /* Primary Actions — Orange */
+  --c-accent: #FF6B35;              /* Primary Orange */
+  --c-accent-hover: #E8551E;        /* Darker Orange hover */
+  --c-accent-highlight: #FF9F1C;    /* Highlight Orange */
+  --c-accent-soft: rgba(255, 107, 53, 0.12);
+  --c-accent-soft-strong: rgba(255, 107, 53, 0.20);
 
   /* Secondary Button */
-  --c-btn-secondary-bg: #2A2A2A;
-  --c-btn-secondary-hover: #333333;
+  --c-btn-secondary-bg: #202020;
+  --c-btn-secondary-hover: #2A2A2A;
   --c-btn-secondary-text: #F5F5F5;
 
   /* Status Indicators */
   --c-success: #22C55E;
   --c-success-soft: rgba(34, 197, 94, 0.12);
-  --c-warning: #F59E0B;
-  --c-warning-soft: rgba(245, 158, 11, 0.12);
+  --c-warning: #FF9F1C;
+  --c-warning-soft: rgba(255, 159, 28, 0.12);
   --c-danger: #EF4444;
   --c-danger-soft: rgba(239, 68, 68, 0.12);
 
   /* Badges */
-  --c-badge-accent-bg: rgba(212, 167, 44, 0.08);
-  --c-badge-accent-text: #E8C766;
-  --c-badge-accent-border: rgba(212, 167, 44, 0.22);
+  --c-badge-accent-bg: rgba(255, 107, 53, 0.10);
+  --c-badge-accent-text: #FF9F1C;
+  --c-badge-accent-border: rgba(255, 107, 53, 0.25);
 
   --c-badge-success-bg: rgba(34, 197, 94, 0.08);
   --c-badge-success-text: #4ADE80;
   --c-badge-success-border: rgba(34, 197, 94, 0.2);
 
-  --c-badge-warning-bg: rgba(245, 158, 11, 0.08);
-  --c-badge-warning-text: #FBBF24;
-  --c-badge-warning-border: rgba(245, 158, 11, 0.2);
+  --c-badge-warning-bg: rgba(255, 159, 28, 0.08);
+  --c-badge-warning-text: #FF9F1C;
+  --c-badge-warning-border: rgba(255, 159, 28, 0.2);
 
   --c-badge-danger-bg: rgba(239, 68, 68, 0.08);
   --c-badge-danger-text: #F87171;
@@ -74,88 +74,88 @@ html.dark .candidate-app,
   --c-shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.7);
 
   /* Inputs */
-  --c-input-bg: #191919;
+  --c-input-bg: #181818;
   --c-input-border: #2A2A2A;
-  --c-input-border-focus: #D4A72C;
+  --c-input-border-focus: #FF6B35;
 
   /* Table / List hover */
   --c-hover-bg: rgba(255, 255, 255, 0.03);
 }
 
-/* â”€â”€â”€ LIGHT THEME â”€â”€â”€ */
+/* ─── LIGHT THEME ─── */
 html.light .candidate-app,
 [data-theme='light'] .candidate-app,
 .light .candidate-app {
   /* Surfaces */
-  --c-bg: #FAF9F7;
+  --c-bg: #FAF9F6;
   --c-bg-subtle: #FFFFFF;
   --c-surface: #FFFFFF;
   --c-surface-card: #FFFFFF;
-  --c-surface-muted: #F4F2EE;
+  --c-surface-muted: #F3F0EB;
 
   /* Borders */
-  --c-border: #E5E2DB;
-  --c-border-strong: #D0CBC0;
+  --c-border: #E5E0D8;
+  --c-border-strong: #D0C8BC;
 
   /* Typography */
-  --c-text: #1A1A1A;
-  --c-text-secondary: #5A5A5A;
-  --c-text-muted: #8A8A8A;
-  --c-on-accent: #111111;
+  --c-text: #181818;
+  --c-text-secondary: #555555;
+  --c-text-muted: #888888;
+  --c-on-accent: #FFFFFF;
 
-  /* Primary Actions â€” Gold (darker for light mode contrast) */
-  --c-accent: #B8860B;
-  --c-accent-hover: #9A7009;
-  --c-accent-highlight: #D4A72C;
-  --c-accent-soft: rgba(184, 134, 11, 0.08);
-  --c-accent-soft-strong: rgba(184, 134, 11, 0.14);
+  /* Primary Actions — Orange */
+  --c-accent: #EA580C;              /* Slightly deeper orange for light contrast */
+  --c-accent-hover: #C2410C;
+  --c-accent-highlight: #FF6B35;
+  --c-accent-soft: rgba(234, 88, 12, 0.08);
+  --c-accent-soft-strong: rgba(234, 88, 12, 0.15);
 
   /* Secondary Button */
-  --c-btn-secondary-bg: #F4F2EE;
-  --c-btn-secondary-hover: #E8E4DC;
-  --c-btn-secondary-text: #1A1A1A;
+  --c-btn-secondary-bg: #F3F0EB;
+  --c-btn-secondary-hover: #E8E2D8;
+  --c-btn-secondary-text: #181818;
 
   /* Status Indicators */
   --c-success: #16A34A;
   --c-success-soft: rgba(22, 163, 74, 0.08);
-  --c-warning: #D97706;
-  --c-warning-soft: rgba(217, 119, 6, 0.08);
+  --c-warning: #EA580C;
+  --c-warning-soft: rgba(234, 88, 12, 0.08);
   --c-danger: #DC2626;
   --c-danger-soft: rgba(220, 38, 38, 0.08);
 
   /* Badges */
-  --c-badge-accent-bg: rgba(184, 134, 11, 0.08);
-  --c-badge-accent-text: #92660A;
-  --c-badge-accent-border: rgba(184, 134, 11, 0.2);
+  --c-badge-accent-bg: rgba(234, 88, 12, 0.08);
+  --c-badge-accent-text: #C2410C;
+  --c-badge-accent-border: rgba(234, 88, 12, 0.2);
 
   --c-badge-success-bg: #F0FDF4;
   --c-badge-success-text: #15803D;
   --c-badge-success-border: #BBF7D0;
 
-  --c-badge-warning-bg: #FFFBEB;
-  --c-badge-warning-text: #B45309;
-  --c-badge-warning-border: #FDE68A;
+  --c-badge-warning-bg: #FFF7ED;
+  --c-badge-warning-text: #C2410C;
+  --c-badge-warning-border: #FED7AA;
 
   --c-badge-danger-bg: #FEF2F2;
   --c-badge-danger-text: #B91C1C;
   --c-badge-danger-border: #FECACA;
 
-  --c-badge-muted-bg: #F4F2EE;
-  --c-badge-muted-text: #5A5A5A;
-  --c-badge-muted-border: #E5E2DB;
+  --c-badge-muted-bg: #F3F0EB;
+  --c-badge-muted-text: #555555;
+  --c-badge-muted-border: #E5E0D8;
 
   /* Shadows */
-  --c-shadow-sm: 0 1px 2px rgba(26, 26, 26, 0.06);
-  --c-shadow: 0 4px 12px rgba(26, 26, 26, 0.07);
-  --c-shadow-lg: 0 10px 25px rgba(26, 26, 26, 0.09);
+  --c-shadow-sm: 0 1px 2px rgba(24, 24, 24, 0.06);
+  --c-shadow: 0 4px 12px rgba(24, 24, 24, 0.07);
+  --c-shadow-lg: 0 10px 25px rgba(24, 24, 24, 0.09);
 
   /* Inputs */
   --c-input-bg: #FFFFFF;
-  --c-input-border: #D0CBC0;
-  --c-input-border-focus: #B8860B;
+  --c-input-border: #D0C8BC;
+  --c-input-border-focus: #EA580C;
 
   /* Table / List hover */
-  --c-hover-bg: rgba(26, 26, 26, 0.03);
+  --c-hover-bg: rgba(24, 24, 24, 0.03);
 }
 
 .candidate-app {
@@ -402,7 +402,7 @@ html.light .candidate-app,
   position: absolute;
   inset: 0;
   transform: translateX(-100%);
-  background: linear-gradient(90deg, transparent, rgba(212, 167, 44, 0.06), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255, 107, 53, 0.08), transparent);
   animation: c-shimmer 1.5s infinite;
 }
 
@@ -556,8 +556,9 @@ html.light .candidate-app,
   user-select: none;
 }
 
-/* Gold accent rule â€” eyebrow decoration */
-.candidate-app .c-gold-rule {
+/* Accent rule — eyebrow decoration */
+.candidate-app .c-gold-rule,
+.candidate-app .c-accent-rule {
   display: inline-block;
   width: 2rem;
   height: 2px;

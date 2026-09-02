@@ -134,7 +134,7 @@ const Dashboard = () => {
                     color: 'var(--c-text-secondary)',
                   }}
                 >
-                  <span className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" />
+                  <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
                   <span>Welcome back, {session?.name || 'Candidate'}</span>
                 </div>
 
@@ -196,7 +196,7 @@ const Dashboard = () => {
                   <span className="c-tech-annotation px-2 py-0.5 rounded bg-black/60 backdrop-blur-sm text-slate-300 border border-white/10">
                     [AI INTERVIEW LAB v2.4]
                   </span>
-                  <span className="c-tech-annotation px-2 py-0.5 rounded bg-black/60 backdrop-blur-sm text-yellow-400 border border-white/10">
+                  <span className="c-tech-annotation px-2 py-0.5 rounded bg-black/60 backdrop-blur-sm text-orange-400 border border-white/10">
                     44.1kHz SAMPLING
                   </span>
                 </div>
@@ -241,7 +241,7 @@ const Dashboard = () => {
               </p>
               <div className="w-full bg-slate-500/10 h-1 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-yellow-500 rounded-full transition-all duration-1000"
+                  className="h-full bg-orange-500 rounded-full transition-all duration-1000"
                   style={{ width: `${Math.min(100, ((summary?.totalInterviews || 0) / 10) * 100)}%` }}
                 />
               </div>
@@ -285,7 +285,7 @@ const Dashboard = () => {
               </p>
               <div className="w-full bg-slate-500/10 h-1 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-yellow-500 rounded-full transition-all duration-1000"
+                  className="h-full bg-orange-500 rounded-full transition-all duration-1000"
                   style={{ width: `${hasScore ? summary.averageScore : 0}%` }}
                 />
               </div>
@@ -326,7 +326,7 @@ const Dashboard = () => {
                   >
                     <div>
                       <div className="flex items-center justify-between mb-3">
-                        <div className="w-9 h-9 rounded-md flex items-center justify-center border transition-colors group-hover:border-yellow-500/50"
+                        <div className="w-9 h-9 rounded-md flex items-center justify-center border transition-colors group-hover:border-orange-500/50"
                           style={{
                             background: 'var(--c-surface-muted)',
                             borderColor: 'var(--c-border)',
@@ -341,7 +341,7 @@ const Dashboard = () => {
                           </div>
                         )}
                       </div>
-                      <h3 className="text-sm font-bold mb-1 group-hover:text-yellow-500 transition-colors" style={{ color: 'var(--c-text)' }}>
+                      <h3 className="text-sm font-bold mb-1 group-hover:text-orange-500 transition-colors" style={{ color: 'var(--c-text)' }}>
                         {cat.name}
                       </h3>
                       <p className="text-xs leading-relaxed line-clamp-2" style={{ color: 'var(--c-text-secondary)' }}>
@@ -355,7 +355,7 @@ const Dashboard = () => {
                       <span style={{ color: 'var(--c-text-muted)' }}>
                         {cat.questionCount ? `${cat.questionCount} Questions` : 'Official Track'}
                       </span>
-                      <span className="flex items-center gap-1 font-semibold text-yellow-500" style={{ color: 'var(--c-accent)' }}>
+                      <span className="flex items-center gap-1 font-semibold text-orange-500" style={{ color: 'var(--c-accent)' }}>
                         {isLaunching ? 'Preparing...' : 'Start Session'}
                         <ChevronRight className="w-3.5 h-3.5" />
                       </span>
@@ -435,7 +435,7 @@ const Dashboard = () => {
                           <Icon className="w-4 h-4" />
                         </div>
                         <div className="min-w-0">
-                          <p className="text-xs font-bold truncate group-hover:text-yellow-500 transition-colors" style={{ color: 'var(--c-text)' }}>
+                          <p className="text-xs font-bold truncate group-hover:text-orange-500 transition-colors" style={{ color: 'var(--c-text)' }}>
                             {interview.role}
                           </p>
                           <div className="flex items-center gap-2 text-[11px] mt-0.5" style={{ color: 'var(--c-text-muted)' }}>
@@ -480,7 +480,7 @@ const Dashboard = () => {
 
                       {/* Action (1 col) */}
                       <div className="sm:col-span-1 flex items-center justify-end">
-                        <span className="text-xs font-semibold group-hover:text-yellow-500 flex items-center gap-1 transition-colors" style={{ color: 'var(--c-accent)' }}>
+                        <span className="text-xs font-semibold group-hover:text-orange-500 flex items-center gap-1 transition-colors" style={{ color: 'var(--c-accent)' }}>
                           <span>{isCompleted ? 'Results' : 'Resume'}</span>
                           <ChevronRight className="w-3.5 h-3.5" />
                         </span>
@@ -506,4 +506,5 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+
 

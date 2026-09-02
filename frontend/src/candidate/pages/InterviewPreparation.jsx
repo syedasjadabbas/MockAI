@@ -298,7 +298,7 @@ const InterviewPreparation = () => {
                     }}
                   >
                     <div className="flex items-center gap-2">
-                      <Mic className="w-3.5 h-3.5 text-yellow-500 shrink-0" />
+                      <Mic className="w-3.5 h-3.5 text-orange-500 shrink-0" />
                       <span className="text-[10px] font-mono">INPUT LEVEL</span>
                     </div>
                     <LiveAudioWaveform bars={12} height={12} color="var(--c-accent)" />
@@ -506,4 +506,5 @@ const InterviewPreparation = () => {
 };
 
 export default InterviewPreparation;
+
 

@@ -162,7 +162,7 @@ const GoalSelection = () => {
               <CornerReticles size={8} color="var(--c-accent)" />
               <img src={CANDIDATE_IMAGES.neuralSphere} alt="AI Neural Network" className="w-full h-full object-cover opacity-90 transition-transform duration-700 group-hover:scale-105" />
               <div className="absolute bottom-2 left-2">
-                <span className="c-tech-annotation px-1.5 py-0.5 rounded bg-black/60 text-yellow-400 border border-white/10">[AI NETWORK]</span>
+                <span className="c-tech-annotation px-1.5 py-0.5 rounded bg-black/60 text-orange-400 border border-white/10">[AI NETWORK]</span>
               </div>
             </div>
           </div>
@@ -208,7 +208,7 @@ const GoalSelection = () => {
                         }}
                       >
                         <div className="flex items-center justify-between">
-                          <div className="w-8 h-8 rounded flex items-center justify-center border transition-colors group-hover:border-yellow-500/50"
+                          <div className="w-8 h-8 rounded flex items-center justify-center border transition-colors group-hover:border-orange-500/50"
                             style={{
                               background: 'var(--c-surface-muted)',
                               borderColor: 'var(--c-border)',
@@ -222,7 +222,7 @@ const GoalSelection = () => {
                           </span>
                         </div>
                         <div>
-                          <span className="text-xs font-bold block group-hover:text-yellow-500 transition-colors" style={{ color: 'var(--c-text)' }}>
+                          <span className="text-xs font-bold block group-hover:text-orange-500 transition-colors" style={{ color: 'var(--c-text)' }}>
                             {type.label}
                           </span>
                           <span className="text-[11px] block mt-0.5" style={{ color: 'var(--c-text-muted)' }}>
@@ -251,7 +251,7 @@ const GoalSelection = () => {
                         }}
                       >
                         <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-8 h-8 rounded flex items-center justify-center shrink-0 border transition-colors group-hover:border-yellow-500/50"
+                          <div className="w-8 h-8 rounded flex items-center justify-center shrink-0 border transition-colors group-hover:border-orange-500/50"
                             style={{
                               background: 'var(--c-surface-muted)',
                               borderColor: 'var(--c-border)',
@@ -260,7 +260,7 @@ const GoalSelection = () => {
                           >
                             <Icon className="w-4 h-4" />
                           </div>
-                          <span className="text-xs font-bold truncate group-hover:text-yellow-500 transition-colors" style={{ color: 'var(--c-text)' }}>
+                          <span className="text-xs font-bold truncate group-hover:text-orange-500 transition-colors" style={{ color: 'var(--c-text)' }}>
                             {cat.name}
                           </span>
                         </div>
@@ -333,4 +333,5 @@ const GoalSelection = () => {
 };
 
 export default GoalSelection;
+
 

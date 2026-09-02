@@ -335,7 +335,7 @@ const InterviewHistory = () => {
                       {/* 1. Track & Role (4 cols) */}
                       <div className="col-span-4 flex items-center gap-3 min-w-0 pr-2">
                         <div
-                          className="w-8 h-8 rounded flex items-center justify-center shrink-0 border transition-colors group-hover:border-yellow-500/40"
+                          className="w-8 h-8 rounded flex items-center justify-center shrink-0 border transition-colors group-hover:border-orange-500/40"
                           style={{
                             background: 'var(--c-surface-muted)',
                             borderColor: 'var(--c-border)',
@@ -347,7 +347,7 @@ const InterviewHistory = () => {
                         <div className="min-w-0">
                           <Link
                             to={targetUrl}
-                            className="text-xs font-bold truncate block group-hover:text-yellow-500 transition-colors"
+                            className="text-xs font-bold truncate block group-hover:text-orange-500 transition-colors"
                             style={{ color: 'var(--c-text)' }}
                           >
                             {session.role || 'Practice Session'}
@@ -404,7 +404,7 @@ const InterviewHistory = () => {
                       <div className="col-span-1 text-right">
                         <Link
                           to={targetUrl}
-                          className="inline-flex items-center gap-1 text-xs font-semibold group-hover:text-yellow-500 transition-colors"
+                          className="inline-flex items-center gap-1 text-xs font-semibold group-hover:text-orange-500 transition-colors"
                           style={{ color: 'var(--c-accent)' }}
                         >
                           <span>{isCompleted ? 'Results' : 'Resume'}</span>
@@ -487,4 +487,5 @@ const InterviewHistory = () => {
 };
 
 export default InterviewHistory;
+
 

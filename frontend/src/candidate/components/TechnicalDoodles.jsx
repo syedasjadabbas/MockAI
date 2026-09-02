@@ -138,7 +138,7 @@ export const BackendClusterSchematic = ({ size = 28, className = '' }) => (
     <line x1="12" y1="8" x2="20" y2="8" stroke="currentColor" strokeWidth="1" strokeOpacity="0.3" strokeLinecap="round" />
     {/* Server rack 2 */}
     <rect x="4" y="14" width="20" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.2" strokeOpacity="0.7" />
-    <circle cx="8" cy="17" r="1" fill="var(--c-accent, #D4A72C)" />
+    <circle cx="8" cy="17" r="1" fill="var(--c-accent, #FF6B35)" />
     <line x1="12" y1="17" x2="20" y2="17" stroke="currentColor" strokeWidth="1" strokeOpacity="0.3" strokeLinecap="round" />
     {/* Data bus */}
     <line x1="14" y1="11" x2="14" y2="14" stroke="currentColor" strokeWidth="1.2" strokeOpacity="0.6" strokeDasharray="1 1" />
