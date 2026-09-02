@@ -162,7 +162,6 @@ const Register = () => {
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       required
-                      placeholder="Jane Doe"
                       className="c-input w-full pl-9 pr-3 py-2 rounded-md text-xs"
                     />
                   </div>
@@ -177,7 +176,6 @@ const Register = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
-                      placeholder="jane@example.com"
                       className="c-input w-full pl-9 pr-3 py-2 rounded-md text-xs"
                     />
                   </div>
