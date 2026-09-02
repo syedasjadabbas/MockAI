@@ -166,15 +166,28 @@ const LandingPage = () => {
               >
                 <div>
                   {/* Step Image */}
-                  <div className="relative aspect-video rounded-lg overflow-hidden border mb-4" style={{ borderColor: 'var(--c-border)' }}>
+                  <div className="relative aspect-video rounded-lg overflow-hidden border mb-4 group" style={{ borderColor: 'var(--c-border)' }}>
                     <img
                       src={CANDIDATE_IMAGES.neuralSphere}
-                      alt="Choose your interview"
-                      className="w-full h-full object-cover"
+                      alt="Choose your interview track"
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
-                    <span className="absolute top-2 left-2 px-2 py-0.5 rounded font-mono text-[10px] font-bold bg-black/80 text-[#FF6B35] border border-white/10">
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none" />
+                    
+                    <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded font-mono text-[10px] font-bold bg-black/80 text-[#FF6B35] border border-white/10">
                       STEP 01
                     </span>
+
+                    <span className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded font-mono text-[10px] font-semibold bg-black/80 text-[#A3A3A3] border border-white/10">
+                      TRACK SELECTION
+                    </span>
+
+                    <div className="absolute bottom-2 left-2.5 right-2.5 flex items-center justify-between text-[10.5px] font-mono text-white/90">
+                      <span className="flex items-center gap-1 text-[#FF9F1C]">
+                        ● Track: Distributed Systems
+                      </span>
+                      <span className="text-[#A3A3A3]">L5 Senior</span>
+                    </div>
                   </div>
 
                   <h3 className="text-base font-bold mb-1" style={{ color: 'var(--c-text)' }}>
@@ -218,15 +231,28 @@ const LandingPage = () => {
               >
                 <div>
                   {/* Step Image */}
-                  <div className="relative aspect-video rounded-lg overflow-hidden border mb-4" style={{ borderColor: 'var(--c-border)' }}>
+                  <div className="relative aspect-video rounded-lg overflow-hidden border mb-4 group" style={{ borderColor: 'var(--c-border)' }}>
                     <img
                       src={CANDIDATE_IMAGES.studioMic}
                       alt="Answer realistic questions"
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
-                    <span className="absolute top-2 left-2 px-2 py-0.5 rounded font-mono text-[10px] font-bold bg-black/80 text-[#FF6B35] border border-white/10">
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none" />
+
+                    <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded font-mono text-[10px] font-bold bg-black/80 text-[#FF6B35] border border-white/10">
                       STEP 02
                     </span>
+
+                    <span className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded font-mono text-[10px] font-semibold bg-black/80 text-[#22C55E] border border-white/10 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#22C55E] animate-pulse" /> LIVE CAPTURE
+                    </span>
+
+                    <div className="absolute bottom-2 left-2.5 right-2.5 flex items-center justify-between text-[10.5px] font-mono text-white/90">
+                      <span className="flex items-center gap-1 text-[#FF9F1C]">
+                        ● Audio + Video Synced
+                      </span>
+                      <span className="text-[#22C55E]">44.1kHz • 60fps</span>
+                    </div>
                   </div>
 
                   <h3 className="text-base font-bold mb-1" style={{ color: 'var(--c-text)' }}>
@@ -269,15 +295,28 @@ const LandingPage = () => {
               >
                 <div>
                   {/* Step Image */}
-                  <div className="relative aspect-video rounded-lg overflow-hidden border mb-4" style={{ borderColor: 'var(--c-border)' }}>
+                  <div className="relative aspect-video rounded-lg overflow-hidden border mb-4 group" style={{ borderColor: 'var(--c-border)' }}>
                     <img
                       src={CANDIDATE_IMAGES.evalChart}
                       alt="Review your performance"
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
-                    <span className="absolute top-2 left-2 px-2 py-0.5 rounded font-mono text-[10px] font-bold bg-black/80 text-[#FF6B35] border border-white/10">
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none" />
+
+                    <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded font-mono text-[10px] font-bold bg-black/80 text-[#FF6B35] border border-white/10">
                       STEP 03
                     </span>
+
+                    <span className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded font-mono text-[10px] font-semibold bg-black/80 text-[#FF6B35] border border-white/10">
+                      MULTIMODAL SYNTHESIS
+                    </span>
+
+                    <div className="absolute bottom-2 left-2.5 right-2.5 flex items-center justify-between text-[10.5px] font-mono text-white/90">
+                      <span className="flex items-center gap-1 text-[#FF9F1C]">
+                        ● Composite Score
+                      </span>
+                      <span className="text-[#22C55E] font-bold">93.2 / 100</span>
+                    </div>
                   </div>
 
                   <h3 className="text-base font-bold mb-1" style={{ color: 'var(--c-text)' }}>
