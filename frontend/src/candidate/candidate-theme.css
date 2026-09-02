@@ -507,13 +507,17 @@ html.light .candidate-app,
   50% { height: 18px; }
 }
 
-@keyframes cScanline {
-  0% { transform: translateY(-100%); }
-  100% { transform: translateY(1000%); }
+@keyframes cRotateSlow {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 .candidate-app .c-float-slow {
   animation: cFloatSlow 6s ease-in-out infinite;
+}
+
+.candidate-app .c-rotate-slow {
+  animation: cRotateSlow 24s linear infinite;
 }
 
 .candidate-app .c-pulse-subtle {

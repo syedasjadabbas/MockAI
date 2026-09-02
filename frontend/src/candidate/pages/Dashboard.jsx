@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense, lazy } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Plus,
@@ -17,6 +17,8 @@ import { getDashboardSummary, getCategories, startInterview } from '../services/
 import { getSession } from '../services/candidateAuth';
 import { formatDate } from '../../utils/dateFormat';
 import { CANDIDATE_IMAGES } from '../assets/images';
+
+const HeroScene3D = lazy(() => import('../components/HeroScene3D'));
 
 import {
   CornerReticles,
@@ -176,27 +178,37 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* Right 3D Visual Asset */}
+            {/* Right 3D Visual Asset — Real WebGL 3D Interactive Scene */}
             <div className="lg:col-span-5 relative flex items-center justify-center">
-              <div className="relative w-full aspect-[4/3] rounded-lg overflow-hidden border shadow-lg group"
+              <div
+                className="relative w-full aspect-[4/3] rounded-lg overflow-hidden border shadow-2xl group"
                 style={{
                   borderColor: 'var(--c-border)',
                   background: 'var(--c-surface)',
                 }}
               >
                 <CornerReticles size={12} color="var(--c-accent)" />
-                <img
-                  src={CANDIDATE_IMAGES.dashboardHero}
-                  alt="MockAI 3D Analysis Orb"
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                />
+                
+                <Suspense
+                  fallback={
+                    <div className="w-full h-full flex items-center justify-center bg-[#111111]">
+                      <img
+                        src={CANDIDATE_IMAGES.dashboardHero}
+                        alt="MockAI 3D Microphone & AI Analysis Core"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  }
+                >
+                  <HeroScene3D />
+                </Suspense>
 
                 {/* Floating Technical HUD Badge */}
-                <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between pointer-events-none">
-                  <span className="c-tech-annotation px-2 py-0.5 rounded bg-black/60 backdrop-blur-sm text-slate-300 border border-white/10">
-                    [AI INTERVIEW LAB v2.4]
+                <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between pointer-events-none z-10">
+                  <span className="c-tech-annotation px-2 py-0.5 rounded bg-black/70 backdrop-blur-sm text-slate-300 border border-white/10">
+                    [MOCK AI 3D LAB]
                   </span>
-                  <span className="c-tech-annotation px-2 py-0.5 rounded bg-black/60 backdrop-blur-sm text-orange-400 border border-white/10">
+                  <span className="c-tech-annotation px-2 py-0.5 rounded bg-black/70 backdrop-blur-sm text-orange-400 border border-white/10">
                     44.1kHz SAMPLING
                   </span>
                 </div>
