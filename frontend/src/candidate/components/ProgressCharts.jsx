@@ -16,21 +16,16 @@ import { formatDateOnly } from '../../utils/dateFormat';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Tooltip, Legend, Filler);
 
-// Canvas rendering can't resolve CSS custom properties (var(--c-accent)
-// means nothing to Chart.js) - these are the literal light/dark values of
-// the same candidate design tokens from candidate-theme.css, kept in sync
-// by hand since there are only two colors to track here.
-const ACCENT = { light: '122, 35, 51', dark: '217, 154, 127' };   // --c-accent
-const SUCCESS = { light: '75, 107, 79', dark: '143, 176, 151' };  // --c-success
+// Solid Electric Blue (#0066FF) & Solid Emerald (#10B981) tokens
+const ACCENT = '0, 102, 255';
+const SUCCESS = '16, 185, 129';
 
-const gridColor = (isDark) => (isDark ? 'rgba(243, 237, 227, 0.08)' : 'rgba(33, 28, 23, 0.06)');
-const tickColor = (isDark) => (isDark ? '#b6a999' : '#6b6055');
+const gridColor = () => '#243044';
+const tickColor = () => '#94A3B8';
 
-// FR36 - Progress Awareness Support: score trend over completed interviews.
+// Progress Awareness Support: score trend over completed interviews.
 export const ScoreTrendChart = ({ data }) => {
   const { isDark } = useTheme();
-  const accent = isDark ? ACCENT.dark : ACCENT.light;
-  const success = isDark ? SUCCESS.dark : SUCCESS.light;
 
   const chartData = {
     labels: data.map((d) => formatDateOnly(d.date)),
@@ -38,22 +33,26 @@ export const ScoreTrendChart = ({ data }) => {
       {
         label: 'Overall Score',
         data: data.map((d) => d.score),
-        borderColor: `rgba(${accent}, 1)`,
-        backgroundColor: `rgba(${accent}, 0.14)`,
+        borderColor: `rgba(${ACCENT}, 1)`,
+        backgroundColor: `rgba(${ACCENT}, 0.1)`,
         fill: true,
-        tension: 0.35,
+        tension: 0.2,
         pointRadius: 4,
-        pointBackgroundColor: `rgba(${accent}, 1)`,
+        pointHoverRadius: 6,
+        pointBackgroundColor: `rgba(${ACCENT}, 1)`,
+        pointBorderColor: '#FFFFFF',
+        pointBorderWidth: 1,
       },
       {
         label: 'Confidence',
         data: data.map((d) => d.confidence),
-        borderColor: `rgba(${success}, 1)`,
-        backgroundColor: `rgba(${success}, 0.1)`,
+        borderColor: `rgba(${SUCCESS}, 1)`,
+        backgroundColor: `rgba(${SUCCESS}, 0.05)`,
         fill: true,
-        tension: 0.35,
-        pointRadius: 4,
-        pointBackgroundColor: `rgba(${success}, 1)`,
+        tension: 0.2,
+        pointRadius: 3,
+        pointHoverRadius: 5,
+        pointBackgroundColor: `rgba(${SUCCESS}, 1)`,
       },
     ],
   };
@@ -62,21 +61,34 @@ export const ScoreTrendChart = ({ data }) => {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      legend: { labels: { color: tickColor(isDark), font: { size: 11, weight: '600' } } },
+      legend: { 
+        labels: { 
+          color: tickColor(), 
+          font: { size: 11, weight: '600', family: 'Inter' } 
+        } 
+      },
+      tooltip: {
+        backgroundColor: '#111827',
+        titleColor: '#FFFFFF',
+        bodyColor: '#94A3B8',
+        borderColor: '#243044',
+        borderWidth: 1,
+        padding: 8,
+        cornerRadius: 6,
+      }
     },
     scales: {
-      x: { grid: { color: gridColor(isDark) }, ticks: { color: tickColor(isDark) } },
-      y: { min: 0, max: 100, grid: { color: gridColor(isDark) }, ticks: { color: tickColor(isDark) } },
+      x: { grid: { color: gridColor() }, ticks: { color: tickColor(), font: { size: 11, family: 'Inter' } } },
+      y: { min: 0, max: 100, grid: { color: gridColor() }, ticks: { color: tickColor(), font: { size: 11, family: 'Inter' } } },
     },
   };
 
-  return <div style={{ height: 280 }}><Line data={chartData} options={options} /></div>;
+  return <div style={{ height: 260 }}><Line data={chartData} options={options} /></div>;
 };
 
 // Category breakdown - average score per interview category practiced.
 export const CategoryBreakdownChart = ({ data }) => {
   const { isDark } = useTheme();
-  const accent = isDark ? ACCENT.dark : ACCENT.light;
 
   const chartData = {
     labels: data.map((d) => d.category),
@@ -84,9 +96,10 @@ export const CategoryBreakdownChart = ({ data }) => {
       {
         label: 'Average Score',
         data: data.map((d) => d.avgScore),
-        backgroundColor: `rgba(${accent}, 0.8)`,
-        borderRadius: 8,
-        maxBarThickness: 40,
+        backgroundColor: `rgba(${ACCENT}, 0.85)`,
+        hoverBackgroundColor: `rgba(${ACCENT}, 1)`,
+        borderRadius: 4,
+        maxBarThickness: 36,
       },
     ],
   };
@@ -94,12 +107,23 @@ export const CategoryBreakdownChart = ({ data }) => {
   const options = {
     responsive: true,
     maintainAspectRatio: false,
-    plugins: { legend: { display: false } },
+    plugins: { 
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#111827',
+        titleColor: '#FFFFFF',
+        bodyColor: '#94A3B8',
+        borderColor: '#243044',
+        borderWidth: 1,
+        padding: 8,
+        cornerRadius: 6,
+      }
+    },
     scales: {
-      x: { grid: { display: false }, ticks: { color: tickColor(isDark), font: { size: 11 } } },
-      y: { min: 0, max: 100, grid: { color: gridColor(isDark) }, ticks: { color: tickColor(isDark) } },
+      x: { grid: { display: false }, ticks: { color: tickColor(), font: { size: 11, family: 'Inter' } } },
+      y: { min: 0, max: 100, grid: { color: gridColor() }, ticks: { color: tickColor(), font: { size: 11, family: 'Inter' } } },
     },
   };
 
-  return <div style={{ height: 280 }}><Bar data={chartData} options={options} /></div>;
+  return <div style={{ height: 260 }}><Bar data={chartData} options={options} /></div>;
 };

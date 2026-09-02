@@ -96,13 +96,8 @@ def aggregate_analysis(per_question_results: list) -> dict:
             "suggestions": None,
         }
 
-    # Reached only once real per-question multimodal results exist. The
-    # actual combination formula (FR21-FR23) is intentionally not decided
-    # here - see module docstring.
-    raise NotImplementedError(
-        "Aggregation formula for real per-question results is not yet defined - "
-        "this is future AI/model-evaluation-phase work, not part of this foundation."
-    )
+    from services.aggregate_evaluator import aggregate_interview_evaluation
+    return aggregate_interview_evaluation(per_question_results)
 
 
 def run_evaluation_pipeline(

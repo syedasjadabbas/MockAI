@@ -7,7 +7,6 @@ import {
   ArrowLeft,
   Eye,
   EyeOff,
-  CheckCircle2,
   Clock,
   RefreshCw,
   KeyRound,
@@ -23,15 +22,6 @@ import {
 import AuthVisualPanel from '../components/AuthVisualPanel';
 import GoogleAuthButton from '../components/GoogleAuthButton';
 import logo from '../../assets/logo.png';
-
-const GoogleIcon = () => (
-  <svg className="w-4 h-4 mr-2.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
-    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
-  </svg>
-);
 
 const FORGOT_STEPS = {
   NONE: 'NONE',
@@ -158,15 +148,10 @@ const Login = () => {
     setLoading(true);
     setError('');
     try {
-      await resetPasswordWithOtp({
-        email: forgotEmail,
-        resetToken,
-        newPassword,
-        confirmPassword,
-      });
+      await resetPasswordWithOtp({ email: forgotEmail, resetToken, newPassword });
       setForgotStep(FORGOT_STEPS.SUCCESS);
     } catch (err) {
-      setError(err.message || 'Password reset failed. Please request a new code.');
+      setError(err.message || 'Failed to reset password.');
     } finally {
       setLoading(false);
     }
@@ -175,6 +160,7 @@ const Login = () => {
   const handleBackToLogin = () => {
     setForgotStep(FORGOT_STEPS.NONE);
     setError('');
+    setForgotEmail('');
     setOtp('');
     setResetToken('');
     setNewPassword('');
@@ -188,57 +174,55 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen grid grid-cols-1 lg:grid-cols-[1.2fr_1fr]">
+    <div className="candidate-app min-h-screen grid grid-cols-1 lg:grid-cols-[1.1fr_1fr]" style={{ background: 'var(--c-bg)' }}>
       <AuthVisualPanel />
 
       {/* Form column with clean background */}
       <div 
-        className="flex items-center justify-center px-6 sm:px-10 py-16 relative"
+        className="flex items-center justify-center px-6 sm:px-10 py-12 relative"
         style={{ background: 'var(--c-bg)' }}
       >
-        <div className="absolute top-6 right-6 z-20">
+        <div className="absolute top-5 right-5 z-20">
           <ThemeToggle />
         </div>
 
-        <div className="w-full max-w-[26rem] px-2 sm:px-4 relative z-10">
+        <div className="w-full max-w-[24rem] px-2 relative z-10">
 
-          {/* ══════════════════════════════════════════════════════════════════
-              FORGOT PASSWORD FLOW: STEP 1 (EMAIL ENTRY)
-          ══════════════════════════════════════════════════════════════════ */}
+          {/* FORGOT PASSWORD: STEP 1 */}
           {forgotStep === FORGOT_STEPS.EMAIL && (
             <>
               <button
                 type="button"
                 onClick={handleBackToLogin}
-                className="flex items-center gap-1.5 text-xs font-semibold mb-8 hover:opacity-85 transition-opacity"
+                className="flex items-center gap-1.5 text-xs font-semibold mb-6 hover:opacity-80 transition-opacity"
                 style={{ color: 'var(--c-text-muted)' }}
               >
                 <ArrowLeft className="w-3.5 h-3.5" /> Back to sign in
               </button>
 
-              <h2 className="c-heading text-2xl sm:text-3xl mb-2">Reset your password</h2>
-              <p className="text-sm mb-6 leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                Enter the email address associated with your MockAI account to receive a 6-digit verification code.
+              <h2 className="c-heading text-xl sm:text-2xl font-bold mb-1.5" style={{ color: 'var(--c-text)' }}>Reset Password</h2>
+              <p className="text-xs mb-5 leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
+                Enter your email address to receive a 6-digit verification code.
               </p>
 
               {error && (
-                <div className="c-badge-danger rounded-xl px-4 py-3 mb-5 flex items-center gap-2 text-xs font-semibold w-full">
-                  <AlertCircle className="w-4 h-4 flex-shrink-0" /> {error}
+                <div className="c-badge-danger rounded-md px-3.5 py-2.5 mb-4 flex items-center gap-2 text-xs font-semibold w-full">
+                  <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> {error}
                 </div>
               )}
 
-              <form onSubmit={handleSendOtp} className="space-y-5">
+              <form onSubmit={handleSendOtp} className="space-y-4">
                 <div>
-                  <label className="c-label block mb-1.5">Email Address</label>
+                  <label className="c-label block mb-1">Email Address</label>
                   <div className="relative">
-                    <Mail className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2" style={{ color: 'var(--c-text-muted)' }} />
+                    <Mail className="w-3.5 h-3.5 absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: 'var(--c-text-muted)' }} />
                     <input
                       type="email"
                       value={forgotEmail}
                       onChange={(e) => setForgotEmail(e.target.value)}
                       required
                       autoFocus
-                      className="c-input w-full pl-11 pr-4 py-3 rounded-xl text-sm"
+                      className="c-input w-full pl-9 pr-3 py-2 rounded-md text-xs"
                     />
                   </div>
                 </div>
@@ -246,60 +230,58 @@ const Login = () => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="c-btn c-btn-cta w-full py-3 mt-2 font-bold"
+                  className="c-btn c-btn-primary w-full py-2.5 font-semibold text-xs rounded-md"
                 >
                   {loading ? (
-                    <span className="w-4.5 h-4.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   ) : (
-                    'Send Verification Code'
+                    'Send Code'
                   )}
                 </button>
               </form>
             </>
           )}
 
-          {/* ══════════════════════════════════════════════════════════════════
-              FORGOT PASSWORD FLOW: STEP 2 (OTP VERIFICATION)
-          ══════════════════════════════════════════════════════════════════ */}
+          {/* FORGOT PASSWORD: STEP 2 (OTP) */}
           {forgotStep === FORGOT_STEPS.OTP && (
             <>
               <button
                 type="button"
                 onClick={() => setForgotStep(FORGOT_STEPS.EMAIL)}
-                className="flex items-center gap-1.5 text-xs font-semibold mb-8 hover:opacity-85 transition-opacity"
+                className="flex items-center gap-1.5 text-xs font-semibold mb-6 hover:opacity-80 transition-opacity"
                 style={{ color: 'var(--c-text-muted)' }}
               >
                 <ArrowLeft className="w-3.5 h-3.5" /> Change email
               </button>
 
-              <h2 className="c-heading text-2xl sm:text-3xl mb-2">Check your email</h2>
-              <p className="text-sm mb-6 leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                We sent a 6-digit verification code to <span className="font-semibold text-[var(--c-text)]">{forgotEmail}</span>.
+              <h2 className="c-heading text-xl sm:text-2xl font-bold mb-1.5" style={{ color: 'var(--c-text)' }}>Enter Code</h2>
+              <p className="text-xs mb-5 leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
+                We sent a 6-digit verification code to <span className="font-semibold" style={{ color: 'var(--c-text)' }}>{forgotEmail}</span>.
               </p>
 
               {error && (
-                <div className="c-badge-danger rounded-xl px-4 py-3 mb-5 flex items-center gap-2 text-xs font-semibold w-full">
-                  <AlertCircle className="w-4 h-4 flex-shrink-0" /> {error}
+                <div className="c-badge-danger rounded-md px-3.5 py-2.5 mb-4 flex items-center gap-2 text-xs font-semibold w-full">
+                  <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> {error}
                 </div>
               )}
 
-              <form onSubmit={handleVerifyOtp} className="space-y-5">
+              <form onSubmit={handleVerifyOtp} className="space-y-4">
                 <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="c-label">6-Digit Verification Code</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="c-label">6-Digit Code</label>
                     <span
                       className={`text-xs font-semibold flex items-center gap-1 ${
-                        otpSecondsLeft <= 60 ? 'text-rose-500 font-bold' : ''
+                        otpSecondsLeft <= 60 ? 'text-red-500' : ''
                       }`}
                       style={{ color: otpSecondsLeft > 60 ? 'var(--c-text-muted)' : undefined }}
                     >
-                      <Clock className="w-3.5 h-3.5" />
+                      <Clock className="w-3 h-3" />
                       {otpSecondsLeft > 0 ? formatTimer(otpSecondsLeft) : 'Expired'}
                     </span>
                   </div>
 
                   <div className="relative">
-                    <KeyRound className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2" style={{ color: 'var(--c-text-muted)' }} />
+                    <KeyRound className="w-3.5 h-3.5 absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: 'var(--c-text-muted)' }} />
                     <input
                       type="text"
                       inputMode="numeric"
@@ -310,8 +292,7 @@ const Login = () => {
                       placeholder="123456"
                       required
                       autoFocus
-                      className="c-input w-full pl-11 pr-4 py-3 rounded-xl text-center text-lg font-bold tracking-[0.3em]"
-                      style={{ letterSpacing: '0.25em' }}
+                      className="c-input w-full pl-9 pr-3 py-2 rounded-md text-center text-base font-bold tracking-widest"
                     />
                   </div>
                 </div>
@@ -319,53 +300,50 @@ const Login = () => {
                 <button
                   type="submit"
                   disabled={loading || otp.length !== 6 || otpSecondsLeft === 0}
-                  className="c-btn c-btn-cta w-full py-3 mt-2 font-bold disabled:opacity-50"
+                  className="c-btn c-btn-primary w-full py-2.5 font-semibold text-xs rounded-md disabled:opacity-50"
                 >
                   {loading ? (
-                    <span className="w-4.5 h-4.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   ) : (
                     'Verify Code'
                   )}
                 </button>
 
-                {/* Resend OTP Row */}
-                <div className="flex items-center justify-center pt-2">
+                <div className="flex items-center justify-center pt-1">
                   <button
                     type="button"
                     disabled={resendCooldown > 0 || loading}
                     onClick={handleResendOtp}
-                    className="inline-flex items-center gap-1.5 text-xs font-semibold transition-opacity disabled:opacity-50 hover:opacity-85"
-                    style={{ color: 'var(--c-accent)' }}
+                    className="inline-flex items-center gap-1 text-xs font-semibold disabled:opacity-50"
+                    style={{ color: 'var(--c-text-muted)' }}
                   >
-                    <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-                    {resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : 'Resend Code'}
+                    <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
+                    {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend Code'}
                   </button>
                 </div>
               </form>
             </>
           )}
 
-          {/* ══════════════════════════════════════════════════════════════════
-              FORGOT PASSWORD FLOW: STEP 3 (NEW PASSWORD)
-          ══════════════════════════════════════════════════════════════════ */}
+          {/* FORGOT PASSWORD: STEP 3 (NEW PASSWORD) */}
           {forgotStep === FORGOT_STEPS.PASSWORD && (
             <>
-              <h2 className="c-heading text-2xl sm:text-3xl mb-2">Set new password</h2>
-              <p className="text-sm mb-6 leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
+              <h2 className="c-heading text-xl sm:text-2xl font-bold mb-1.5" style={{ color: 'var(--c-text)' }}>Set New Password</h2>
+              <p className="text-xs mb-5 leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
                 Choose a strong password with at least 8 characters.
               </p>
 
               {error && (
-                <div className="c-badge-danger rounded-xl px-4 py-3 mb-5 flex items-center gap-2 text-xs font-semibold w-full">
-                  <AlertCircle className="w-4 h-4 flex-shrink-0" /> {error}
+                <div className="c-badge-danger rounded-md px-3.5 py-2.5 mb-4 flex items-center gap-2 text-xs font-semibold w-full">
+                  <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> {error}
                 </div>
               )}
 
-              <form onSubmit={handleResetPassword} className="space-y-5">
+              <form onSubmit={handleResetPassword} className="space-y-4">
                 <div>
-                  <label className="c-label block mb-1.5">New Password</label>
+                  <label className="c-label block mb-1">New Password</label>
                   <div className="relative">
-                    <Lock className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2" style={{ color: 'var(--c-text-muted)' }} />
+                    <Lock className="w-3.5 h-3.5 absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: 'var(--c-text-muted)' }} />
                     <input
                       type={showNewPassword ? 'text' : 'password'}
                       value={newPassword}
@@ -373,38 +351,38 @@ const Login = () => {
                       placeholder="At least 8 characters"
                       required
                       autoFocus
-                      className="c-input w-full pl-11 pr-11 py-3 rounded-xl text-sm"
+                      className="c-input w-full pl-9 pr-9 py-2 rounded-md text-xs"
                     />
                     <button
                       type="button"
                       onClick={() => setShowNewPassword(!showNewPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 hover:opacity-80"
                       style={{ color: 'var(--c-text-muted)' }}
                     >
-                      {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      {showNewPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                     </button>
                   </div>
                 </div>
 
                 <div>
-                  <label className="c-label block mb-1.5">Confirm New Password</label>
+                  <label className="c-label block mb-1">Confirm New Password</label>
                   <div className="relative">
-                    <Lock className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2" style={{ color: 'var(--c-text-muted)' }} />
+                    <Lock className="w-3.5 h-3.5 absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: 'var(--c-text-muted)' }} />
                     <input
                       type={showConfirmPassword ? 'text' : 'password'}
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="Repeat new password"
                       required
-                      className="c-input w-full pl-11 pr-11 py-3 rounded-xl text-sm"
+                      className="c-input w-full pl-9 pr-9 py-2 rounded-md text-xs"
                     />
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 hover:opacity-80"
                       style={{ color: 'var(--c-text-muted)' }}
                     >
-                      {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      {showConfirmPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                     </button>
                   </div>
                 </div>
@@ -412,10 +390,10 @@ const Login = () => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="c-btn c-btn-cta w-full py-3 mt-2 font-bold"
+                  className="c-btn c-btn-primary w-full py-2.5 font-semibold text-xs rounded-md"
                 >
                   {loading ? (
-                    <span className="w-4.5 h-4.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   ) : (
                     'Reset Password'
                   )}
@@ -424,24 +402,22 @@ const Login = () => {
             </>
           )}
 
-          {/* ══════════════════════════════════════════════════════════════════
-              FORGOT PASSWORD FLOW: STEP 4 (SUCCESS)
-          ══════════════════════════════════════════════════════════════════ */}
+          {/* FORGOT PASSWORD: STEP 4 (SUCCESS) */}
           {forgotStep === FORGOT_STEPS.SUCCESS && (
             <div className="text-center py-4">
               <div
-                className="w-16 h-16 rounded-2xl mx-auto mb-6 flex items-center justify-center shadow-sm"
+                className="w-12 h-12 rounded-md mx-auto mb-4 flex items-center justify-center border"
                 style={{
                   background: 'var(--c-surface-muted)',
-                  border: '1px solid var(--c-border)',
+                  borderColor: 'var(--c-border)',
                 }}
               >
-                <ShieldCheck className="w-8 h-8" style={{ color: 'var(--c-accent)' }} />
+                <ShieldCheck className="w-6 h-6 text-emerald-500" />
               </div>
 
-              <h2 className="c-heading text-2xl sm:text-3xl mb-3">Password reset successfully</h2>
-              <p className="text-sm mb-8 leading-relaxed max-w-sm mx-auto" style={{ color: 'var(--c-text-secondary)' }}>
-                Your account password has been securely updated. You can now sign in with your new password.
+              <h2 className="c-heading text-xl font-bold mb-2" style={{ color: 'var(--c-text)' }}>Password Updated</h2>
+              <p className="text-xs mb-6 leading-relaxed max-w-sm mx-auto" style={{ color: 'var(--c-text-secondary)' }}>
+                Your account password has been updated. You can now sign in with your new credentials.
               </p>
 
               <button
@@ -451,45 +427,42 @@ const Login = () => {
                   setPassword('');
                   handleBackToLogin();
                 }}
-                className="c-btn c-btn-cta w-full py-3.5 font-bold"
+                className="c-btn c-btn-primary w-full py-2.5 font-semibold text-xs rounded-md"
               >
                 Continue to Sign In
               </button>
             </div>
           )}
 
-          {/* ══════════════════════════════════════════════════════════════════
-              STANDARD LOGIN VIEW
-          ══════════════════════════════════════════════════════════════════ */}
+          {/* STANDARD LOGIN VIEW */}
           {forgotStep === FORGOT_STEPS.NONE && (
             <>
-              {/* Elegant Mobile Logo */}
               <div className="mb-4 lg:hidden select-none">
-                <img src={logo} alt="MockAI Logo" className="c-brand-logo-lg" />
+                <img src={logo} alt="MockAI Logo" className="c-brand-logo" />
               </div>
               
-              <h2 className="c-heading text-3xl mb-1.5">Welcome back</h2>
-              <p className="text-sm mb-6" style={{ color: 'var(--c-text-secondary)' }}>
-                Sign in to continue your interview practice.
+              <h2 className="c-heading text-2xl font-bold mb-1" style={{ color: 'var(--c-text)' }}>Sign In</h2>
+              <p className="text-xs mb-5" style={{ color: 'var(--c-text-secondary)' }}>
+                Access your candidate practice workspace.
               </p>
 
-              <form onSubmit={handleLogin} className="space-y-5">
+              <form onSubmit={handleLogin} className="space-y-4">
                 <div>
-                  <label className="c-label block mb-1.5">Email Address</label>
+                  <label className="c-label block mb-1">Email Address</label>
                   <div className="relative">
-                    <Mail className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2" style={{ color: 'var(--c-text-muted)' }} />
+                    <Mail className="w-3.5 h-3.5 absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: 'var(--c-text-muted)' }} />
                     <input
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
-                      className="c-input w-full pl-11 pr-4 py-3 rounded-xl text-sm"
+                      className="c-input w-full pl-9 pr-3 py-2 rounded-md text-xs"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <div className="flex items-center justify-between mb-1.5">
+                  <div className="flex items-center justify-between mb-1">
                     <label className="c-label">Password</label>
                     <button
                       type="button"
@@ -498,49 +471,49 @@ const Login = () => {
                         setError('');
                         setForgotStep(FORGOT_STEPS.EMAIL);
                       }}
-                      className="text-xs font-semibold hover:opacity-85 transition-opacity"
-                      style={{ color: 'var(--c-accent)' }}
+                      className="text-[11px] font-semibold hover:opacity-80"
+                      style={{ color: 'var(--c-text-muted)' }}
                     >
                       Forgot password?
                     </button>
                   </div>
                   <div className="relative">
-                    <Lock className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2" style={{ color: 'var(--c-text-muted)' }} />
+                    <Lock className="w-3.5 h-3.5 absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: 'var(--c-text-muted)' }} />
                     <input
                       type={showPassword ? 'text' : 'password'}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
                       required
-                      className="c-input w-full pl-11 pr-11 py-3 rounded-xl text-sm"
+                      className="c-input w-full pl-9 pr-9 py-2 rounded-md text-xs"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 hover:opacity-80"
                       style={{ color: 'var(--c-text-muted)' }}
                       aria-label={showPassword ? 'Hide password' : 'Show password'}
                     >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                     </button>
                   </div>
                 </div>
 
                 {error && (
-                  <div className="c-badge-danger rounded-xl px-3.5 py-3 flex items-center gap-2 text-xs font-semibold w-full">
-                    <AlertCircle className="w-4 h-4 flex-shrink-0" /> {error}
+                  <div className="c-badge-danger rounded-md px-3 py-2 flex items-center gap-2 text-xs font-semibold w-full">
+                    <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> {error}
                   </div>
                 )}
 
-                <button type="submit" disabled={loading} className="c-btn c-btn-cta w-full py-3 mt-2">
-                  {loading ? <span className="w-4.5 h-4.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Sign In'}
+                <button type="submit" disabled={loading} className="c-btn c-btn-primary w-full py-2.5 font-semibold text-xs rounded-md mt-1">
+                  {loading ? <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Sign In'}
                 </button>
               </form>
 
               {/* OR Divider */}
-              <div className="flex items-center my-5 select-none">
+              <div className="flex items-center my-4 select-none">
                 <div className="flex-1 border-t" style={{ borderColor: 'var(--c-input-border)' }} />
-                <span className="px-3.5 text-xs uppercase tracking-widest font-semibold" style={{ color: 'var(--c-text-muted)' }}>or</span>
+                <span className="px-3 text-[10px] uppercase tracking-wider font-semibold" style={{ color: 'var(--c-text-muted)' }}>or</span>
                 <div className="flex-1 border-t" style={{ borderColor: 'var(--c-input-border)' }} />
               </div>
 
@@ -552,10 +525,10 @@ const Login = () => {
                 disabled={loading}
               />
 
-              <p className="text-sm mt-7 text-center" style={{ color: 'var(--c-text-secondary)' }}>
+              <p className="text-xs mt-5 text-center" style={{ color: 'var(--c-text-secondary)' }}>
                 Don't have an account?{' '}
-                <Link to="/register" className="font-semibold hover:opacity-85 transition-opacity" style={{ color: 'var(--c-accent)' }}>
-                  Start practicing
+                <Link to="/register" className="font-semibold hover:underline" style={{ color: 'var(--c-accent)' }}>
+                  Create account
                 </Link>
               </p>
             </>

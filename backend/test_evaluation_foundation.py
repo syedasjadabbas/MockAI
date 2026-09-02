@@ -144,9 +144,12 @@ def test_evaluation_api():
     b_get_attempt = client.get(f"/candidate/interviews/{interview_id}/evaluation", headers=headers_b)
     expect(b_get_attempt.status_code == 404, "Candidate B cannot read Candidate A's evaluation")
 
-    start_resp = client.post(f"/candidate/interviews/{interview_id}/evaluation/start", headers=headers_a)
-    expect(start_resp.status_code == 200, f"Starting evaluation succeeds (got {start_resp.status_code}: {start_resp.text})")
-    expect(start_resp.json()["evaluation_status"] == "processing", "evaluation_status becomes 'processing'")
+    from unittest.mock import patch
+
+    with patch("routes.candidate_evaluation.evaluate_interview_job") as mock_worker:
+        start_resp = client.post(f"/candidate/interviews/{interview_id}/evaluation/start", headers=headers_a)
+        expect(start_resp.status_code == 200, f"Starting evaluation succeeds (got {start_resp.status_code}: {start_resp.text})")
+        expect(start_resp.json()["evaluation_status"] == "processing", "evaluation_status becomes 'processing'")
 
     double_start = client.post(f"/candidate/interviews/{interview_id}/evaluation/start", headers=headers_a)
     expect(double_start.status_code == 400, "Starting evaluation a second time (already processing) is rejected with 400")
@@ -223,7 +226,8 @@ def test_evaluation_api():
     # Failed path
     # -----------------------------------------------------------------
     second_interview_id = complete_a_real_interview(headers_a)
-    client.post(f"/candidate/interviews/{second_interview_id}/evaluation/start", headers=headers_a)
+    with patch("routes.candidate_evaluation.evaluate_interview_job"):
+        client.post(f"/candidate/interviews/{second_interview_id}/evaluation/start", headers=headers_a)
 
     fail_missing_reason = client.put(f"/internal/evaluations/{second_interview_id}", json={"status": "failed"}, headers=internal_headers)
     expect(fail_missing_reason.status_code == 400, "Internal endpoint requires failed_reason when status is 'failed'")

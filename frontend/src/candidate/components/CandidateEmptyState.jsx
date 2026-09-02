@@ -1,22 +1,24 @@
 import React from 'react';
 import { Inbox } from 'lucide-react';
 
-// Local replacement for the shared src/components/EmptyState.jsx (also
-// used by Admin, hardcodes indigo). Same shape, candidate palette.
 const CandidateEmptyState = ({ icon: Icon = Inbox, title = 'Nothing here yet', description, actionLabel, onAction }) => (
-  <div className="flex flex-col items-center justify-center text-center py-14 px-4">
+  <div className="flex flex-col items-center justify-center text-center py-12 px-4">
     <div
-      className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4"
-      style={{ background: 'var(--c-surface-muted)', color: 'var(--c-text-muted)' }}
+      className="w-10 h-10 rounded-md flex items-center justify-center mb-3 border"
+      style={{ 
+        background: 'var(--c-surface-muted)', 
+        borderColor: 'var(--c-border)', 
+        color: 'var(--c-text-muted)' 
+      }}
     >
-      <Icon className="w-7 h-7" />
+      <Icon className="w-5 h-5" />
     </div>
-    <h4 className="c-heading text-base mb-1.5">{title}</h4>
+    <h4 className="c-heading text-sm font-bold mb-1" style={{ color: 'var(--c-text)' }}>{title}</h4>
     {description && (
-      <p className="text-sm max-w-sm mb-5" style={{ color: 'var(--c-text-secondary)' }}>{description}</p>
+      <p className="text-xs max-w-sm mb-4" style={{ color: 'var(--c-text-secondary)' }}>{description}</p>
     )}
     {actionLabel && onAction && (
-      <button onClick={onAction} type="button" className="c-btn c-btn-primary px-4 py-2 text-xs">
+      <button onClick={onAction} type="button" className="c-btn c-btn-primary px-4 py-2 text-xs font-semibold rounded-md">
         {actionLabel}
       </button>
     )}

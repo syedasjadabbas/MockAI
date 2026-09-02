@@ -156,12 +156,12 @@ export default function GoogleAuthButton({
   };
 
   return (
-    <div className="w-full relative min-h-[44px]">
+    <div className="w-full relative min-h-[40px]">
       {/* Official GIS Button Rendering Target */}
       <div
         ref={googleBtnContainerRef}
         className={`w-full flex justify-center items-center transition-opacity duration-200 ${rendered && !loading ? 'opacity-100' : 'hidden'}`}
-        style={{ minHeight: '44px' }}
+        style={{ minHeight: '40px' }}
       />
 
       {/* Branded Fallback / Loading Presentation */}
@@ -170,15 +170,15 @@ export default function GoogleAuthButton({
           type="button"
           disabled={disabled || loading}
           onClick={handleCustomFallbackClick}
-          className="w-full flex items-center justify-center py-3 px-4 rounded-xl text-sm font-semibold border transition-all duration-200 hover:opacity-90 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+          className="w-full flex items-center justify-center py-2.5 px-4 rounded-md text-xs font-semibold border transition-colors hover:bg-white/[0.04] disabled:opacity-60 disabled:cursor-not-allowed"
           style={{
-            backgroundColor: 'var(--c-input-bg)',
-            borderColor: 'var(--c-input-border)',
-            color: 'var(--c-text)',
+            backgroundColor: '#121A2A',
+            borderColor: 'var(--c-border)',
+            color: '#FFFFFF',
           }}
         >
           {loading ? (
-            <span className="w-4 h-4 mr-2.5 border-2 border-current border-t-transparent rounded-full animate-spin flex-shrink-0" />
+            <span className="w-3.5 h-3.5 mr-2 border-2 border-current border-t-transparent rounded-full animate-spin flex-shrink-0" />
           ) : (
             <GoogleIcon />
           )}

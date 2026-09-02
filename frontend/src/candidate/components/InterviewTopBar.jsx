@@ -13,25 +13,22 @@ export const FLOW_STEPS = [
   { key: 'feedback', label: 'Feedback' },
 ];
 
-// Minimal top bar for the immersive interview journey (Goal Selection
-// through Feedback). Deliberately has no nav/menu clutter - this mirrors
-// how a real interview tool keeps a candidate focused during the session.
 const InterviewTopBar = ({ activeStep, onExit }) => {
   const navigate = useNavigate();
   const activeIndex = FLOW_STEPS.findIndex((s) => s.key === activeStep);
 
   return (
-    <header className="sticky top-0 z-30 c-panel">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+    <header className="sticky top-0 z-30 border-b" style={{ background: 'var(--c-bg-subtle)', borderColor: 'var(--c-border)' }}>
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 h-15 flex items-center justify-between gap-4">
         <Link 
           to="/dashboard" 
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} 
-          className="shrink-0 flex items-center select-none hover:opacity-95 transition-opacity"
+          className="shrink-0 flex items-center select-none"
         >
           <img src={logo} alt="MockAI Logo" className="c-brand-logo" />
         </Link>
 
-        <div className="hidden lg:flex items-center gap-1.5 flex-1 min-w-0 justify-center overflow-x-auto">
+        <div className="hidden lg:flex items-center gap-2 flex-1 min-w-0 justify-center overflow-x-auto">
           {FLOW_STEPS.map((step, idx) => {
             const isDone = idx < activeIndex;
             const isActive = idx === activeIndex;
@@ -39,24 +36,28 @@ const InterviewTopBar = ({ activeStep, onExit }) => {
               <React.Fragment key={step.key}>
                 <div className="flex items-center gap-1.5 shrink-0">
                   <div
-                    className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold border"
+                    className="w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold border transition-all"
                     style={{
-                      background: isDone ? 'var(--c-accent)' : 'transparent',
-                      borderColor: isDone ? 'var(--c-accent)' : isActive ? 'var(--c-accent)' : 'var(--c-border-strong)',
-                      color: isDone ? 'var(--c-on-accent)' : isActive ? 'var(--c-accent)' : 'var(--c-text-muted)',
+                      background: isDone ? 'var(--c-success)' : isActive ? 'var(--c-accent)' : 'var(--c-surface-muted)',
+                      borderColor: isDone ? 'var(--c-success)' : isActive ? 'var(--c-accent)' : 'var(--c-border)',
+                      color: isDone || isActive ? '#FFFFFF' : 'var(--c-text-muted)',
                     }}
                   >
                     {isDone ? <Check className="w-3 h-3" /> : idx + 1}
                   </div>
                   <span
                     className="text-xs font-semibold"
-                    style={{ color: isActive ? 'var(--c-text)' : 'var(--c-text-muted)' }}
+                    style={{ color: isActive ? 'var(--c-text)' : isDone ? 'var(--c-text-secondary)' : 'var(--c-text-muted)' }}
                   >
                     {step.label}
                   </span>
                 </div>
                 {idx < FLOW_STEPS.length - 1 && (
-                  <div className="w-6 h-px shrink-0" style={{ background: 'var(--c-border)' }} />
+                  <div className="w-6 h-px shrink-0" 
+                    style={{ 
+                      background: idx < activeIndex ? 'var(--c-accent)' : 'var(--c-border)' 
+                    }} 
+                  />
                 )}
               </React.Fragment>
             );
@@ -67,11 +68,11 @@ const InterviewTopBar = ({ activeStep, onExit }) => {
           <ThemeToggle />
           <button
             onClick={() => (onExit ? onExit() : navigate('/dashboard'))}
-            className="c-btn c-btn-secondary p-2.5"
+            className="c-btn c-btn-secondary p-2 rounded-md"
             title="Exit to Dashboard"
             aria-label="Exit to Dashboard"
           >
-            <X className="w-4.5 h-4.5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
       </div>

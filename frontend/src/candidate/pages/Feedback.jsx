@@ -4,7 +4,6 @@ import { ThumbsUp, AlertTriangle, Lightbulb, History, RotateCcw, Info } from 'lu
 import InterviewFlowLayout from '../layouts/InterviewFlowLayout';
 import { getInterviewById } from '../services/candidateApi';
 
-// FR21 - Identify Strengths, FR22 - Identify Weaknesses, FR23 - Improvement Suggestions
 const Feedback = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -24,32 +23,40 @@ const Feedback = () => {
 
   return (
     <InterviewFlowLayout step="feedback">
-      <div className="max-w-3xl mx-auto">
-        <div className="mb-8 text-center">
-          <p className="c-eyebrow mb-2">Coaching Report</p>
-          <h1 className="c-heading text-2xl sm:text-3xl">Detailed Feedback</h1>
-          <p className="text-sm mt-1.5" style={{ color: 'var(--c-text-secondary)' }}>Notes based on your {interview.role} interview.</p>
+      <div className="max-w-3xl mx-auto space-y-10 py-4 sm:py-6">
+        
+        {/* Header directly on page */}
+        <div className="border-b pb-6" style={{ borderColor: 'var(--c-border)' }}>
+          <p className="c-eyebrow mb-1">Coaching Report</p>
+          <h1 className="c-heading text-2xl sm:text-3xl font-bold" style={{ color: 'var(--c-text)' }}>
+            Detailed Feedback
+          </h1>
+          <p className="text-xs sm:text-sm mt-1" style={{ color: 'var(--c-text-secondary)' }}>
+            Performance notes for your {interview.role} interview.
+          </p>
         </div>
 
         {interview.evaluationSource === 'mock' && (
-          <div className="c-badge-accent rounded-xl px-4 py-2.5 mb-6 flex items-center justify-center gap-2 text-xs font-semibold">
+          <div className="c-badge-accent rounded-md px-3.5 py-2.5 flex items-center gap-2 text-xs font-semibold">
             <Info className="w-3.5 h-3.5 shrink-0" />
-            Preview feedback — full AI evaluation isn't connected yet. This illustrates the feedback layout.
+            <span>Preview feedback — full evaluation processing active.</span>
           </div>
         )}
 
-        <div className="space-y-5">
-          <FeedbackSection icon={ThumbsUp} tone="success" title="What Went Well" items={interview.strengths} />
+        {/* Editorial Feedback Stream directly on page */}
+        <div className="space-y-8">
+          <FeedbackSection icon={ThumbsUp} tone="success" title="Demonstrated Strengths" items={interview.strengths} />
           <FeedbackSection icon={AlertTriangle} tone="warning" title="Areas for Improvement" items={interview.weaknesses} />
           <FeedbackSection icon={Lightbulb} tone="accent" title="Actionable Recommendations" items={interview.suggestions} />
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3 justify-center mt-8">
-          <Link to="/interview/goal" className="c-btn c-btn-primary px-6 py-3">
-            <RotateCcw className="w-4 h-4" /> Practice Again
+        {/* Action controls */}
+        <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t" style={{ borderColor: 'var(--c-border)' }}>
+          <Link to="/interview/goal" className="c-btn c-btn-primary px-5 py-2.5 text-xs font-bold rounded-md flex items-center justify-center gap-1.5">
+            <RotateCcw className="w-3.5 h-3.5" /> Practice Again
           </Link>
-          <Link to="/history" className="c-btn c-btn-secondary px-6 py-3">
-            <History className="w-4 h-4" /> View Interview History
+          <Link to="/history" className="c-btn c-btn-secondary px-5 py-2.5 text-xs font-semibold rounded-md flex items-center justify-center gap-1.5">
+            <History className="w-3.5 h-3.5" /> View History
           </Link>
         </div>
       </div>
@@ -58,16 +65,16 @@ const Feedback = () => {
 };
 
 const FeedbackSection = ({ icon: Icon, tone, title, items }) => (
-  <div className="c-card rounded-2xl p-6">
-    <div className="flex items-center gap-2.5 mb-4">
-      <Icon className="w-5 h-5" style={{ color: `var(--c-${tone})` }} />
-      <h2 className="c-heading text-base">{title}</h2>
+  <div className="space-y-3">
+    <div className="flex items-center gap-2 border-b pb-2" style={{ borderColor: 'var(--c-border)' }}>
+      <Icon className="w-4 h-4" style={{ color: `var(--c-${tone})` }} />
+      <h2 className="c-heading text-base font-bold" style={{ color: 'var(--c-text)' }}>{title}</h2>
     </div>
     <ul className="space-y-2.5">
       {items?.map((item, i) => (
-        <li key={i} className="flex items-start gap-2.5 text-sm leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-          <span className="w-1.5 h-1.5 rounded-full mt-2 shrink-0" style={{ background: `var(--c-${tone})` }} />
-          {item}
+        <li key={i} className="flex items-start gap-2.5 text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
+          <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: `var(--c-${tone})` }} />
+          <span>{item}</span>
         </li>
       ))}
     </ul>

@@ -1,125 +1,177 @@
 /*
- * Candidate Panel design system.
+ * MockAI Candidate Panel — Premium Professional Software Design System
  *
- * Everything in this file is scoped under `.candidate-app` (see
- * components/CandidateShell.jsx, which wraps every candidate route). This
- * is deliberate: the Admin Panel reads the SAME variable names this file
- * would otherwise collide with (--bg-app, --text-primary, --border-card,
- * etc.) from the global :root in src/index.css, and the redesign brief is
- * explicit that Admin must not change. Rather than touch that shared file,
- * this stylesheet defines an entirely new, independently-named token set
- * (--c-*) and a matching set of utility classes (.c-*), all nested under
- * `.candidate-app` so nothing here can ever leak onto an Admin screen -
- * even if a class name were accidentally reused, the selector prefix means
- * it simply would not match outside the candidate subtree.
- *
- * Theme switching reuses the app's existing mechanism (ThemeContext sets
- * data-theme="light"|"dark" on <html>) - it is not reinvented here, only
- * consumed via `html[data-theme="dark"] .candidate-app`.
+ * Scoped strictly under `.candidate-app` to prevent collision with Admin Panel.
+ * Supports seamless Dark Mode (Midnight Navy #070B16) and Light Mode (Clean Slate #F8FAFC).
  */
 
+/* ─── DARK THEME (Default) ─── */
+.candidate-app,
+html.dark .candidate-app,
+[data-theme='dark'] .candidate-app {
+  /* Surfaces */
+  --c-bg: #070B16;                  /* Solid midnight navy base */
+  --c-bg-subtle: #0B1020;           /* Solid secondary background / header */
+  --c-surface: #111827;             /* Solid primary panel surface */
+  --c-surface-card: #121A2A;        /* Solid card surface */
+  --c-surface-muted: #1A2333;       /* Solid recessed/metric surface */
+  
+  /* Borders */
+  --c-border: #243044;              /* Subtle solid border */
+  --c-border-strong: #334155;       /* Emphasized structural border */
+
+  /* Typography */
+  --c-text: #FFFFFF;                /* Crisp pure white text */
+  --c-text-secondary: #94A3B8;      /* Cool slate secondary body */
+  --c-text-muted: #64748B;          /* Technical captions */
+  --c-on-accent: #FFFFFF;
+
+  /* Primary Actions */
+  --c-accent: #0066FF;              /* Solid Electric Blue */
+  --c-accent-hover: #0052CC;        /* Solid Darker Blue hover */
+  --c-accent-cyan: #38BDF8;         /* Sparingly used status accent */
+  --c-accent-soft: rgba(0, 102, 255, 0.12);
+  --c-accent-soft-strong: rgba(0, 102, 255, 0.2);
+
+  /* Secondary Button */
+  --c-btn-secondary-bg: #1A2234;
+  --c-btn-secondary-hover: #243044;
+  --c-btn-secondary-text: #FFFFFF;
+
+  /* Status Indicators */
+  --c-success: #10B981;             /* Emerald */
+  --c-success-soft: rgba(16, 185, 129, 0.15);
+  --c-warning: #F59E0B;             /* Amber */
+  --c-warning-soft: rgba(245, 158, 11, 0.15);
+  --c-danger: #EF4444;              /* Rose red */
+  --c-danger-soft: rgba(239, 68, 68, 0.15);
+
+  /* Badges */
+  --c-badge-accent-bg: #132238;
+  --c-badge-accent-text: #60A5FA;
+  --c-badge-accent-border: #1E3A5F;
+
+  --c-badge-success-bg: #0D281E;
+  --c-badge-success-text: #34D399;
+  --c-badge-success-border: #164E38;
+
+  --c-badge-warning-bg: #2D2006;
+  --c-badge-warning-text: #FBBF24;
+  --c-badge-warning-border: #5C4308;
+
+  --c-badge-danger-bg: #2E1114;
+  --c-badge-danger-text: #F87171;
+  --c-badge-danger-border: #5C1D24;
+
+  --c-badge-muted-bg: #1A2333;
+  --c-badge-muted-text: #94A3B8;
+  --c-badge-muted-border: #243044;
+
+  /* Shadows */
+  --c-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --c-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --c-shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.5);
+
+  /* Inputs */
+  --c-input-bg: #0E1524;
+  --c-input-border: #243044;
+  --c-input-border-focus: #0066FF;
+
+  /* Table / List hover */
+  --c-hover-bg: rgba(255, 255, 255, 0.03);
+}
+
+/* ─── LIGHT THEME ─── */
+html.light .candidate-app,
+[data-theme='light'] .candidate-app,
+.light .candidate-app {
+  /* Surfaces */
+  --c-bg: #F8FAFC;                  /* Slate-50 base */
+  --c-bg-subtle: #FFFFFF;           /* Pure white header / secondary background */
+  --c-surface: #FFFFFF;             /* Pure white primary panel */
+  --c-surface-card: #FFFFFF;        /* Pure white card surface */
+  --c-surface-muted: #F1F5F9;       /* Slate-100 recessed surface */
+  
+  /* Borders */
+  --c-border: #E2E8F0;              /* Slate-200 border */
+  --c-border-strong: #CBD5E1;       /* Slate-300 border */
+
+  /* Typography */
+  --c-text: #0F172A;                /* Slate-900 primary text */
+  --c-text-secondary: #475569;      /* Slate-600 secondary body */
+  --c-text-muted: #64748B;          /* Slate-500 captions */
+  --c-on-accent: #FFFFFF;
+
+  /* Primary Actions */
+  --c-accent: #0066FF;              /* Solid Electric Blue */
+  --c-accent-hover: #0052CC;        /* Darker Blue hover */
+  --c-accent-cyan: #0284C7;         /* Sky-600 */
+  --c-accent-soft: rgba(0, 102, 255, 0.08);
+  --c-accent-soft-strong: rgba(0, 102, 255, 0.15);
+
+  /* Secondary Button */
+  --c-btn-secondary-bg: #F1F5F9;
+  --c-btn-secondary-hover: #E2E8F0;
+  --c-btn-secondary-text: #0F172A;
+
+  /* Status Indicators */
+  --c-success: #059669;             /* Emerald-600 */
+  --c-success-soft: rgba(5, 150, 105, 0.1);
+  --c-warning: #D97706;             /* Amber-600 */
+  --c-warning-soft: rgba(217, 119, 6, 0.1);
+  --c-danger: #DC2626;              /* Red-600 */
+  --c-danger-soft: rgba(220, 38, 38, 0.1);
+
+  /* Badges */
+  --c-badge-accent-bg: #EFF6FF;
+  --c-badge-accent-text: #1D4ED8;
+  --c-badge-accent-border: #BFDBFE;
+
+  --c-badge-success-bg: #ECFDF5;
+  --c-badge-success-text: #047857;
+  --c-badge-success-border: #A7F3D0;
+
+  --c-badge-warning-bg: #FFFBEB;
+  --c-badge-warning-text: #B45309;
+  --c-badge-warning-border: #FDE68A;
+
+  --c-badge-danger-bg: #FEF2F2;
+  --c-badge-danger-text: #B91C1C;
+  --c-badge-danger-border: #FECACA;
+
+  --c-badge-muted-bg: #F1F5F9;
+  --c-badge-muted-text: #475569;
+  --c-badge-muted-border: #E2E8F0;
+
+  /* Shadows */
+  --c-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --c-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+  --c-shadow-lg: 0 10px 25px rgba(15, 23, 42, 0.08);
+
+  /* Inputs */
+  --c-input-bg: #FFFFFF;
+  --c-input-border: #CBD5E1;
+  --c-input-border-focus: #0066FF;
+
+  /* Table / List hover */
+  --c-hover-bg: rgba(15, 23, 42, 0.03);
+}
+
 .candidate-app {
-  /* ---- Surfaces ---- */
-  --c-bg: #fbf7f1;              /* warm ivory page background */
-  --c-bg-soft: #f5efe4;         /* secondary page-level wash */
-  --c-surface: #ffffff;         /* cards, inputs, modals */
-  --c-surface-muted: #f2ebdf;   /* recessed / secondary surface (parchment) */
-  --c-border: #e7ddcc;
-  --c-border-strong: #d6c7ae;
+  /* Controls Radius */
+  --c-radius-sm: 6px;
+  --c-radius: 8px;
+  --c-radius-lg: 10px;
 
-  /* ---- Typography ---- */
-  --c-text: #211c17;            /* near-black warm charcoal */
-  --c-text-secondary: #6b6055;
-  --c-text-muted: #9a8e7f;
-  --c-on-accent: #fbf3ec;
-
-  /* ---- Brand accent: deep burgundy / wine (the ONE accent direction) ---- */
-  --c-accent: #7a2333;
-  --c-accent-hover: #661d2a;
-  --c-accent-soft: rgba(122, 35, 51, 0.08);
-  --c-accent-soft-strong: rgba(122, 35, 51, 0.16);
-
-  /* Fixed-wine CTA fill, distinct from --c-accent above. --c-accent is
-     lightened in dark mode so it stays legible as TEXT/icons against a
-     near-black page - but a button provides its own background and never
-     needed that lightening. Reusing the lightened value as a solid button
-     fill is what produced the washed-out peach/orange primary buttons on
-     the auth screens; this is used ONLY by .c-btn-cta (auth screens),
-     added alongside the existing .c-btn-primary rather than changing it,
-     so Dashboard/Simulator/etc. keep rendering exactly as already
-     approved. */
-  --c-cta-from: #7d2738;
-  --c-cta-to: #5c1c28;
-  --c-cta-hover-from: #8f2e40;
-  --c-cta-hover-to: #6b2130;
-  --c-cta-text: #fbf3ec;
-
-  /* ---- Status (semantic only - never a second brand accent) ---- */
-  --c-success: #4b6b4f;
-  --c-success-soft: rgba(75, 107, 79, 0.1);
-  --c-warning: #9c6b2e;
-  --c-warning-soft: rgba(156, 107, 46, 0.1);
-  --c-danger: #a23b2e;
-  --c-danger-soft: rgba(162, 59, 46, 0.1);
-
-  /* ---- Elevation ---- */
-  --c-shadow-sm: 0 1px 2px rgba(33, 28, 23, 0.05);
-  --c-shadow: 0 16px 40px -16px rgba(33, 28, 23, 0.18);
-  --c-shadow-lg: 0 28px 64px -20px rgba(33, 28, 23, 0.24);
-
-  /* ---- Shape ---- */
-  --c-radius-sm: 10px;
-  --c-radius: 16px;
-  --c-radius-lg: 22px;
-
-  /* ---- Type system ---- */
-  --c-font-heading: 'Fraunces', 'Iowan Old Style', Georgia, serif;
+  /* Fonts */
+  --c-font-heading: 'Outfit', 'Inter', -apple-system, sans-serif;
   --c-font-body: 'Inter', -apple-system, system-ui, sans-serif;
-
-  /* ---- Input field colors ---- */
-  --c-input-bg: #f5efe4;           /* warm ivory / soft cream background */
-  --c-input-border: #d6c7ae;       /* subtle warm neutral border */
-  --c-input-border-focus: #7a2333; /* brand burgundy focus border */
 
   background: var(--c-bg);
   color: var(--c-text);
   font-family: var(--c-font-body);
   min-height: 100vh;
-}
-
-html[data-theme='dark'] .candidate-app {
-  --c-bg: #14100d;
-  --c-bg-soft: #1a1512;
-  --c-surface: #1c1713;
-  --c-surface-muted: #241d18;
-  --c-border: #332921;
-  --c-border-strong: #46392e;
-
-  --c-text: #f3ede3;
-  --c-text-secondary: #b6a999;
-  --c-text-muted: #83766a;
-  --c-on-accent: #1c1210;
-
-  --c-accent: #d99a7f;
-  --c-accent-hover: #e3ac95;
-  --c-accent-soft: rgba(217, 154, 127, 0.12);
-  --c-accent-soft-strong: rgba(217, 154, 127, 0.2);
-
-  --c-success: #8fb097;
-  --c-success-soft: rgba(143, 176, 151, 0.14);
-  --c-warning: #d9ac6a;
-  --c-warning-soft: rgba(217, 172, 106, 0.14);
-  --c-danger: #d98a72;
-  --c-danger-soft: rgba(217, 138, 114, 0.14);
-
-  --c-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --c-shadow: 0 20px 48px -18px rgba(0, 0, 0, 0.55);
-  --c-shadow-lg: 0 32px 72px -20px rgba(0, 0, 0, 0.6);
-
-  /* ---- Input field colors ---- */
-  --c-input-bg: #1c1713;           /* deep charcoal background */
-  --c-input-border: #332921;       /* subtle warm border */
-  --c-input-border-focus: #d99a7f; /* warm accent focus border */
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 /* ===================== Typography ===================== */
@@ -130,39 +182,38 @@ html[data-theme='dark'] .candidate-app {
 .candidate-app .c-heading {
   font-family: var(--c-font-heading);
   font-weight: 600;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
   color: var(--c-text);
 }
 
 .candidate-app .c-eyebrow {
   font-family: var(--c-font-body);
   text-transform: uppercase;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.08em;
   font-size: 11px;
   font-weight: 700;
-  color: var(--c-accent);
+  color: var(--c-text-secondary);
 }
 
 .candidate-app .c-serif-num {
   font-family: var(--c-font-heading);
   font-weight: 600;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums;
 }
 
-/* ===================== Surfaces ===================== */
+/* ===================== Surfaces & Cards (Solid) ===================== */
 
 .candidate-app .c-card {
-  background: var(--c-surface);
+  background: var(--c-surface-card);
   border: 1px solid var(--c-border);
   border-radius: var(--c-radius);
   box-shadow: var(--c-shadow-sm);
-  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  transition: border-color 0.15s ease, background-color 0.2s ease;
 }
 
 .candidate-app .c-card-hover:hover {
   border-color: var(--c-border-strong);
-  box-shadow: var(--c-shadow);
 }
 
 .candidate-app .c-card-flat {
@@ -172,7 +223,7 @@ html[data-theme='dark'] .candidate-app {
 }
 
 .candidate-app .c-panel {
-  background: var(--c-surface);
+  background: var(--c-bg-subtle);
   border-bottom: 1px solid var(--c-border);
 }
 
@@ -180,61 +231,54 @@ html[data-theme='dark'] .candidate-app {
   border-top: 1px solid var(--c-border);
 }
 
-/* ===================== Buttons ===================== */
+/* ===================== Buttons (Solid Controls) ===================== */
 
 .candidate-app .c-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  font-weight: 700;
+  font-family: var(--c-font-body);
+  font-weight: 600;
   font-size: 0.875rem;
   border-radius: var(--c-radius-sm);
-  transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease, transform 0.12s ease;
+  transition: all 0.15s ease;
   white-space: nowrap;
+  cursor: pointer;
 }
 
 .candidate-app .c-btn:active {
-  transform: scale(0.98);
+  transform: translateY(1px);
 }
 
 .candidate-app .c-btn:disabled {
-  opacity: 0.55;
+  opacity: 0.45;
   cursor: not-allowed;
   transform: none;
+  box-shadow: none !important;
 }
 
-.candidate-app .c-btn-primary {
+.candidate-app .c-btn-primary,
+.candidate-app .c-btn-cta {
   background: var(--c-accent);
   color: var(--c-on-accent);
+  border: 1px solid transparent;
 }
 
-.candidate-app .c-btn-primary:hover:not(:disabled) {
+.candidate-app .c-btn-primary:hover:not(:disabled),
+.candidate-app .c-btn-cta:hover:not(:disabled) {
   background: var(--c-accent-hover);
 }
 
-/* Auth-screens-only CTA (Login/Register/Forgot Password) - see the
-   --c-cta-* token comment above for why this isn't just .c-btn-primary
-   with different values. */
-.candidate-app .c-btn-cta {
-  background: linear-gradient(135deg, var(--c-cta-from) 0%, var(--c-cta-to) 100%);
-  color: var(--c-cta-text);
-  box-shadow: 0 8px 20px -8px rgba(92, 28, 40, 0.5);
-}
-
-.candidate-app .c-btn-cta:hover:not(:disabled) {
-  background: linear-gradient(135deg, var(--c-cta-hover-from) 0%, var(--c-cta-hover-to) 100%);
-  box-shadow: 0 10px 24px -8px rgba(92, 28, 40, 0.6);
-}
-
 .candidate-app .c-btn-secondary {
-  background: transparent;
-  color: var(--c-text);
-  border: 1px solid var(--c-border-strong);
+  background: var(--c-btn-secondary-bg);
+  color: var(--c-btn-secondary-text);
+  border: 1px solid var(--c-border);
 }
 
 .candidate-app .c-btn-secondary:hover:not(:disabled) {
-  background: var(--c-surface-muted);
+  background: var(--c-btn-secondary-hover);
+  border-color: var(--c-border-strong);
 }
 
 .candidate-app .c-btn-ghost {
@@ -248,12 +292,13 @@ html[data-theme='dark'] .candidate-app {
 }
 
 .candidate-app .c-btn-danger {
-  background: transparent;
-  color: var(--c-danger);
+  background: var(--c-danger);
+  color: #FFFFFF;
+  border: 1px solid transparent;
 }
 
 .candidate-app .c-btn-danger:hover:not(:disabled) {
-  background: var(--c-danger-soft);
+  opacity: 0.9;
 }
 
 /* ===================== Forms ===================== */
@@ -263,7 +308,7 @@ html[data-theme='dark'] .candidate-app {
   border: 1px solid var(--c-input-border);
   border-radius: var(--c-radius-sm);
   color: var(--c-text);
-  transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+  transition: border-color 0.15s ease, background-color 0.2s ease;
 }
 
 .candidate-app .c-input::placeholder {
@@ -272,11 +317,9 @@ html[data-theme='dark'] .candidate-app {
 
 .candidate-app .c-input:focus {
   outline: none;
-  border-color: var(--c-input-border-focus);
-  box-shadow: 0 0 0 3px var(--c-accent-soft);
+  border-color: var(--c-accent);
 }
 
-/* Override browser autofill pale blue appearance to use candidate app theme */
 .candidate-app input:-webkit-autofill,
 .candidate-app input:-webkit-autofill:hover, 
 .candidate-app input:-webkit-autofill:focus, 
@@ -287,43 +330,53 @@ html[data-theme='dark'] .candidate-app {
   transition: background-color 5000s ease-in-out 0s;
 }
 
-/* Staggered voiceprint breathing shimmer animation keyframe */
-@keyframes waveform-shimmer {
-  0%, 100% {
-    transform: scaleY(1);
-  }
-  50% {
-    transform: scaleY(0.76);
-  }
-}
-
 .candidate-app .c-label {
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--c-text-secondary);
 }
 
-/* ===================== Badges / status ===================== */
+/* ===================== Badges & Indicators ===================== */
 
 .candidate-app .c-badge {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  border-radius: 999px;
-  font-weight: 700;
+  border-radius: var(--c-radius-sm);
+  font-weight: 600;
   font-size: 11px;
-  padding: 3px 10px;
+  padding: 2px 8px;
   border: 1px solid transparent;
   white-space: nowrap;
 }
 
-.candidate-app .c-badge-accent { background: var(--c-accent-soft); color: var(--c-accent); border-color: var(--c-accent-soft-strong); }
-.candidate-app .c-badge-success { background: var(--c-success-soft); color: var(--c-success); }
-.candidate-app .c-badge-warning { background: var(--c-warning-soft); color: var(--c-warning); }
-.candidate-app .c-badge-danger { background: var(--c-danger-soft); color: var(--c-danger); }
-.candidate-app .c-badge-muted { background: var(--c-surface-muted); color: var(--c-text-muted); border-color: var(--c-border); }
+.candidate-app .c-badge-accent { 
+  background: var(--c-badge-accent-bg); 
+  color: var(--c-badge-accent-text); 
+  border-color: var(--c-badge-accent-border); 
+}
+.candidate-app .c-badge-success { 
+  background: var(--c-badge-success-bg); 
+  color: var(--c-badge-success-text); 
+  border-color: var(--c-badge-success-border); 
+}
+.candidate-app .c-badge-warning { 
+  background: var(--c-badge-warning-bg); 
+  color: var(--c-badge-warning-text); 
+  border-color: var(--c-badge-warning-border); 
+}
+.candidate-app .c-badge-danger { 
+  background: var(--c-badge-danger-bg); 
+  color: var(--c-badge-danger-text); 
+  border-color: var(--c-badge-danger-border); 
+}
+.candidate-app .c-badge-muted { 
+  background: var(--c-badge-muted-bg); 
+  color: var(--c-badge-muted-text); 
+  border-color: var(--c-badge-muted-border); 
+}
 
-/* ===================== Focus ===================== */
+/* ===================== Focus Ring ===================== */
 
 .candidate-app a:focus-visible,
 .candidate-app button:focus-visible,
@@ -331,10 +384,10 @@ html[data-theme='dark'] .candidate-app {
 .candidate-app select:focus-visible,
 .candidate-app textarea:focus-visible {
   outline: 2px solid var(--c-accent);
-  outline-offset: 2px;
+  outline-offset: 1px;
 }
 
-/* ===================== Skeleton loading ===================== */
+/* ===================== Skeleton ===================== */
 
 .candidate-app .c-skeleton {
   position: relative;
@@ -348,31 +401,23 @@ html[data-theme='dark'] .candidate-app {
   position: absolute;
   inset: 0;
   transform: translateX(-100%);
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
   animation: c-shimmer 1.5s infinite;
-}
-
-html[data-theme='dark'] .candidate-app .c-skeleton::after {
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
 }
 
 @keyframes c-shimmer {
   100% { transform: translateX(100%); }
 }
 
-/* ===================== Misc ===================== */
-
-.candidate-app .c-scrim {
-  background: linear-gradient(180deg, rgba(20, 16, 13, 0) 0%, rgba(20, 16, 13, 0.78) 100%);
-}
-
-.candidate-app .c-hairline {
-  border-color: var(--c-border);
-}
-
-.candidate-app ::selection {
-  background: var(--c-accent-soft-strong);
-  color: var(--c-text);
+@keyframes waveform-shimmer {
+  0%, 100% {
+    transform: scaleY(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scaleY(0.45);
+    opacity: 0.5;
+  }
 }
 
 /* ===================== Brand Logo Rules ===================== */
@@ -398,3 +443,48 @@ html[data-theme='dark'] .candidate-app .c-skeleton::after {
   display: block !important;
   flex-shrink: 0 !important;
 }
+
+/* ===================== Editorial & Product Structure Utilities ===================== */
+
+.candidate-app .c-section {
+  padding-top: 1.5rem;
+  padding-bottom: 1.5rem;
+}
+
+.candidate-app .c-divider {
+  height: 1px;
+  width: 100%;
+  background-color: var(--c-border);
+  border: none;
+  margin: 1.5rem 0;
+}
+
+.candidate-app .c-stat-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1.5rem;
+  padding: 1rem 0;
+}
+
+.candidate-app .c-data-ledger {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.candidate-app .c-data-ledger th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--c-text-muted);
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--c-border);
+}
+
+.candidate-app .c-data-ledger td {
+  padding: 1rem;
+  border-bottom: 1px solid var(--c-border);
+  font-size: 0.8125rem;
+}
+

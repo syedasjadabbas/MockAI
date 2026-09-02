@@ -1,27 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Code2, Users, Compass, Server, Cpu, BarChart3, AlertCircle } from 'lucide-react';
+import { ArrowRight, Code2, Users, Compass, Server, Cpu, BarChart3, AlertCircle, CheckCircle2 } from 'lucide-react';
 import InterviewFlowLayout from '../layouts/InterviewFlowLayout';
 import { INTERVIEW_TYPES } from '../data/categories';
 import { getCategories, startInterview } from '../services/candidateApi';
-
-// FR07 - Accept Interview Goal, FR08 - Select Interview Questions
-//
-// A small transparent keyword matcher drives the free-text fallback, not
-// NLP/AI - real language understanding is explicit future AI-integration
-// work. Categories come from the real Question Bank (GET /candidate/
-// categories) - the only thing that's presentational-only here is the
-// Technical/HR/Situational grouping: the backend's categories_collection
-// has no "interview type" field of its own (that grouping only exists at
-// the question level within a category), so inferInterviewType() below
-// derives it client-side from the category name, purely to keep this
-// page's existing flow working. It never invents a new category or
-// changes what's actually stored in the Question Bank.
-//
-// Presented as a guided, step-by-step preparation flow rather than a chat
-// assistant - no avatar/bot icon, no "AI" framing. The underlying state
-// machine (ask-goal -> ask-type -> confirm) is unchanged; only how the
-// current step and prior choices are displayed has changed.
 
 const CATEGORY_ICONS = { Code: Code2, Server, Cpu, BarChart3, Users, Folder: Code2 };
 
@@ -88,7 +70,7 @@ const GoalSelection = () => {
     pushUser(category.name);
     setSelectedCategory(category);
     setSelectedType(inferInterviewType(category));
-    pushBot(`${category.name} it is. Ready to continue to preparation?`);
+    pushBot(`${category.name} selected. Ready to proceed to setup and calibration?`);
     setStage('confirm');
   };
 
@@ -100,7 +82,7 @@ const GoalSelection = () => {
     if (options.length === 1) {
       chooseCategory(options[0]);
     } else {
-      pushBot(`Which area within ${type.label.toLowerCase()} would you like to focus on?`);
+      pushBot(`Which domain within ${type.label.toLowerCase()} would you like to focus on?`);
       setStage('ask-type');
     }
   };
@@ -115,7 +97,7 @@ const GoalSelection = () => {
     if (matched) {
       chooseCategory(matched);
     } else {
-      pushBot("I didn't catch a specific topic — pick one of the options below instead.");
+      pushBot("I didn't catch an exact track — pick one of the options below to get started.");
       setSelectedType(null);
       setStage('ask-type');
     }
@@ -140,45 +122,70 @@ const GoalSelection = () => {
 
   return (
     <InterviewFlowLayout step="goal">
-      <div className="max-w-2xl mx-auto">
-        <p className="c-eyebrow mb-2">Set Your Goal</p>
+      <div className="max-w-2xl mx-auto py-6 sm:py-10 space-y-8">
+        
+        {/* Header directly on page */}
+        <div>
+          <p className="c-eyebrow mb-1">Goal Setup</p>
+          <h1 className="c-heading text-2xl sm:text-3xl font-bold" style={{ color: 'var(--c-text)' }}>
+            {currentPrompt}
+          </h1>
+          <p className="text-xs sm:text-sm mt-1" style={{ color: 'var(--c-text-secondary)' }}>
+            Choose a practice track to generate tailored interview prompts and evaluation criteria.
+          </p>
+        </div>
 
         {trail.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2 mb-5">
+          <div className="flex flex-wrap items-center gap-2">
             {trail.map((t, i) => (
-              <span key={i} className="c-badge c-badge-accent">{t}</span>
+              <span key={i} className="c-badge c-badge-muted font-semibold text-xs">
+                {t}
+              </span>
             ))}
           </div>
         )}
 
-        <div className="c-card rounded-3xl p-7 sm:p-9">
+        {/* Content Area */}
+        <div>
           {categoriesLoading ? (
-            <div className="flex items-center justify-center py-14">
+            <div className="flex flex-col items-center justify-center py-12 gap-3">
               <div className="w-6 h-6 border-2 rounded-full animate-spin" style={{ borderColor: 'var(--c-accent)', borderTopColor: 'transparent' }} />
+              <p className="text-xs font-medium" style={{ color: 'var(--c-text-muted)' }}>Loading tracks...</p>
             </div>
           ) : categoriesError ? (
-            <div className="flex flex-col items-center gap-2 py-14 text-center">
-              <AlertCircle className="w-6 h-6" style={{ color: 'var(--c-danger)' }} />
-              <p className="text-sm" style={{ color: 'var(--c-text-secondary)' }}>{categoriesError}</p>
+            <div className="flex flex-col items-center gap-3 py-10 text-center">
+              <AlertCircle className="w-6 h-6 text-red-500" />
+              <p className="text-sm font-medium" style={{ color: 'var(--c-text-secondary)' }}>{categoriesError}</p>
             </div>
           ) : (
             <>
-              <h1 className="c-heading text-2xl sm:text-[1.6rem] leading-snug mb-6">{currentPrompt}</h1>
-
+              {/* LEVEL 3 — Standalone Selectable Track Cards */}
               {stage === 'ask-goal' && (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                   {INTERVIEW_TYPES.map((type) => {
-                    const Icon = { Code2, Users, Compass }[type.icon];
+                    const Icon = { Code2, Users, Compass }[type.icon] || Code2;
                     return (
                       <button
                         key={type.id}
                         onClick={() => chooseType(type.id)}
-                        className="c-card c-card-hover rounded-2xl p-4 text-left flex flex-col gap-2.5"
+                        className="c-card c-card-hover rounded-lg p-5 text-left flex flex-col gap-3 transition-all group"
+                        style={{
+                          background: 'var(--c-surface-card)',
+                          borderColor: 'var(--c-border)',
+                        }}
                       >
-                        <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: 'var(--c-accent-soft)', color: 'var(--c-accent)' }}>
-                          {Icon && <Icon className="w-4.5 h-4.5" />}
+                        <div className="w-8 h-8 rounded flex items-center justify-center border"
+                          style={{
+                            background: 'var(--c-surface-muted)',
+                            borderColor: 'var(--c-border)',
+                            color: 'var(--c-text)',
+                          }}
+                        >
+                          <Icon className="w-4 h-4" />
                         </div>
-                        <span className="text-sm font-semibold">{type.label}</span>
+                        <span className="text-xs font-bold group-hover:text-blue-500 transition-colors" style={{ color: 'var(--c-text)' }}>
+                          {type.label}
+                        </span>
                       </button>
                     );
                   })}
@@ -186,17 +193,31 @@ const GoalSelection = () => {
               )}
 
               {stage === 'ask-type' && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {(selectedType ? getCategoriesByType(categories, selectedType) : categories).map((cat) => {
                     const Icon = CATEGORY_ICONS[cat.icon] || Code2;
                     return (
                       <button
                         key={cat.id}
                         onClick={() => chooseCategory(cat)}
-                        className="c-card c-card-hover rounded-2xl p-4 text-left flex flex-col gap-2.5"
+                        className="c-card c-card-hover rounded-lg p-4 text-left flex items-center gap-3.5 transition-all group"
+                        style={{
+                          background: 'var(--c-surface-card)',
+                          borderColor: 'var(--c-border)',
+                        }}
                       >
-                        <Icon className="w-4.5 h-4.5" style={{ color: 'var(--c-accent)' }} />
-                        <span className="text-sm font-semibold">{cat.name}</span>
+                        <div className="w-8 h-8 rounded flex items-center justify-center shrink-0 border"
+                          style={{
+                            background: 'var(--c-surface-muted)',
+                            borderColor: 'var(--c-border)',
+                            color: 'var(--c-text)',
+                          }}
+                        >
+                          <Icon className="w-4 h-4" />
+                        </div>
+                        <span className="text-xs font-bold truncate group-hover:text-blue-500 transition-colors" style={{ color: 'var(--c-text)' }}>
+                          {cat.name}
+                        </span>
                       </button>
                     );
                   })}
@@ -204,13 +225,31 @@ const GoalSelection = () => {
               )}
 
               {stage === 'confirm' && (
-                <div>
-                  <button onClick={handleBegin} disabled={starting} className="c-btn c-btn-primary px-6 py-3">
-                    {starting ? 'Setting up…' : 'Continue to Preparation'}
-                    {!starting && <ArrowRight className="w-4 h-4" />}
+                <div className="space-y-5 pt-2">
+                  <div className="p-4 rounded-lg border flex items-center gap-3.5"
+                    style={{
+                      background: 'var(--c-surface-card)',
+                      borderColor: 'var(--c-border)',
+                    }}
+                  >
+                    <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--c-text-muted)' }}>Selected Track</p>
+                      <p className="text-base font-bold" style={{ color: 'var(--c-text)' }}>{selectedCategory?.name}</p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={handleBegin}
+                    disabled={starting}
+                    className="c-btn c-btn-primary px-6 py-3 text-xs font-bold rounded-md w-full sm:w-auto flex items-center justify-center gap-2"
+                  >
+                    <span>{starting ? 'Initializing Session…' : 'Continue to Preparation'}</span>
+                    {!starting && <ArrowRight className="w-3.5 h-3.5" />}
                   </button>
+
                   {startError && (
-                    <p className="text-xs font-semibold flex items-center gap-1.5 mt-3" style={{ color: 'var(--c-danger)' }}>
+                    <p className="text-xs font-semibold flex items-center gap-1.5 text-red-500">
                       <AlertCircle className="w-3.5 h-3.5 shrink-0" /> {startError}
                     </p>
                   )}
@@ -221,17 +260,18 @@ const GoalSelection = () => {
           )}
         </div>
 
+        {/* Search input bar */}
         {!categoriesLoading && !categoriesError && stage !== 'confirm' && (
-          <div className="flex items-center gap-2 mt-4">
+          <div className="flex items-center gap-2 pt-2 border-t" style={{ borderColor: 'var(--c-border)' }}>
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-              placeholder="Or describe it yourself — e.g. a backend engineering interview"
-              className="c-input flex-1 px-4 py-2.5 rounded-xl text-sm"
+              placeholder="Or enter a specific topic — e.g., React, System Architecture, Leadership..."
+              className="c-input flex-1 px-3.5 py-2.5 rounded-md text-xs"
             />
-            <button onClick={handleSend} className="c-btn c-btn-secondary px-4 py-2.5">
+            <button onClick={handleSend} className="c-btn c-btn-secondary px-4 py-2.5 rounded-md text-xs font-semibold">
               Go
             </button>
           </div>

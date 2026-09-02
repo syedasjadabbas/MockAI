@@ -2,22 +2,17 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { 
   Check, 
-  Clock, 
   ArrowRight, 
-  CheckCircle2, 
   AlertCircle, 
   ShieldCheck, 
   LayoutDashboard, 
   History, 
   FileText,
-  Layers,
-  Sparkles
 } from 'lucide-react';
 import InterviewFlowLayout from '../layouts/InterviewFlowLayout';
 import { getActiveInterview, getRealEvaluation } from '../services/candidateApi';
 import { formatDate } from '../../utils/dateFormat';
 
-// FR10 - Interview Session Completion & Evaluation Status
 const InterviewCompletion = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -58,9 +53,9 @@ const InterviewCompletion = () => {
   if (loading) {
     return (
       <InterviewFlowLayout step="complete">
-        <div className="max-w-5xl mx-auto py-20 flex flex-col items-center justify-center gap-4 text-center">
-          <div className="w-8 h-8 border-2 rounded-full animate-spin" style={{ borderColor: 'var(--c-accent)', borderTopColor: 'transparent' }} />
-          <p className="text-sm font-medium" style={{ color: 'var(--c-text-secondary)' }}>
+        <div className="max-w-5xl mx-auto py-16 flex flex-col items-center justify-center gap-3 text-center">
+          <div className="w-6 h-6 border-2 rounded-full animate-spin" style={{ borderColor: 'var(--c-accent)', borderTopColor: 'transparent' }} />
+          <p className="text-xs font-medium" style={{ color: 'var(--c-text-secondary)' }}>
             Retrieving interview completion receipt…
           </p>
         </div>
@@ -71,17 +66,19 @@ const InterviewCompletion = () => {
   if (error || !interview) {
     return (
       <InterviewFlowLayout step="complete">
-        <div className="max-w-xl mx-auto py-16 text-center space-y-5">
-          <div className="w-12 h-12 rounded-2xl mx-auto flex items-center justify-center border" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)', color: 'var(--c-danger)' }}>
-            <AlertCircle className="w-6 h-6" />
+        <div className="max-w-md mx-auto py-14 text-center space-y-4">
+          <div className="w-10 h-10 rounded-md mx-auto flex items-center justify-center border"
+            style={{ background: 'var(--c-badge-danger-bg)', borderColor: 'var(--c-badge-danger-border)', color: 'var(--c-danger)' }}
+          >
+            <AlertCircle className="w-5 h-5" />
           </div>
-          <div className="space-y-2">
-            <h1 className="c-heading text-2xl">Session Unavailable</h1>
-            <p className="text-sm max-w-md mx-auto" style={{ color: 'var(--c-text-secondary)' }}>
+          <div className="space-y-1">
+            <h1 className="c-heading text-xl font-bold" style={{ color: 'var(--c-text)' }}>Session Unavailable</h1>
+            <p className="text-xs" style={{ color: 'var(--c-text-secondary)' }}>
               {error || 'We were unable to locate this interview record.'}
             </p>
           </div>
-          <Link to="/dashboard" className="c-btn c-btn-primary px-6 py-2.5 text-xs">
+          <Link to="/dashboard" className="c-btn c-btn-primary px-5 py-2 text-xs font-semibold rounded-md inline-block">
             Return to Dashboard
           </Link>
         </div>
@@ -110,119 +107,117 @@ const InterviewCompletion = () => {
 
   return (
     <InterviewFlowLayout step="complete">
-      <div className="max-w-5xl mx-auto space-y-8">
+      <div className="max-w-5xl mx-auto space-y-8 py-4 sm:py-6">
         
         {/* Top Context & Reference */}
         <div className="flex flex-wrap items-center justify-between gap-4 border-b pb-4" style={{ borderColor: 'var(--c-border)' }}>
-          <div className="flex items-center gap-3">
-            <span className="c-eyebrow">Session Finalization</span>
-            <span style={{ color: 'var(--c-border-strong)' }}>/</span>
-            <span className="text-xs font-mono px-2 py-0.5 rounded border" style={{ borderColor: 'var(--c-border)', color: 'var(--c-text-muted)', background: 'var(--c-surface-muted)' }}>
+          <div className="flex items-center gap-2.5">
+            <span className="c-eyebrow">Session Status</span>
+            <span style={{ color: 'var(--c-border)' }}>/</span>
+            <span className="text-xs font-mono px-2 py-0.5 rounded border font-semibold"
+              style={{ borderColor: 'var(--c-border)', background: 'var(--c-surface-muted)', color: 'var(--c-text-secondary)' }}
+            >
               REF: {id.slice(-6).toUpperCase()}
             </span>
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="c-badge c-badge-success flex items-center gap-1">
-              <Check className="w-3 h-3" /> Submitted Successfully
+            <span className="c-badge c-badge-success flex items-center gap-1 font-semibold text-xs">
+              <Check className="w-3 h-3" /> Submitted & Finalized
             </span>
           </div>
         </div>
 
-        {/* Hero Title Statement */}
-        <div className="space-y-3">
-          <p className="c-eyebrow">Submission Confirmed</p>
-          <h1 className="c-heading text-3xl sm:text-4xl md:text-5xl leading-tight">
-            Interview complete.
+        {/* Hero Title Statement directly on page */}
+        <div>
+          <p className="c-eyebrow mb-1">Receipt</p>
+          <h1 className="c-heading text-2xl sm:text-3xl font-bold" style={{ color: 'var(--c-text)' }}>
+            Interview Finished
           </h1>
-          <p className="text-base sm:text-lg max-w-3xl leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-            Your spoken responses for <strong className="font-semibold" style={{ color: 'var(--c-text)' }}>{interview.role}</strong> have been finalized and securely submitted for evaluation.
+          <p className="text-xs sm:text-sm mt-1 max-w-2xl leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
+            Your responses for <strong className="font-semibold" style={{ color: 'var(--c-text)' }}>{interview.role}</strong> have been finalized and recorded.
           </p>
         </div>
 
         {/* Main Two-Column Summary & Evaluation Dossier */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
-          {/* Left Column: Official Session Summary & Prompt Ledger (7 cols) */}
-          <div className="lg:col-span-7 space-y-6">
+          {/* Left Column: Summary & Prompts (7 cols) — Open editorial ledger */}
+          <div className="lg:col-span-7 space-y-8">
             
-            {/* Session Ledger Card */}
-            <div className="c-card p-6 sm:p-7 space-y-5">
-              <div className="border-b pb-3 flex items-center justify-between" style={{ borderColor: 'var(--c-border)' }}>
+            {/* Session Ledger */}
+            <div className="space-y-3">
+              <div className="border-b pb-2 flex items-center justify-between" style={{ borderColor: 'var(--c-border)' }}>
                 <div>
-                  <p className="c-eyebrow">Official Record</p>
-                  <h2 className="c-heading text-lg mt-0.5">Session Summary</h2>
+                  <p className="c-eyebrow mb-0.5">Overview</p>
+                  <h2 className="c-heading text-base font-bold" style={{ color: 'var(--c-text)' }}>Session Summary</h2>
                 </div>
                 <span className="text-xs font-mono" style={{ color: 'var(--c-text-muted)' }}>
                   {formatDate(interview.completedAt || interview.createdAt)}
                 </span>
               </div>
 
-              <dl className="divide-y text-xs sm:text-sm" style={{ borderColor: 'var(--c-border)' }}>
-                <div className="py-3 flex items-center justify-between">
-                  <dt style={{ color: 'var(--c-text-secondary)' }}>Target Discipline</dt>
-                  <dd className="font-semibold text-right" style={{ color: 'var(--c-text)' }}>
-                    {interview.role}
-                  </dd>
+              <dl className="divide-y text-xs border-b" style={{ borderColor: 'var(--c-border)' }}>
+                <div className="py-2.5 flex items-center justify-between">
+                  <dt style={{ color: 'var(--c-text-secondary)' }}>Role Track</dt>
+                  <dd className="font-bold text-right" style={{ color: 'var(--c-text)' }}>{interview.role}</dd>
                 </div>
 
-                <div className="py-3 flex items-center justify-between">
-                  <dt style={{ color: 'var(--c-text-secondary)' }}>Interview Track</dt>
-                  <dd className="font-semibold text-right capitalize" style={{ color: 'var(--c-text)' }}>
-                    {interview.type || 'Technical'}
-                  </dd>
+                <div className="py-2.5 flex items-center justify-between">
+                  <dt style={{ color: 'var(--c-text-secondary)' }}>Track Type</dt>
+                  <dd className="font-bold text-right capitalize" style={{ color: 'var(--c-text)' }}>{interview.type || 'Technical'}</dd>
                 </div>
 
-                <div className="py-3 flex items-center justify-between">
-                  <dt style={{ color: 'var(--c-text-secondary)' }}>Responses Recorded</dt>
-                  <dd className="font-semibold text-right c-serif-num text-sm" style={{ color: 'var(--c-text)' }}>
+                <div className="py-2.5 flex items-center justify-between">
+                  <dt style={{ color: 'var(--c-text-secondary)' }}>Prompts Recorded</dt>
+                  <dd className="font-bold text-right font-mono" style={{ color: 'var(--c-text)' }}>
                     {answeredCount} of {totalQuestions} Prompts
                   </dd>
                 </div>
 
                 {totalRecordedSeconds > 0 && (
-                  <div className="py-3 flex items-center justify-between">
-                    <dt style={{ color: 'var(--c-text-secondary)' }}>Total Spoken Duration</dt>
-                    <dd className="font-semibold text-right c-serif-num text-sm" style={{ color: 'var(--c-text)' }}>
+                  <div className="py-2.5 flex items-center justify-between">
+                    <dt style={{ color: 'var(--c-text-secondary)' }}>Spoken Duration</dt>
+                    <dd className="font-bold text-right font-mono" style={{ color: 'var(--c-text)' }}>
                       {formatDuration(totalRecordedSeconds)}
                     </dd>
                   </div>
                 )}
 
-                <div className="py-3 flex items-center justify-between">
-                  <dt style={{ color: 'var(--c-text-secondary)' }}>Session Status</dt>
-                  <dd className="font-semibold text-right" style={{ color: 'var(--c-success)' }}>
-                    Finalized & Archived
+                <div className="py-2.5 flex items-center justify-between">
+                  <dt style={{ color: 'var(--c-text-secondary)' }}>Status</dt>
+                  <dd className="font-bold text-emerald-500 text-right">
+                    Finalized
                   </dd>
                 </div>
               </dl>
             </div>
 
             {/* Prompt Response Breakdown Ledger */}
-            <div className="c-card p-6 space-y-4">
-              <div className="border-b pb-3 flex items-center justify-between" style={{ borderColor: 'var(--c-border)' }}>
+            <div className="space-y-3">
+              <div className="border-b pb-2 flex items-center justify-between" style={{ borderColor: 'var(--c-border)' }}>
                 <div>
-                  <p className="c-eyebrow">Submission Ledger</p>
-                  <h3 className="c-heading text-base mt-0.5">Recorded Prompts</h3>
+                  <p className="c-eyebrow mb-0.5">Prompts</p>
+                  <h3 className="c-heading text-base font-bold" style={{ color: 'var(--c-text)' }}>Recorded Takes</h3>
                 </div>
-                <span className="text-xs font-mono" style={{ color: 'var(--c-text-muted)' }}>
+                <span className="text-xs font-mono font-bold" style={{ color: 'var(--c-text-secondary)' }}>
                   {answeredCount}/{totalQuestions} Received
                 </span>
               </div>
 
-              <div className="divide-y text-xs" style={{ borderColor: 'var(--c-border)' }}>
+              <div className="divide-y text-xs border-b" style={{ borderColor: 'var(--c-border)' }}>
                 {interview.questions.map((q, i) => {
                   const resp = (interview.responses || []).find((r) => (r.question_id || r.questionId) === q.id);
                   const isSaved = !!resp;
                   const duration = resp?.duration_seconds || resp?.durationSeconds;
 
                   return (
-                    <div key={q.id} className="py-3 px-1 flex items-center justify-between gap-4">
+                    <div key={q.id} className="py-3 flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3 min-w-0">
-                        <span className="font-mono text-xs font-bold w-5 shrink-0" style={{ color: 'var(--c-accent)' }}>
+                        <span className="font-mono text-xs font-bold w-4 shrink-0" style={{ color: 'var(--c-text-muted)' }}>
                           {(i + 1).toString().padStart(2, '0')}
                         </span>
-                        <p className="truncate font-medium" style={{ color: 'var(--c-text)' }}>
+                        <p className="truncate font-medium text-xs" style={{ color: 'var(--c-text)' }}>
                           {q.question_text}
                         </p>
                       </div>
@@ -234,11 +229,11 @@ const InterviewCompletion = () => {
                           </span>
                         )}
                         {isSaved ? (
-                          <span className="c-badge c-badge-success text-[10px] py-0.5 px-2 flex items-center gap-1">
+                          <span className="c-badge c-badge-success text-[10px] py-0.5 px-1.5 font-bold flex items-center gap-1">
                             <Check className="w-2.5 h-2.5" /> Saved
                           </span>
                         ) : (
-                          <span className="c-badge c-badge-muted text-[10px] py-0.5 px-2">
+                          <span className="c-badge c-badge-muted text-[10px] py-0.5 px-1.5">
                             Skipped
                           </span>
                         )}
@@ -251,73 +246,59 @@ const InterviewCompletion = () => {
 
           </div>
 
-          {/* Right Column: Evaluation Lifecycle & Candidate Navigation (5 cols) */}
+          {/* Right Column: Actions (5 cols) */}
           <div className="lg:col-span-5 space-y-6">
             
-            {/* Evaluation Status Card */}
-            <div className="c-card p-6 space-y-4">
-              <div className="border-b pb-3 flex items-center justify-between" style={{ borderColor: 'var(--c-border)' }}>
+            {/* Evaluation Status & Actions Panel */}
+            <div className="c-card p-5 space-y-4 rounded-lg border"
+              style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}
+            >
+              <div className="border-b pb-2.5 flex items-center justify-between" style={{ borderColor: 'var(--c-border)' }}>
                 <div>
-                  <p className="c-eyebrow">Lifecycle</p>
-                  <h3 className="c-heading text-lg mt-0.5">Evaluation Status</h3>
+                  <p className="c-eyebrow mb-0.5">Report</p>
+                  <h3 className="c-heading text-base font-bold" style={{ color: 'var(--c-text)' }}>Evaluation Status</h3>
                 </div>
 
                 {isEvalCompleted ? (
-                  <span className="c-badge c-badge-success text-xs">Ready</span>
+                  <span className="c-badge c-badge-success text-xs font-bold">Ready</span>
                 ) : (
-                  <span className="c-badge c-badge-accent text-xs">Pending Analysis</span>
+                  <span className="c-badge c-badge-accent text-xs font-bold">Processing</span>
                 )}
               </div>
 
               {isEvalCompleted ? (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
                     Your session analysis and aggregate performance scoring are ready for review.
                   </p>
                   <Link 
                     to={`/interview/${id}/results`}
-                    className="c-btn c-btn-primary w-full py-3.5 text-xs font-bold flex items-center justify-center gap-2"
+                    className="c-btn c-btn-primary w-full py-2.5 text-xs font-bold flex items-center justify-center gap-1.5 rounded-md"
                   >
                     <span>View Evaluation Report</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  <div className="p-4 rounded-xl space-y-2 border" style={{ background: 'var(--c-surface-muted)', borderColor: 'var(--c-border)' }}>
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: 'var(--c-accent)' }} />
-                      <p className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--c-text)' }}>
-                        Analysis In Pipeline
-                      </p>
-                    </div>
-                    <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                      Your spoken responses are securely archived. Comprehensive scoring and multimodal evaluation will appear in your history once the evaluation service processes this session.
-                    </p>
-                  </div>
+                <div className="space-y-3">
+                  <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
+                    Spoken takes are being transcribed and evaluated across technical concepts and delivery.
+                  </p>
 
                   <Link 
                     to={`/interview/${id}/results`}
-                    className="c-btn c-btn-secondary w-full py-3 text-xs flex items-center justify-center gap-2"
+                    className="c-btn c-btn-secondary w-full py-2.5 text-xs font-semibold flex items-center justify-center gap-1.5 rounded-md"
                   >
                     <FileText className="w-3.5 h-3.5" />
-                    <span>Preview Results Layout</span>
+                    <span>Open Results Page</span>
                   </Link>
                 </div>
               )}
-            </div>
 
-            {/* Candidate Next Actions Card */}
-            <div className="c-card p-6 space-y-4">
-              <div className="border-b pb-3" style={{ borderColor: 'var(--c-border)' }}>
-                <p className="c-eyebrow">Next Steps</p>
-                <h3 className="c-heading text-lg mt-0.5">Candidate Actions</h3>
-              </div>
-
-              <div className="space-y-3">
+              <div className="pt-2 border-t space-y-2" style={{ borderColor: 'var(--c-border)' }}>
                 <Link
                   to="/dashboard"
-                  className="c-btn c-btn-primary w-full py-3.5 text-xs font-bold flex items-center justify-center gap-2"
+                  className="c-btn c-btn-primary w-full py-2.5 text-xs font-bold flex items-center justify-center gap-1.5 rounded-md"
                 >
                   <LayoutDashboard className="w-3.5 h-3.5" />
                   <span>Return to Dashboard</span>
@@ -325,24 +306,22 @@ const InterviewCompletion = () => {
 
                 <Link
                   to="/history"
-                  className="c-btn c-btn-secondary w-full py-3.5 text-xs flex items-center justify-center gap-2"
+                  className="c-btn c-btn-secondary w-full py-2.5 text-xs font-semibold flex items-center justify-center gap-1.5 rounded-md"
                 >
                   <History className="w-3.5 h-3.5" />
-                  <span>View Interview History</span>
+                  <span>View History</span>
                 </Link>
               </div>
             </div>
 
-            {/* Candidate Privacy & Security Ledger */}
-            <div className="c-card-flat p-5 space-y-2 rounded-2xl">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4" style={{ color: 'var(--c-accent)' }} />
-                <span className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--c-text)' }}>
-                  Secure Data Archival
-                </span>
+            {/* Archival Notice */}
+            <div className="pt-2">
+              <div className="flex items-center gap-1.5 mb-1">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                <span className="text-[11px] font-bold" style={{ color: 'var(--c-text)' }}>Archival Notice</span>
               </div>
-              <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                Your responses are stored securely and associated strictly with your authenticated candidate profile.
+              <p className="text-[11px] leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
+                Responses are stored securely with your candidate profile and accessible anytime from Interview History.
               </p>
             </div>
 

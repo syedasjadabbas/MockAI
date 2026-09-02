@@ -26,10 +26,11 @@ routers.
 from datetime import datetime
 
 from bson import ObjectId
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 
 from database import interviews_collection
 from middleware.candidate_auth import verify_candidate
+from services.evaluation_worker import evaluate_interview_job
 
 router = APIRouter()
 
@@ -55,19 +56,16 @@ def _get_owned_interview_or_404(interview_id: str, user_id: str) -> dict:
 # Start evaluation - FR10-03 / Use Case 12 "End Interview Session"
 # (postcondition: "analysis is initiated"), FR20's aggregation prerequisite.
 #
-# This is a state transition: pending_evaluation -> processing. It does NOT
-# run the aggregate scoring stage of services/evaluation_pipeline.py - there
-# is no background worker yet, and FR21-FR27 stay strictly out of scope
-# until then. It IS non-destructive of per_question data: real ASR (FR15)
-# already runs per-response, at upload time, WHILE the interview is still
-# "In Progress" (see routes/candidate_interview.py's media upload
-# endpoint) - by the time this fires, interview.evaluation.per_question may
-# already hold real transcripts. This merges rather than overwrites, so
-# that data is never lost.
+# Transitions evaluation_status: pending_evaluation -> processing, and
+# asynchronously dispatches the real AI evaluation worker to process responses.
 # ---------------------------------------------------------------------------
 
 @router.post("/interviews/{interview_id}/evaluation/start")
-def start_evaluation(interview_id: str, token_payload: dict = Depends(verify_candidate)):
+def start_evaluation(
+    interview_id: str,
+    background_tasks: BackgroundTasks,
+    token_payload: dict = Depends(verify_candidate),
+):
     interview = _get_owned_interview_or_404(interview_id, token_payload.get("user_id"))
 
     if interview.get("status") != "Completed":
@@ -82,8 +80,6 @@ def start_evaluation(interview_id: str, token_payload: dict = Depends(verify_can
     merged_evaluation = {
         "started_at": now,
         "completed_at": None,
-        # Preserved if real per-response ASR already populated it;
-        # otherwise still None - never fabricated either way.
         "per_question": existing_evaluation.get("per_question"),
         "overall_score": None,
         "confidence_score": None,
@@ -99,6 +95,10 @@ def start_evaluation(interview_id: str, token_payload: dict = Depends(verify_can
         {"_id": interview["_id"]},
         {"$set": {"evaluation_status": "processing", "evaluation": merged_evaluation}},
     )
+
+    # Launch evaluation worker in the background
+    background_tasks.add_task(evaluate_interview_job, str(interview["_id"]))
+
     return {"evaluation_status": "processing"}
 
 

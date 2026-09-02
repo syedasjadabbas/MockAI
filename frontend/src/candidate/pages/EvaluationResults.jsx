@@ -1,32 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { 
-  ArrowRight, 
-  ArrowLeft, 
-  Check, 
-  Clock, 
-  Calendar, 
-  User, 
-  ShieldCheck, 
-  AlertCircle, 
-  CheckCircle2, 
-  LayoutDashboard, 
-  History, 
+import {
   RotateCcw,
-  Sparkles,
-  FileText,
-  Activity,
-  Layers,
+  History,
+  LayoutDashboard,
   ThumbsUp,
-  AlertTriangle,
-  Lightbulb
+  Lightbulb,
+  CheckCircle2,
+  AlertCircle,
+  Clock,
+  Sparkles,
+  ArrowRight,
 } from 'lucide-react';
 import InterviewFlowLayout from '../layouts/InterviewFlowLayout';
 import { getActiveInterview, getRealEvaluation } from '../services/candidateApi';
-import { getSession } from '../services/candidateAuth';
 import { formatDate } from '../../utils/dateFormat';
 
-// FR17-FR20, FR24-FR27, FR35 - Candidate Evaluation Results & Report
+// FR17-FR23 - Real Multimodal Evaluation Results (Assessment Report Layout)
 const EvaluationResults = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -35,9 +25,6 @@ const EvaluationResults = () => {
   const [realEval, setRealEval] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-
-  const candidateSession = getSession();
-  const candidateName = candidateSession?.name || 'Candidate';
 
   useEffect(() => {
     let isMounted = true;
@@ -49,14 +36,14 @@ const EvaluationResults = () => {
       .then(([interviewData, evalData]) => {
         if (!isMounted) return;
         if (!interviewData) {
-          setError('Assessment record could not be found.');
+          setError('Interview session could not be located.');
           return;
         }
         setInterview(interviewData);
         setRealEval(evalData);
       })
       .catch((err) => {
-        if (isMounted) setError(err.message || 'Failed to load assessment details.');
+        if (isMounted) setError(err.message || 'Failed to load evaluation results.');
       })
       .finally(() => {
         if (isMounted) setLoading(false);
@@ -70,10 +57,10 @@ const EvaluationResults = () => {
   if (loading) {
     return (
       <InterviewFlowLayout step="results">
-        <div className="max-w-5xl mx-auto py-20 flex flex-col items-center justify-center gap-4 text-center">
-          <div className="w-8 h-8 border-2 rounded-full animate-spin" style={{ borderColor: 'var(--c-accent)', borderTopColor: 'transparent' }} />
-          <p className="text-sm font-medium" style={{ color: 'var(--c-text-secondary)' }}>
-            Retrieving official evaluation record…
+        <div className="max-w-4xl mx-auto py-20 flex flex-col items-center justify-center gap-3 text-center">
+          <div className="w-6 h-6 border-2 rounded-full animate-spin" style={{ borderColor: 'var(--c-accent)', borderTopColor: 'transparent' }} />
+          <p className="text-xs font-medium" style={{ color: 'var(--c-text-secondary)' }}>
+            Generating executive assessment dossier…
           </p>
         </div>
       </InterviewFlowLayout>
@@ -83,230 +70,194 @@ const EvaluationResults = () => {
   if (error || !interview) {
     return (
       <InterviewFlowLayout step="results">
-        <div className="max-w-xl mx-auto py-16 text-center space-y-5">
-          <div className="w-12 h-12 rounded-2xl mx-auto flex items-center justify-center border" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)', color: 'var(--c-danger)' }}>
-            <AlertCircle className="w-6 h-6" />
+        <div className="max-w-md mx-auto py-16 text-center space-y-4">
+          <div className="w-10 h-10 rounded-md mx-auto flex items-center justify-center border"
+            style={{ background: 'var(--c-badge-danger-bg)', borderColor: 'var(--c-badge-danger-border)', color: 'var(--c-danger)' }}
+          >
+            <AlertCircle className="w-5 h-5" />
           </div>
-          <div className="space-y-2">
-            <h1 className="c-heading text-2xl">Report Unavailable</h1>
-            <p className="text-sm max-w-md mx-auto" style={{ color: 'var(--c-text-secondary)' }}>
-              {error || 'The requested evaluation report could not be loaded.'}
+          <div className="space-y-1">
+            <h1 className="c-heading text-xl font-bold" style={{ color: 'var(--c-text)' }}>Results Unavailable</h1>
+            <p className="text-xs" style={{ color: 'var(--c-text-secondary)' }}>
+              {error || 'We were unable to locate this evaluation record.'}
             </p>
           </div>
-          <Link to="/history" className="c-btn c-btn-primary px-6 py-2.5 text-xs">
-            Return to Interview History
+          <Link to="/dashboard" className="c-btn c-btn-primary px-5 py-2 text-xs font-semibold rounded-md inline-block">
+            Return to Dashboard
           </Link>
         </div>
       </InterviewFlowLayout>
     );
   }
 
-  // Real backend fields only - never fabricated
-  const evalStatus = realEval?.evaluationStatus || interview.evaluationStatus || 'pending_evaluation';
+  const evaluationStatus = realEval?.evaluationStatus || interview.evaluationStatus || 'pending_evaluation';
   const evaluation = realEval?.evaluation;
+  const isCompleted = evaluationStatus === 'completed' && !!evaluation;
+  const isProcessing = evaluationStatus === 'processing' || evaluationStatus === 'pending_evaluation';
+  const isFailed = evaluationStatus === 'failed';
 
-  const overallScore = evaluation?.overall_score ?? interview.score;
-  const confidenceScore = evaluation?.confidence_score ?? interview.confidence;
-  const stressLevel = evaluation?.stress_level ?? interview.stress;
-  const interpretation = evaluation?.interpretation;
-  const strengths = Array.isArray(evaluation?.strengths) ? evaluation.strengths.filter(Boolean) : [];
-  const weaknesses = Array.isArray(evaluation?.weaknesses) ? evaluation.weaknesses.filter(Boolean) : [];
-  const suggestions = Array.isArray(evaluation?.suggestions) ? evaluation.suggestions.filter(Boolean) : [];
-  const perQuestionEval = Array.isArray(evaluation?.per_question) ? evaluation.per_question : [];
-
-  const isCompleted = evalStatus === 'completed' && overallScore != null;
-  const isFailed = evalStatus === 'failed';
-  const isProcessing = !isCompleted && !isFailed;
+  const overallScore = evaluation?.overall_score ?? interview.score ?? 0;
+  const confidenceScore = evaluation?.confidence_score ?? interview.confidence ?? null;
+  const stressLevel = evaluation?.stress_level ?? interview.stress ?? null;
+  const interpretation = evaluation?.interpretation ?? interview.interpretation ?? '';
+  const strengths = evaluation?.strengths ?? interview.strengths ?? [];
+  const weaknesses = evaluation?.weaknesses ?? interview.weaknesses ?? [];
+  const suggestions = evaluation?.suggestions ?? interview.suggestions ?? [];
+  const perQuestionEval = evaluation?.per_question ?? [];
 
   const answeredCount = (interview.responses || []).length;
   const totalQuestions = (interview.questions || []).length;
 
   return (
     <InterviewFlowLayout step="results">
-      <div className="max-w-5xl mx-auto space-y-8">
+      <div className="max-w-4xl mx-auto space-y-12 py-6 sm:py-10">
         
-        {/* 1. REPORT HEADER */}
-        <div className="space-y-4 border-b pb-6" style={{ borderColor: 'var(--c-border)' }}>
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <span className="c-eyebrow">Assessment Record</span>
-              <span style={{ color: 'var(--c-border-strong)' }}>/</span>
-              <span className="text-xs font-mono px-2 py-0.5 rounded border" style={{ borderColor: 'var(--c-border)', color: 'var(--c-text-muted)', background: 'var(--c-surface-muted)' }}>
-                REF: {id.slice(-6).toUpperCase()}
-              </span>
+        {/* ===================================================================
+            1. ASSESSMENT HEADER (Candidate / Role / Date / REF)
+           =================================================================== */}
+        <section aria-label="Assessment Metadata" className="border-b pb-8" style={{ borderColor: 'var(--c-border)' }}>
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+            <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--c-text-muted)' }}>
+              <span className="font-semibold" style={{ color: 'var(--c-text)' }}>Executive Assessment Report</span>
+              <span>/</span>
+              <span className="font-mono">REF: {id.slice(-6).toUpperCase()}</span>
             </div>
 
             <div>
-              {isCompleted ? (
-                <span className="c-badge c-badge-success text-xs flex items-center gap-1">
-                  <Check className="w-3 h-3" /> Evaluation Completed
+              {isCompleted && (
+                <span className="c-badge c-badge-success text-xs font-bold">
+                  Evaluation Finalized
                 </span>
-              ) : isFailed ? (
-                <span className="c-badge c-badge-danger text-xs flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3" /> Evaluation Failed
+              )}
+              {isProcessing && (
+                <span className="c-badge c-badge-accent text-xs font-bold flex items-center gap-1.5">
+                  <div className="w-2 h-2 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  <span>Processing Evaluation</span>
                 </span>
-              ) : (
-                <span className="c-badge c-badge-accent text-xs flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: 'var(--c-accent)' }} />
-                  Analysis in Pipeline
+              )}
+              {isFailed && (
+                <span className="c-badge c-badge-danger text-xs font-bold">
+                  Evaluation Interrupted
                 </span>
               )}
             </div>
           </div>
 
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pt-2">
-            <div className="space-y-2">
-              <h1 className="c-heading text-3xl sm:text-4xl md:text-5xl leading-tight">
-                Interview Assessment
+          <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-3">
+            <div>
+              <h1 className="c-heading text-3xl sm:text-4xl font-bold tracking-tight" style={{ color: 'var(--c-text)' }}>
+                {interview.role}
               </h1>
-              <p className="text-base" style={{ color: 'var(--c-text-secondary)' }}>
-                Official performance summary for <strong className="font-semibold" style={{ color: 'var(--c-text)' }}>{interview.role}</strong>
+              <p className="text-xs sm:text-sm mt-1" style={{ color: 'var(--c-text-secondary)' }}>
+                Track: <span className="capitalize font-semibold" style={{ color: 'var(--c-text)' }}>{interview.type || 'Technical'}</span> • Completed on {formatDate(interview.completedAt || interview.createdAt)}
               </p>
             </div>
 
-            {/* Dossier Metadata Strip */}
-            <div className="flex flex-wrap items-center gap-4 text-xs font-medium" style={{ color: 'var(--c-text-secondary)' }}>
-              <div className="flex items-center gap-1.5">
-                <User className="w-3.5 h-3.5" style={{ color: 'var(--c-accent)' }} />
-                <span>{candidateName}</span>
-              </div>
-              <span>·</span>
-              <div className="flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5" style={{ color: 'var(--c-accent)' }} />
-                <span>{formatDate(interview.completedAt || interview.createdAt)}</span>
-              </div>
-              <span>·</span>
-              <span className="capitalize">{interview.type || 'Technical'}</span>
+            <div className="text-xs font-mono" style={{ color: 'var(--c-text-muted)' }}>
+              {answeredCount} of {totalQuestions} Prompts Evaluated
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* 2. OVERALL ASSESSMENT SECTION */}
+        {/* ===================================================================
+            2. OVERALL SCORE & INTERPRETATION (Directly on page with dividers)
+           =================================================================== */}
         {isCompleted ? (
-          <div className="c-card p-7 sm:p-9 space-y-6">
-            <div className="border-b pb-4 flex items-center justify-between" style={{ borderColor: 'var(--c-border)' }}>
-              <div>
-                <p className="c-eyebrow">Aggregate Assessment</p>
-                <h2 className="c-heading text-xl mt-0.5">Overall Performance</h2>
-              </div>
-              <span className="text-xs font-mono" style={{ color: 'var(--c-text-muted)' }}>
-                Standardized 0–100 Scale
-              </span>
-            </div>
-
+          <section aria-label="Overall Score" className="border-b pb-10" style={{ borderColor: 'var(--c-border)' }}>
+            <p className="c-eyebrow mb-2">Overall Score</p>
+            
             <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
-              <div className="md:col-span-4 flex flex-col items-center justify-center p-6 rounded-2xl border text-center" style={{ background: 'var(--c-surface-muted)', borderColor: 'var(--c-border)' }}>
-                <div className="flex items-baseline gap-1">
-                  <span className="c-serif-num text-5xl sm:text-6xl font-bold" style={{ color: 'var(--c-accent)' }}>
-                    {Math.round(overallScore)}
-                  </span>
-                  <span className="text-xl font-medium" style={{ color: 'var(--c-text-muted)' }}>
-                    /100
-                  </span>
-                </div>
-                <p className="text-xs font-bold uppercase tracking-wider mt-2" style={{ color: 'var(--c-text)' }}>
-                  Composite Score
-                </p>
+              <div className="md:col-span-4 flex items-baseline gap-2">
+                <span className="c-serif-num text-5xl sm:text-6xl font-bold tracking-tight" style={{ color: 'var(--c-text)' }}>
+                  {Math.round(overallScore)}%
+                </span>
+                <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--c-text-muted)' }}>
+                  Composite
+                </span>
               </div>
 
-              <div className="md:col-span-8 space-y-3">
-                <h3 className="c-heading text-lg">Score Interpretation</h3>
-                <p className="text-sm leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
+              <div className="md:col-span-8">
+                <p className="text-xs sm:text-sm leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
                   {interpretation || 
-                    `This composite score is computed from your response delivery, technical depth, and communication clarity across ${answeredCount} evaluated prompts.`}
+                    `This composite score is computed from response delivery, technical depth, and domain concept coverage across ${answeredCount} evaluated prompt takes.`}
                 </p>
               </div>
             </div>
-          </div>
+          </section>
         ) : isFailed ? (
-          <div className="c-card p-6 sm:p-8 space-y-4 border-l-4" style={{ borderColor: 'var(--c-danger)' }}>
-            <div className="flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" style={{ color: 'var(--c-danger)' }} />
-              <div className="space-y-1">
-                <h2 className="c-heading text-lg">Evaluation Processing Interrupted</h2>
-                <p className="text-sm leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                  {evaluation?.failed_reason || 'An issue was encountered while processing your response recordings. Your session remains safely saved.'}
-                </p>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="c-card p-7 sm:p-9 space-y-5">
-            <div className="border-b pb-4 flex items-center justify-between" style={{ borderColor: 'var(--c-border)' }}>
+          <section aria-label="Evaluation Failure" className="border-b pb-8" style={{ borderColor: 'var(--c-border)' }}>
+            <div className="c-badge-danger p-4 rounded-md flex items-start gap-3 text-xs">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-500" />
               <div>
-                <p className="c-eyebrow">Status Overview</p>
-                <h2 className="c-heading text-xl mt-0.5">Evaluation In Pipeline</h2>
+                <p className="font-bold">Evaluation Interrupted</p>
+                <p className="mt-0.5">{evaluation?.failed_reason || 'An issue occurred during evaluation processing.'}</p>
               </div>
-              <span className="c-badge c-badge-accent text-xs">Processing Queued</span>
             </div>
-
-            <div className="p-5 rounded-2xl border space-y-3" style={{ background: 'var(--c-surface-muted)', borderColor: 'var(--c-border)' }}>
-              <div className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-full animate-pulse" style={{ background: 'var(--c-accent)' }} />
-                <p className="text-sm font-semibold" style={{ color: 'var(--c-text)' }}>
-                  Responses Ingested & Awaiting Analysis
-                </p>
-              </div>
-              <p className="text-xs sm:text-sm leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                Your {answeredCount} recorded audio-visual responses are archived in the Question Bank. Aggregate scoring, confidence analysis, and speech transcripts will appear automatically in your candidate record once evaluation processing concludes.
+          </section>
+        ) : (
+          <section aria-label="Evaluation In Progress" className="border-b pb-8" style={{ borderColor: 'var(--c-border)' }}>
+            <div className="p-4 rounded-md border text-xs" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
+              <p className="font-bold mb-1" style={{ color: 'var(--c-text)' }}>Evaluation in Pipeline</p>
+              <p style={{ color: 'var(--c-text-secondary)' }}>
+                Your responses have been safely ingested. As soon as transcript analysis and multimodal scoring finish, scores and question feedback will appear here.
               </p>
             </div>
-          </div>
+          </section>
         )}
 
-        {/* 3. PERFORMANCE BREAKDOWN (Rendered only when real metric fields exist) */}
+        {/* ===================================================================
+            3. PERFORMANCE BREAKDOWN (Structured Data Ledger)
+           =================================================================== */}
         {isCompleted && (confidenceScore != null || stressLevel != null) && (
-          <div className="space-y-4">
-            <div className="border-b pb-2" style={{ borderColor: 'var(--c-border)' }}>
-              <p className="c-eyebrow">Dimensions</p>
-              <h2 className="c-heading text-xl mt-0.5">Performance Breakdown</h2>
+          <section aria-label="Performance Breakdown" className="border-b pb-10 space-y-4" style={{ borderColor: 'var(--c-border)' }}>
+            <div>
+              <p className="c-eyebrow mb-1">Dimensions</p>
+              <h2 className="c-heading text-xl font-bold" style={{ color: 'var(--c-text)' }}>Performance Breakdown</h2>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 pt-2">
               {confidenceScore != null && (
-                <div className="c-card p-6 space-y-2">
-                  <p className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--c-text-muted)' }}>
-                    Confidence Assessment
+                <div className="space-y-1">
+                  <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--c-text-muted)' }}>
+                    Speech Confidence
                   </p>
-                  <div className="flex items-baseline gap-1">
-                    <span className="c-serif-num text-3xl font-bold" style={{ color: 'var(--c-text)' }}>
-                      {Math.round(confidenceScore)}%
-                    </span>
-                  </div>
+                  <p className="c-serif-num text-3xl font-bold" style={{ color: 'var(--c-text)' }}>
+                    {Math.round(confidenceScore)}%
+                  </p>
                   <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                    Derived from speech pacing, tone modulation, and clarity of response formulation.
+                    Derived from spoken pacing, volume consistency, and hesitation minimization.
                   </p>
                 </div>
               )}
 
               {stressLevel != null && (
-                <div className="c-card p-6 space-y-2">
-                  <p className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--c-text-muted)' }}>
-                    Stress & Composure Indicator
+                <div className="space-y-1">
+                  <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--c-text-muted)' }}>
+                    Composure Indicator
                   </p>
-                  <div className="flex items-baseline gap-1">
-                    <span className="c-serif-num text-3xl font-bold" style={{ color: 'var(--c-accent)' }}>
-                      {stressLevel}
-                    </span>
-                  </div>
+                  <p className="c-serif-num text-3xl font-bold" style={{ color: 'var(--c-text)' }}>
+                    {stressLevel}
+                  </p>
                   <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
                     Behavioral stability and tension levels observed across sequential prompts.
                   </p>
                 </div>
               )}
             </div>
-          </div>
+          </section>
         )}
 
-        {/* 4. RESPONSE-BY-RESPONSE REVIEW */}
-        <div className="c-card p-6 sm:p-7 space-y-5">
-          <div className="border-b pb-4 flex items-center justify-between" style={{ borderColor: 'var(--c-border)' }}>
+        {/* ===================================================================
+            4. QUESTION-BY-QUESTION REVIEW (Editorial Assessment Stream)
+           =================================================================== */}
+        <section aria-label="Question Review" className="border-b pb-10 space-y-6" style={{ borderColor: 'var(--c-border)' }}>
+          <div className="flex items-baseline justify-between">
             <div>
-              <p className="c-eyebrow">Audit</p>
-              <h2 className="c-heading text-xl mt-0.5">Prompt & Response Review</h2>
+              <p className="c-eyebrow mb-1">Audit</p>
+              <h2 className="c-heading text-xl font-bold" style={{ color: 'var(--c-text)' }}>Question Review</h2>
             </div>
-            <span className="text-xs font-mono" style={{ color: 'var(--c-text-muted)' }}>
-              {answeredCount} of {totalQuestions} Recorded
+            <span className="text-xs font-mono font-bold" style={{ color: 'var(--c-text-muted)' }}>
+              {answeredCount}/{totalQuestions} Takes
             </span>
           </div>
 
@@ -318,24 +269,36 @@ const EvaluationResults = () => {
               const duration = resp?.duration_seconds || resp?.durationSeconds;
               const transcript = qEval?.asr?.transcript;
               const questionScore = qEval?.multimodal?.score ?? qEval?.score;
+              const wpm = qEval?.delivery?.words_per_minute;
+              const pacing = qEval?.delivery?.pacing;
+              const feedback = qEval?.feedback || qEval?.nlp?.feedback;
 
               return (
-                <div key={q.id} className="py-4 space-y-2">
+                <div key={q.id} className="py-6 space-y-3">
+                  {/* Header Row */}
                   <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-start gap-3 min-w-0">
-                      <span className="c-serif-num font-bold text-sm shrink-0 mt-0.5" style={{ color: 'var(--c-accent)' }}>
-                        {(idx + 1).toString().padStart(2, '0')}
-                      </span>
-                      <div className="space-y-1">
-                        <p className="text-sm font-semibold" style={{ color: 'var(--c-text)' }}>
-                          {q.question_text}
-                        </p>
-                        <div className="flex items-center gap-2 text-[11px]" style={{ color: 'var(--c-text-muted)' }}>
-                          <span className="capitalize">{q.difficulty || 'Medium'}</span>
-                          <span>·</span>
-                          <span>{q.type || 'Technical'}</span>
-                        </div>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs font-bold" style={{ color: 'var(--c-text-muted)' }}>
+                          Question {(idx + 1).toString().padStart(2, '0')}
+                        </span>
+                        <span className="text-[11px]" style={{ color: 'var(--c-border)' }}>•</span>
+                        <span className="text-[11px] capitalize font-medium" style={{ color: 'var(--c-text-secondary)' }}>
+                          {q.type || 'Technical'} ({q.difficulty || 'Medium'})
+                        </span>
+                        {wpm != null && (
+                          <>
+                            <span className="text-[11px]" style={{ color: 'var(--c-border)' }}>•</span>
+                            <span className="text-[11px] font-mono" style={{ color: 'var(--c-text-muted)' }}>
+                              {Math.round(wpm)} WPM ({pacing})
+                            </span>
+                          </>
+                        )}
                       </div>
+
+                      <h3 className="c-heading text-base font-bold" style={{ color: 'var(--c-text)' }}>
+                        {q.question_text}
+                      </h3>
                     </div>
 
                     <div className="shrink-0 flex items-center gap-2">
@@ -345,89 +308,109 @@ const EvaluationResults = () => {
                         </span>
                       )}
                       {questionScore != null && (
-                        <span className="c-badge c-badge-accent text-xs font-mono font-bold">
+                        <span className="c-badge c-badge-accent text-xs font-mono font-bold px-2 py-0.5">
                           {Math.round(questionScore)}%
                         </span>
                       )}
                       {isRecorded ? (
-                        <span className="c-badge c-badge-success text-[11px] py-0.5 px-2">
+                        <span className="c-badge c-badge-success text-[10px] py-0.5 px-1.5 font-bold">
                           Recorded
                         </span>
                       ) : (
-                        <span className="c-badge c-badge-muted text-[11px] py-0.5 px-2">
+                        <span className="c-badge c-badge-muted text-[10px] py-0.5 px-1.5">
                           Skipped
                         </span>
                       )}
                     </div>
                   </div>
 
-                  {/* Transcript snippet if real transcription exists */}
+                  {/* Transcribed Response (Restrained inset block) */}
                   {transcript && (
-                    <div className="ml-7 p-3 rounded-lg text-xs leading-relaxed border" style={{ background: 'var(--c-surface-muted)', borderColor: 'var(--c-border)', color: 'var(--c-text-secondary)' }}>
+                    <div className="p-3 rounded-md border text-xs leading-relaxed"
+                      style={{ background: 'var(--c-surface-muted)', borderColor: 'var(--c-border)', color: 'var(--c-text)' }}
+                    >
                       <span className="font-bold text-[10px] uppercase tracking-wider block mb-1" style={{ color: 'var(--c-text-muted)' }}>
-                        Transcribed Response
+                        Transcript
                       </span>
                       "{transcript}"
                     </div>
+                  )}
+
+                  {/* Specific Feedback if provided */}
+                  {feedback && (
+                    <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
+                      <strong className="font-semibold" style={{ color: 'var(--c-text)' }}>Notes:</strong> {feedback}
+                    </p>
                   )}
                 </div>
               );
             })}
           </div>
-        </div>
+        </section>
 
-        {/* 5. & 6. STRENGTHS & AREAS TO IMPROVE (Real backend data only) */}
+        {/* ===================================================================
+            5. STRENGTHS & RECOMMENDATIONS (Editorial Two-Column List)
+           =================================================================== */}
         {(strengths.length > 0 || weaknesses.length > 0 || suggestions.length > 0) && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {strengths.length > 0 && (
-              <div className="c-card p-6 space-y-4">
-                <div className="flex items-center gap-2 border-b pb-3" style={{ borderColor: 'var(--c-border)' }}>
-                  <ThumbsUp className="w-4 h-4" style={{ color: 'var(--c-success)' }} />
-                  <h3 className="c-heading text-lg">Demonstrated Strengths</h3>
-                </div>
-                <ul className="space-y-2.5 text-xs sm:text-sm">
-                  {strengths.map((st, i) => (
-                    <li key={i} className="flex items-start gap-2.5 leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                      <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" style={{ color: 'var(--c-success)' }} />
-                      <span>{st}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+          <section aria-label="Strengths and Recommendations" className="border-b pb-10 space-y-6" style={{ borderColor: 'var(--c-border)' }}>
+            <div>
+              <p className="c-eyebrow mb-1">Qualitative Insights</p>
+              <h2 className="c-heading text-xl font-bold" style={{ color: 'var(--c-text)' }}>Assessment Highlights</h2>
+            </div>
 
-            {(weaknesses.length > 0 || suggestions.length > 0) && (
-              <div className="c-card p-6 space-y-4">
-                <div className="flex items-center gap-2 border-b pb-3" style={{ borderColor: 'var(--c-border)' }}>
-                  <Lightbulb className="w-4 h-4" style={{ color: 'var(--c-accent)' }} />
-                  <h3 className="c-heading text-lg">Recommendations for Growth</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {strengths.length > 0 && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 border-b pb-2" style={{ borderColor: 'var(--c-border)' }}>
+                    <ThumbsUp className="w-4 h-4 text-emerald-500" />
+                    <h3 className="c-heading text-sm font-bold" style={{ color: 'var(--c-text)' }}>Demonstrated Strengths</h3>
+                  </div>
+                  <ul className="space-y-2.5 text-xs">
+                    {strengths.map((st, i) => (
+                      <li key={i} className="flex items-start gap-2.5 leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
+                        <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5 text-emerald-500" />
+                        <span>{st}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                <ul className="space-y-2.5 text-xs sm:text-sm">
-                  {[...weaknesses, ...suggestions].map((item, i) => (
-                    <li key={i} className="flex items-start gap-2.5 leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                      <span className="w-1.5 h-1.5 rounded-full mt-2 shrink-0" style={{ background: 'var(--c-accent)' }} />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
+              )}
+
+              {(weaknesses.length > 0 || suggestions.length > 0) && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 border-b pb-2" style={{ borderColor: 'var(--c-border)' }}>
+                    <Lightbulb className="w-4 h-4 text-amber-500" />
+                    <h3 className="c-heading text-sm font-bold" style={{ color: 'var(--c-text)' }}>Recommendations for Growth</h3>
+                  </div>
+                  <ul className="space-y-2.5 text-xs">
+                    {[...weaknesses, ...suggestions].map((item, i) => (
+                      <li key={i} className="flex items-start gap-2.5 leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
+                        <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: 'var(--c-border-strong)' }} />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </section>
         )}
 
-        {/* 8. ACTIONS */}
-        <div className="border-t pt-6 flex flex-wrap items-center justify-between gap-4" style={{ borderColor: 'var(--c-border)' }}>
+        {/* ===================================================================
+            6. ACTIONS BAR
+           =================================================================== */}
+        <section aria-label="Report Actions" className="pt-2 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <Link
               to="/history"
-              className="c-btn c-btn-secondary px-5 py-3 text-xs flex items-center gap-2"
+              className="c-btn c-btn-secondary px-4 py-2.5 text-xs font-semibold rounded-md flex items-center gap-1.5"
             >
               <History className="w-3.5 h-3.5" />
               <span>Interview History</span>
             </Link>
             <Link
               to="/dashboard"
-              className="c-btn c-btn-secondary px-5 py-3 text-xs flex items-center gap-2"
+              className="c-btn c-btn-secondary px-4 py-2.5 text-xs font-semibold rounded-md flex items-center gap-1.5"
             >
               <LayoutDashboard className="w-3.5 h-3.5" />
               <span>Dashboard</span>
@@ -436,12 +419,12 @@ const EvaluationResults = () => {
 
           <Link
             to="/interview/goal"
-            className="c-btn c-btn-primary px-6 py-3 text-xs font-bold flex items-center gap-2"
+            className="c-btn c-btn-primary px-5 py-2.5 text-xs font-bold rounded-md flex items-center gap-1.5"
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            <span>Practice Another Interview</span>
+            <span>Practice Another Session</span>
           </Link>
-        </div>
+        </section>
 
       </div>
     </InterviewFlowLayout>
