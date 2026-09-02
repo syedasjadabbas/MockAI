@@ -3,124 +3,139 @@ import * as THREE from 'three';
 import { CANDIDATE_IMAGES } from '../assets/images';
 
 /**
- * Creates a dynamic CanvasTexture for the 3D Assessment Panels
+ * Creates an ultra-high-resolution CanvasTexture for the 3D Assessment Panels
  */
-function createAssessmentCardTexture({ title, value, subtext, statusColor = '#FF6B35', width = 360, height = 180, hasCircle = false, circleVal = 91 }) {
+function createAssessmentCardTexture({ title, value, subtext, statusColor = '#FF6B35', width = 1024, height = 512, hasCircle = false, circleVal = 91 }) {
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext('2d');
 
-  // Background - Dark obsidian glass
+  // Background - Deep solid charcoal with subtle transparency
   ctx.fillStyle = '#181818';
   ctx.beginPath();
-  ctx.roundRect(4, 4, width - 8, height - 8, 16);
+  ctx.roundRect(12, 12, width - 24, height - 24, 32);
   ctx.fill();
 
-  // Subtle border
-  ctx.strokeStyle = '#2E2E2E';
-  ctx.lineWidth = 2.5;
+  // Distinct high-contrast border
+  ctx.strokeStyle = '#383838';
+  ctx.lineWidth = 6;
   ctx.stroke();
 
-  // Corner orange accent tick
+  // Top accent bar in Primary Orange
   ctx.strokeStyle = statusColor;
-  ctx.lineWidth = 3;
+  ctx.lineWidth = 8;
   ctx.beginPath();
-  ctx.moveTo(14, 4);
-  ctx.lineTo(34, 4);
+  ctx.roundRect(12, 12, width - 24, height - 24, 32);
+  ctx.clip();
+  ctx.beginPath();
+  ctx.moveTo(12, 16);
+  ctx.lineTo(160, 16);
   ctx.stroke();
+
+  // Restore clip for content
+  ctx.restore();
 
   if (hasCircle) {
     // Score circular meter on right
-    const cx = width - 60;
-    const cy = height / 2;
-    const r = 36;
-    // Track
+    const cx = width - 150;
+    const cy = height / 2 + 10;
+    const r = 90;
+    // Track background
     ctx.strokeStyle = '#2A2A2A';
-    ctx.lineWidth = 6;
+    ctx.lineWidth = 16;
     ctx.beginPath();
     ctx.arc(cx, cy, r, 0, Math.PI * 2);
     ctx.stroke();
-    // Progress
+    // Progress arc
     ctx.strokeStyle = statusColor;
-    ctx.lineWidth = 6;
+    ctx.lineWidth = 16;
+    ctx.lineCap = 'round';
     ctx.beginPath();
     ctx.arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + (Math.PI * 2 * (circleVal / 100)));
     ctx.stroke();
-    // Inner text
-    ctx.fillStyle = '#F5F5F5';
-    ctx.font = 'bold 22px system-ui, -apple-system, sans-serif';
+    // Inner percentage text
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 54px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(`${circleVal}%`, cx, cy);
   }
 
-  // Header Title
+  // Header Title (Uppercase, High Contrast Muted Grey)
   ctx.fillStyle = '#A3A3A3';
-  ctx.font = '600 15px system-ui, -apple-system, sans-serif';
+  ctx.font = 'bold 36px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
-  ctx.fillText(title.toUpperCase(), 24, 24);
+  ctx.fillText(title.toUpperCase(), 60, 60);
 
-  // Main Metric Value
-  ctx.fillStyle = '#F5F5F5';
-  ctx.font = 'bold 32px system-ui, -apple-system, sans-serif';
-  ctx.fillText(value, 24, 52);
+  // Main Metric Value (Extra Large Crisp Pure White)
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = 'bold 96px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  ctx.fillText(value, 60, 120);
 
-  // Subtext / Tag
+  // Subtext / Tag + Progress Bar
   if (subtext) {
     ctx.fillStyle = statusColor;
-    ctx.font = '600 14px system-ui, -apple-system, sans-serif';
-    ctx.fillText(subtext, 24, 100);
+    ctx.font = '600 36px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.fillText(subtext, 60, 260);
 
-    // Mini bar
-    ctx.fillStyle = '#2A2A2A';
+    const barWidth = width - (hasCircle ? 360 : 120);
+    // Background track
+    ctx.fillStyle = '#2E2E2E';
     ctx.beginPath();
-    ctx.roundRect(24, 126, width - (hasCircle ? 140 : 48), 6, 3);
+    ctx.roundRect(60, 330, barWidth, 16, 8);
     ctx.fill();
 
+    // Active progress fill
     ctx.fillStyle = statusColor;
     ctx.beginPath();
-    ctx.roundRect(24, 126, (width - (hasCircle ? 140 : 48)) * 0.85, 6, 3);
+    ctx.roundRect(60, 330, barWidth * 0.88, 16, 8);
     ctx.fill();
   }
 
   const texture = new THREE.CanvasTexture(canvas);
+  texture.generateMipmaps = true;
+  texture.minFilter = THREE.LinearMipmapLinearFilter;
+  texture.magFilter = THREE.LinearFilter;
   texture.needsUpdate = true;
   texture.colorSpace = THREE.SRGBColorSpace;
   return texture;
 }
 
 /**
- * Creates branding texture for the microphone body
+ * Creates high-resolution branding texture for the microphone body
  */
 function createMicrophoneBrandTexture() {
   const canvas = document.createElement('canvas');
-  canvas.width = 512;
-  canvas.height = 128;
+  canvas.width = 1024;
+  canvas.height = 256;
   const ctx = canvas.getContext('2d');
 
   // Dark graphite background
   ctx.fillStyle = '#161616';
-  ctx.fillRect(0, 0, 512, 128);
+  ctx.fillRect(0, 0, 1024, 256);
 
-  // "MOCK AI" Text Branding
-  ctx.fillStyle = '#F5F5F5';
-  ctx.font = 'bold 36px system-ui, -apple-system, sans-serif';
+  // "MOCK AI" Text Branding (Crisp bold typography)
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = '900 76px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText('MOCK AI', 256, 56);
+  ctx.fillText('MOCK AI', 512, 110);
 
   // Orange subtle indicator dot & rule
   ctx.fillStyle = '#FF6B35';
   ctx.beginPath();
-  ctx.arc(170, 56, 4, 0, Math.PI * 2);
+  ctx.arc(330, 110, 10, 0, Math.PI * 2);
   ctx.fill();
 
   ctx.fillStyle = '#FF6B35';
-  ctx.fillRect(200, 88, 112, 3);
+  ctx.fillRect(390, 175, 244, 8);
 
   const texture = new THREE.CanvasTexture(canvas);
+  texture.generateMipmaps = true;
+  texture.minFilter = THREE.LinearMipmapLinearFilter;
+  texture.magFilter = THREE.LinearFilter;
   texture.needsUpdate = true;
   texture.colorSpace = THREE.SRGBColorSpace;
   return texture;
@@ -472,34 +487,37 @@ const HeroScene3D = () => {
     const particleCloud = new THREE.Points(particleGeo, particleMat);
     worldGroup.add(particleCloud);
 
+    const maxAnisotropy = renderer.capabilities.getMaxAnisotropy();
+    brandTexture.anisotropy = maxAnisotropy;
+
     // --- 3D Assessment Floating Panels ---
     const cards = [
       {
         data: { title: 'Speech Clarity', value: '94%', subtext: 'Clear articulation' },
-        pos: [-2.65, 1.45, 0.5],
-        rot: [0.08, 0.32, -0.04],
-        scale: [1.6, 0.8, 1],
+        pos: [-2.65, 1.35, 1.1],
+        rot: [0.02, 0.14, -0.01],
+        scale: [2.1, 1.05, 1],
         floatPhase: 0,
       },
       {
         data: { title: 'Pacing cadence', value: '135 wpm', subtext: 'Optimal tempo' },
-        pos: [-2.45, -0.25, 0.9],
-        rot: [-0.06, 0.28, 0.02],
-        scale: [1.6, 0.8, 1],
+        pos: [-2.5, -0.35, 1.3],
+        rot: [-0.02, 0.12, 0.01],
+        scale: [2.1, 1.05, 1],
         floatPhase: 1.8,
       },
       {
         data: { title: 'Evaluation', value: '91%', subtext: 'Composite Score', hasCircle: true, circleVal: 91 },
-        pos: [2.55, 1.35, 0.4],
-        rot: [0.06, -0.34, 0.03],
-        scale: [1.7, 0.85, 1],
+        pos: [2.65, 1.35, 1.1],
+        rot: [0.02, -0.14, 0.01],
+        scale: [2.1, 1.05, 1],
         floatPhase: 3.2,
       },
       {
         data: { title: 'Fluency Index', value: 'High', subtext: 'Low hesitation' },
-        pos: [2.4, -0.35, 0.75],
-        rot: [-0.05, -0.26, -0.02],
-        scale: [1.55, 0.78, 1],
+        pos: [2.5, -0.35, 1.3],
+        rot: [-0.02, -0.12, -0.01],
+        scale: [2.1, 1.05, 1],
         floatPhase: 4.6,
       },
     ];
@@ -507,11 +525,12 @@ const HeroScene3D = () => {
     const cardMeshes = [];
     cards.forEach((cfg) => {
       const cardTex = createAssessmentCardTexture(cfg.data);
+      cardTex.anisotropy = maxAnisotropy;
       const cardGeo = new THREE.PlaneGeometry(1, 1);
       const cardMat = new THREE.MeshBasicMaterial({
         map: cardTex,
         transparent: true,
-        opacity: 0.92,
+        opacity: 0.96,
         side: THREE.DoubleSide,
       });
       const cardMesh = new THREE.Mesh(cardGeo, cardMat);
