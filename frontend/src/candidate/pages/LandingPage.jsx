@@ -585,7 +585,7 @@ const LandingPage = () => {
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-mono text-xs text-[#FF6B35] font-bold">01 • CONTENT</span>
-                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#181818] text-[#22C55E] border border-white/10">Weight 40%</span>
+                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#181818] text-[#22C55E] border border-white/10">Accuracy %</span>
                   </div>
                   <h3 className="text-sm font-bold" style={{ color: 'var(--c-text)' }}>
                     Technical Accuracy
@@ -604,7 +604,7 @@ const LandingPage = () => {
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-mono text-xs text-[#FF6B35] font-bold">02 • DELIVERY</span>
-                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#181818] text-[#60A5FA] border border-white/10">Weight 20%</span>
+                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#181818] text-[#60A5FA] border border-white/10">Fluency & WPM</span>
                   </div>
                   <h3 className="text-sm font-bold" style={{ color: 'var(--c-text)' }}>
                     Speech & Communication
@@ -623,7 +623,7 @@ const LandingPage = () => {
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-mono text-xs text-[#FF6B35] font-bold">03 • VISION</span>
-                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#181818] text-[#FBBF24] border border-white/10">Vision Signal</span>
+                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#181818] text-[#FBBF24] border border-white/10">Face Tracking</span>
                   </div>
                   <h3 className="text-sm font-bold" style={{ color: 'var(--c-text)' }}>
                     Facial Expression
@@ -642,7 +642,7 @@ const LandingPage = () => {
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-mono text-xs text-[#FF6B35] font-bold">04 • BEHAVIOR</span>
-                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#181818] text-[#A855F7] border border-white/10">Behavioral</span>
+                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#181818] text-[#A855F7] border border-white/10">Composure Index</span>
                   </div>
                   <h3 className="text-sm font-bold" style={{ color: 'var(--c-text)' }}>
                     Confidence & Stress
@@ -661,7 +661,7 @@ const LandingPage = () => {
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-mono text-xs text-[#FF6B35] font-bold">05 • STRUCTURE</span>
-                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#181818] text-[#EC4899] border border-white/10">Coverage</span>
+                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#181818] text-[#EC4899] border border-white/10">Scope Coverage</span>
                   </div>
                   <h3 className="text-sm font-bold" style={{ color: 'var(--c-text)' }}>
                     Completeness & Clarity
@@ -680,7 +680,7 @@ const LandingPage = () => {
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-mono text-xs text-[#FF6B35] font-bold">06 • SYNTHESIS</span>
-                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#181818] text-[#FF9F1C] border border-white/10">0–100 Index</span>
+                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#181818] text-[#FF9F1C] border border-white/10">0–100 Score</span>
                   </div>
                   <h3 className="text-sm font-bold" style={{ color: 'var(--c-text)' }}>
                     Overall Performance
