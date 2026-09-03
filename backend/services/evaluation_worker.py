@@ -134,6 +134,9 @@ def evaluate_interview_job(interview_id: str) -> Dict:
             "weaknesses": aggregate_res["weaknesses"],
             "suggestions": aggregate_res["suggestions"],
             "facial_summary": aggregate_res.get("facial_summary"),
+            "aggregate_analysis": aggregate_res.get("aggregate_analysis"),
+            "scoring_formula": aggregate_res.get("scoring_formula"),
+            "dimension_scores": aggregate_res.get("dimension_scores"),
             "failed_reason": None,
         }
 
