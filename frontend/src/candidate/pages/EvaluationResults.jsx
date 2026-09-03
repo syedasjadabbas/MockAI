@@ -268,7 +268,7 @@ const EvaluationResults = () => {
                   </span>
                 </div>
                 <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                  Semantic correctness, question-answering relevance, key technical concept coverage, and response completeness.
+                  BERT/DistilBERT semantic alignment against rubrics, question relevance, key technical concept coverage, and response completeness.
                 </p>
               </div>
 
@@ -463,6 +463,8 @@ const EvaluationResults = () => {
               const coveredConcepts = textAnalysis?.covered_concepts || [];
               const missingConcepts = textAnalysis?.missing_concepts || qEval?.missing_concepts || [];
               const contentScore = textAnalysis?.content_score;
+              const semanticSimScore = textAnalysis?.semantic_similarity_score;
+              const nlpModel = textAnalysis?.model;
 
               // Delivery real metrics
               const delivery = qEval?.delivery;
@@ -535,6 +537,11 @@ const EvaluationResults = () => {
                         <span className="font-bold flex items-center gap-1.5 text-neutral-300">
                           <FileText className="w-3.5 h-3.5 text-[#FF6B35]" />
                           <span>NLP Content</span>
+                          {nlpModel && nlpModel.includes('bert') && (
+                            <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-[#FF6B35]/10 text-[#FF6B35] border border-[#FF6B35]/20">
+                              BERT
+                            </span>
+                          )}
                         </span>
                         {contentScore != null && (
                           <span className="font-mono text-[#FF6B35] font-bold">
@@ -543,6 +550,12 @@ const EvaluationResults = () => {
                         )}
                       </div>
                       <div className="space-y-1">
+                        {semanticSimScore != null && semanticSimScore > 0 && (
+                          <div className="flex items-center justify-between text-[10px] font-mono text-neutral-400">
+                            <span>Semantic Alignment:</span>
+                            <span className="text-neutral-200 font-semibold">{Math.round(semanticSimScore)}%</span>
+                          </div>
+                        )}
                         {coveredConcepts.length > 0 && (
                           <div className="flex items-center gap-1 flex-wrap text-[10px] font-mono">
                             <span className="text-neutral-400">Covered:</span>

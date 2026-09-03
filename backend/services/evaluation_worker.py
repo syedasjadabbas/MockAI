@@ -114,6 +114,7 @@ def evaluate_interview_job(interview_id: str) -> Dict:
                 media_url=media_url,
                 asr_status=asr_status,
                 asr_provider=asr_provider,
+                rubric=q.get("rubric"),
             )
             per_question_results.append(q_eval)
 

@@ -37,6 +37,7 @@ def evaluate_question_response(
     media_url: Optional[str] = None,
     asr_status: Optional[str] = None,
     asr_provider: Optional[str] = None,
+    rubric: Optional[Dict] = None,
 ) -> Dict:
     """
     Evaluates a candidate's response to an individual question.
@@ -46,13 +47,14 @@ def evaluate_question_response(
     diff_normalized = difficulty.capitalize() if difficulty else "Medium"
     diff_weight = get_difficulty_weight(diff_normalized)
 
-    # 1. NLP Content Analysis
+    # 1. NLP Content Analysis (FR16: BERT/DistilBERT semantic analysis)
     nlp_result = analyze_transcript(
         question_text=question_text,
         expected_answer=expected_answer,
         tags=tags,
         difficulty=diff_normalized,
         transcript=transcript,
+        rubric=rubric,
     )
 
     # 2. Delivery Analysis
@@ -105,14 +107,15 @@ def evaluate_question_response(
     text_analysis_data = {
         "status": nlp_result["status"],
         "content_score": nlp_result["content_score"],
+        "semantic_similarity_score": nlp_result.get("semantic_similarity_score", 0.0),
         "concept_coverage_score": nlp_result["concept_coverage_score"],
         "relevance_score": nlp_result["relevance_score"],
         "completeness_score": nlp_result["completeness_score"],
         "covered_concepts": nlp_result["covered_concepts"],
         "missing_concepts": nlp_result["missing_concepts"],
         "notes": nlp_result["notes"],
-        "model": "nlp-criteria-v1",
-        "error": None,
+        "model": nlp_result.get("model", "bert-distilbert-minilm-v2"),
+        "error": nlp_result.get("error"),
     }
 
     # 3. Facial & Behavioral Analysis (FR13 / FR17)
