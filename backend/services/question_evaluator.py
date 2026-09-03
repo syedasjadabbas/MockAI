@@ -1,8 +1,9 @@
 """
-Question-Level Evaluator for candidate interview responses (Phase 3).
+Question-Level Evaluator for candidate interview responses (Phase 3 / Task 4).
 
-Combines NLP transcript content analysis and delivery metrics to produce an
-explainable, deterministic 0-100 score for a single question response.
+Combines NLP transcript content analysis, speech delivery metrics, and
+computer-vision facial behavioral analysis to produce a deterministic,
+explainable 0-100 multimodal score for a single question response.
 
 Difficulty weights:
 - Easy: 1.0
@@ -12,6 +13,7 @@ Difficulty weights:
 from typing import Dict, List, Optional
 from services.nlp_analyzer import analyze_transcript
 from services.delivery_analyzer import analyze_delivery
+from services.multimodal_fusion import fuse_per_question
 
 DIFFICULTY_WEIGHTS: Dict[str, float] = {
     "Easy": 1.0,
@@ -57,30 +59,53 @@ def evaluate_question_response(
         rubric=rubric,
     )
 
-    # 2. Delivery Analysis
+    # 2. Delivery Analysis (FR15 / FR22 / FR23)
     delivery_result = analyze_delivery(
         transcript=transcript,
         duration_seconds=duration_seconds,
         media_url=media_url,
     )
 
+    # 3. Facial & Behavioral Analysis (FR13 / FR17)
+    resolved_video_path = None
+    if media_url:
+        try:
+            import os
+            from services.media_storage import LocalFilesystemMediaStorage
+            storage = LocalFilesystemMediaStorage()
+            resolved = storage.resolve_path(media_url)
+            if resolved and resolved.is_file():
+                resolved_video_path = str(resolved)
+            elif os.path.isfile(str(media_url)):
+                resolved_video_path = str(media_url)
+        except Exception:
+            import os
+            resolved_video_path = media_url if (media_url and os.path.isfile(str(media_url))) else None
+
+    from services.facial_analyzer import FacialAnalyzer
+    facial_analysis_data = FacialAnalyzer().analyze_video(
+        video_path=resolved_video_path,
+        duration_seconds=duration_seconds,
+    )
+
+    # 4. Multimodal Fusion (FR18 / FR19)
+    multimodal_data = fuse_per_question(
+        nlp_result=nlp_result,
+        delivery_result=delivery_result,
+        facial_result=facial_analysis_data,
+    )
+
+    # The fused multimodal score becomes the canonical question score
+    question_score = multimodal_data["score"]
+
+    # 5. Derive strengths, feedback, and missing concepts
     is_unanswered = not transcript or not transcript.strip() or nlp_result["status"] in ("empty", "missing")
 
     if is_unanswered:
-        question_score = 0.0
         strengths: List[str] = []
         missing_concepts = nlp_result.get("missing_concepts", [])
         feedback = "No response was recorded for this question prompt."
-        behavioral_insights = "Prompt skipped or recording unsubmitted."
-        multimodal_status = "completed"
     else:
-        # Base Question Score: 70% content + 30% delivery
-        content_score = nlp_result["content_score"]
-        fluency_score = delivery_result["fluency_score"]
-        raw_score = (0.70 * content_score) + (0.30 * fluency_score)
-        question_score = round(min(100.0, max(0.0, raw_score)), 1)
-
-        # Identify strengths
         strengths = []
         covered = nlp_result.get("covered_concepts", [])
         if covered:
@@ -89,13 +114,16 @@ def evaluate_question_response(
             strengths.append(f"Optimal speaking pace ({delivery_result.get('words_per_minute')} WPM).")
         elif delivery_result.get("fluency_indicator") == "Fluent":
             strengths.append("Smooth conversational delivery with minimal hesitation.")
+        content_score = nlp_result.get("content_score", 0.0)
         if content_score >= 80.0:
             strengths.append("Thorough technical depth addressing core requirements.")
+        if facial_analysis_data.get("status") == "completed":
+            indicators = facial_analysis_data.get("behavioral_indicators", {})
+            if indicators.get("composure_index") == "Composed & Stable":
+                strengths.append("Maintained calm facial composure throughout response.")
 
         missing_concepts = nlp_result.get("missing_concepts", [])
         feedback = f"{nlp_result['notes']} {delivery_result['notes']}"
-        behavioral_insights = delivery_result["notes"]
-        multimodal_status = "completed"
 
     asr_data = {
         "status": asr_status or ("completed" if transcript else "empty"),
@@ -118,36 +146,6 @@ def evaluate_question_response(
         "error": nlp_result.get("error"),
     }
 
-    # 3. Facial & Behavioral Analysis (FR13 / FR17)
-    resolved_video_path = None
-    if media_url:
-        try:
-            import os
-            from services.media_storage import LocalFilesystemMediaStorage
-            storage = LocalFilesystemMediaStorage()
-            resolved = storage.resolve_path(media_url)
-            if resolved and resolved.is_file():
-                resolved_video_path = str(resolved)
-            elif os.path.isfile(str(media_url)):
-                resolved_video_path = str(media_url)
-        except Exception:
-            resolved_video_path = media_url if (media_url and os.path.isfile(str(media_url))) else None
-
-    from services.facial_analyzer import FacialAnalyzer
-    facial_analysis_data = FacialAnalyzer().analyze_video(
-        video_path=resolved_video_path,
-        duration_seconds=duration_seconds,
-    )
-
-    multimodal_data = {
-        "status": multimodal_status,
-        "score": question_score,
-        "integrated_score": question_score,
-        "behavioral_insights": behavioral_insights,
-        "fusion_method": "weighted_content_delivery_v1",
-        "error": None,
-    }
-
     return {
         "question_id": question_id,
         "difficulty": diff_normalized,
@@ -162,3 +160,4 @@ def evaluate_question_response(
         "missing_concepts": missing_concepts,
         "feedback": feedback,
     }
+

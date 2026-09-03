@@ -42,13 +42,15 @@ def aggregate_interview_evaluation(per_question_results: List[Dict]) -> Dict:
             "suggestions": ["Record and submit spoken responses for each prompt."],
         }
 
-    # 1. Calculate Weighted Overall Score
+    # 1. Calculate Weighted Overall Score (using multimodal fusion scores)
     total_weight = 0.0
     weighted_score_sum = 0.0
 
     for q_eval in per_question_results:
         w = float(q_eval.get("difficulty_weight", 1.25))
-        s = float(q_eval.get("score", 0.0))
+        # Prefer multimodal fused score, fall back to top-level score
+        mm = q_eval.get("multimodal", {})
+        s = float(mm.get("score", q_eval.get("score", 0.0)))
         total_weight += w
         weighted_score_sum += (s * w)
 
