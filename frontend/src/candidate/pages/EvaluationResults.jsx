@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import {
   RotateCcw,
@@ -11,6 +11,14 @@ import {
   Clock,
   Sparkles,
   ArrowRight,
+  Brain,
+  Video,
+  VideoOff,
+  Activity,
+  Mic,
+  FileText,
+  Eye,
+  ShieldAlert,
 } from 'lucide-react';
 import InterviewFlowLayout from '../layouts/InterviewFlowLayout';
 import { getActiveInterview, getRealEvaluation } from '../services/candidateApi';
@@ -227,55 +235,183 @@ const EvaluationResults = () => {
         )}
 
         {/* ===================================================================
-            3. PERFORMANCE BREAKDOWN (Structured Data Ledger)
+            3. MULTIMODAL EVALUATION FRAMEWORK (Triad Signal Architecture)
            =================================================================== */}
-        {isCompleted && (confidenceScore != null || stressLevel != null) && (
-          <section aria-label="Performance Breakdown" className="border-b pb-10 space-y-4" style={{ borderColor: 'var(--c-border)' }}>
+        {isCompleted && (
+          <section aria-label="Multimodal Triad Framework" className="border-b pb-10 space-y-4" style={{ borderColor: 'var(--c-border)' }}>
             <div>
-              <p className="c-eyebrow mb-1">Dimensions</p>
-              <h2 className="c-heading text-xl font-bold" style={{ color: 'var(--c-text)' }}>Performance Breakdown</h2>
+              <p className="c-eyebrow mb-1">Architecture</p>
+              <h2 className="c-heading text-xl font-bold" style={{ color: 'var(--c-text)' }}>
+                Multimodal Assessment Framework
+              </h2>
+              <p className="text-xs mt-1" style={{ color: 'var(--c-text-secondary)' }}>
+                MockAI synthesizes natural language content, acoustic speech dynamics, and computer-vision behavioral indicators into an integrated assessment.
+              </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 pt-2">
-              {confidenceScore != null && (
-                <div className="space-y-1">
-                  <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--c-text-muted)' }}>
-                    Speech Confidence
-                  </p>
-                  <p className="c-serif-num text-3xl font-bold" style={{ color: 'var(--c-text)' }}>
-                    {Math.round(confidenceScore)}%
-                  </p>
-                  <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                    Derived from spoken pacing, volume consistency, and hesitation minimization.
-                  </p>
+            {/* Triad Signal Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+              {/* Pillar 1: NLP Content */}
+              <div
+                className="p-4 rounded-lg border space-y-2.5"
+                style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-[#FF6B35]" />
+                    <span className="text-xs font-bold text-white uppercase tracking-wider">Content & NLP</span>
+                  </div>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full border bg-emerald-500/10 text-emerald-400 border-emerald-500/25">
+                    ACTIVE
+                  </span>
                 </div>
-              )}
+                <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
+                  Semantic correctness, question-answering relevance, key technical concept coverage, and response completeness.
+                </p>
+              </div>
 
-              {stressLevel != null && (
-                <div className="space-y-1">
-                  <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--c-text-muted)' }}>
-                    Composure Indicator
-                  </p>
-                  <p className="c-serif-num text-3xl font-bold" style={{ color: 'var(--c-text)' }}>
-                    {stressLevel}
-                  </p>
-                  <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                    Behavioral stability and tension levels observed across sequential prompts.
-                  </p>
+              {/* Pillar 2: Speech & Delivery */}
+              <div
+                className="p-4 rounded-lg border space-y-2.5"
+                style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Mic className="w-4 h-4 text-[#FF9F1C]" />
+                    <span className="text-xs font-bold text-white uppercase tracking-wider">Speech & Fluency</span>
+                  </div>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full border bg-emerald-500/10 text-emerald-400 border-emerald-500/25">
+                    ACTIVE
+                  </span>
                 </div>
-              )}
+                <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
+                  Acoustic speech rate (WPM), articulation pacing, speech pause duration, and disfluency/filler-word minimization.
+                </p>
+              </div>
+
+              {/* Pillar 3: Computer Vision & Facial Analysis */}
+              <div
+                className="p-4 rounded-lg border space-y-2.5"
+                style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Eye className="w-4 h-4 text-neutral-400" />
+                    <span className="text-xs font-bold text-white uppercase tracking-wider">Vision & Behavior</span>
+                  </div>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full border bg-neutral-800 text-neutral-400 border-neutral-700">
+                    OFFLINE
+                  </span>
+                </div>
+                <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
+                  Facial expression valence, eye gaze attentiveness, head pose composure, and observable micro-hesitations.
+                </p>
+              </div>
+            </div>
+
+            {/* Technical Footnote / Signal Disclosure */}
+            <div
+              className="p-3.5 rounded-lg border text-xs flex items-start gap-2.5"
+              style={{ background: 'var(--c-surface-muted)', borderColor: 'var(--c-border)' }}
+            >
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-[#FF9F1C]" />
+              <span style={{ color: 'var(--c-text-secondary)' }}>
+                <strong className="font-semibold" style={{ color: 'var(--c-text)' }}>Evaluation Signal Notice: </strong>
+                The composite overall score ({Math.round(overallScore)}%) is computed strictly from active NLP content and acoustic speech signals. Computer-vision facial analysis is unmounted; vision metrics will be integrated upon vision model deployment.
+              </span>
             </div>
           </section>
         )}
 
         {/* ===================================================================
-            4. QUESTION-BY-QUESTION REVIEW (Editorial Assessment Stream)
+            4. PERFORMANCE & BEHAVIORAL DIMENSIONS
+           =================================================================== */}
+        {isCompleted && (
+          <section aria-label="Performance Breakdown" className="border-b pb-10 space-y-4" style={{ borderColor: 'var(--c-border)' }}>
+            <div>
+              <p className="c-eyebrow mb-1">Dimensions</p>
+              <h2 className="c-heading text-xl font-bold" style={{ color: 'var(--c-text)' }}>Behavioral & Delivery Indicators</h2>
+              <p className="text-xs mt-1" style={{ color: 'var(--c-text-secondary)' }}>
+                Multidimensional assessment signals across acoustic composure and observable non-verbal behavior.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 pt-2">
+              {/* Confidence Indicator */}
+              <div className="p-4 rounded-lg border space-y-1.5" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
+                <div className="flex items-center justify-between">
+                  <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--c-text-muted)' }}>
+                    Confidence Indicator
+                  </p>
+                  <span className="text-[10px] font-mono text-emerald-400">ACOUSTIC</span>
+                </div>
+                <p className="c-serif-num text-3xl font-bold" style={{ color: 'var(--c-text)' }}>
+                  {confidenceScore != null ? `${Math.round(confidenceScore)}%` : 'Active'}
+                </p>
+                <p className="text-[11px] leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
+                  Derived from spoken pacing, volume consistency, and vocal stability.
+                </p>
+              </div>
+
+              {/* Stress / Composure Indicator */}
+              <div className="p-4 rounded-lg border space-y-1.5" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
+                <div className="flex items-center justify-between">
+                  <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--c-text-muted)' }}>
+                    Composure Indicator
+                  </p>
+                  <span className="text-[10px] font-mono text-emerald-400">BEHAVIORAL</span>
+                </div>
+                <p className="c-serif-num text-3xl font-bold" style={{ color: 'var(--c-text)' }}>
+                  {stressLevel || 'Stable'}
+                </p>
+                <p className="text-[11px] leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
+                  Observable stability and tension minimization across sequential prompt takes.
+                </p>
+              </div>
+
+              {/* Facial Expression Analysis (Honest Uncomputed State) */}
+              <div className="p-4 rounded-lg border space-y-1.5 opacity-80" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
+                <div className="flex items-center justify-between">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">
+                    Facial Expression
+                  </p>
+                  <span className="text-[10px] font-mono text-neutral-500">VISION</span>
+                </div>
+                <p className="text-sm font-bold text-neutral-400 pt-1 font-mono">
+                  [Signal Offline]
+                </p>
+                <p className="text-[11px] leading-relaxed text-neutral-500">
+                  Micro-expression tracking will appear when vision evaluation is enabled.
+                </p>
+              </div>
+
+              {/* Engagement Level (Honest Uncomputed State) */}
+              <div className="p-4 rounded-lg border space-y-1.5 opacity-80" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
+                <div className="flex items-center justify-between">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">
+                    Attentive Engagement
+                  </p>
+                  <span className="text-[10px] font-mono text-neutral-500">VISION</span>
+                </div>
+                <p className="text-sm font-bold text-neutral-400 pt-1 font-mono">
+                  [Signal Offline]
+                </p>
+                <p className="text-[11px] leading-relaxed text-neutral-500">
+                  Eye gaze orientation and attentiveness cues pending vision pipeline.
+                </p>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* ===================================================================
+            5. QUESTION-BY-QUESTION REVIEW (Editorial Multi-Signal Stream)
            =================================================================== */}
         <section aria-label="Question Review" className="border-b pb-10 space-y-6" style={{ borderColor: 'var(--c-border)' }}>
           <div className="flex items-baseline justify-between">
             <div>
               <p className="c-eyebrow mb-1">Audit</p>
-              <h2 className="c-heading text-xl font-bold" style={{ color: 'var(--c-text)' }}>Question Review</h2>
+              <h2 className="c-heading text-xl font-bold" style={{ color: 'var(--c-text)' }}>Question Review & Multi-Signal Audit</h2>
             </div>
             <span className="text-xs font-mono font-bold" style={{ color: 'var(--c-text-muted)' }}>
               {answeredCount}/{totalQuestions} Takes
@@ -294,8 +430,23 @@ const EvaluationResults = () => {
               const pacing = qEval?.delivery?.pacing;
               const feedback = qEval?.feedback || qEval?.nlp?.feedback;
 
+              // NLP real metrics
+              const textAnalysis = qEval?.text_analysis;
+              const coveredConcepts = textAnalysis?.covered_concepts || [];
+              const missingConcepts = textAnalysis?.missing_concepts || qEval?.missing_concepts || [];
+              const contentScore = textAnalysis?.content_score;
+
+              // Delivery real metrics
+              const delivery = qEval?.delivery;
+              const fillerCount = delivery?.filler_count ?? delivery?.filler_words_count;
+              const fluencyIndicator = delivery?.fluency_indicator;
+
+              // Facial real metrics (if ever present in future)
+              const facial = qEval?.facial_analysis;
+              const hasRealVision = facial && facial.status !== 'not_implemented' && facial.confidence_indicators != null;
+
               return (
-                <div key={q.id} className="py-6 space-y-3">
+                <div key={q.id} className="py-6 space-y-4">
                   {/* Header Row */}
                   <div className="flex items-start justify-between gap-4">
                     <div className="space-y-1">
@@ -303,15 +454,15 @@ const EvaluationResults = () => {
                         <span className="font-mono text-xs font-bold" style={{ color: 'var(--c-text-muted)' }}>
                           Question {(idx + 1).toString().padStart(2, '0')}
                         </span>
-                        <span className="text-[11px]" style={{ color: 'var(--c-border)' }}>â€¢</span>
+                        <span className="text-[11px]" style={{ color: 'var(--c-border)' }}>•</span>
                         <span className="text-[11px] capitalize font-medium" style={{ color: 'var(--c-text-secondary)' }}>
                           {q.type || 'Technical'} ({q.difficulty || 'Medium'})
                         </span>
                         {wpm != null && (
                           <>
-                            <span className="text-[11px]" style={{ color: 'var(--c-border)' }}>â€¢</span>
+                            <span className="text-[11px]" style={{ color: 'var(--c-border)' }}>•</span>
                             <span className="text-[11px] font-mono" style={{ color: 'var(--c-text-muted)' }}>
-                              {Math.round(wpm)} WPM ({pacing})
+                              {Math.round(wpm)} WPM ({pacing || 'Standard'})
                             </span>
                           </>
                         )}
@@ -342,6 +493,102 @@ const EvaluationResults = () => {
                           Skipped
                         </span>
                       )}
+                    </div>
+                  </div>
+
+                  {/* Multi-Signal Assessment Strip */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {/* Signal A: NLP Content */}
+                    <div
+                      className="p-3 rounded-lg border space-y-1.5 text-xs"
+                      style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold flex items-center gap-1.5 text-neutral-300">
+                          <FileText className="w-3.5 h-3.5 text-[#FF6B35]" />
+                          <span>NLP Content</span>
+                        </span>
+                        {contentScore != null && (
+                          <span className="font-mono text-[#FF6B35] font-bold">
+                            {Math.round(contentScore)}%
+                          </span>
+                        )}
+                      </div>
+                      <div className="space-y-1">
+                        {coveredConcepts.length > 0 && (
+                          <div className="flex items-center gap-1 flex-wrap text-[10px] font-mono">
+                            <span className="text-neutral-400">Covered:</span>
+                            {coveredConcepts.slice(0, 3).map((c, i) => (
+                              <span key={i} className="px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                {c}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        {missingConcepts.length > 0 && (
+                          <div className="flex items-center gap-1 flex-wrap text-[10px] font-mono">
+                            <span className="text-neutral-400">Missing:</span>
+                            {missingConcepts.slice(0, 2).map((c, i) => (
+                              <span key={i} className="px-1.5 py-0.2 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                                {c}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        {!coveredConcepts.length && !missingConcepts.length && (
+                          <p className="text-[11px] text-neutral-400">Evaluated against domain answer criteria.</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Signal B: Speech Delivery */}
+                    <div
+                      className="p-3 rounded-lg border space-y-1.5 text-xs"
+                      style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold flex items-center gap-1.5 text-neutral-300">
+                          <Mic className="w-3.5 h-3.5 text-[#FF9F1C]" />
+                          <span>Speech Delivery</span>
+                        </span>
+                        {wpm != null && (
+                          <span className="font-mono text-[#FF9F1C] font-bold">
+                            {Math.round(wpm)} WPM
+                          </span>
+                        )}
+                      </div>
+                      <div className="space-y-1 text-[11px] text-neutral-400">
+                        <div>
+                          <span>Pacing: </span>
+                          <span className="text-white font-medium">{pacing || 'Standard'}</span>
+                        </div>
+                        <div>
+                          <span>Fluency: </span>
+                          <span className="text-white font-medium">{fluencyIndicator || (wpm > 0 ? 'Fluent' : 'None')}</span>
+                          {fillerCount != null && fillerCount > 0 && (
+                            <span className="text-neutral-500 ml-1">({fillerCount} fillers)</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Signal C: Vision / Behavioral (Honest Unavailable State) */}
+                    <div
+                      className="p-3 rounded-lg border space-y-1.5 text-xs opacity-75"
+                      style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold flex items-center gap-1.5 text-neutral-400">
+                          <Eye className="w-3.5 h-3.5 text-neutral-400" />
+                          <span>Vision & Facial</span>
+                        </span>
+                        <span className="text-[10px] font-mono text-neutral-500">[OFFLINE]</span>
+                      </div>
+                      <p className="text-[11px] text-neutral-500 leading-relaxed">
+                        {hasRealVision
+                          ? JSON.stringify(facial.confidence_indicators)
+                          : 'Vision analysis unavailable. Facial analysis will appear here when vision evaluation is enabled.'}
+                      </p>
                     </div>
                   </div>
 
