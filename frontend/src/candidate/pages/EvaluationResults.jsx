@@ -113,6 +113,8 @@ const EvaluationResults = () => {
 
   const overallScore = evaluation?.overall_score ?? interview.score ?? 0;
   const confidenceScore = evaluation?.confidence_score ?? interview.confidence ?? null;
+  const confidenceLevel = evaluation?.confidence_level ?? interview.confidenceLevel ?? null;
+  const stressScore = evaluation?.stress_score ?? interview.stressScore ?? null;
   const stressLevel = evaluation?.stress_level ?? interview.stress ?? null;
   const interpretation = evaluation?.interpretation ?? interview.interpretation ?? '';
   const strengths = evaluation?.strengths ?? interview.strengths ?? [];
@@ -355,10 +357,17 @@ const EvaluationResults = () => {
                   <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--c-text-muted)' }}>
                     Confidence Indicator
                   </p>
-                  <span className="text-[10px] font-mono text-emerald-400">ACOUSTIC</span>
+                  <span className="text-[10px] font-mono text-emerald-400">
+                    {hasVisionSummary ? 'MULTIMODAL' : 'ACOUSTIC'}
+                  </span>
                 </div>
                 <p className="c-serif-num text-3xl font-bold" style={{ color: 'var(--c-text)' }}>
                   {confidenceScore != null ? `${Math.round(confidenceScore)}%` : 'Active'}
+                  {confidenceLevel && confidenceLevel !== 'Not Assessed' && (
+                    <span className="text-xs font-sans font-normal ml-2 text-emerald-400">
+                      ({confidenceLevel})
+                    </span>
+                  )}
                 </p>
                 <p className="text-[11px] leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
                   Derived from spoken pacing, volume consistency, and vocal stability.
@@ -371,10 +380,17 @@ const EvaluationResults = () => {
                   <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--c-text-muted)' }}>
                     Composure Indicator
                   </p>
-                  <span className="text-[10px] font-mono text-emerald-400">BEHAVIORAL</span>
+                  <span className="text-[10px] font-mono text-emerald-400">
+                    {hasVisionSummary ? 'MULTIMODAL' : 'BEHAVIORAL'}
+                  </span>
                 </div>
                 <p className="c-serif-num text-3xl font-bold" style={{ color: 'var(--c-text)' }}>
                   {stressLevel || 'Stable'}
+                  {stressScore != null && stressLevel !== 'Not Assessed' && (
+                    <span className="text-xs font-sans font-normal ml-2 text-neutral-400">
+                      ({Math.round(stressScore)}%)
+                    </span>
+                  )}
                 </p>
                 <p className="text-[11px] leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
                   Observable stability and tension minimization across sequential prompt takes.

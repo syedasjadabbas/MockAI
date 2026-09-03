@@ -14,6 +14,7 @@ from typing import Dict, List, Optional
 from services.nlp_analyzer import analyze_transcript
 from services.delivery_analyzer import analyze_delivery
 from services.multimodal_fusion import fuse_per_question
+from services.confidence_stress_analyzer import analyze_question_confidence_and_stress
 
 DIFFICULTY_WEIGHTS: Dict[str, float] = {
     "Easy": 1.0,
@@ -98,7 +99,13 @@ def evaluate_question_response(
     # The fused multimodal score becomes the canonical question score
     question_score = multimodal_data["score"]
 
-    # 5. Derive strengths, feedback, and missing concepts
+    # 5. Confidence & Stress Analysis (FR22 / FR23)
+    confidence_and_stress_data = analyze_question_confidence_and_stress(
+        delivery_result=delivery_result,
+        facial_result=facial_analysis_data,
+    )
+
+    # 6. Derive strengths, feedback, and missing concepts
     is_unanswered = not transcript or not transcript.strip() or nlp_result["status"] in ("empty", "missing")
 
     if is_unanswered:
@@ -156,8 +163,10 @@ def evaluate_question_response(
         "facial_analysis": facial_analysis_data,
         "delivery": delivery_result,
         "multimodal": multimodal_data,
+        "confidence_and_stress": confidence_and_stress_data,
         "strengths": strengths,
         "missing_concepts": missing_concepts,
         "feedback": feedback,
     }
+
 

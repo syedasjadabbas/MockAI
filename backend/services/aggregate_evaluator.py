@@ -15,6 +15,7 @@ Integrity guarantees:
 - Deterministic and repeatable mathematical scoring.
 """
 from typing import Dict, List, Optional
+from services.confidence_stress_analyzer import aggregate_confidence_and_stress
 
 DIFFICULTY_WEIGHTS: Dict[str, float] = {
     "Easy": 1.0,
@@ -37,11 +38,15 @@ def aggregate_interview_evaluation(per_question_results: List[Dict]) -> Dict:
       - FR20: Compiles evaluation results and combines analysis outputs into an aggregate dataset.
       - FR21: Calculates difficulty-weighted overall performance score incorporating communication
               and behavioral analysis.
+      - FR22: Calculates dual-modality confidence score and categorical level.
+      - FR23: Calculates dual-modality stress score and categorical indicator.
 
     Returns:
         Dict matching the evaluation subdocument schema:
             - overall_score: float (0.0 to 100.0)
             - confidence_score: float (0.0 to 100.0)
+            - confidence_level: str ("High" | "Moderate" | "Developing" | "Low" | "Not Assessed")
+            - stress_score: float (0.0 to 100.0)
             - stress_level: "Low" | "Moderate" | "Elevated" | "Not Assessed"
             - interpretation: str
             - strengths: List[str]
@@ -51,6 +56,7 @@ def aggregate_interview_evaluation(per_question_results: List[Dict]) -> Dict:
             - aggregate_analysis: Dict (FR20 compiled dataset)
             - scoring_formula: Dict (FR21-01 mathematical explainability)
             - dimension_scores: Dict (FR21-02 communication & behavioral analysis incorporation)
+            - confidence_and_stress_summary: Dict (FR22 / FR23 detailed evidence)
     """
     if not per_question_results:
         empty_formula = {
@@ -77,9 +83,26 @@ def aggregate_interview_evaluation(per_question_results: List[Dict]) -> Dict:
             "communication_fluency": 0.0,
             "behavioral_composure": 0.0,
         }
+        empty_cs = {
+            "confidence_score": 0.0,
+            "confidence_level": "Not Assessed",
+            "stress_score": 0.0,
+            "stress_level": "Not Assessed",
+            "evaluated_takes": 0,
+            "modality_status": {"speech": "unavailable", "vision": "unavailable"},
+            "summary_evidence": {
+                "avg_speech_confidence": 0.0,
+                "avg_speech_stress": 0.0,
+                "avg_facial_confidence": 0.0,
+                "avg_facial_stress": 0.0,
+            },
+            "formula": "0.60 * speech_confidence + 0.40 * facial_confidence | 0.50 * speech_stress + 0.50 * facial_stress",
+        }
         return {
             "overall_score": 0.0,
             "confidence_score": 0.0,
+            "confidence_level": "Not Assessed",
+            "stress_score": 0.0,
             "stress_level": "Not Assessed",
             "interpretation": "No questions were evaluated in this session.",
             "strengths": [],
@@ -94,6 +117,7 @@ def aggregate_interview_evaluation(per_question_results: List[Dict]) -> Dict:
             "aggregate_analysis": empty_aggregate,
             "scoring_formula": empty_formula,
             "dimension_scores": empty_dimensions,
+            "confidence_and_stress_summary": empty_cs,
         }
 
     total_count = len(per_question_results)
@@ -294,20 +318,13 @@ def aggregate_interview_evaluation(per_question_results: List[Dict]) -> Dict:
     }
 
     # -----------------------------------------------------------------------
-    # Baseline Confidence & Stress derivation (deferred to Task 6 for final fusion)
+    # FR22 & FR23: Dual-Modality Confidence & Stress Assessment
     # -----------------------------------------------------------------------
-    if answered_count == 0:
-        confidence_score = 0.0
-        stress_level = "Not Assessed"
-    else:
-        confidence_score = avg_fluency
-        rushed_count = sum(1 for q in answered_questions if q.get("delivery", {}).get("pacing") == "Rushed")
-        if avg_hesitation <= 3.5 and rushed_count == 0:
-            stress_level = "Low"
-        elif avg_hesitation <= 7.5 and rushed_count <= 1:
-            stress_level = "Moderate"
-        else:
-            stress_level = "Elevated"
+    cs_aggregate = aggregate_confidence_and_stress(per_question_results)
+    confidence_score = cs_aggregate["confidence_score"]
+    confidence_level = cs_aggregate["confidence_level"]
+    stress_score = cs_aggregate["stress_score"]
+    stress_level = cs_aggregate["stress_level"]
 
     # -----------------------------------------------------------------------
     # Synthesize Strengths, Weaknesses, Suggestions & Interpretation
@@ -385,13 +402,16 @@ def aggregate_interview_evaluation(per_question_results: List[Dict]) -> Dict:
     interpretation = (
         f"{level_str} overall performance with a composite score of {round(overall_score)}/100. "
         f"The candidate {summary_tone} across {answered_count} of {total_count} evaluated prompts. "
-        f"Delivery fluency was assessed at {round(confidence_score)}% with {stress_level.lower()} observed tension."
+        f"Delivery confidence was assessed at {round(confidence_score)}% ({confidence_level}) with {stress_level.lower()} observed tension ({round(stress_score)}%)."
     )
 
     return {
         "overall_score": overall_score,
         "confidence_score": confidence_score,
+        "confidence_level": confidence_level,
+        "stress_score": stress_score,
         "stress_level": stress_level,
+        "confidence_and_stress_summary": cs_aggregate,
         "interpretation": interpretation,
         "strengths": strengths[:4],
         "weaknesses": weaknesses[:3],
