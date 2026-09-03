@@ -120,6 +120,8 @@ const EvaluationResults = () => {
   const strengths = evaluation?.strengths ?? interview.strengths ?? [];
   const weaknesses = evaluation?.weaknesses ?? interview.weaknesses ?? [];
   const suggestions = evaluation?.suggestions ?? interview.suggestions ?? [];
+  const insights = evaluation?.insights ?? interview.insights ?? null;
+  const scoreRationale = insights?.score_explanation?.score_rationale ?? null;
   const perQuestionEval = evaluation?.per_question ?? [];
   const facialSummary = evaluation?.facial_summary;
   const hasVisionSummary = facialSummary?.status === 'completed';
@@ -216,6 +218,19 @@ const EvaluationResults = () => {
               {interpretation || 
                 `This composite score is computed from response delivery, technical depth, and domain concept coverage across ${answeredCount} evaluated prompt takes.`}
             </p>
+
+            {/* FR24: Score Interpretation & Behavioral Rationale */}
+            {scoreRationale && (
+              <div
+                className="mt-4 p-3.5 rounded-lg border text-xs leading-relaxed space-y-1.5"
+                style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}
+              >
+                <div className="flex items-center gap-2 text-[10px] font-mono font-bold uppercase tracking-wider text-orange-400">
+                  <span>Score Rationale & Behavioral Attribution</span>
+                </div>
+                <p style={{ color: 'var(--c-text-secondary)' }}>{scoreRationale}</p>
+              </div>
+            )}
           </section>
         ) : isFailed ? (
           <section aria-label="Evaluation Failure" className="border-b pb-8" style={{ borderColor: 'var(--c-border)' }}>
@@ -696,16 +711,17 @@ const EvaluationResults = () => {
         </section>
 
         {/* ===================================================================
-            5. STRENGTHS & RECOMMENDATIONS (Editorial Two-Column List)
+            5. STRENGTHS, WEAKNESSES & COACHING STRATEGIES (FR25, FR26, FR27)
            =================================================================== */}
         {(strengths.length > 0 || weaknesses.length > 0 || suggestions.length > 0) && (
           <section aria-label="Strengths and Recommendations" className="border-b pb-10 space-y-6" style={{ borderColor: 'var(--c-border)' }}>
             <div>
               <p className="c-eyebrow mb-1">Qualitative Insights</p>
-              <h2 className="c-heading text-xl font-bold" style={{ color: 'var(--c-text)' }}>Assessment Highlights</h2>
+              <h2 className="c-heading text-xl font-bold" style={{ color: 'var(--c-text)' }}>Assessment Highlights & Coaching</h2>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Demonstrated Strengths (FR25) */}
               {strengths.length > 0 && (
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 border-b pb-2" style={{ borderColor: 'var(--c-border)' }}>
@@ -723,23 +739,47 @@ const EvaluationResults = () => {
                 </div>
               )}
 
-              {(weaknesses.length > 0 || suggestions.length > 0) && (
+              {/* Areas for Improvement / Weaknesses (FR26) */}
+              {weaknesses.length > 0 && (
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 border-b pb-2" style={{ borderColor: 'var(--c-border)' }}>
-                    <Lightbulb className="w-4 h-4 text-amber-500" />
-                    <h3 className="c-heading text-sm font-bold" style={{ color: 'var(--c-text)' }}>Recommendations for Growth</h3>
+                    <AlertCircle className="w-4 h-4 text-amber-500" />
+                    <h3 className="c-heading text-sm font-bold" style={{ color: 'var(--c-text)' }}>Key Areas for Improvement</h3>
                   </div>
                   <ul className="space-y-2.5 text-xs">
-                    {[...weaknesses, ...suggestions].map((item, i) => (
+                    {weaknesses.map((wk, i) => (
                       <li key={i} className="flex items-start gap-2.5 leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                        <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: 'var(--c-border-strong)' }} />
-                        <span>{item}</span>
+                        <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 bg-amber-500" />
+                        <span>{wk}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
               )}
             </div>
+
+            {/* Personalized Coaching & Preparation Strategies (FR27) */}
+            {suggestions.length > 0 && (
+              <div
+                className="mt-6 p-4 rounded-lg border space-y-3"
+                style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}
+              >
+                <div className="flex items-center gap-2 border-b pb-2" style={{ borderColor: 'var(--c-border)' }}>
+                  <Lightbulb className="w-4 h-4 text-orange-400" />
+                  <h3 className="c-heading text-sm font-bold" style={{ color: 'var(--c-text)' }}>
+                    Personalized Coaching & Preparation Strategies
+                  </h3>
+                </div>
+                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  {suggestions.map((sug, i) => (
+                    <li key={i} className="flex items-start gap-2 leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
+                      <span className="font-mono text-orange-400 font-bold shrink-0 mt-0.5">0{i + 1}.</span>
+                      <span>{sug}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </section>
         )}
 

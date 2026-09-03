@@ -285,6 +285,7 @@ export async function getInterviewById(id) {
         strengths: evaluation.strengths,
         weaknesses: evaluation.weaknesses,
         suggestions: evaluation.suggestions,
+        insights: evaluation.insights,
         perQuestion: evaluation.per_question,
       };
     }

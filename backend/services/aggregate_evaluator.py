@@ -16,6 +16,7 @@ Integrity guarantees:
 """
 from typing import Dict, List, Optional
 from services.confidence_stress_analyzer import aggregate_confidence_and_stress
+from services.insights_service import generate_interview_insights
 
 DIFFICULTY_WEIGHTS: Dict[str, float] = {
     "Easy": 1.0,
@@ -40,6 +41,10 @@ def aggregate_interview_evaluation(per_question_results: List[Dict]) -> Dict:
               and behavioral analysis.
       - FR22: Calculates dual-modality confidence score and categorical level.
       - FR23: Calculates dual-modality stress score and categorical indicator.
+      - FR24: Generates score interpretation support, overall rationale, and behavioral observations.
+      - FR25: Identifies strong communication behaviors and confident response highlights.
+      - FR26: Identifies areas needing improvement, missing concepts, and weak performance cues.
+      - FR27: Generates personalized improvement suggestions, coaching guidance, and prep strategies.
 
     Returns:
         Dict matching the evaluation subdocument schema:
@@ -57,6 +62,7 @@ def aggregate_interview_evaluation(per_question_results: List[Dict]) -> Dict:
             - scoring_formula: Dict (FR21-01 mathematical explainability)
             - dimension_scores: Dict (FR21-02 communication & behavioral analysis incorporation)
             - confidence_and_stress_summary: Dict (FR22 / FR23 detailed evidence)
+            - insights: Dict (FR24–FR27 structured insights and coaching)
     """
     if not per_question_results:
         empty_formula = {
@@ -98,26 +104,39 @@ def aggregate_interview_evaluation(per_question_results: List[Dict]) -> Dict:
             },
             "formula": "0.60 * speech_confidence + 0.40 * facial_confidence | 0.50 * speech_stress + 0.50 * facial_stress",
         }
+        empty_facial = {
+            "status": "not_implemented",
+            "evaluated_takes": 0,
+            "dominant_expression": None,
+            "overall_composure": None,
+        }
+        empty_insights = generate_interview_insights(
+            per_question_results=[],
+            overall_score=0.0,
+            dimension_scores=empty_dimensions,
+            confidence_score=0.0,
+            confidence_level="Not Assessed",
+            stress_score=0.0,
+            stress_level="Not Assessed",
+            aggregate_analysis=empty_aggregate,
+            facial_summary=empty_facial,
+        )
         return {
             "overall_score": 0.0,
             "confidence_score": 0.0,
             "confidence_level": "Not Assessed",
             "stress_score": 0.0,
             "stress_level": "Not Assessed",
-            "interpretation": "No questions were evaluated in this session.",
-            "strengths": [],
-            "weaknesses": ["No prompts were recorded or submitted."],
-            "suggestions": ["Record and submit spoken responses for each prompt."],
-            "facial_summary": {
-                "status": "not_implemented",
-                "evaluated_takes": 0,
-                "dominant_expression": None,
-                "overall_composure": None,
-            },
+            "interpretation": empty_insights["score_explanation"]["overall_summary"],
+            "strengths": empty_insights["strengths"],
+            "weaknesses": empty_insights["weaknesses"],
+            "suggestions": empty_insights["suggestions"],
+            "facial_summary": empty_facial,
             "aggregate_analysis": empty_aggregate,
             "scoring_formula": empty_formula,
             "dimension_scores": empty_dimensions,
             "confidence_and_stress_summary": empty_cs,
+            "insights": empty_insights,
         }
 
     total_count = len(per_question_results)
@@ -327,83 +346,24 @@ def aggregate_interview_evaluation(per_question_results: List[Dict]) -> Dict:
     stress_level = cs_aggregate["stress_level"]
 
     # -----------------------------------------------------------------------
-    # Synthesize Strengths, Weaknesses, Suggestions & Interpretation
+    # FR24–FR27: Explainable Insights, Strengths, Weaknesses & Recommendations
     # -----------------------------------------------------------------------
-    strengths: List[str] = []
-    if unique_covered:
-        strengths.append(f"Demonstrated domain knowledge across key topics: {', '.join(unique_covered[:4])}.")
-
-    if answered_count > 0:
-        optimal_pacing_count = sum(1 for q in answered_questions if q.get("delivery", {}).get("pacing") == "Optimal")
-        if optimal_pacing_count >= (answered_count / 2):
-            strengths.append(f"Maintained steady conversational pacing across prompts (averaging {avg_wpm} WPM).")
-
-        low_hesitation_count = sum(1 for q in answered_questions if q.get("delivery", {}).get("hesitation_level") == "Low")
-        if low_hesitation_count >= (answered_count / 2):
-            strengths.append("Clear verbal articulation with minimal filler hesitation.")
-
-    if facial_results and overall_composure == "Composed & Stable" and len(strengths) < 4:
-        strengths.append("Maintained calm facial composure and steady visual engagement.")
-
-    if not strengths:
-        if answered_count > 0:
-            strengths.append("Successfully completed and submitted recorded responses.")
-        else:
-            strengths.append("Interview session initialized and recorded.")
-
-    weaknesses: List[str] = []
-    if unique_missing:
-        weaknesses.append(f"Opportunities for deeper coverage on: {', '.join(unique_missing[:3])}.")
-
-    if answered_count > 0:
-        elevated_fillers = sum(1 for q in answered_questions if q.get("delivery", {}).get("hesitation_level") == "Elevated")
-        if elevated_fillers > 0:
-            weaknesses.append("Noticeable hesitation and filler word usage during technical explanations.")
-
-        slow_or_rushed = sum(1 for q in answered_questions if q.get("delivery", {}).get("pacing") in ("Slow", "Rushed"))
-        if slow_or_rushed > 0:
-            weaknesses.append("Pacing variance observed between rapid and deliberate response sections.")
-
-    if skipped_count > 0:
-        weaknesses.append(f"{skipped_count} prompt{'s were' if skipped_count > 1 else ' was'} skipped without recorded responses.")
-    if failed_count > 0:
-        weaknesses.append(f"{failed_count} prompt{'s encountered' if failed_count > 1 else ' encountered'} media processing issues.")
-
-    suggestions: List[str] = []
-    if unique_missing:
-        suggestions.append(f"Prepare specific technical examples illustrating {', '.join(unique_missing[:2])}.")
-
-    if answered_count > 0:
-        if avg_wpm < 110:
-            suggestions.append("Aim to slightly increase response cadence toward 120-150 words per minute.")
-        elif avg_wpm > 165:
-            suggestions.append("Practice pausing between points to avoid rushing complex architectural explanations.")
-        else:
-            suggestions.append("Continue practicing structured responses using the STAR method (Situation, Task, Action, Result).")
-
-        suggestions.append("Use brief 1-2 second pauses before answering to organize key points and reduce fillers.")
-    else:
-        suggestions.append("Complete all prompt recordings to receive a full comprehensive evaluation.")
-
-    # Performance Interpretation
-    if overall_score >= 80.0:
-        level_str = "Strong"
-        summary_tone = "demonstrated strong technical proficiency and confident communication"
-    elif overall_score >= 60.0:
-        level_str = "Competent"
-        summary_tone = "demonstrated solid foundational understanding with opportunities for greater depth"
-    elif overall_score >= 35.0:
-        level_str = "Developing"
-        summary_tone = "showed emerging familiarity with core concepts but missed key technical details"
-    else:
-        level_str = "Limited"
-        summary_tone = "had limited response coverage and key technical areas require review"
-
-    interpretation = (
-        f"{level_str} overall performance with a composite score of {round(overall_score)}/100. "
-        f"The candidate {summary_tone} across {answered_count} of {total_count} evaluated prompts. "
-        f"Delivery confidence was assessed at {round(confidence_score)}% ({confidence_level}) with {stress_level.lower()} observed tension ({round(stress_score)}%)."
+    insights = generate_interview_insights(
+        per_question_results=per_question_results,
+        overall_score=overall_score,
+        dimension_scores=dimension_scores,
+        confidence_score=confidence_score,
+        confidence_level=confidence_level,
+        stress_score=stress_score,
+        stress_level=stress_level,
+        aggregate_analysis=aggregate_analysis,
+        facial_summary=facial_summary,
     )
+
+    interpretation = insights["score_explanation"]["overall_summary"]
+    strengths = insights["strengths"]
+    weaknesses = insights["weaknesses"]
+    suggestions = insights["suggestions"]
 
     return {
         "overall_score": overall_score,
@@ -413,12 +373,13 @@ def aggregate_interview_evaluation(per_question_results: List[Dict]) -> Dict:
         "stress_level": stress_level,
         "confidence_and_stress_summary": cs_aggregate,
         "interpretation": interpretation,
-        "strengths": strengths[:4],
-        "weaknesses": weaknesses[:3],
-        "suggestions": suggestions[:4],
+        "strengths": strengths,
+        "weaknesses": weaknesses,
+        "suggestions": suggestions,
         "facial_summary": facial_summary,
         "aggregate_analysis": aggregate_analysis,
         "scoring_formula": scoring_formula,
         "dimension_scores": dimension_scores,
+        "insights": insights,
     }
 
