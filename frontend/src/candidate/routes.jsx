@@ -13,6 +13,7 @@ const Feedback = lazy(() => import('./pages/Feedback'));
 const InterviewHistory = lazy(() => import('./pages/InterviewHistory'));
 const ProgressTracking = lazy(() => import('./pages/ProgressTracking'));
 const Profile = lazy(() => import('./pages/Profile'));
+const Mentors = lazy(() => import('./pages/Mentors'));
 
 // Candidate/User Panel routes. Each page manages its own layout shell
 // internally (CandidateLayout for the dashboard-style pages, InterviewFlowLayout
@@ -23,6 +24,7 @@ export const candidateRoutes = [
   { path: '/register', element: <Register />, private: false },
   { path: '/login', element: <Login />, private: false },
   { path: '/dashboard', element: <Dashboard />, private: true },
+  { path: '/mentors', element: <Mentors />, private: true },
   { path: '/interview/goal', element: <GoalSelection />, private: true },
   { path: '/interview/:id/prepare', element: <InterviewPreparation />, private: true },
   { path: '/interview/:id/session', element: <InterviewSimulator />, private: true },

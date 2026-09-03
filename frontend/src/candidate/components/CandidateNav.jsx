@@ -10,6 +10,7 @@ import {
   History,
   TrendingUp,
   Home,
+  Users,
 } from 'lucide-react';
 import ThemeToggle from '../../components/ThemeToggle';
 import { getSession, logout } from '../services/candidateAuth';
@@ -18,6 +19,7 @@ import logo from '../../assets/logo.png';
 const NAV_LINKS = [
   { label: 'Home', path: '/' },
   { label: 'Dashboard', path: '/dashboard' },
+  { label: 'Mentors', path: '/mentors' },
   { label: 'History', path: '/history' },
   { label: 'Progress', path: '/progress' },
   { label: 'Profile', path: '/profile' },
@@ -225,6 +227,16 @@ const CandidateNav = () => {
                 >
                   <User className="w-3.5 h-3.5" style={{ color: 'var(--c-accent)' }} />
                   <span>Candidate Profile</span>
+                </Link>
+
+                <Link
+                  to="/mentors"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-2 px-3 py-2 transition-colors hover:bg-white/[0.04]"
+                  style={{ color: 'var(--c-text-secondary)' }}
+                >
+                  <Users className="w-3.5 h-3.5 text-[#FF6B35]" />
+                  <span>Technical Mentors</span>
                 </Link>
 
                 <Link
