@@ -180,6 +180,34 @@ def aggregate_interview_evaluation(per_question_results: List[Dict]) -> Dict:
         f"Delivery fluency was assessed at {round(confidence_score)}% with {stress_level.lower()} observed tension."
     )
 
+    # 7. Synthesize Visual Behavioral Signals if available (FR17 / FR22 / FR23)
+    facial_results = [
+        q.get("facial_analysis") for q in per_question_results
+        if isinstance(q.get("facial_analysis"), dict) and q.get("facial_analysis", {}).get("status") == "completed"
+    ]
+    if facial_results:
+        dominant_expressions = [f.get("dominant_expression") for f in facial_results if f.get("dominant_expression")]
+        most_common_expression = max(set(dominant_expressions), key=dominant_expressions.count) if dominant_expressions else "Neutral"
+        composure_indices = [f.get("behavioral_indicators", {}).get("composure_index") for f in facial_results]
+        stable_count = sum(1 for c in composure_indices if c == "Composed & Stable")
+        overall_composure = "Composed & Stable" if stable_count >= (len(facial_results) / 2) else "Moderate Composure"
+
+        facial_summary = {
+            "status": "completed",
+            "evaluated_takes": len(facial_results),
+            "dominant_expression": most_common_expression,
+            "overall_composure": overall_composure,
+        }
+        if overall_composure == "Composed & Stable" and len(strengths) < 4:
+            strengths.append("Maintained calm facial composure and steady visual engagement.")
+    else:
+        facial_summary = {
+            "status": "not_implemented",
+            "evaluated_takes": 0,
+            "dominant_expression": None,
+            "overall_composure": None,
+        }
+
     return {
         "overall_score": overall_score,
         "confidence_score": confidence_score,
@@ -188,4 +216,5 @@ def aggregate_interview_evaluation(per_question_results: List[Dict]) -> Dict:
         "strengths": strengths[:4],
         "weaknesses": weaknesses[:3],
         "suggestions": suggestions[:4],
+        "facial_summary": facial_summary,
     }

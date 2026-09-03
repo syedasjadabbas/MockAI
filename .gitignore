@@ -40,6 +40,9 @@ frontend/.env
 # Interview response recordings (candidate media, never committed)
 backend/media/
 
+# Machine Learning Model weights (auto-downloaded by services on-demand)
+backend/models/*.onnx
+
 # Google Cloud / other service-account credential keys
 *service-account*.json
 *credentials*.json

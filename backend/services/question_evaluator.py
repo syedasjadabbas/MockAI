@@ -115,13 +115,26 @@ def evaluate_question_response(
         "error": None,
     }
 
-    facial_analysis_data = {
-        "status": "not_implemented",
-        "confidence_indicators": None,
-        "stress_indicators": None,
-        "model": None,
-        "error": None,
-    }
+    # 3. Facial & Behavioral Analysis (FR13 / FR17)
+    resolved_video_path = None
+    if media_url:
+        try:
+            import os
+            from services.media_storage import LocalFilesystemMediaStorage
+            storage = LocalFilesystemMediaStorage()
+            resolved = storage.resolve_path(media_url)
+            if resolved and resolved.is_file():
+                resolved_video_path = str(resolved)
+            elif os.path.isfile(str(media_url)):
+                resolved_video_path = str(media_url)
+        except Exception:
+            resolved_video_path = media_url if (media_url and os.path.isfile(str(media_url))) else None
+
+    from services.facial_analyzer import FacialAnalyzer
+    facial_analysis_data = FacialAnalyzer().analyze_video(
+        video_path=resolved_video_path,
+        duration_seconds=duration_seconds,
+    )
 
     multimodal_data = {
         "status": multimodal_status,

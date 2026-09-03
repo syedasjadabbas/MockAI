@@ -65,7 +65,16 @@ class MediaStorageService(ABC):
 
 class LocalFilesystemMediaStorage(MediaStorageService):
     def __init__(self, base_dir: str = None):
-        self.base_dir = Path(base_dir or os.getenv("MEDIA_STORAGE_DIR", "media")).resolve()
+        if base_dir:
+            self.base_dir = Path(base_dir).resolve()
+        elif os.getenv("MEDIA_STORAGE_DIR"):
+            self.base_dir = Path(os.getenv("MEDIA_STORAGE_DIR")).resolve()
+        else:
+            source_backend_media = (Path(__file__).resolve().parent.parent / "media").resolve()
+            if source_backend_media.is_dir():
+                self.base_dir = source_backend_media
+            else:
+                self.base_dir = Path("media").resolve()
 
     def _target_dir(self, interview_id: str, question_id: str) -> Path:
         interview_id = _sanitize_id_segment(interview_id, "interview_id")

@@ -119,6 +119,8 @@ const EvaluationResults = () => {
   const weaknesses = evaluation?.weaknesses ?? interview.weaknesses ?? [];
   const suggestions = evaluation?.suggestions ?? interview.suggestions ?? [];
   const perQuestionEval = evaluation?.per_question ?? [];
+  const facialSummary = evaluation?.facial_summary;
+  const hasVisionSummary = facialSummary?.status === 'completed';
 
   const answeredCount = (interview.responses || []).length;
   const totalQuestions = (interview.questions || []).length;
@@ -296,15 +298,23 @@ const EvaluationResults = () => {
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Eye className="w-4 h-4 text-neutral-400" />
+                    <Eye className={`w-4 h-4 ${hasVisionSummary ? 'text-cyan-400' : 'text-neutral-400'}`} />
                     <span className="text-xs font-bold text-white uppercase tracking-wider">Vision & Behavior</span>
                   </div>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full border bg-neutral-800 text-neutral-400 border-neutral-700">
-                    OFFLINE
-                  </span>
+                  {hasVisionSummary ? (
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full border bg-cyan-500/10 text-cyan-400 border-cyan-500/25">
+                      ACTIVE
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full border bg-neutral-800 text-neutral-400 border-neutral-700">
+                      OFFLINE
+                    </span>
+                  )}
                 </div>
                 <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                  Facial expression valence, eye gaze attentiveness, head pose composure, and observable micro-hesitations.
+                  {hasVisionSummary
+                    ? `Observable facial composure: ${facialSummary.overall_composure}. Dominant expression: ${facialSummary.dominant_expression}.`
+                    : 'Facial expression valence, eye gaze attentiveness, head pose composure, and observable micro-hesitations.'}
                 </p>
               </div>
             </div>
@@ -317,7 +327,9 @@ const EvaluationResults = () => {
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-[#FF9F1C]" />
               <span style={{ color: 'var(--c-text-secondary)' }}>
                 <strong className="font-semibold" style={{ color: 'var(--c-text)' }}>Evaluation Signal Notice: </strong>
-                The composite overall score ({Math.round(overallScore)}%) is computed strictly from active NLP content and acoustic speech signals. Computer-vision facial analysis is unmounted; vision metrics will be integrated upon vision model deployment.
+                {hasVisionSummary
+                  ? `Multimodal signals integrated from active NLP semantic analysis, speech delivery metrics, and real computer-vision facial composure analysis (${facialSummary.evaluated_takes} takes evaluated).`
+                  : `The composite overall score (${Math.round(overallScore)}%) is computed strictly from active NLP content and acoustic speech signals. Computer-vision facial analysis is unmounted; vision metrics will be integrated upon vision model deployment.`}
               </span>
             </div>
           </section>
@@ -369,35 +381,51 @@ const EvaluationResults = () => {
                 </p>
               </div>
 
-              {/* Facial Expression Analysis (Honest Uncomputed State) */}
-              <div className="p-4 rounded-lg border space-y-1.5 opacity-80" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
+              {/* Facial Expression Analysis */}
+              <div className={`p-4 rounded-lg border space-y-1.5 ${hasVisionSummary ? '' : 'opacity-80'}`} style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
                 <div className="flex items-center justify-between">
                   <p className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">
                     Facial Expression
                   </p>
-                  <span className="text-[10px] font-mono text-neutral-500">VISION</span>
+                  <span className={`text-[10px] font-mono ${hasVisionSummary ? 'text-cyan-400' : 'text-neutral-500'}`}>VISION</span>
                 </div>
-                <p className="text-sm font-bold text-neutral-400 pt-1 font-mono">
-                  [Signal Offline]
-                </p>
-                <p className="text-[11px] leading-relaxed text-neutral-500">
-                  Micro-expression tracking will appear when vision evaluation is enabled.
+                {hasVisionSummary ? (
+                  <p className="c-serif-num text-2xl font-bold text-white pt-0.5">
+                    {facialSummary.dominant_expression}
+                  </p>
+                ) : (
+                  <p className="text-sm font-bold text-neutral-400 pt-1 font-mono">
+                    [Signal Offline]
+                  </p>
+                )}
+                <p className="text-[11px] leading-relaxed text-neutral-400">
+                  {hasVisionSummary
+                    ? 'Model-derived primary facial expression observed across interview takes.'
+                    : 'Micro-expression tracking will appear when vision evaluation is enabled.'}
                 </p>
               </div>
 
-              {/* Engagement Level (Honest Uncomputed State) */}
-              <div className="p-4 rounded-lg border space-y-1.5 opacity-80" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
+              {/* Engagement Level */}
+              <div className={`p-4 rounded-lg border space-y-1.5 ${hasVisionSummary ? '' : 'opacity-80'}`} style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
                 <div className="flex items-center justify-between">
                   <p className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">
                     Attentive Engagement
                   </p>
-                  <span className="text-[10px] font-mono text-neutral-500">VISION</span>
+                  <span className={`text-[10px] font-mono ${hasVisionSummary ? 'text-cyan-400' : 'text-neutral-500'}`}>VISION</span>
                 </div>
-                <p className="text-sm font-bold text-neutral-400 pt-1 font-mono">
-                  [Signal Offline]
-                </p>
-                <p className="text-[11px] leading-relaxed text-neutral-500">
-                  Eye gaze orientation and attentiveness cues pending vision pipeline.
+                {hasVisionSummary ? (
+                  <p className="c-serif-num text-2xl font-bold text-white pt-0.5">
+                    {facialSummary.overall_composure}
+                  </p>
+                ) : (
+                  <p className="text-sm font-bold text-neutral-400 pt-1 font-mono">
+                    [Signal Offline]
+                  </p>
+                )}
+                <p className="text-[11px] leading-relaxed text-neutral-400">
+                  {hasVisionSummary
+                    ? 'Eye presence consistency and observable non-verbal composure.'
+                    : 'Eye gaze orientation and attentiveness cues pending vision pipeline.'}
                 </p>
               </div>
             </div>
@@ -441,9 +469,9 @@ const EvaluationResults = () => {
               const fillerCount = delivery?.filler_count ?? delivery?.filler_words_count;
               const fluencyIndicator = delivery?.fluency_indicator;
 
-              // Facial real metrics (if ever present in future)
+              // Facial real metrics
               const facial = qEval?.facial_analysis;
-              const hasRealVision = facial && facial.status !== 'not_implemented' && facial.confidence_indicators != null;
+              const hasRealVision = facial && facial.status === 'completed';
 
               return (
                 <div key={q.id} className="py-6 space-y-4">
@@ -572,23 +600,45 @@ const EvaluationResults = () => {
                       </div>
                     </div>
 
-                    {/* Signal C: Vision / Behavioral (Honest Unavailable State) */}
+                    {/* Signal C: Vision / Behavioral */}
                     <div
-                      className="p-3 rounded-lg border space-y-1.5 text-xs opacity-75"
+                      className={`p-3 rounded-lg border space-y-1.5 text-xs ${hasRealVision ? '' : 'opacity-75'}`}
                       style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}
                     >
                       <div className="flex items-center justify-between">
-                        <span className="font-bold flex items-center gap-1.5 text-neutral-400">
-                          <Eye className="w-3.5 h-3.5 text-neutral-400" />
+                        <span className="font-bold flex items-center gap-1.5 text-neutral-300">
+                          <Eye className={`w-3.5 h-3.5 ${hasRealVision ? 'text-cyan-400' : 'text-neutral-400'}`} />
                           <span>Vision & Facial</span>
                         </span>
-                        <span className="text-[10px] font-mono text-neutral-500">[OFFLINE]</span>
+                        {hasRealVision ? (
+                          <span className="text-[10px] font-mono text-cyan-400 font-bold">[ACTIVE]</span>
+                        ) : (
+                          <span className="text-[10px] font-mono text-neutral-500">[OFFLINE]</span>
+                        )}
                       </div>
-                      <p className="text-[11px] text-neutral-500 leading-relaxed">
-                        {hasRealVision
-                          ? JSON.stringify(facial.confidence_indicators)
-                          : 'Vision analysis unavailable. Facial analysis will appear here when vision evaluation is enabled.'}
-                      </p>
+                      {hasRealVision ? (
+                        <div className="space-y-1 text-[11px] text-neutral-300">
+                          <div>
+                            <span className="text-neutral-400">Expression: </span>
+                            <span className="text-white font-medium">{facial.dominant_expression}</span>
+                            {facial.expression_distribution && (
+                              <span className="text-neutral-400 ml-1">({facial.expression_distribution[facial.dominant_expression.toLowerCase()] ?? ''}%)</span>
+                            )}
+                          </div>
+                          <div>
+                            <span className="text-neutral-400">Composure: </span>
+                            <span className="text-white font-medium">{facial.behavioral_indicators?.composure_index || 'Stable'}</span>
+                          </div>
+                          <div>
+                            <span className="text-neutral-400">Engagement: </span>
+                            <span className="text-white font-medium">{facial.behavioral_indicators?.engagement_level || 'High'}</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-[11px] text-neutral-500 leading-relaxed">
+                          Vision analysis unavailable. Facial analysis will appear here when vision evaluation is enabled.
+                        </p>
+                      )}
                     </div>
                   </div>
 
