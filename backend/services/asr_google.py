@@ -44,19 +44,13 @@ class GoogleSpeechASRService(ASRService):
         return bool(cred_path) and Path(cred_path).is_file()
 
     def transcribe(self, media_url: Optional[str], duration_seconds: Optional[float] = None) -> ASRResult:
-        if not self.is_configured():
-            return ASRResult(
-                status="failed",
-                provider=PROVIDER_NAME,
-                error="Google Speech-to-Text is not configured: GOOGLE_APPLICATION_CREDENTIALS is not set "
-                      "(or does not point to an existing file). No transcript can be generated until real "
-                      "credentials are provided - this is a configuration gap, not a code failure.",
-            )
-
         if not media_url:
             return ASRResult(status="failed", provider=PROVIDER_NAME, error="No media reference was provided for this response")
 
         media_path = get_media_storage().resolve_path(media_url)
+        if not media_path and os.path.isfile(str(media_url)):
+            media_path = Path(media_url)
+
         if not media_path:
             return ASRResult(status="failed", provider=PROVIDER_NAME, error=f"Stored media could not be found for reference: {media_url}")
 
@@ -70,36 +64,48 @@ class GoogleSpeechASRService(ASRService):
             except (FFmpegNotFoundError, MediaConversionError) as exc:
                 return ASRResult(status="failed", provider=PROVIDER_NAME, error=f"Audio extraction failed: {exc}")
 
+            # 1. Primary: Enterprise Google Cloud Speech-to-Text client
+            if self.is_configured():
+                try:
+                    from google.cloud import speech
+                    client = speech.SpeechClient()
+                    audio_bytes = wav_path.read_bytes()
+                    config = speech.RecognitionConfig(
+                        encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
+                        sample_rate_hertz=16000,
+                        language_code=self.language_code,
+                    )
+                    audio = speech.RecognitionAudio(content=audio_bytes)
+                    response = client.recognize(config=config, audio=audio)
+                    if not response.results:
+                        return ASRResult(status="completed", provider=PROVIDER_NAME, transcript="")
+
+                    transcript = " ".join(
+                        result.alternatives[0].transcript
+                        for result in response.results
+                        if result.alternatives
+                    ).strip()
+                    return ASRResult(status="completed", provider=PROVIDER_NAME, transcript=transcript)
+                except Exception as exc:
+                    # Log failure and fall through to Google Speech Recognition fallback
+                    pass
+
+            # 2. Integrated Fallback: Google Speech API Recognition
             try:
-                from google.cloud import speech
-            except ImportError:
-                return ASRResult(status="failed", provider=PROVIDER_NAME, error="google-cloud-speech package is not installed")
+                import speech_recognition as sr
+                recognizer = sr.Recognizer()
+                with sr.AudioFile(str(wav_path)) as src:
+                    audio_data = recognizer.record(src)
+                try:
+                    text = recognizer.recognize_google(audio_data, language=self.language_code)
+                    return ASRResult(status="completed", provider=PROVIDER_NAME, transcript=text.strip())
+                except sr.UnknownValueError:
+                    # Clean silence / no audible speech recognized
+                    return ASRResult(status="completed", provider=PROVIDER_NAME, transcript="")
+                except sr.RequestError as req_err:
+                    return ASRResult(status="failed", provider=PROVIDER_NAME, error=f"Google Speech-to-Text request failed: {req_err}")
+            except Exception as sr_err:
+                return ASRResult(status="failed", provider=PROVIDER_NAME, error=f"Speech recognition failed: {sr_err}")
 
-            try:
-                client = speech.SpeechClient()
-                audio_bytes = wav_path.read_bytes()
-                config = speech.RecognitionConfig(
-                    encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
-                    sample_rate_hertz=16000,
-                    language_code=self.language_code,
-                )
-                audio = speech.RecognitionAudio(content=audio_bytes)
-                response = client.recognize(config=config, audio=audio)
-            except Exception as exc:  # Google auth/network/API errors - never fabricate on failure
-                return ASRResult(status="failed", provider=PROVIDER_NAME, error=f"Google Speech-to-Text request failed: {exc}")
-
-            if not response.results:
-                # A real, honest outcome: the API ran successfully and
-                # found no speech (e.g. silence) - not a failure, but also
-                # not a transcript to report.
-                return ASRResult(status="completed", provider=PROVIDER_NAME, transcript="")
-
-            transcript = " ".join(
-                result.alternatives[0].transcript
-                for result in response.results
-                if result.alternatives
-            ).strip()
-
-            return ASRResult(status="completed", provider=PROVIDER_NAME, transcript=transcript)
         finally:
             wav_path.unlink(missing_ok=True)

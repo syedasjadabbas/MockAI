@@ -9,8 +9,12 @@ Integrity guarantees:
 - Safely handles missing, empty, or unmeasured responses (yielding 0.0 without crash).
 - Never claims facial emotions, eye contact, or stress beyond defensible speech signals.
 """
+import logging
+import os
 import re
 from typing import Dict, List, Optional, Set, Tuple
+
+logger = logging.getLogger("mockai.delivery")
 
 FILLER_WORDS: Set[str] = {
     "um", "uh", "er", "ah", "like", "you know", "i mean", "actually",
@@ -49,6 +53,92 @@ def _count_fillers(text: Optional[str]) -> Tuple[int, List[str]]:
     return len(detected), detected
 
 
+def _analyze_acoustic_pauses(media_url: Optional[str]) -> Tuple[float, int, float]:
+    """
+    Extracts acoustic silent pause metrics from the candidate's recording.
+    Returns:
+        (pause_duration_seconds, pause_count, speech_duration_seconds)
+    """
+    if not media_url:
+        return 0.0, 0, 0.0
+
+    try:
+        from services.media_storage import get_media_storage
+        from services.media_conversion import extract_audio_to_wav, is_ffmpeg_available
+        import scipy.io.wavfile as wavfile
+        import numpy as np
+        import tempfile
+        from pathlib import Path
+        import uuid
+
+        media_path = get_media_storage().resolve_path(media_url)
+        if not media_path and os.path.isfile(str(media_url)):
+            media_path = Path(media_url)
+
+        if not media_path or not Path(media_path).is_file():
+            return 0.0, 0, 0.0
+
+        if not is_ffmpeg_available():
+            return 0.0, 0, 0.0
+
+        wav_path = Path(tempfile.gettempdir()) / f"mockai_pause_{uuid.uuid4().hex}.wav"
+        try:
+            extract_audio_to_wav(media_path, wav_path)
+            rate, data = wavfile.read(str(wav_path))
+            if len(data) == 0:
+                return 0.0, 0, 0.0
+
+            # Convert to mono if stereo
+            if len(data.shape) > 1:
+                data = np.mean(data, axis=1)
+
+            total_duration = len(data) / float(rate)
+            # 50ms frames
+            frame_len = int(rate * 0.05)
+            if frame_len <= 0:
+                return 0.0, 0, total_duration
+
+            frames = [data[i:i+frame_len] for i in range(0, len(data), frame_len) if len(data[i:i+frame_len]) == frame_len]
+            if not frames:
+                return 0.0, 0, total_duration
+
+            rms = [np.sqrt(np.mean(f.astype(np.float32)**2)) for f in frames]
+            peak_rms = max(rms) if rms else 0.0
+            if peak_rms < 1e-4:
+                # Completely silent audio
+                return round(total_duration, 2), 1, 0.0
+
+            # Dynamic silence threshold: 6% of peak RMS or floor
+            silence_thresh = max(10.0, peak_rms * 0.06)
+
+            # Detect contiguous silent runs >= 500ms (10 frames)
+            pause_count = 0
+            pause_frames = 0
+            curr_silent_streak = 0
+
+            for r in rms:
+                if r < silence_thresh:
+                    curr_silent_streak += 1
+                else:
+                    if curr_silent_streak >= 10:  # >= 0.5s pause
+                        pause_count += 1
+                        pause_frames += curr_silent_streak
+                    curr_silent_streak = 0
+
+            if curr_silent_streak >= 10:
+                pause_count += 1
+                pause_frames += curr_silent_streak
+
+            pause_duration = round(pause_frames * 0.05, 2)
+            speech_duration = round(max(0.0, total_duration - pause_duration), 2)
+            return pause_duration, pause_count, speech_duration
+
+        finally:
+            wav_path.unlink(missing_ok=True)
+    except Exception:
+        return 0.0, 0, 0.0
+
+
 def analyze_delivery(
     transcript: Optional[str],
     duration_seconds: Optional[float] = None,
@@ -69,6 +159,9 @@ def analyze_delivery(
             - hesitation_level: "None" | "Low" | "Moderate" | "Elevated"
             - fluency_score: float (0.0 to 100.0)
             - fluency_indicator: "Fluent" | "Moderate" | "Hesitant" | "No Spoken Data"
+            - pause_duration_seconds: float
+            - pause_count: int
+            - articulation_wpm: float
             - notes: str
     """
     dur = max(0.0, float(duration_seconds or 0.0))
@@ -85,6 +178,9 @@ def analyze_delivery(
             "hesitation_level": "None",
             "fluency_score": 0.0,
             "fluency_indicator": "No Spoken Data",
+            "pause_duration_seconds": 0.0,
+            "pause_count": 0,
+            "articulation_wpm": 0.0,
             "notes": "No spoken words were recorded for this prompt.",
         }
 
@@ -92,12 +188,20 @@ def analyze_delivery(
     word_count = len(words)
     filler_count, detected_fillers = _count_fillers(transcript)
 
+    # Acoustic pause extraction if media file exists
+    pause_duration, pause_count, speech_dur = _analyze_acoustic_pauses(media_url)
+
     # 1. Words Per Minute
     if dur > 0.0:
         wpm = round((word_count / dur) * 60.0, 1)
     else:
-        # Fallback if duration is absent: approximate based on 130 WPM average
         wpm = round(float(word_count), 1)
+
+    # Articulation Rate (WPM during active speech)
+    if speech_dur > 0.0:
+        articulation_wpm = round((word_count / speech_dur) * 60.0, 1)
+    else:
+        articulation_wpm = wpm
 
     # 2. Pacing classification
     if dur <= 0.0 and word_count == 0:
@@ -113,8 +217,11 @@ def analyze_delivery(
     else:
         pacing = "Rushed"
 
-    # 3. Hesitation & Filler Rate
-    hesitation_rate = round((filler_count / max(1, word_count)) * 100.0, 1)
+    # 3. Hesitation & Filler Rate (synthesizing lexical fillers + acoustic pauses)
+    lexical_hesitation_rate = (filler_count / max(1, word_count)) * 100.0
+    acoustic_hesitation_penalty = min(15.0, (pause_duration / max(1.0, dur)) * 25.0) if dur > 0 else 0.0
+    hesitation_rate = round(lexical_hesitation_rate + (acoustic_hesitation_penalty * 0.3), 1)
+
     if word_count == 0:
         hesitation_level = "None"
     elif hesitation_rate <= 3.0:
@@ -150,7 +257,6 @@ def analyze_delivery(
         hesitation_points = 0.0
 
     # Component C: Volume & Continuity (up to 25 pts)
-    # Target 30+ words for full continuity credit
     continuity_points = min(25.0, (word_count / 30.0) * 25.0)
 
     raw_fluency = pacing_points + hesitation_points + continuity_points
@@ -168,11 +274,11 @@ def analyze_delivery(
 
     # Notes
     if fluency_score >= 80.0:
-        notes = f"Fluid spoken delivery at {wpm} WPM ({pacing} pacing) with minimal hesitation ({hesitation_rate}% fillers)."
+        notes = f"Fluid spoken delivery at {wpm} WPM ({pacing} pacing) with minimal hesitation ({hesitation_rate}% fillers/pauses)."
     elif fluency_score >= 50.0:
-        notes = f"Steady delivery at {wpm} WPM ({pacing} pacing). {filler_count} filler words detected."
+        notes = f"Steady delivery at {wpm} WPM ({pacing} pacing). {filler_count} filler words detected with {pause_count} pauses."
     else:
-        notes = f"Spoken delivery exhibited {hesitation_level.lower()} hesitation ({filler_count} fillers) at {wpm} WPM ({pacing})."
+        notes = f"Spoken delivery exhibited {hesitation_level.lower()} hesitation ({filler_count} fillers, {pause_duration}s pauses) at {wpm} WPM ({pacing})."
 
     return {
         "status": "completed",
@@ -186,5 +292,8 @@ def analyze_delivery(
         "hesitation_level": hesitation_level,
         "fluency_score": fluency_score,
         "fluency_indicator": fluency_indicator,
+        "pause_duration_seconds": pause_duration,
+        "pause_count": pause_count,
+        "articulation_wpm": articulation_wpm,
         "notes": notes,
     }
