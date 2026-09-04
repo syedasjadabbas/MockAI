@@ -43,9 +43,8 @@ services:
   # ---------------------------------------------------------------------------
   # MockAI React 19 Frontend Web App (Render Static Site)
   # ---------------------------------------------------------------------------
-  - type: web
+  - type: static
     name: mockai-frontend
-    runtime: static
     rootDir: frontend
     buildCommand: npm install && npm run build
     staticPublishPath: dist
