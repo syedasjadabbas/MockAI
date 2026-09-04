@@ -34,7 +34,7 @@ import { Bar } from 'react-chartjs-2';
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 import InterviewFlowLayout from '../layouts/InterviewFlowLayout';
-import { getActiveInterview, getRealEvaluation } from '../services/candidateApi';
+import { getActiveInterview, getRealEvaluation, startEvaluation, endInterview } from '../services/candidateApi';
 import { formatDate } from '../../utils/dateFormat';
 import { CANDIDATE_IMAGES } from '../assets/images';
 import {
@@ -56,29 +56,74 @@ const EvaluationResults = () => {
 
   useEffect(() => {
     let isMounted = true;
+    let pollInterval = null;
 
-    Promise.all([
-      getActiveInterview(id),
-      getRealEvaluation(id).catch(() => ({ evaluationStatus: 'pending_evaluation', evaluation: null })),
-    ])
-      .then(([interviewData, evalData]) => {
+    const initLoad = async () => {
+      try {
+        const [interviewData, evalData] = await Promise.all([
+          getActiveInterview(id),
+          getRealEvaluation(id).catch(() => ({ evaluationStatus: 'pending_evaluation', evaluation: null })),
+        ]);
+
         if (!isMounted) return;
         if (!interviewData) {
           setError('Interview session could not be located.');
+          setLoading(false);
           return;
         }
+
         setInterview(interviewData);
         setRealEval(evalData);
-      })
-      .catch((err) => {
-        if (isMounted) setError(err.message || 'Failed to load evaluation results.');
-      })
-      .finally(() => {
-        if (isMounted) setLoading(false);
-      });
+        setLoading(false);
+
+        // If evaluation is still pending or processing, kick off and poll
+        const currentStatus = evalData?.evaluationStatus || interviewData.evaluationStatus || 'pending_evaluation';
+        
+        if (currentStatus === 'pending_evaluation') {
+          if (interviewData.status !== 'Completed') {
+            await endInterview(id).catch(() => {});
+          } else {
+            await startEvaluation(id).catch(() => {});
+          }
+          if (isMounted) {
+            setRealEval((prev) => ({ ...(prev || {}), evaluationStatus: 'processing' }));
+          }
+        }
+
+        if (currentStatus !== 'completed' && currentStatus !== 'failed') {
+          pollInterval = setInterval(async () => {
+            try {
+              const latestEval = await getRealEvaluation(id);
+              if (!isMounted) return;
+              setRealEval(latestEval);
+
+              if (latestEval?.evaluationStatus === 'completed' || latestEval?.evaluationStatus === 'failed') {
+                clearInterval(pollInterval);
+                pollInterval = null;
+                // Re-fetch interview document to synchronize denormalized score/status fields
+                const updatedInterview = await getActiveInterview(id);
+                if (isMounted && updatedInterview) {
+                  setInterview(updatedInterview);
+                }
+              }
+            } catch {
+              // Ignore background polling errors
+            }
+          }, 3000);
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(err.message || 'Failed to load evaluation results.');
+          setLoading(false);
+        }
+      }
+    };
+
+    initLoad();
 
     return () => {
       isMounted = false;
+      if (pollInterval) clearInterval(pollInterval);
     };
   }, [id]);
 

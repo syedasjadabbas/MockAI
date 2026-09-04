@@ -25,6 +25,7 @@ import {
   getActiveInterview,
   submitResponse,
   submitResponseMetadataOnly,
+  endInterview,
 } from '../services/candidateApi';
 
 // FR10/FR11/FR12/FR33/FR15 - Full multimodal audio/video prompt simulator
@@ -322,8 +323,13 @@ const InterviewSimulator = () => {
     }
   };
 
-  const handleEnd = () => {
+  const handleEnd = async () => {
     setEnding(true);
+    try {
+      await endInterview(id);
+    } catch (err) {
+      console.warn('Conclude interview sync notice:', err);
+    }
     navigate(`/interview/${id}/complete`);
   };
 

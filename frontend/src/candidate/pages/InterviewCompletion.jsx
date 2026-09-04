@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { 
   Check, 
@@ -10,7 +10,7 @@ import {
   FileText,
 } from 'lucide-react';
 import InterviewFlowLayout from '../layouts/InterviewFlowLayout';
-import { getActiveInterview, getRealEvaluation } from '../services/candidateApi';
+import { getActiveInterview, getRealEvaluation, startEvaluation, endInterview } from '../services/candidateApi';
 import { formatDate } from '../../utils/dateFormat';
 import { CANDIDATE_IMAGES } from '../assets/images';
 import {
@@ -30,12 +30,13 @@ const InterviewCompletion = () => {
 
   useEffect(() => {
     let isMounted = true;
+    let pollInterval = null;
 
     Promise.all([
       getActiveInterview(id),
       getRealEvaluation(id).catch(() => ({ evaluationStatus: 'pending_evaluation', evaluation: null })),
     ])
-      .then(([interviewData, evalData]) => {
+      .then(async ([interviewData, evalData]) => {
         if (!isMounted) return;
         if (!interviewData) {
           setError('Interview session could not be located.');
@@ -43,6 +44,37 @@ const InterviewCompletion = () => {
         }
         setInterview(interviewData);
         setRealEval(evalData);
+
+        // Ensure evaluation is triggered if pending
+        const currentStatus = evalData?.evaluationStatus || interviewData.evaluationStatus || 'pending_evaluation';
+        if (currentStatus === 'pending_evaluation') {
+          if (interviewData.status !== 'Completed') {
+            await endInterview(id).catch(() => {});
+          } else {
+            await startEvaluation(id).catch(() => {});
+          }
+          if (isMounted) {
+            setRealEval((prev) => ({ ...(prev || {}), evaluationStatus: 'processing' }));
+          }
+        }
+
+        // Poll every 3s if not yet completed
+        const isDone = evalData?.evaluationStatus === 'completed' || interviewData.evaluationStatus === 'completed';
+        if (!isDone) {
+          pollInterval = setInterval(async () => {
+            try {
+              const latestEval = await getRealEvaluation(id);
+              if (!isMounted) return;
+              setRealEval(latestEval);
+              if (latestEval.evaluationStatus === 'completed' || latestEval.evaluationStatus === 'failed') {
+                clearInterval(pollInterval);
+                pollInterval = null;
+              }
+            } catch {
+              // Ignore polling errors
+            }
+          }, 3000);
+        }
       })
       .catch((err) => {
         if (isMounted) setError(err.message || 'Failed to load interview session details.');
@@ -53,6 +85,7 @@ const InterviewCompletion = () => {
 
     return () => {
       isMounted = false;
+      if (pollInterval) clearInterval(pollInterval);
     };
   }, [id]);
 
