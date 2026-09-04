@@ -20,6 +20,19 @@ import {
   Eye,
   ShieldAlert,
 } from 'lucide-react';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+import { Bar } from 'react-chartjs-2';
+
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+
 import InterviewFlowLayout from '../layouts/InterviewFlowLayout';
 import { getActiveInterview, getRealEvaluation } from '../services/candidateApi';
 import { formatDate } from '../../utils/dateFormat';
@@ -106,8 +119,8 @@ const EvaluationResults = () => {
   }
 
   const evaluationStatus = realEval?.evaluationStatus || interview.evaluationStatus || 'pending_evaluation';
-  const evaluation = realEval?.evaluation;
-  const isCompleted = evaluationStatus === 'completed' && !!evaluation;
+  const evaluation = realEval?.evaluation || interview.evaluation || (interview.evaluationSource === 'real' ? interview : null);
+  const isCompleted = (evaluationStatus === 'completed' && !!evaluation) || !!evaluation?.overall_score || !!interview.score;
   const isProcessing = evaluationStatus === 'processing' || evaluationStatus === 'pending_evaluation';
   const isFailed = evaluationStatus === 'failed';
 
@@ -122,12 +135,167 @@ const EvaluationResults = () => {
   const suggestions = evaluation?.suggestions ?? interview.suggestions ?? [];
   const insights = evaluation?.insights ?? interview.insights ?? null;
   const scoreRationale = insights?.score_explanation?.score_rationale ?? null;
+  const summaryReport = evaluation?.summary_report ?? interview.summaryReport ?? null;
+  const performanceRating = summaryReport?.performance_overview?.performance_rating || (overallScore >= 70 ? 'Proficient Performance' : (overallScore >= 55 ? 'Competent Performance' : 'Developing'));
+  const dimensionScores = evaluation?.dimension_scores ?? interview.dimensionScores ?? {
+    technical_content: 0,
+    communication_fluency: 0,
+    behavioral_composure: 0,
+  };
   const perQuestionEval = evaluation?.per_question ?? [];
   const facialSummary = evaluation?.facial_summary;
   const hasVisionSummary = facialSummary?.status === 'completed';
 
   const answeredCount = (interview.responses || []).length;
   const totalQuestions = (interview.questions || []).length;
+
+  // FR29-01: Performance Dimensions Breakdown Chart
+  const dimensionChartData = {
+    labels: ['Technical Content', 'Communication Fluency', 'Behavioral Composure'],
+    datasets: [
+      {
+        label: 'Score (%)',
+        data: [
+          Math.min(100, Math.max(0, Math.round(dimensionScores?.technical_content ?? 0))),
+          Math.min(100, Math.max(0, Math.round(dimensionScores?.communication_fluency ?? 0))),
+          Math.min(100, Math.max(0, Math.round(dimensionScores?.behavioral_composure ?? 0))),
+        ],
+        backgroundColor: [
+          'rgba(255, 107, 53, 0.85)',
+          'rgba(255, 159, 28, 0.85)',
+          hasVisionSummary ? 'rgba(6, 182, 212, 0.85)' : 'rgba(100, 116, 139, 0.35)',
+        ],
+        borderColor: [
+          '#FF6B35',
+          '#FF9F1C',
+          hasVisionSummary ? '#06B6D4' : '#64748B',
+        ],
+        borderWidth: 1.5,
+        borderRadius: 4,
+      },
+    ],
+  };
+
+  const dimensionChartOptions = {
+    indexAxis: 'y',
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: (context) => {
+            const val = context.raw;
+            if (context.dataIndex === 2 && !hasVisionSummary) {
+              return 'Behavioral Composure: Unassessed (Vision Offline)';
+            }
+            return `${context.label}: ${val}%`;
+          },
+        },
+      },
+    },
+    scales: {
+      x: {
+        min: 0,
+        max: 100,
+        ticks: {
+          stepSize: 25,
+          callback: (value) => `${value}%`,
+          color: '#94A3B8',
+          font: { size: 10 },
+        },
+        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+      },
+      y: {
+        ticks: {
+          color: '#E2E8F0',
+          font: { size: 11, weight: '500' },
+        },
+        grid: { display: false },
+      },
+    },
+  };
+
+  // FR29-01: Per-Question Performance Trajectory Chart
+  const questionLabels = (interview.questions || []).map((_, i) => `Q${(i + 1).toString().padStart(2, '0')}`);
+  const questionScores = (interview.questions || []).map((q) => {
+    const resp = (interview.responses || []).find((r) => (r.question_id || r.questionId) === q.id);
+    const qEval = perQuestionEval.find((item) => (item.question_id || item.questionId) === q.id);
+    if (!resp) return 0;
+    if (qEval?.status === 'failed') return 0;
+    return Math.min(100, Math.max(0, Math.round(qEval?.multimodal?.score ?? qEval?.score ?? 0)));
+  });
+
+  const questionColors = (interview.questions || []).map((q) => {
+    const resp = (interview.responses || []).find((r) => (r.question_id || r.questionId) === q.id);
+    const qEval = perQuestionEval.find((item) => (item.question_id || item.questionId) === q.id);
+    if (!resp) return 'rgba(100, 116, 139, 0.35)'; // Skipped
+    if (qEval?.status === 'failed') return 'rgba(239, 68, 68, 0.7)'; // Failed
+    return 'rgba(255, 107, 53, 0.85)'; // Evaluated
+  });
+
+  const questionBorderColors = (interview.questions || []).map((q) => {
+    const resp = (interview.responses || []).find((r) => (r.question_id || r.questionId) === q.id);
+    const qEval = perQuestionEval.find((item) => (item.question_id || item.questionId) === q.id);
+    if (!resp) return '#64748B';
+    if (qEval?.status === 'failed') return '#EF4444';
+    return '#FF6B35';
+  });
+
+  const trajectoryChartData = {
+    labels: questionLabels,
+    datasets: [
+      {
+        label: 'Question Score (%)',
+        data: questionScores,
+        backgroundColor: questionColors,
+        borderColor: questionBorderColors,
+        borderWidth: 1.5,
+        borderRadius: 4,
+      },
+    ],
+  };
+
+  const trajectoryChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: (context) => {
+            const idx = context.dataIndex;
+            const q = (interview.questions || [])[idx];
+            const resp = (interview.responses || []).find((r) => (r.question_id || r.questionId) === q?.id);
+            const qEval = perQuestionEval.find((item) => (item.question_id || item.questionId) === q?.id);
+            if (!resp) return `Prompt ${(idx + 1).toString().padStart(2, '0')}: Skipped (0%)`;
+            if (qEval?.status === 'failed') return `Prompt ${(idx + 1).toString().padStart(2, '0')}: Processing Failed`;
+            return `Prompt ${(idx + 1).toString().padStart(2, '0')}: ${context.raw}%`;
+          },
+        },
+      },
+    },
+    scales: {
+      y: {
+        min: 0,
+        max: 100,
+        ticks: {
+          stepSize: 25,
+          callback: (value) => `${value}%`,
+          color: '#94A3B8',
+          font: { size: 10 },
+        },
+        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+      },
+      x: {
+        ticks: {
+          color: '#E2E8F0',
+          font: { size: 11, weight: '600' },
+        },
+        grid: { display: false },
+      },
+    },
+  };
 
   return (
     <InterviewFlowLayout step="results">
@@ -231,6 +399,86 @@ const EvaluationResults = () => {
                 <p style={{ color: 'var(--c-text-secondary)' }}>{scoreRationale}</p>
               </div>
             )}
+
+            {/* FR 29-01: Visual Performance Analytics Graphs */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6">
+              {/* Graph A: Performance Dimensions Breakdown */}
+              <div
+                className="p-4 rounded-lg border space-y-3"
+                style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}
+              >
+                <div className="flex items-center justify-between border-b pb-2" style={{ borderColor: 'var(--c-border)' }}>
+                  <div>
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-orange-400 block">[FR 29-01 GRAPH]</span>
+                    <h3 className="c-heading text-xs font-bold" style={{ color: 'var(--c-text)' }}>Performance Dimensions Breakdown</h3>
+                  </div>
+                  <span className="text-[10px] font-mono text-neutral-400">Scale 0-100%</span>
+                </div>
+                <div className="h-44 w-full">
+                  <Bar data={dimensionChartData} options={dimensionChartOptions} />
+                </div>
+                <div className="flex items-center justify-between text-[10px] font-mono text-neutral-400 pt-1 border-t" style={{ borderColor: 'var(--c-border)' }}>
+                  <span>Technical: {Math.round(dimensionScores?.technical_content ?? 0)}%</span>
+                  <span>Fluency: {Math.round(dimensionScores?.communication_fluency ?? 0)}%</span>
+                  <span>Composure: {hasVisionSummary ? `${Math.round(dimensionScores?.behavioral_composure ?? 0)}%` : 'Offline'}</span>
+                </div>
+              </div>
+
+              {/* Graph B: Per-Question Performance Trajectory */}
+              <div
+                className="p-4 rounded-lg border space-y-3"
+                style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}
+              >
+                <div className="flex items-center justify-between border-b pb-2" style={{ borderColor: 'var(--c-border)' }}>
+                  <div>
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-orange-400 block">[FR 29-01 GRAPH]</span>
+                    <h3 className="c-heading text-xs font-bold" style={{ color: 'var(--c-text)' }}>Per-Question Performance Trajectory</h3>
+                  </div>
+                  <span className="text-[10px] font-mono text-neutral-400">{answeredCount}/{totalQuestions} Takes</span>
+                </div>
+                <div className="h-44 w-full">
+                  <Bar data={trajectoryChartData} options={trajectoryChartOptions} />
+                </div>
+                <div className="flex items-center justify-between text-[10px] font-mono text-neutral-400 pt-1 border-t" style={{ borderColor: 'var(--c-border)' }}>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-[#FF6B35]" />
+                    <span>Evaluated</span>
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-slate-500" />
+                    <span>Skipped / Unassessed</span>
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-rose-500" />
+                    <span>Failed</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* FR 28-03: Structured Performance Overview (Audit Summary) */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-6">
+              <div className="p-3 rounded-lg border space-y-1" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
+                <span className="text-[10px] uppercase font-mono tracking-wider block" style={{ color: 'var(--c-text-muted)' }}>Total Prompts</span>
+                <span className="font-mono text-lg font-bold" style={{ color: 'var(--c-text)' }}>{totalQuestions}</span>
+              </div>
+              <div className="p-3 rounded-lg border space-y-1" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
+                <span className="text-[10px] uppercase font-mono tracking-wider block" style={{ color: 'var(--c-text-muted)' }}>Evaluated Takes</span>
+                <span className="font-mono text-lg font-bold text-emerald-400">{answeredCount}</span>
+              </div>
+              <div className="p-3 rounded-lg border space-y-1" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
+                <span className="text-[10px] uppercase font-mono tracking-wider block" style={{ color: 'var(--c-text-muted)' }}>Skipped Takes</span>
+                <span className="font-mono text-lg font-bold text-amber-400">
+                  {summaryReport?.performance_overview?.skipped_questions ?? Math.max(0, totalQuestions - answeredCount)}
+                </span>
+              </div>
+              <div className="p-3 rounded-lg border space-y-1" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
+                <span className="text-[10px] uppercase font-mono tracking-wider block" style={{ color: 'var(--c-text-muted)' }}>Completion Rate</span>
+                <span className="font-mono text-lg font-bold text-cyan-400">
+                  {summaryReport?.performance_overview?.completion_rate ?? (totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0)}%
+                </span>
+              </div>
+            </div>
           </section>
         ) : isFailed ? (
           <section aria-label="Evaluation Failure" className="border-b pb-8" style={{ borderColor: 'var(--c-border)' }}>
@@ -367,7 +615,8 @@ const EvaluationResults = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 pt-2">
               {/* Confidence Indicator */}
-              <div className="p-4 rounded-lg border space-y-1.5" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
+              {/* Confidence Indicator (FR 29-02 Visual Indicator) */}
+              <div className="p-4 rounded-lg border space-y-2" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
                 <div className="flex items-center justify-between">
                   <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--c-text-muted)' }}>
                     Confidence Indicator
@@ -376,21 +625,40 @@ const EvaluationResults = () => {
                     {hasVisionSummary ? 'MULTIMODAL' : 'ACOUSTIC'}
                   </span>
                 </div>
-                <p className="c-serif-num text-3xl font-bold" style={{ color: 'var(--c-text)' }}>
-                  {confidenceScore != null ? `${Math.round(confidenceScore)}%` : 'Active'}
+                <div className="flex items-baseline gap-2">
+                  <p className="c-serif-num text-3xl font-bold" style={{ color: 'var(--c-text)' }}>
+                    {confidenceScore != null && confidenceLevel !== 'Not Assessed' ? `${Math.round(confidenceScore)}%` : 'Active'}
+                  </p>
                   {confidenceLevel && confidenceLevel !== 'Not Assessed' && (
-                    <span className="text-xs font-sans font-normal ml-2 text-emerald-400">
+                    <span className="text-xs font-sans font-semibold text-emerald-400">
                       ({confidenceLevel})
                     </span>
                   )}
-                </p>
+                </div>
+                {/* Visual Level Meter Bar */}
+                <div className="pt-1 space-y-1">
+                  <div className="h-2 w-full rounded-full bg-slate-800/80 overflow-hidden relative border border-white/5">
+                    <div
+                      className="h-full rounded-full transition-all duration-1000"
+                      style={{
+                        width: `${confidenceScore != null && confidenceLevel !== 'Not Assessed' ? Math.min(100, Math.max(0, confidenceScore)) : 0}%`,
+                        background: (confidenceScore ?? 0) >= 80 ? '#10B981' : ((confidenceScore ?? 0) >= 60 ? '#FF9F1C' : '#F59E0B'),
+                      }}
+                    />
+                  </div>
+                  <div className="flex justify-between text-[9px] font-mono text-neutral-500">
+                    <span>0% Dev</span>
+                    <span>60% Mod</span>
+                    <span>80% High</span>
+                  </div>
+                </div>
                 <p className="text-[11px] leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                  Derived from spoken pacing, volume consistency, and vocal stability.
+                  Synthesized from vocal pacing, articulation fluency, and non-verbal poise.
                 </p>
               </div>
 
-              {/* Stress / Composure Indicator */}
-              <div className="p-4 rounded-lg border space-y-1.5" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
+              {/* Stress / Composure Indicator (FR 29-02 Visual Indicator) */}
+              <div className="p-4 rounded-lg border space-y-2" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
                 <div className="flex items-center justify-between">
                   <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--c-text-muted)' }}>
                     Composure Indicator
@@ -399,21 +667,40 @@ const EvaluationResults = () => {
                     {hasVisionSummary ? 'MULTIMODAL' : 'BEHAVIORAL'}
                   </span>
                 </div>
-                <p className="c-serif-num text-3xl font-bold" style={{ color: 'var(--c-text)' }}>
-                  {stressLevel || 'Stable'}
+                <div className="flex items-baseline gap-2">
+                  <p className="c-serif-num text-3xl font-bold" style={{ color: 'var(--c-text)' }}>
+                    {stressLevel || 'Stable'}
+                  </p>
                   {stressScore != null && stressLevel !== 'Not Assessed' && (
-                    <span className="text-xs font-sans font-normal ml-2 text-neutral-400">
-                      ({Math.round(stressScore)}%)
+                    <span className="text-xs font-sans font-semibold text-neutral-400">
+                      ({Math.round(stressScore)}% stress)
                     </span>
                   )}
-                </p>
+                </div>
+                {/* Visual Level Meter Bar */}
+                <div className="pt-1 space-y-1">
+                  <div className="h-2 w-full rounded-full bg-slate-800/80 overflow-hidden relative border border-white/5">
+                    <div
+                      className="h-full rounded-full transition-all duration-1000"
+                      style={{
+                        width: `${stressScore != null && stressLevel !== 'Not Assessed' ? Math.min(100, Math.max(0, stressScore)) : 0}%`,
+                        background: (stressScore ?? 0) >= 65 ? '#F43F5E' : ((stressScore ?? 0) >= 35 ? '#FF9F1C' : '#10B981'),
+                      }}
+                    />
+                  </div>
+                  <div className="flex justify-between text-[9px] font-mono text-neutral-500">
+                    <span className="text-emerald-400">0% Low</span>
+                    <span className="text-amber-400">35% Mod</span>
+                    <span className="text-rose-400">65% Elev</span>
+                  </div>
+                </div>
                 <p className="text-[11px] leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
                   Observable stability and tension minimization across sequential prompt takes.
                 </p>
               </div>
 
               {/* Facial Expression Analysis */}
-              <div className={`p-4 rounded-lg border space-y-1.5 ${hasVisionSummary ? '' : 'opacity-80'}`} style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
+              <div className={`p-4 rounded-lg border space-y-1.5 ${hasVisionSummary ? '' : 'opacity-85'}`} style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
                 <div className="flex items-center justify-between">
                   <p className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">
                     Facial Expression
@@ -425,19 +712,19 @@ const EvaluationResults = () => {
                     {facialSummary.dominant_expression}
                   </p>
                 ) : (
-                  <p className="text-sm font-bold text-neutral-400 pt-1 font-mono">
-                    [Signal Offline]
+                  <p className="text-xs font-bold text-neutral-400 pt-1 font-mono">
+                    [Vision Offline]
                   </p>
                 )}
                 <p className="text-[11px] leading-relaxed text-neutral-400">
                   {hasVisionSummary
                     ? 'Model-derived primary facial expression observed across interview takes.'
-                    : 'Micro-expression tracking will appear when vision evaluation is enabled.'}
+                    : 'Camera was unmounted; facial expression cues omitted without fabrication.'}
                 </p>
               </div>
 
               {/* Engagement Level */}
-              <div className={`p-4 rounded-lg border space-y-1.5 ${hasVisionSummary ? '' : 'opacity-80'}`} style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
+              <div className={`p-4 rounded-lg border space-y-1.5 ${hasVisionSummary ? '' : 'opacity-85'}`} style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
                 <div className="flex items-center justify-between">
                   <p className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">
                     Attentive Engagement
@@ -449,14 +736,14 @@ const EvaluationResults = () => {
                     {facialSummary.overall_composure}
                   </p>
                 ) : (
-                  <p className="text-sm font-bold text-neutral-400 pt-1 font-mono">
-                    [Signal Offline]
+                  <p className="text-xs font-bold text-neutral-400 pt-1 font-mono">
+                    [Vision Offline]
                   </p>
                 )}
                 <p className="text-[11px] leading-relaxed text-neutral-400">
                   {hasVisionSummary
                     ? 'Eye presence consistency and observable non-verbal composure.'
-                    : 'Eye gaze orientation and attentiveness cues pending vision pipeline.'}
+                    : 'Attentiveness and head pose cues unrecorded; non-verbal analysis omitted.'}
                 </p>
               </div>
             </div>
@@ -545,9 +832,13 @@ const EvaluationResults = () => {
                           {Math.round(questionScore)}%
                         </span>
                       )}
-                      {isRecorded ? (
+                      {qEval?.status === 'failed' ? (
+                        <span className="c-badge c-badge-danger text-[10px] py-0.5 px-1.5 font-bold">
+                          Failed
+                        </span>
+                      ) : isRecorded ? (
                         <span className="c-badge c-badge-success text-[10px] py-0.5 px-1.5 font-bold">
-                          Recorded
+                          Evaluated
                         </span>
                       ) : (
                         <span className="c-badge c-badge-muted text-[10px] py-0.5 px-1.5">
@@ -556,6 +847,19 @@ const EvaluationResults = () => {
                       )}
                     </div>
                   </div>
+
+                  {/* Status Disclosures */}
+                  {qEval?.status === 'failed' && (
+                    <div className="p-2.5 rounded border text-xs bg-rose-500/10 border-rose-500/20 text-rose-300">
+                      <span className="font-bold">Take Processing Note: </span>
+                      {qEval?.failed_reason || 'Media processing error encountered for this response take.'}
+                    </div>
+                  )}
+                  {!isRecorded && (
+                    <div className="p-2.5 rounded border text-xs bg-slate-800/40 border-slate-700/40 text-neutral-400 italic">
+                      Question was skipped by candidate; no response take submitted for evaluation.
+                    </div>
+                  )}
 
                   {/* Multi-Signal Assessment Strip */}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

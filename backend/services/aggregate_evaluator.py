@@ -14,7 +14,7 @@ Integrity guarantees:
 - Correctly scales difficulty and accounts for skipped/failed responses with zero fabrication.
 - Deterministic and repeatable mathematical scoring.
 """
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 from services.confidence_stress_analyzer import aggregate_confidence_and_stress
 from services.insights_service import generate_interview_insights
 
@@ -29,6 +29,110 @@ def get_difficulty_weight(difficulty: Optional[str]) -> float:
     if not difficulty:
         return 1.25
     return DIFFICULTY_WEIGHTS.get(difficulty.capitalize(), 1.25)
+
+
+def _compile_interview_summary_report(
+    overall_score: float,
+    dimension_scores: Dict[str, float],
+    confidence_score: float,
+    confidence_level: str,
+    stress_score: float,
+    stress_level: str,
+    facial_summary: Dict[str, Any],
+    aggregate_analysis: Dict[str, Any],
+    insights: Dict[str, Any],
+    per_question_results: List[Dict[str, Any]],
+) -> Dict[str, Any]:
+    """
+    Compiles the canonical FR28 Interview Summary Report.
+    FR 28-01: Generate a summary report after the interview.
+    FR 28-02: Include scores and behavioral insights.
+    FR 28-03: Provide a structured performance overview.
+    """
+    answered_q = aggregate_analysis.get("answered_questions", 0)
+    if answered_q == 0:
+        rating = "Not Assessed"
+    elif overall_score >= 85.0:
+        rating = "Exemplary Performance"
+    elif overall_score >= 70.0:
+        rating = "Proficient Performance"
+    elif overall_score >= 55.0:
+        rating = "Competent Performance"
+    else:
+        rating = "Needs Preparation"
+
+    tech_metrics = aggregate_analysis.get("compiled_metrics", {}).get("technical", {})
+    comm_metrics = aggregate_analysis.get("compiled_metrics", {}).get("communication", {})
+
+    has_nlp = bool(tech_metrics.get("covered_concepts") or tech_metrics.get("missing_concepts") or tech_metrics.get("avg_content_score", 0) > 0)
+    has_speech = bool(comm_metrics.get("avg_wpm", 0) > 0 or comm_metrics.get("avg_fluency_score", 0) > 0)
+    has_vision = bool(facial_summary.get("status") == "completed" and facial_summary.get("evaluated_takes", 0) > 0)
+
+    per_q_summary = []
+    for idx, q in enumerate(per_question_results):
+        q_id = q.get("question_id") or f"q_{idx+1}"
+        q_status = q.get("status", "evaluated")
+        q_score = q.get("score") if q_status == "evaluated" else (0.0 if q_status == "skipped" else None)
+
+        q_delivery = q.get("delivery") or {}
+        q_facial = q.get("facial_analysis") or {}
+        q_text = q.get("text_analysis") or {}
+
+        indicators = q_facial.get("behavioral_indicators") if isinstance(q_facial.get("behavioral_indicators"), dict) else {}
+
+        per_q_summary.append({
+            "question_id": q_id,
+            "difficulty": q.get("difficulty", "Medium"),
+            "status": q_status,
+            "score": q_score,
+            "modalities": {
+                "nlp": bool(q_text.get("covered_concepts") or q_text.get("content_score") is not None),
+                "speech": bool(q_delivery.get("status") == "completed" and q_delivery.get("words_per_minute", 0) > 0),
+                "vision": bool(q_facial.get("status") == "completed"),
+            },
+            "words_per_minute": q_delivery.get("words_per_minute"),
+            "pacing": q_delivery.get("pacing"),
+            "dominant_expression": q_facial.get("dominant_expression"),
+            "composure_index": indicators.get("composure_index"),
+        })
+
+    return {
+        "performance_overview": {
+            "overall_score": overall_score,
+            "performance_rating": rating,
+            "dimension_scores": {
+                "technical_content": round(dimension_scores.get("technical_content", 0.0), 1),
+                "communication_fluency": round(dimension_scores.get("communication_fluency", 0.0), 1),
+                "behavioral_composure": round(dimension_scores.get("behavioral_composure", 0.0), 1),
+            },
+            "total_questions": aggregate_analysis.get("total_questions", 0),
+            "answered_questions": aggregate_analysis.get("answered_questions", 0),
+            "skipped_questions": aggregate_analysis.get("skipped_questions", 0),
+            "failed_questions": aggregate_analysis.get("failed_questions", 0),
+            "completion_rate": aggregate_analysis.get("completion_rate", 0.0),
+        },
+        "behavioral_insights": {
+            "confidence_score": confidence_score,
+            "confidence_level": confidence_level,
+            "stress_score": stress_score,
+            "stress_level": stress_level,
+            "facial_composure": facial_summary.get("overall_composure") if has_vision else "Not Assessed",
+            "dominant_expression": facial_summary.get("dominant_expression") if has_vision else "Not Assessed",
+            "modality_availability": {
+                "nlp": "available" if has_nlp else "unavailable",
+                "speech": "available" if has_speech else "unavailable",
+                "vision": "available" if has_vision else "unavailable",
+            },
+        },
+        "per_question_summary": per_q_summary,
+        "qualitative_synthesis": {
+            "interpretation": insights.get("score_explanation", {}).get("overall_summary", ""),
+            "score_rationale": insights.get("score_explanation", {}).get("score_rationale", ""),
+            "strengths": insights.get("strengths", []),
+            "weaknesses": insights.get("weaknesses", []),
+            "suggestions": insights.get("suggestions", []),
+        },
+    }
 
 
 def aggregate_interview_evaluation(per_question_results: List[Dict]) -> Dict:
@@ -121,6 +225,18 @@ def aggregate_interview_evaluation(per_question_results: List[Dict]) -> Dict:
             aggregate_analysis=empty_aggregate,
             facial_summary=empty_facial,
         )
+        empty_summary = _compile_interview_summary_report(
+            overall_score=0.0,
+            dimension_scores=empty_dimensions,
+            confidence_score=0.0,
+            confidence_level="Not Assessed",
+            stress_score=0.0,
+            stress_level="Not Assessed",
+            facial_summary=empty_facial,
+            aggregate_analysis=empty_aggregate,
+            insights=empty_insights,
+            per_question_results=[],
+        )
         return {
             "overall_score": 0.0,
             "confidence_score": 0.0,
@@ -137,6 +253,7 @@ def aggregate_interview_evaluation(per_question_results: List[Dict]) -> Dict:
             "dimension_scores": empty_dimensions,
             "confidence_and_stress_summary": empty_cs,
             "insights": empty_insights,
+            "summary_report": empty_summary,
         }
 
     total_count = len(per_question_results)
@@ -365,6 +482,19 @@ def aggregate_interview_evaluation(per_question_results: List[Dict]) -> Dict:
     weaknesses = insights["weaknesses"]
     suggestions = insights["suggestions"]
 
+    summary_report = _compile_interview_summary_report(
+        overall_score=overall_score,
+        dimension_scores=dimension_scores,
+        confidence_score=confidence_score,
+        confidence_level=confidence_level,
+        stress_score=stress_score,
+        stress_level=stress_level,
+        facial_summary=facial_summary,
+        aggregate_analysis=aggregate_analysis,
+        insights=insights,
+        per_question_results=per_question_results,
+    )
+
     return {
         "overall_score": overall_score,
         "confidence_score": confidence_score,
@@ -381,5 +511,6 @@ def aggregate_interview_evaluation(per_question_results: List[Dict]) -> Dict:
         "scoring_formula": scoring_formula,
         "dimension_scores": dimension_scores,
         "insights": insights,
+        "summary_report": summary_report,
     }
 
