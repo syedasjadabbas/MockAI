@@ -1,0 +1,17 @@
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.venv
+venv
+env
+.env
+.env.*
+!.env.example
+media/interviews/*
+uploads/*
+*.log
+.git
+.gitignore
+.vscode
+.idea
