@@ -1,0 +1,76 @@
+services:
+  # ---------------------------------------------------------------------------
+  # MockAI FastAPI Backend Engine (Render Web Service)
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: mockai-backend
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    plan: starter
+    region: oregon
+    branch: main
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: MONGO_URI
+        sync: false
+      - key: DATABASE_NAME
+        value: mockai
+      - key: SECRET_KEY
+        sync: false
+      - key: INTERNAL_SERVICE_KEY
+        sync: false
+      - key: SMTP_SERVER
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_EMAIL
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        value: 241282110466-461tgmm58u101naprguqjgvj48spsnmb.apps.googleusercontent.com
+      - key: ALLOWED_ORIGINS
+        fromService:
+          type: web
+          name: mockai-frontend
+          property: host
+      - key: FRONTEND_URL
+        fromService:
+          type: web
+          name: mockai-frontend
+          property: host
+      - key: MEDIA_STORAGE_DIR
+        value: /app/media
+      - key: UPLOAD_DIR
+        value: /app/uploads
+
+  # ---------------------------------------------------------------------------
+  # MockAI React 19 Frontend Web App (Render Static Site)
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: mockai-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    branch: main
+    autoDeploy: true
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_BASE
+        fromService:
+          type: web
+          name: mockai-backend
+          property: host
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: mockai-backend
+          property: host
+      - key: VITE_GOOGLE_CLIENT_ID
+        value: 241282110466-461tgmm58u101naprguqjgvj48spsnmb.apps.googleusercontent.com
