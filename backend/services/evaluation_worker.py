@@ -42,14 +42,18 @@ def evaluate_interview_job(interview_id: str) -> Dict:
         now = datetime.utcnow()
         # Mark as processing if not already marked
         if interview.get("evaluation_status") != "processing":
-            existing_eval = interview.get("evaluation") or {}
-            interviews_collection.update_one(
-                {"_id": obj_id},
-                {"$set": {
+            existing_eval = interview.get("evaluation")
+            if not isinstance(existing_eval, dict):
+                set_doc = {
+                    "evaluation_status": "processing",
+                    "evaluation": {"started_at": now},
+                }
+            else:
+                set_doc = {
                     "evaluation_status": "processing",
                     "evaluation.started_at": existing_eval.get("started_at") or now,
-                }}
-            )
+                }
+            interviews_collection.update_one({"_id": obj_id}, {"$set": set_doc})
             interview = interviews_collection.find_one({"_id": obj_id})
 
         questions = interview.get("questions", [])
@@ -162,12 +166,22 @@ def evaluate_interview_job(interview_id: str) -> Dict:
 
     except Exception as e:
         logger.error(f"Evaluation pipeline failed for interview {interview_id}: {e}", exc_info=True)
-        interviews_collection.update_one(
-            {"_id": obj_id},
-            {"$set": {
+        fail_now = datetime.utcnow()
+        doc_now = interviews_collection.find_one({"_id": obj_id})
+        existing_eval = doc_now.get("evaluation") if isinstance(doc_now, dict) else None
+        if not isinstance(existing_eval, dict):
+            fail_set = {
                 "evaluation_status": "failed",
-                "evaluation.completed_at": datetime.utcnow(),
+                "evaluation": {
+                    "completed_at": fail_now,
+                    "failed_reason": str(e),
+                },
+            }
+        else:
+            fail_set = {
+                "evaluation_status": "failed",
+                "evaluation.completed_at": fail_now,
                 "evaluation.failed_reason": str(e),
-            }}
-        )
+            }
+        interviews_collection.update_one({"_id": obj_id}, {"$set": fail_set})
         raise e

@@ -459,12 +459,19 @@ INTERVIEW_LIST_PROJECTION = {
 INTERVIEW_DETAIL_PROJECTION = {
     "user_id": 1,
     "role": 1,
+    "category_id": 1,
+    "type": 1,
     "status": 1,
+    "evaluation_status": 1,
     "score": 1,
     "confidence": 1,
     "stress": 1,
     "transcript": 1,
-    "created_at": 1
+    "questions": 1,
+    "responses": 1,
+    "evaluation": 1,
+    "created_at": 1,
+    "completed_at": 1,
 }
 
 def attach_candidate_names(interviews: list) -> list:
@@ -539,6 +546,7 @@ def get_interview(id: str, token_payload: dict = Depends(verify_admin)):
     if not interview:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Interview not found")
         
+    attach_candidate_names([interview])
     return serialize_mongo(interview)
 
 class UpdateInterviewRequest(BaseModel):

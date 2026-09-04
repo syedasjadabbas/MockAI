@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Search,
@@ -383,7 +383,7 @@ const InterviewHistory = () => {
                           </span>
                         ) : (
                           <span className="text-xs font-mono" style={{ color: 'var(--c-text-muted)' }}>
-                            â€”
+                            —
                           </span>
                         )}
                       </div>
@@ -455,7 +455,7 @@ const InterviewHistory = () => {
                               {Math.round(session.score)}%
                             </span>
                           ) : (
-                            <span className="text-xs font-mono" style={{ color: 'var(--c-text-muted)' }}>â€”</span>
+                            <span className="text-xs font-mono" style={{ color: 'var(--c-text-muted)' }}>—</span>
                           )}
                           <Link
                             to={targetUrl}
