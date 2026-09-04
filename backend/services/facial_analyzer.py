@@ -86,7 +86,7 @@ class FacialAnalyzer:
 
             if FER_MODEL_PATH.is_file():
                 so = ort.SessionOptions()
-                so.intra_op_num_threads = 2
+                so.intra_op_num_threads = 1
                 so.inter_op_num_threads = 1
                 so.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
                 self.ort_session = ort.InferenceSession(str(FER_MODEL_PATH), so)
@@ -226,6 +226,7 @@ class FacialAnalyzer:
                 "error": "Unable to decode video streams",
             }
 
+        yunet_detector = None
         try:
             total_video_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
             video_fps = cap.get(cv2.CAP_PROP_FPS) or 25.0
@@ -419,6 +420,8 @@ class FacialAnalyzer:
         finally:
             if cap is not None:
                 cap.release()
+            if yunet_detector is not None:
+                del yunet_detector
             if temp_normalized_path and os.path.exists(temp_normalized_path):
                 try:
                     os.unlink(temp_normalized_path)

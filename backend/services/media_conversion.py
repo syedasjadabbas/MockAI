@@ -73,6 +73,7 @@ def extract_audio_to_wav(input_path: Path, output_path: Path, sample_rate: int =
     result = subprocess.run(
         [
             "ffmpeg", "-y",
+            "-loglevel", "error",
             "-i", str(input_path),
             "-vn",                      # drop the video track entirely
             "-acodec", "pcm_s16le",     # LINEAR16
@@ -113,6 +114,7 @@ def normalize_video_to_mp4(
     result = subprocess.run(
         [
             "ffmpeg", "-y",
+            "-loglevel", "error",
             "-i", str(input_path),
             "-c:v", "libx264",
             "-preset", preset,

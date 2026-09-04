@@ -150,6 +150,13 @@ class BertSemanticAnalyzer:
         if not self._init_attempted:
             self._init_attempted = True
             try:
+                import torch
+                # Constrain PyTorch thread pool to prevent thread-arena memory fragmentation
+                torch.set_num_threads(1)
+                try:
+                    torch.set_num_interop_threads(1)
+                except Exception:
+                    pass
                 from sentence_transformers import SentenceTransformer
                 self._model = SentenceTransformer("all-MiniLM-L6-v2")
                 logger.info("SentenceTransformer all-MiniLM-L6-v2 (DistilBERT family) loaded successfully.")
@@ -168,10 +175,12 @@ class BertSemanticAnalyzer:
         if model is None:
             raise RuntimeError(f"BERT model unavailable: {self._load_error}")
         
+        import torch
         from sentence_transformers import util
-        emb_a = model.encode(text_a, convert_to_tensor=True)
-        emb_b = model.encode(text_b, convert_to_tensor=True)
-        cos_sim = util.cos_sim(emb_a, emb_b).item()
+        with torch.inference_mode():
+            emb_a = model.encode(text_a, convert_to_tensor=True)
+            emb_b = model.encode(text_b, convert_to_tensor=True)
+            cos_sim = util.cos_sim(emb_a, emb_b).item()
         return float(cos_sim)
 
     def evaluate_concepts_semantically(
@@ -195,6 +204,7 @@ class BertSemanticAnalyzer:
             sentences = [transcript]
 
         model = self.get_model()
+        emb_sentences = None
 
         for c in concepts:
             # First check direct lexical/stem presence
@@ -205,10 +215,13 @@ class BertSemanticAnalyzer:
             # If not directly matched lexically, check semantic embedding similarity
             if model is not None and len(c.strip()) > 2:
                 try:
+                    import torch
                     from sentence_transformers import util
-                    emb_c = model.encode(c, convert_to_tensor=True)
-                    emb_sentences = model.encode(sentences, convert_to_tensor=True)
-                    max_sim = util.cos_sim(emb_c, emb_sentences).max().item()
+                    with torch.inference_mode():
+                        if emb_sentences is None:
+                            emb_sentences = model.encode(sentences, convert_to_tensor=True)
+                        emb_c = model.encode(c, convert_to_tensor=True)
+                        max_sim = util.cos_sim(emb_c, emb_sentences).max().item()
                     if max_sim >= 0.48:
                         covered.append(c)
                         continue

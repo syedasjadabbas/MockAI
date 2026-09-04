@@ -9,7 +9,9 @@ Asynchronously orchestrates the end-to-end evaluation pipeline for a completed i
 5. Persists the complete evaluation record and updates evaluation_status ("completed" or "failed").
 6. Denormalizes top-level score, confidence, and stress for Admin reporting compatibility.
 """
+import gc
 import logging
+import threading
 from datetime import datetime
 from typing import Dict, List, Optional
 from bson import ObjectId
@@ -21,11 +23,26 @@ from services.aggregate_evaluator import aggregate_interview_evaluation
 
 logger = logging.getLogger("mockai.evaluation_worker")
 
+# Serialization lock to prevent concurrent evaluation overlap within the process
+_evaluation_lock = threading.Lock()
+
 
 def evaluate_interview_job(interview_id: str) -> Dict:
     """
     Executes the full evaluation pipeline for the given interview ID.
     Can be run as a background task or synchronously in tests.
+    Serialized via _evaluation_lock to prevent concurrent evaluation memory surges.
+    """
+    with _evaluation_lock:
+        try:
+            return _evaluate_interview_job_unlocked(interview_id)
+        finally:
+            gc.collect()
+
+
+def _evaluate_interview_job_unlocked(interview_id: str) -> Dict:
+    """
+    Internal execution implementation of the evaluation pipeline.
     """
     try:
         obj_id = ObjectId(interview_id)
