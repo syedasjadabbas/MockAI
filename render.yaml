@@ -32,15 +32,9 @@ services:
       - key: GOOGLE_CLIENT_ID
         value: 241282110466-461tgmm58u101naprguqjgvj48spsnmb.apps.googleusercontent.com
       - key: ALLOWED_ORIGINS
-        fromService:
-          type: web
-          name: mockai-frontend
-          property: host
+        value: https://mockai-frontend-ybo1.onrender.com,http://localhost:5173,http://127.0.0.1:5173
       - key: FRONTEND_URL
-        fromService:
-          type: web
-          name: mockai-frontend
-          property: host
+        value: https://mockai-frontend-ybo1.onrender.com
       - key: MEDIA_STORAGE_DIR
         value: /app/media
       - key: UPLOAD_DIR
@@ -63,14 +57,8 @@ services:
         destination: /index.html
     envVars:
       - key: VITE_API_BASE
-        fromService:
-          type: web
-          name: mockai-backend
-          property: host
+        value: https://mockai-backend-4gxp.onrender.com
       - key: VITE_API_URL
-        fromService:
-          type: web
-          name: mockai-backend
-          property: host
+        value: https://mockai-backend-4gxp.onrender.com/admin
       - key: VITE_GOOGLE_CLIENT_ID
         value: 241282110466-461tgmm58u101naprguqjgvj48spsnmb.apps.googleusercontent.com

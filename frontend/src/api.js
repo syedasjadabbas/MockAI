@@ -1,5 +1,22 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/admin';
-export const API_BASE = import.meta.env.VITE_API_BASE || 'http://127.0.0.1:8000';
+const normalizeApiUrl = (url, fallback) => {
+  if (!url || typeof url !== 'string' || !url.trim()) return fallback;
+  let trimmed = url.trim().replace(/\/+$/, '');
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed;
+  }
+  // If provided as a bare Render service slug or hostname (e.g. 'mockai-backend-4gxp')
+  if (!trimmed.includes('.')) {
+    return `https://${trimmed}.onrender.com`;
+  }
+  return `https://${trimmed}`;
+};
+
+const rawApiBase = import.meta.env.VITE_API_BASE;
+const rawApiUrl = import.meta.env.VITE_API_URL;
+
+export const API_BASE = normalizeApiUrl(rawApiBase, 'http://127.0.0.1:8000');
+const API_URL = rawApiUrl ? normalizeApiUrl(rawApiUrl, `${API_BASE}/admin`) : `${API_BASE}/admin`;
+
 
 const isTokenExpired = (token) => {
   try {

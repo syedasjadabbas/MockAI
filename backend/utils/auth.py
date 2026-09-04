@@ -11,16 +11,39 @@ load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY", "default-fallback-secret-key")
 ALGORITHM = "HS256"
 
-# Password hashing context setup
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+import bcrypt as _bcrypt_lib
+
+# Password hashing context setup with resilient fallback
+try:
+    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+except Exception:
+    pwd_context = None
 
 def hash_password(password: str) -> str:
     """Return the hashed version of a plain password."""
-    return pwd_context.hash(password)
+    if pwd_context is not None:
+        try:
+            return pwd_context.hash(password)
+        except Exception:
+            pass
+    # Resilient direct bcrypt fallback
+    pwd_bytes = password.encode("utf-8")[:72]
+    salt = _bcrypt_lib.gensalt()
+    return _bcrypt_lib.hashpw(pwd_bytes, salt).decode("utf-8")
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Return True if the plain password matches the hashed password."""
-    return pwd_context.verify(plain_password, hashed_password)
+    if pwd_context is not None:
+        try:
+            return pwd_context.verify(plain_password, hashed_password)
+        except Exception:
+            pass
+    # Resilient direct bcrypt fallback
+    try:
+        pwd_bytes = plain_password.encode("utf-8")[:72]
+        return _bcrypt_lib.checkpw(pwd_bytes, hashed_password.encode("utf-8"))
+    except Exception:
+        return False
 
 def create_access_token(data: dict) -> str:
     """Create a new JWT access token with a 24-hour expiration."""

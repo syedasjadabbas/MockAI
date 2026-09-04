@@ -44,10 +44,13 @@ def send_email(to_email: str, subject: str, html_content: str, sender_display_na
     server = None
     try:
         if smtp_port == 465:
-            server = smtplib.SMTP_SSL(smtp_server, smtp_port, timeout=10)
+            server = smtplib.SMTP_SSL(smtp_server, smtp_port, timeout=15)
+            server.ehlo()
         else:
-            server = smtplib.SMTP(smtp_server, smtp_port, timeout=10)
+            server = smtplib.SMTP(smtp_server, smtp_port, timeout=15)
+            server.ehlo()
             server.starttls()
+            server.ehlo()
 
         server.login(sender_email, sender_password)
         server.send_message(msg)
@@ -56,13 +59,13 @@ def send_email(to_email: str, subject: str, html_content: str, sender_display_na
         print(f"[ERROR] Gmail SMTP authentication failed for {to_email}: {auth_err}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Gmail SMTP authentication failed. Please verify your Gmail address and 16-character App Password in backend/.env."
+            detail="Gmail SMTP authentication failed. Please verify your Gmail address and 16-character App Password in environment variables."
         )
     except (smtplib.SMTPConnectError, socket.timeout, TimeoutError) as conn_err:
         print(f"[ERROR] Gmail SMTP connection failed for {to_email}: {conn_err}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Could not connect to SMTP server ({smtp_server}:{smtp_port}). Please check your internet or network firewall."
+            detail=f"Could not connect to SMTP server ({smtp_server}:{smtp_port}). Please check server network or firewall."
         )
     except HTTPException:
         raise
