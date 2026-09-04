@@ -143,9 +143,73 @@ class FacialAnalyzer:
                 "error": "Media recording is empty (0 bytes)",
             }
 
-        # 2. Open video capture
-        cap = cv2.VideoCapture(str(video_path))
+        # 2. Normalize/convert streaming WebM or unindexed container via FFmpeg before OpenCV capture
+        temp_normalized_path: Optional[str] = None
+        target_video_path = str(video_path)
+        cap = None
+
+        from services.media_conversion import is_ffmpeg_available, normalize_video_to_mp4, has_video_stream
+        if is_ffmpeg_available() and not has_video_stream(Path(video_path)):
+            return {
+                "status": "insufficient_data",
+                "face_detected": False,
+                "face_presence_ratio": 0.0,
+                "total_frames_sampled": 0,
+                "dominant_expression": "Unavailable",
+                "expression_distribution": {},
+                "behavioral_indicators": {
+                    "engagement_level": "Unavailable",
+                    "composure_index": "Unavailable",
+                    "observable_tension": "Unavailable",
+                },
+                "model": "fer-cnn-onnx-v1",
+                "error": "Media recording contains no video stream (audio-only)",
+            }
+
+        if is_ffmpeg_available() and target_video_path.lower().endswith(".webm"):
+            import tempfile
+            try:
+                temp_fd, temp_normalized_path = tempfile.mkstemp(suffix=".mp4", prefix="mockai_norm_")
+                os.close(temp_fd)
+                normalize_video_to_mp4(Path(video_path), Path(temp_normalized_path))
+                target_video_path = temp_normalized_path
+                logger.info(f"Normalized WebM to frame-readable MP4: {video_path} -> {temp_normalized_path}")
+            except Exception as conv_err:
+                logger.warning(f"Video normalization notice ({conv_err}); attempting direct capture from {video_path}")
+                if temp_normalized_path and os.path.exists(temp_normalized_path):
+                    try:
+                        os.unlink(temp_normalized_path)
+                    except OSError:
+                        pass
+                temp_normalized_path = None
+                target_video_path = str(video_path)
+
+        # 3. Open video capture
+        cap = cv2.VideoCapture(target_video_path)
         if not cap.isOpened():
+            # If direct opening failed and we haven't tried FFmpeg normalization yet, attempt normalization
+            if temp_normalized_path is None and is_ffmpeg_available():
+                import tempfile
+                try:
+                    temp_fd, temp_normalized_path = tempfile.mkstemp(suffix=".mp4", prefix="mockai_norm_")
+                    os.close(temp_fd)
+                    normalize_video_to_mp4(Path(video_path), Path(temp_normalized_path))
+                    target_video_path = temp_normalized_path
+                    cap = cv2.VideoCapture(target_video_path)
+                except Exception:
+                    if temp_normalized_path and os.path.exists(temp_normalized_path):
+                        try:
+                            os.unlink(temp_normalized_path)
+                        except OSError:
+                            pass
+                    temp_normalized_path = None
+
+        if not cap.isOpened():
+            if temp_normalized_path and os.path.exists(temp_normalized_path):
+                try:
+                    os.unlink(temp_normalized_path)
+                except OSError:
+                    pass
             return {
                 "status": "corrupt_media",
                 "face_detected": False,
@@ -168,11 +232,11 @@ class FacialAnalyzer:
             width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
             height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
+            first_frame = None
             if width <= 0 or height <= 0 or total_video_frames <= 0:
                 # Try reading at least one frame to confirm
                 ret, frame = cap.read()
                 if not ret or frame is None:
-                    cap.release()
                     return {
                         "status": "insufficient_data",
                         "face_detected": False,
@@ -191,9 +255,9 @@ class FacialAnalyzer:
                 else:
                     height, width, _ = frame.shape
                     total_video_frames = 1
-                    cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                    first_frame = frame
 
-            # Sample frames using millisecond timestamps for robust WebM/VP8 temporal stepping
+            # Sample frames using millisecond timestamps for robust temporal stepping
             interval_ms = (1000.0 / fps_sample_rate) if fps_sample_rate > 0 else 1000.0
             next_sample_time_ms = 0.0
 
@@ -201,6 +265,14 @@ class FacialAnalyzer:
             face_detected_count = 0
             total_sampled_count = 0
             face_centers_x: List[float] = []
+
+            # Determine temporal duration
+            if duration_seconds and duration_seconds > 0:
+                inferred_duration = duration_seconds
+            elif total_video_frames > 0 and video_fps > 0:
+                inferred_duration = total_video_frames / video_fps
+            else:
+                inferred_duration = 30.0
 
             # Initialize YuNet Face Detector for the video resolution
             yunet_detector = None
@@ -218,10 +290,15 @@ class FacialAnalyzer:
                     logger.warning(f"YuNet creation failed: {e}")
 
             frame_counter = 0
-            step_fallback = 30
+            step_fallback = max(1, int(video_fps)) if video_fps > 0 else 30
 
             while total_sampled_count < max_samples:
-                ret, frame = cap.read()
+                if first_frame is not None:
+                    frame = first_frame
+                    ret = True
+                    first_frame = None
+                else:
+                    ret, frame = cap.read()
                 if not ret or frame is None:
                     break
 
@@ -243,14 +320,12 @@ class FacialAnalyzer:
                     if face_crop is not None:
                         face_detected_count += 1
                         x, y, w_box, h_box = face_bbox
-                        face_centers_x.append((x + w_box / 2.0) / width)
+                        face_centers_x.append((x + w_box / 2.0) / width if width > 0 else 0.5)
 
                         # Classify facial expression
                         probs = self._classify_face_expression(face_crop)
                         if probs is not None:
                             sampled_emotions.append(probs)
-
-            cap.release()
 
             if total_sampled_count == 0:
                 return {
@@ -326,7 +401,6 @@ class FacialAnalyzer:
 
         except Exception as e:
             logger.error(f"Error during facial video analysis: {e}", exc_info=True)
-            cap.release()
             return {
                 "status": "analysis_failed",
                 "face_detected": False,
@@ -342,6 +416,14 @@ class FacialAnalyzer:
                 "model": "fer-cnn-onnx-v1",
                 "error": str(e),
             }
+        finally:
+            if cap is not None:
+                cap.release()
+            if temp_normalized_path and os.path.exists(temp_normalized_path):
+                try:
+                    os.unlink(temp_normalized_path)
+                except OSError:
+                    pass
 
     def _extract_face(
         self,

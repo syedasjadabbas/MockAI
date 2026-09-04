@@ -47,3 +47,6 @@ backend/models/*.onnx
 *service-account*.json
 *credentials*.json
 google-credentials*.json
+
+# Scratch workspace scripts and temporary files
+scratch/

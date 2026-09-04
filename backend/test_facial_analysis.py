@@ -60,6 +60,8 @@ def run_tests():
 
     analyzer = FacialAnalyzer()
     real_video_path = "backend/media/interviews/6a96c6df4fe22d4bad7fc5a7/6a884ae95deeec968f07461a/response.webm"
+    if not os.path.exists(real_video_path):
+        real_video_path = "media/interviews/6a96c6df4fe22d4bad7fc5a7/6a884ae95deeec968f07461a/response.webm"
 
     # -------------------------------------------------------------------------
     # TEST 1: Valid interview video containing a detectable face

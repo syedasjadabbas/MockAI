@@ -35,6 +35,29 @@ def is_ffmpeg_available() -> bool:
     return shutil.which("ffmpeg") is not None
 
 
+def has_video_stream(input_path: Path) -> bool:
+    """Checks if the media file contains at least one decodable video stream."""
+    if not shutil.which("ffprobe"):
+        return True  # Fallback to True if ffprobe binary is absent
+    try:
+        res = subprocess.run(
+            [
+                "ffprobe", "-v", "error",
+                "-select_streams", "v:0",
+                "-show_entries", "stream=codec_type",
+                "-of", "csv=p=0",
+                str(input_path),
+            ],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        return "video" in res.stdout.strip().lower()
+    except Exception:
+        return True
+
+
+
 def extract_audio_to_wav(input_path: Path, output_path: Path, sample_rate: int = 16000) -> None:
     """
     Extracts the audio track from `input_path` (any container FFmpeg can
@@ -64,3 +87,46 @@ def extract_audio_to_wav(input_path: Path, output_path: Path, sample_rate: int =
     if result.returncode != 0 or not output_path.exists():
         stderr = result.stderr.decode("utf-8", errors="replace")[-500:]
         raise MediaConversionError(f"ffmpeg audio extraction failed: {stderr}")
+
+
+def normalize_video_to_mp4(
+    input_path: Path,
+    output_path: Path,
+    crf: int = 23,
+    preset: str = "ultrafast",
+) -> None:
+    """
+    Normalizes/transcodes a candidate video recording (such as browser-recorded
+    streaming WebM/VP8/VP9 without EBML cues) into a frame-readable, indexed
+    MP4 container with H.264 video stream.
+
+    The output MP4 contains valid container headers, duration, and frame indices
+    required for OpenCV VideoCapture frame stepping and YuNet face detection.
+    Audio stream is dropped (-an) to minimize CPU overhead and disk usage during
+    facial analysis.
+    """
+    if not is_ffmpeg_available():
+        raise FFmpegNotFoundError("ffmpeg is required for video normalization but was not found on PATH")
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    result = subprocess.run(
+        [
+            "ffmpeg", "-y",
+            "-i", str(input_path),
+            "-c:v", "libx264",
+            "-preset", preset,
+            "-crf", str(crf),
+            "-pix_fmt", "yuv420p",
+            "-movflags", "+faststart",
+            "-an",
+            str(output_path),
+        ],
+        capture_output=True,
+        timeout=60,
+    )
+
+    if result.returncode != 0 or not output_path.exists() or output_path.stat().st_size == 0:
+        stderr = result.stderr.decode("utf-8", errors="replace")[-500:]
+        raise MediaConversionError(f"ffmpeg video normalization failed: {stderr}")
+
