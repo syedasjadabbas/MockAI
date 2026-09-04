@@ -289,9 +289,10 @@ def aggregate_interview_evaluation(per_question_results: List[Dict]) -> Dict:
         has_transcript = bool(asr_info.get("transcript") and str(asr_info.get("transcript")).strip())
         word_count = q_eval.get("delivery", {}).get("word_count", 0)
 
-        if mm_status == "failed" or text_status == "failed":
+        q_status = q_eval.get("status")
+        if q_status == "failed" or mm_status == "failed" or text_status == "failed":
             failed_questions.append(q_eval)
-        elif not has_transcript and (text_status in ("empty", "missing") or word_count == 0):
+        elif q_status == "skipped" or (q_status != "evaluated" and not has_transcript and (text_status in ("empty", "missing") or (word_count == 0 and q_score == 0.0))):
             skipped_questions.append(q_eval)
         else:
             answered_questions.append(q_eval)
