@@ -1,176 +1,86 @@
-# MockAI – AI-Powered Interview Evaluation System
+# MockAI
 
-<p align="center">
-  <img src="banner.png" alt="MockAI Banner" />
-</p>
+## AI-Powered Career Interview Coach
 
-Research-oriented AI interview evaluation platform focused on multimodal analysis using speech recognition, NLP, and facial emotion detection to assess communication, confidence, and interview performance.
+MockAI is a multimodal AI-powered web application designed to help candidates practice interviews and receive structured, personalized performance feedback.
 
-## Overview
+The system evaluates interview responses across three complementary modalities:
 
-MockAI is a Final Year Project designed to simulate and evaluate interview performance using artificial intelligence and machine learning workflows.
+- NLP for answer content and semantic relevance
+- Speech analysis for delivery, fluency, pacing, and hesitation
+- Facial analysis for emotion and composure
 
-The system combines speech-to-text processing, NLP-based answer evaluation, and facial emotion analysis to generate intelligent interview feedback and performance insights.
+The results are combined through a deterministic multimodal late-fusion scoring engine to produce an overall interview assessment.
 
-The project focuses on modular AI architecture, multimodal processing pipelines, and scalable evaluation workflows.
-
-## Current Status
-
-MockAI is currently under active development as a research-oriented AI system focused on intelligent interview evaluation workflows and multimodal analysis.
+---
 
 ## Features
 
-### AI Interview Evaluation
+### Candidate Platform
 
-* AI-assisted mock interview workflows
-* Automated performance evaluation
-* Intelligent scoring and feedback generation
-* Communication and confidence assessment
+- Secure user authentication
+- Personalized candidate dashboard
+- Mock interview sessions
+- Text-based interview responses
+- Speech-based interview responses
+- Video-based interview responses
+- Dynamic interview questions
+- Question difficulty levels
+- Per-question evaluation
+- Multimodal performance analysis
+- Overall interview scoring
+- Performance history
+- Detailed feedback
+- Strength identification
+- Weakness identification
+- Improvement suggestions
+- Interview reports
 
-### NLP & Speech Processing
+### AI Evaluation
 
-* Speech-to-text conversion
-* NLP-based answer analysis
-* Semantic evaluation workflows
-* Context-aware response assessment
+MockAI processes candidate responses through three analysis pipelines.
 
-### Facial Emotion Detection
+#### NLP Analysis
 
-* Facial expression analysis
-* Emotion recognition workflows
-* Confidence and stress-level estimation
-* Real-time facial analysis pipeline
+Evaluates the content of candidate answers using transformer-based semantic analysis.
 
-### Reporting & Analytics
+- BERT / DistilBERT architecture
+- Sentence-transformer embeddings
+- Semantic similarity
+- Answer relevance
+- Content evaluation
 
-* Interview performance reports
-* Evaluation score generation
-* Feedback visualization workflows
-* Analytical performance insights
+#### Speech Analysis
 
-## Current Modules
+Analyzes spoken responses for communication and delivery characteristics.
 
-* Speech-to-Text Processing
-* NLP-Based Answer Evaluation
-* Facial Emotion Detection
-* Interview Scoring Engine
-* Feedback Report Generation
+- Speech transcription
+- Word count
+- Speaking rate
+- Words per minute
+- Pause detection
+- Hesitation signals
+- Fluency analysis
+- Delivery assessment
 
-## Research Focus
+#### Facial Analysis
 
-* Multimodal AI systems
-* NLP-driven evaluation workflows
-* Emotion recognition systems
-* AI-assisted interview analysis
-* Human-computer interaction workflows
+Analyzes facial expressions from interview video.
 
-## Engineering Highlights
+- Face detection
+- Facial emotion recognition
+- Emotion classification
+- Composure analysis
+- Behavioral indicators
 
-* Modular AI system architecture
-* Multimodal processing pipeline
-* NLP and computer vision integration
-* Structured backend workflows
-* Maintainable project organization
-* AI-driven evaluation engine design
+#### Multimodal Fusion
 
-## Screenshots
+The three modalities are combined using weighted late fusion:
 
-<p align="center">
-  <img src="Screenshot 2026-05-04 112518.png" width="45%" />
-  <img src="Screenshot 2026-05-04 112543.png" width="45%" />
-</p>
-
-<p align="center">
-  <img src="Screenshot 2026-05-04 112554.png" width="45%" />
-  <img src="Screenshot 2026-05-04 112607.png" width="45%" />
-</p>
-
-
-## Tech Stack
-
-### Frontend
-
-* React.js
-* Tailwind CSS
-
-### Backend
-
-* FastAPI
-* Python
-
-### AI & Machine Learning
-
-* BERT
-* DeepFace
-* OpenCV
-* SpeechRecognition
-
-### Database & Tools
-
-* MongoDB
-* Git & GitHub
-* Postman
-
-## Architecture
-
-```text id="e7a2vq"
-User Interview Input
-        ↓
-Speech-to-Text Processing
-        ↓
-NLP Analysis (BERT)
-        ↓
-Facial Emotion Detection (DeepFace)
-        ↓
-Scoring & Evaluation Engine
-        ↓
-Feedback Report Generation
-```
-
-## Installation
-
-### Clone Repository
-
-```bash id="w4j9pk"
-git clone https://github.com/syedasjadabbas/MockAI.git
-```
-
-### Backend Setup
-
-```bash id="f3v8mz"
-cd backend
-pip install -r requirements.txt
-uvicorn main:app --reload
-```
-
-### Frontend Setup
-
-```bash id="r1m7xq"
-cd frontend
-npm install
-npm run dev
-```
-
-## Project Structure
-
-```text id="m2k9sv"
-MockAI/
-├── frontend/                 # React frontend
-├── backend/                  # FastAPI backend
-├── ai-models/                # AI/ML modules
-├── datasets/                 # Training/testing data
-├── assets/                   # Banner and assets
-└── README.md
-```
-
-## Future Improvements
-
-* Real-time interview analytics
-* Advanced scoring algorithms
-* Cloud deployment workflows
-* AI recommendation engine
-* Expanded multimodal evaluation pipeline
-
-## Author
-
-SYED ASJAD ABBAS
+```text
+Final Score =
+0.50 × NLP Content Score
++
+0.30 × Speech Delivery Score
++
+0.20 × Vision / Facial Score
