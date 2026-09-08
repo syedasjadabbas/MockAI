@@ -75,63 +75,44 @@ const PublicNav = () => {
             2. RIGHT UTILITIES (Log In / Dashboard, Start Practicing, Theme)
            =================================================================== */}
         <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
-          <ThemeToggle className="!p-2 !rounded-md !border-[var(--c-border)] !bg-[var(--c-surface)] hover:!bg-[var(--c-surface-muted)]" />
+          <ThemeToggle className="!p-2 !rounded-lg !border-white/[0.08] !bg-white/[0.03] hover:!bg-white/[0.07] !text-zinc-400 hover:!text-amber-400 transition-all active:scale-95" />
 
           {authed ? (
             /* Logged in candidate quick dashboard link */
             <Link
               to="/dashboard"
-              className="c-btn c-btn-secondary px-3 py-1.5 sm:px-3.5 sm:py-2 text-xs font-semibold rounded-md flex items-center gap-1.5 border"
-              style={{
-                background: 'var(--c-surface)',
-                borderColor: 'var(--c-border)',
-                color: 'var(--c-text)',
-              }}
+              className="c-btn c-btn-secondary px-3 py-1.5 sm:px-3.5 sm:py-2 text-xs font-semibold rounded-lg flex items-center gap-1.5"
             >
-              <LayoutDashboard className="w-3.5 h-3.5 text-[#FF6B35]" />
+              <LayoutDashboard className="w-3.5 h-3.5 text-orange-400" />
               <span>Dashboard</span>
             </Link>
           ) : (
             /* Public Visitor Log In */
             <Link
               to="/login"
-              className="px-3 py-1.5 sm:px-3.5 sm:py-2 text-xs font-semibold rounded-md transition-colors border flex items-center gap-1.5"
-              style={{
-                borderColor: 'var(--c-border)',
-                background: 'var(--c-surface)',
-                color: 'var(--c-text)',
-              }}
+              className="c-btn c-btn-secondary px-3 py-1.5 sm:px-3.5 sm:py-2 text-xs font-medium rounded-lg flex items-center gap-1.5 group"
             >
-              <LogIn className="w-3.5 h-3.5 text-[#A3A3A3]" />
+              <LogIn className="w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-200 transition-colors" />
               <span>Log In</span>
             </Link>
           )}
 
-          {/* Solid Orange Primary CTA */}
+          {/* Primary CTA */}
           <Link
             to={authed ? '/interview/goal' : '/register'}
-            className="c-btn c-btn-primary px-3.5 py-1.5 sm:px-4 sm:py-2 text-xs font-bold rounded-md flex items-center gap-1.5 transition-all select-none shadow-sm"
-            style={{
-              background: 'var(--c-accent)',
-              color: 'var(--c-on-accent)',
-            }}
+            className="c-btn c-btn-primary px-3.5 py-1.5 sm:px-4 sm:py-2 text-xs font-semibold rounded-lg flex items-center gap-1.5 select-none group"
           >
             <span>Start Practicing</span>
-            <ArrowRight className="w-3.5 h-3.5" />
+            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
           </Link>
 
           {/* Mobile Menu Toggle Button */}
           <button
             onClick={() => setMobileOpen((v) => !v)}
-            className="md:hidden p-2 rounded-md border transition-colors"
-            style={{
-              borderColor: 'var(--c-border)',
-              background: 'var(--c-surface)',
-              color: 'var(--c-text)',
-            }}
+            className="md:hidden c-btn c-btn-secondary !p-2 !rounded-lg transition-colors"
             aria-label="Toggle navigation menu"
           >
-            {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+            {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4 text-zinc-300" />}
           </button>
         </div>
       </div>
@@ -153,7 +134,7 @@ const PublicNav = () => {
                 key={link.label}
                 href={link.href}
                 onClick={(e) => handleScrollTo(e, link.href)}
-                className="block px-3 py-2 text-xs font-semibold rounded-md text-[#A3A3A3] hover:text-white hover:bg-[#202020] transition-colors"
+                className="block px-3 py-2 text-xs font-semibold rounded-md text-[#A3A3A3] hover:text-white hover:bg-white/[0.04] transition-colors"
               >
                 {link.label}
               </a>
@@ -165,13 +146,9 @@ const PublicNav = () => {
               <Link
                 to="/login"
                 onClick={() => setMobileOpen(false)}
-                className="w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-md border text-[#F5F5F5]"
-                style={{
-                  borderColor: 'var(--c-border)',
-                  background: 'var(--c-surface)',
-                }}
+                className="c-btn c-btn-secondary w-full py-2 text-xs font-medium rounded-lg flex items-center justify-center gap-2"
               >
-                <LogIn className="w-3.5 h-3.5" />
+                <LogIn className="w-3.5 h-3.5 text-zinc-400" />
                 <span>Log In</span>
               </Link>
             )}
@@ -179,11 +156,10 @@ const PublicNav = () => {
             <Link
               to={authed ? '/interview/goal' : '/register'}
               onClick={() => setMobileOpen(false)}
-              className="w-full flex items-center justify-center gap-2 py-2.5 text-xs font-bold rounded-md text-white shadow-md select-none"
-              style={{ background: 'var(--c-accent)' }}
+              className="c-btn c-btn-primary w-full py-2.5 text-xs font-semibold rounded-lg flex items-center justify-center gap-2 select-none group"
             >
               <span>Start Practicing</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
             </Link>
           </div>
         </div>

@@ -232,7 +232,7 @@ html.light .candidate-app,
   border-top: 1px solid var(--c-border);
 }
 
-/* ===================== Buttons (Solid Controls) ===================== */
+/* ===================== Buttons (Tactile Engineered Controls) ===================== */
 
 .candidate-app .c-btn {
   display: inline-flex;
@@ -242,14 +242,17 @@ html.light .candidate-app,
   font-family: var(--c-font-body);
   font-weight: 600;
   font-size: 0.875rem;
+  letter-spacing: -0.01em;
   border-radius: var(--c-radius-sm);
-  transition: all 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   white-space: nowrap;
   cursor: pointer;
+  position: relative;
+  user-select: none;
 }
 
-.candidate-app .c-btn:active {
-  transform: translateY(1px);
+.candidate-app .c-btn:active:not(:disabled) {
+  transform: translateY(1px) scale(0.985);
 }
 
 .candidate-app .c-btn:disabled {
@@ -259,27 +262,60 @@ html.light .candidate-app,
   box-shadow: none !important;
 }
 
+/* Primary Accent Button — Dimensional Amber-Orange with Inset Highlight */
 .candidate-app .c-btn-primary,
 .candidate-app .c-btn-cta {
-  background: var(--c-accent);
-  color: var(--c-on-accent);
-  border: 1px solid transparent;
+  background: linear-gradient(180deg, #FA7A38 0%, #E65A20 100%);
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25),
+              0 1px 2px rgba(0, 0, 0, 0.4),
+              0 4px 14px rgba(230, 90, 32, 0.25);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.25);
 }
 
 .candidate-app .c-btn-primary:hover:not(:disabled),
 .candidate-app .c-btn-cta:hover:not(:disabled) {
-  background: var(--c-accent-hover);
+  background: linear-gradient(180deg, #FB884B 0%, #EE672D 100%);
+  border-color: rgba(255, 255, 255, 0.28);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35),
+              0 2px 6px rgba(0, 0, 0, 0.45),
+              0 6px 20px rgba(230, 90, 32, 0.35);
+  transform: translateY(-0.5px);
 }
 
+.candidate-app .c-btn-primary:active:not(:disabled),
+.candidate-app .c-btn-cta:active:not(:disabled) {
+  background: linear-gradient(180deg, #E65A20 0%, #D44E17 100%);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.35),
+              0 1px 2px rgba(0, 0, 0, 0.2);
+  transform: translateY(1px) scale(0.985);
+}
+
+/* Secondary Button — Sleek Dark Glass Surface */
 .candidate-app .c-btn-secondary {
-  background: var(--c-btn-secondary-bg);
-  color: var(--c-btn-secondary-text);
-  border: 1px solid var(--c-border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--c-text);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04),
+              0 1px 2px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .candidate-app .c-btn-secondary:hover:not(:disabled) {
-  background: var(--c-btn-secondary-hover);
-  border-color: var(--c-border-strong);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: #FFFFFF;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08),
+              0 2px 4px rgba(0, 0, 0, 0.3);
+  transform: translateY(-0.5px);
+}
+
+.candidate-app .c-btn-secondary:active:not(:disabled) {
+  background: rgba(255, 255, 255, 0.03);
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.2);
+  transform: translateY(1px) scale(0.985);
 }
 
 .candidate-app .c-btn-ghost {
@@ -289,17 +325,19 @@ html.light .candidate-app,
 
 .candidate-app .c-btn-ghost:hover:not(:disabled) {
   color: var(--c-text);
-  background: var(--c-surface-muted);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .candidate-app .c-btn-danger {
-  background: var(--c-danger);
+  background: linear-gradient(180deg, #EF4444 0%, #DC2626 100%);
   color: #FFFFFF;
-  border: 1px solid transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2),
+              0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .candidate-app .c-btn-danger:hover:not(:disabled) {
-  opacity: 0.9;
+  background: linear-gradient(180deg, #F87171 0%, #EF4444 100%);
 }
 
 /* ===================== Forms ===================== */
@@ -337,44 +375,47 @@ html.light .candidate-app,
   color: var(--c-text-secondary);
 }
 
-/* ===================== Badges & Indicators ===================== */
+/* ===================== Badges & Indicators (Refined Tonal Capsule System) ===================== */
 
 .candidate-app .c-badge {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  border-radius: var(--c-radius-sm);
-  font-weight: 600;
+  border-radius: 5px;
+  font-weight: 500;
   font-size: 11px;
   padding: 2px 8px;
-  border: 1px solid transparent;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--c-text-secondary);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
   white-space: nowrap;
 }
 
 .candidate-app .c-badge-accent {
-  background: var(--c-badge-accent-bg);
-  color: var(--c-badge-accent-text);
-  border-color: var(--c-badge-accent-border);
+  background: rgba(234, 88, 12, 0.10);
+  color: #FB923C;
+  border-color: rgba(234, 88, 12, 0.22);
 }
 .candidate-app .c-badge-success {
-  background: var(--c-badge-success-bg);
-  color: var(--c-badge-success-text);
-  border-color: var(--c-badge-success-border);
+  background: rgba(34, 197, 94, 0.08);
+  color: #4ADE80;
+  border-color: rgba(34, 197, 94, 0.18);
 }
 .candidate-app .c-badge-warning {
-  background: var(--c-badge-warning-bg);
-  color: var(--c-badge-warning-text);
-  border-color: var(--c-badge-warning-border);
+  background: rgba(245, 158, 11, 0.08);
+  color: #FBBF24;
+  border-color: rgba(245, 158, 11, 0.18);
 }
 .candidate-app .c-badge-danger {
-  background: var(--c-badge-danger-bg);
-  color: var(--c-badge-danger-text);
-  border-color: var(--c-badge-danger-border);
+  background: rgba(239, 68, 68, 0.08);
+  color: #F87171;
+  border-color: rgba(239, 68, 68, 0.18);
 }
 .candidate-app .c-badge-muted {
-  background: var(--c-badge-muted-bg);
-  color: var(--c-badge-muted-text);
-  border-color: var(--c-badge-muted-border);
+  background: rgba(255, 255, 255, 0.03);
+  color: #A3A3A3;
+  border-color: rgba(255, 255, 255, 0.07);
 }
 
 /* ===================== Focus Ring ===================== */
