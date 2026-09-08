@@ -172,12 +172,12 @@ const EvaluationResults = () => {
         backgroundColor: [
           'rgba(255, 107, 53, 0.85)',
           'rgba(255, 159, 28, 0.85)',
-          hasVisionSummary ? 'rgba(6, 182, 212, 0.85)' : 'rgba(100, 116, 139, 0.35)',
+          hasVisionSummary ? 'rgba(148, 163, 184, 0.75)' : 'rgba(71, 85, 105, 0.35)',
         ],
         borderColor: [
           '#FF6B35',
           '#FF9F1C',
-          hasVisionSummary ? '#06B6D4' : '#64748B',
+          hasVisionSummary ? '#94A3B8' : '#475569',
         ],
         borderWidth: 1.5,
         borderRadius: 4,
@@ -495,7 +495,7 @@ const EvaluationResults = () => {
                     <span>Skipped / Unassessed</span>
                   </span>
                   <span className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-rose-500" />
+                    <span className="w-2 h-2 rounded-full bg-red-500/70" />
                     <span>Failed</span>
                   </span>
                 </div>
@@ -510,17 +510,17 @@ const EvaluationResults = () => {
               </div>
               <div className="p-3 rounded-lg border space-y-1" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
                 <span className="text-[10px] uppercase font-mono tracking-wider block" style={{ color: 'var(--c-text-muted)' }}>Evaluated Takes</span>
-                <span className="font-mono text-lg font-bold text-emerald-400">{answeredCount}</span>
+                <span className="font-mono text-lg font-bold" style={{ color: 'var(--c-text)' }}>{answeredCount}</span>
               </div>
               <div className="p-3 rounded-lg border space-y-1" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
                 <span className="text-[10px] uppercase font-mono tracking-wider block" style={{ color: 'var(--c-text-muted)' }}>Skipped Takes</span>
-                <span className="font-mono text-lg font-bold text-amber-400">
+                <span className="font-mono text-lg font-bold" style={{ color: 'var(--c-text-muted)' }}>
                   {summaryReport?.performance_overview?.skipped_questions ?? Math.max(0, totalQuestions - answeredCount)}
                 </span>
               </div>
               <div className="p-3 rounded-lg border space-y-1" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
                 <span className="text-[10px] uppercase font-mono tracking-wider block" style={{ color: 'var(--c-text-muted)' }}>Completion Rate</span>
-                <span className="font-mono text-lg font-bold text-cyan-400">
+                <span className="font-mono text-lg font-bold text-[#FF6B35]">
                   {summaryReport?.performance_overview?.completion_rate ?? (totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0)}%
                 </span>
               </div>
@@ -574,7 +574,7 @@ const EvaluationResults = () => {
                     <FileText className="w-4 h-4 text-[#FF6B35]" />
                     <span className="text-xs font-bold text-white uppercase tracking-wider">Content & NLP</span>
                   </div>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full border bg-emerald-500/10 text-emerald-400 border-emerald-500/25">
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded border font-medium bg-emerald-500/10 text-emerald-400/90 border-emerald-500/20">
                     ACTIVE
                   </span>
                 </div>
@@ -593,7 +593,7 @@ const EvaluationResults = () => {
                     <Mic className="w-4 h-4 text-[#FF9F1C]" />
                     <span className="text-xs font-bold text-white uppercase tracking-wider">Speech & Fluency</span>
                   </div>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full border bg-emerald-500/10 text-emerald-400 border-emerald-500/25">
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded border font-medium bg-emerald-500/10 text-emerald-400/90 border-emerald-500/20">
                     ACTIVE
                   </span>
                 </div>
@@ -609,15 +609,15 @@ const EvaluationResults = () => {
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Eye className={`w-4 h-4 ${hasVisionSummary ? 'text-cyan-400' : 'text-neutral-400'}`} />
+                    <Eye className={`w-4 h-4 ${hasVisionSummary ? 'text-[#FF9F1C]' : 'text-neutral-500'}`} />
                     <span className="text-xs font-bold text-white uppercase tracking-wider">Vision & Behavior</span>
                   </div>
                   {hasVisionSummary ? (
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full border bg-cyan-500/10 text-cyan-400 border-cyan-500/25">
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded border font-medium bg-emerald-500/10 text-emerald-400/90 border-emerald-500/20">
                       ACTIVE
                     </span>
                   ) : (
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full border bg-neutral-800 text-neutral-400 border-neutral-700">
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded border font-medium bg-neutral-800 text-neutral-400 border-neutral-700">
                       OFFLINE
                     </span>
                   )}
@@ -667,7 +667,7 @@ const EvaluationResults = () => {
                   <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--c-text-muted)' }}>
                     Confidence Indicator
                   </p>
-                  <span className="text-[10px] font-mono text-emerald-400">
+                  <span className="text-[10px] font-mono text-neutral-400">
                     {hasVisionSummary ? 'MULTIMODAL' : 'ACOUSTIC'}
                   </span>
                 </div>
@@ -676,7 +676,7 @@ const EvaluationResults = () => {
                     {confidenceScore != null && confidenceLevel !== 'Not Assessed' ? `${Math.round(confidenceScore)}%` : 'Active'}
                   </p>
                   {confidenceLevel && confidenceLevel !== 'Not Assessed' && (
-                    <span className="text-xs font-sans font-semibold text-emerald-400">
+                    <span className="text-xs font-sans font-semibold text-neutral-300">
                       ({confidenceLevel})
                     </span>
                   )}
@@ -688,7 +688,7 @@ const EvaluationResults = () => {
                       className="h-full rounded-full transition-all duration-1000"
                       style={{
                         width: `${confidenceScore != null && confidenceLevel !== 'Not Assessed' ? Math.min(100, Math.max(0, confidenceScore)) : 0}%`,
-                        background: (confidenceScore ?? 0) >= 80 ? '#10B981' : ((confidenceScore ?? 0) >= 60 ? '#FF9F1C' : '#F59E0B'),
+                        background: (confidenceScore ?? 0) >= 80 ? '#FF6B35' : ((confidenceScore ?? 0) >= 60 ? '#FF9F1C' : '#94A3B8'),
                       }}
                     />
                   </div>
@@ -709,7 +709,7 @@ const EvaluationResults = () => {
                   <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--c-text-muted)' }}>
                     Composure Indicator
                   </p>
-                  <span className="text-[10px] font-mono text-emerald-400">
+                  <span className="text-[10px] font-mono text-neutral-400">
                     {hasVisionSummary ? 'MULTIMODAL' : 'BEHAVIORAL'}
                   </span>
                 </div>
@@ -730,14 +730,14 @@ const EvaluationResults = () => {
                       className="h-full rounded-full transition-all duration-1000"
                       style={{
                         width: `${stressScore != null && stressLevel !== 'Not Assessed' ? Math.min(100, Math.max(0, stressScore)) : 0}%`,
-                        background: (stressScore ?? 0) >= 65 ? '#F43F5E' : ((stressScore ?? 0) >= 35 ? '#FF9F1C' : '#10B981'),
+                        background: (stressScore ?? 0) >= 65 ? '#EF4444' : ((stressScore ?? 0) >= 35 ? '#FF9F1C' : '#10B981'),
                       }}
                     />
                   </div>
                   <div className="flex justify-between text-[9px] font-mono text-neutral-500">
-                    <span className="text-emerald-400">0% Low</span>
-                    <span className="text-amber-400">35% Mod</span>
-                    <span className="text-rose-400">65% Elev</span>
+                    <span>0% Low</span>
+                    <span>35% Mod</span>
+                    <span>65% Elev</span>
                   </div>
                 </div>
                 <p className="text-[11px] leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
@@ -751,7 +751,7 @@ const EvaluationResults = () => {
                   <p className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">
                     Facial Expression
                   </p>
-                  <span className={`text-[10px] font-mono ${hasVisionSummary ? 'text-cyan-400' : 'text-neutral-500'}`}>VISION</span>
+                  <span className="text-[10px] font-mono text-neutral-400">VISION</span>
                 </div>
                 {hasVisionSummary ? (
                   <p className="c-serif-num text-2xl font-bold text-white pt-0.5">
@@ -775,7 +775,7 @@ const EvaluationResults = () => {
                   <p className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">
                     Attentive Engagement
                   </p>
-                  <span className={`text-[10px] font-mono ${hasVisionSummary ? 'text-cyan-400' : 'text-neutral-500'}`}>VISION</span>
+                  <span className="text-[10px] font-mono text-neutral-400">VISION</span>
                 </div>
                 {hasVisionSummary ? (
                   <p className="c-serif-num text-2xl font-bold text-white pt-0.5">
@@ -941,7 +941,7 @@ const EvaluationResults = () => {
                           <div className="flex items-center gap-1 flex-wrap text-[10px] font-mono">
                             <span className="text-neutral-400">Covered:</span>
                             {coveredConcepts.slice(0, 3).map((c, i) => (
-                              <span key={i} className="px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                              <span key={i} className="px-1.5 py-0.2 rounded bg-neutral-800 text-emerald-400/90 border border-emerald-500/20">
                                 {c}
                               </span>
                             ))}
@@ -951,7 +951,7 @@ const EvaluationResults = () => {
                           <div className="flex items-center gap-1 flex-wrap text-[10px] font-mono">
                             <span className="text-neutral-400">Missing:</span>
                             {missingConcepts.slice(0, 2).map((c, i) => (
-                              <span key={i} className="px-1.5 py-0.2 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                              <span key={i} className="px-1.5 py-0.2 rounded bg-neutral-800 text-rose-400/90 border border-rose-500/20">
                                 {c}
                               </span>
                             ))}
@@ -1001,11 +1001,11 @@ const EvaluationResults = () => {
                     >
                       <div className="flex items-center justify-between">
                         <span className="font-bold flex items-center gap-1.5 text-neutral-300">
-                          <Eye className={`w-3.5 h-3.5 ${hasRealVision ? 'text-cyan-400' : 'text-neutral-400'}`} />
+                          <Eye className={`w-3.5 h-3.5 ${hasRealVision ? 'text-[#FF9F1C]' : 'text-neutral-500'}`} />
                           <span>Vision & Facial</span>
                         </span>
                         {hasRealVision ? (
-                          <span className="text-[10px] font-mono text-cyan-400 font-bold">[ACTIVE]</span>
+                          <span className="text-[10px] font-mono text-emerald-400/90 font-medium">[ACTIVE]</span>
                         ) : (
                           <span className="text-[10px] font-mono text-neutral-500">[OFFLINE]</span>
                         )}
@@ -1093,13 +1093,13 @@ const EvaluationResults = () => {
               {weaknesses.length > 0 && (
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 border-b pb-2" style={{ borderColor: 'var(--c-border)' }}>
-                    <AlertCircle className="w-4 h-4 text-amber-500" />
+                    <AlertCircle className="w-4 h-4 text-[#FF9F1C]" />
                     <h3 className="c-heading text-sm font-bold" style={{ color: 'var(--c-text)' }}>Key Areas for Improvement</h3>
                   </div>
                   <ul className="space-y-2.5 text-xs">
                     {weaknesses.map((wk, i) => (
                       <li key={i} className="flex items-start gap-2.5 leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                        <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 bg-amber-500" />
+                        <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 bg-[#FF9F1C]" />
                         <span>{wk}</span>
                       </li>
                     ))}
