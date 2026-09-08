@@ -127,62 +127,26 @@ const EvaluationResults = () => {
     };
   }, [id]);
 
-  if (loading) {
-    return (
-      <InterviewFlowLayout step="results">
-        <div className="max-w-4xl mx-auto py-20 flex flex-col items-center justify-center gap-3 text-center">
-          <div className="w-6 h-6 border-2 rounded-full animate-spin" style={{ borderColor: 'var(--c-accent)', borderTopColor: 'transparent' }} />
-          <p className="text-xs font-medium" style={{ color: 'var(--c-text-secondary)' }}>
-            Generating executive assessment dossierâ€¦
-          </p>
-        </div>
-      </InterviewFlowLayout>
-    );
-  }
-
-  if (error || !interview) {
-    return (
-      <InterviewFlowLayout step="results">
-        <div className="max-w-md mx-auto py-16 text-center space-y-4">
-          <div className="w-10 h-10 rounded-md mx-auto flex items-center justify-center border"
-            style={{ background: 'var(--c-badge-danger-bg)', borderColor: 'var(--c-badge-danger-border)', color: 'var(--c-danger)' }}
-          >
-            <AlertCircle className="w-5 h-5" />
-          </div>
-          <div className="space-y-1">
-            <h1 className="c-heading text-xl font-bold" style={{ color: 'var(--c-text)' }}>Results Unavailable</h1>
-            <p className="text-xs" style={{ color: 'var(--c-text-secondary)' }}>
-              {error || 'We were unable to locate this evaluation record.'}
-            </p>
-          </div>
-          <Link to="/dashboard" className="c-btn c-btn-primary px-5 py-2 text-xs font-semibold rounded-md inline-block">
-            Return to Dashboard
-          </Link>
-        </div>
-      </InterviewFlowLayout>
-    );
-  }
-
-  const evaluationStatus = realEval?.evaluationStatus || interview.evaluationStatus || 'pending_evaluation';
-  const evaluation = realEval?.evaluation || interview.evaluation || (interview.evaluationSource === 'real' ? interview : null);
-  const isCompleted = (evaluationStatus === 'completed' && !!evaluation) || !!evaluation?.overall_score || !!interview.score;
+  const evaluationStatus = realEval?.evaluationStatus || interview?.evaluationStatus || 'pending_evaluation';
+  const evaluation = realEval?.evaluation || interview?.evaluation || (interview?.evaluationSource === 'real' ? interview : null);
+  const isCompleted = (evaluationStatus === 'completed' && !!evaluation) || !!evaluation?.overall_score || !!interview?.score;
   const isProcessing = evaluationStatus === 'processing' || evaluationStatus === 'pending_evaluation';
   const isFailed = evaluationStatus === 'failed';
 
-  const overallScore = evaluation?.overall_score ?? interview.score ?? 0;
-  const confidenceScore = evaluation?.confidence_score ?? interview.confidence ?? null;
-  const confidenceLevel = evaluation?.confidence_level ?? interview.confidenceLevel ?? null;
-  const stressScore = evaluation?.stress_score ?? interview.stressScore ?? null;
-  const stressLevel = evaluation?.stress_level ?? interview.stress ?? null;
-  const interpretation = evaluation?.interpretation ?? interview.interpretation ?? '';
-  const strengths = evaluation?.strengths ?? interview.strengths ?? [];
-  const weaknesses = evaluation?.weaknesses ?? interview.weaknesses ?? [];
-  const suggestions = evaluation?.suggestions ?? interview.suggestions ?? [];
-  const insights = evaluation?.insights ?? interview.insights ?? null;
+  const overallScore = evaluation?.overall_score ?? interview?.score ?? 0;
+  const confidenceScore = evaluation?.confidence_score ?? interview?.confidence ?? null;
+  const confidenceLevel = evaluation?.confidence_level ?? interview?.confidenceLevel ?? null;
+  const stressScore = evaluation?.stress_score ?? interview?.stressScore ?? null;
+  const stressLevel = evaluation?.stress_level ?? interview?.stress ?? null;
+  const interpretation = evaluation?.interpretation ?? interview?.interpretation ?? '';
+  const strengths = evaluation?.strengths ?? interview?.strengths ?? [];
+  const weaknesses = evaluation?.weaknesses ?? interview?.weaknesses ?? [];
+  const suggestions = evaluation?.suggestions ?? interview?.suggestions ?? [];
+  const insights = evaluation?.insights ?? interview?.insights ?? null;
   const scoreRationale = insights?.score_explanation?.score_rationale ?? null;
-  const summaryReport = evaluation?.summary_report ?? interview.summaryReport ?? null;
+  const summaryReport = evaluation?.summary_report ?? interview?.summaryReport ?? null;
   const performanceRating = summaryReport?.performance_overview?.performance_rating || (overallScore >= 70 ? 'Proficient Performance' : (overallScore >= 55 ? 'Competent Performance' : 'Developing'));
-  const dimensionScores = evaluation?.dimension_scores ?? interview.dimensionScores ?? {
+  const dimensionScores = evaluation?.dimension_scores ?? interview?.dimensionScores ?? {
     technical_content: 0,
     communication_fluency: 0,
     behavioral_composure: 0,
@@ -191,8 +155,8 @@ const EvaluationResults = () => {
   const facialSummary = evaluation?.facial_summary;
   const hasVisionSummary = facialSummary?.status === 'completed';
 
-  const answeredCount = (interview.responses || []).length;
-  const totalQuestions = (interview.questions || []).length;
+  const answeredCount = (interview?.responses || []).length;
+  const totalQuestions = (interview?.questions || []).length;
 
   // FR29-01: Performance Dimensions Breakdown Chart
   const dimensionChartData = useMemo(() => ({
@@ -263,25 +227,25 @@ const EvaluationResults = () => {
 
   // FR29-01: Per-Question Performance Trajectory Chart
   const trajectoryChartData = useMemo(() => {
-    const questionLabels = (interview.questions || []).map((_, i) => `Q${(i + 1).toString().padStart(2, '0')}`);
-    const questionScores = (interview.questions || []).map((q) => {
-      const resp = (interview.responses || []).find((r) => (r.question_id || r.questionId) === q.id);
+    const questionLabels = (interview?.questions || []).map((_, i) => `Q${(i + 1).toString().padStart(2, '0')}`);
+    const questionScores = (interview?.questions || []).map((q) => {
+      const resp = (interview?.responses || []).find((r) => (r.question_id || r.questionId) === q.id);
       const qEval = perQuestionEval.find((item) => (item.question_id || item.questionId) === q.id);
       if (!resp) return 0;
       if (qEval?.status === 'failed') return 0;
       return Math.min(100, Math.max(0, Math.round(qEval?.multimodal?.score ?? qEval?.score ?? 0)));
     });
 
-    const questionColors = (interview.questions || []).map((q) => {
-      const resp = (interview.responses || []).find((r) => (r.question_id || r.questionId) === q.id);
+    const questionColors = (interview?.questions || []).map((q) => {
+      const resp = (interview?.responses || []).find((r) => (r.question_id || r.questionId) === q.id);
       const qEval = perQuestionEval.find((item) => (item.question_id || item.questionId) === q.id);
       if (!resp) return 'rgba(100, 116, 139, 0.35)'; // Skipped
       if (qEval?.status === 'failed') return 'rgba(239, 68, 68, 0.7)'; // Failed
       return 'rgba(255, 107, 53, 0.85)'; // Evaluated
     });
 
-    const questionBorderColors = (interview.questions || []).map((q) => {
-      const resp = (interview.responses || []).find((r) => (r.question_id || r.questionId) === q.id);
+    const questionBorderColors = (interview?.questions || []).map((q) => {
+      const resp = (interview?.responses || []).find((r) => (r.question_id || r.questionId) === q.id);
       const qEval = perQuestionEval.find((item) => (item.question_id || item.questionId) === q.id);
       if (!resp) return '#64748B';
       if (qEval?.status === 'failed') return '#EF4444';
@@ -301,7 +265,7 @@ const EvaluationResults = () => {
         },
       ],
     };
-  }, [interview.questions, interview.responses, perQuestionEval]);
+  }, [interview?.questions, interview?.responses, perQuestionEval]);
 
   const trajectoryChartOptions = useMemo(() => ({
     responsive: true,
@@ -312,8 +276,8 @@ const EvaluationResults = () => {
         callbacks: {
           label: (context) => {
             const idx = context.dataIndex;
-            const q = (interview.questions || [])[idx];
-            const resp = (interview.responses || []).find((r) => (r.question_id || r.questionId) === q?.id);
+            const q = (interview?.questions || [])[idx];
+            const resp = (interview?.responses || []).find((r) => (r.question_id || r.questionId) === q?.id);
             const qEval = perQuestionEval.find((item) => (item.question_id || item.questionId) === q?.id);
             if (!resp) return `Prompt ${(idx + 1).toString().padStart(2, '0')}: Skipped (0%)`;
             if (qEval?.status === 'failed') return `Prompt ${(idx + 1).toString().padStart(2, '0')}: Processing Failed`;
@@ -342,7 +306,43 @@ const EvaluationResults = () => {
         grid: { display: false },
       },
     },
-  }), [interview.questions, interview.responses, perQuestionEval]);
+  }), [interview?.questions, interview?.responses, perQuestionEval]);
+
+  if (loading) {
+    return (
+      <InterviewFlowLayout step="results">
+        <div className="max-w-4xl mx-auto py-20 flex flex-col items-center justify-center gap-3 text-center">
+          <div className="w-6 h-6 border-2 rounded-full animate-spin" style={{ borderColor: 'var(--c-accent)', borderTopColor: 'transparent' }} />
+          <p className="text-xs font-medium" style={{ color: 'var(--c-text-secondary)' }}>
+            Generating executive assessment dossier…
+          </p>
+        </div>
+      </InterviewFlowLayout>
+    );
+  }
+
+  if (error || !interview) {
+    return (
+      <InterviewFlowLayout step="results">
+        <div className="max-w-md mx-auto py-16 text-center space-y-4">
+          <div className="w-10 h-10 rounded-md mx-auto flex items-center justify-center border"
+            style={{ background: 'var(--c-badge-danger-bg)', borderColor: 'var(--c-badge-danger-border)', color: 'var(--c-danger)' }}
+          >
+            <AlertCircle className="w-5 h-5" />
+          </div>
+          <div className="space-y-1">
+            <h1 className="c-heading text-xl font-bold" style={{ color: 'var(--c-text)' }}>Results Unavailable</h1>
+            <p className="text-xs" style={{ color: 'var(--c-text-secondary)' }}>
+              {error || 'We were unable to locate this evaluation record.'}
+            </p>
+          </div>
+          <Link to="/dashboard" className="c-btn c-btn-primary px-5 py-2 text-xs font-semibold rounded-md inline-block">
+            Return to Dashboard
+          </Link>
+        </div>
+      </InterviewFlowLayout>
+    );
+  }
 
   return (
     <InterviewFlowLayout step="results">
@@ -356,9 +356,8 @@ const EvaluationResults = () => {
             <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--c-text-muted)' }}>
               <span className="font-semibold" style={{ color: 'var(--c-text)' }}>Executive Assessment Report</span>
               <span>/</span>
-              <span className="font-mono">REF: {id.slice(-6).toUpperCase()}</span>
+              <span className="font-mono">REF: {id ? id.slice(-6).toUpperCase() : '------'}</span>
             </div>
-
             <div className="flex items-center gap-3">
               <AssessmentDossierSeal size={28} />
               {isCompleted && (
@@ -383,10 +382,10 @@ const EvaluationResults = () => {
           <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-3">
             <div>
               <h1 className="c-heading text-3xl sm:text-4xl font-bold tracking-tight" style={{ color: 'var(--c-text)' }}>
-                {interview.role}
+                {interview?.role || 'Technical Interview'}
               </h1>
               <p className="text-xs sm:text-sm mt-1" style={{ color: 'var(--c-text-secondary)' }}>
-                Track: <span className="capitalize font-semibold" style={{ color: 'var(--c-text)' }}>{interview.type || 'Technical'}</span> â€¢ Completed on {formatDate(interview.completedAt || interview.createdAt)}
+                Track: <span className="capitalize font-semibold" style={{ color: 'var(--c-text)' }}>{interview?.type || 'Technical'}</span> • Completed on {formatDate(interview?.completedAt || interview?.createdAt)}
               </p>
             </div>
 
@@ -625,7 +624,7 @@ const EvaluationResults = () => {
                 </div>
                 <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
                   {hasVisionSummary
-                    ? `Observable facial composure: ${facialSummary.overall_composure}. Dominant expression: ${facialSummary.dominant_expression}.`
+                    ? `Observable facial composure: ${facialSummary?.overall_composure || 'Composed & Stable'}. Dominant expression: ${facialSummary?.dominant_expression || 'Neutral'}.`
                     : 'Facial expression valence, eye gaze attentiveness, head pose composure, and observable micro-hesitations.'}
                 </p>
               </div>
@@ -640,7 +639,7 @@ const EvaluationResults = () => {
               <span style={{ color: 'var(--c-text-secondary)' }}>
                 <strong className="font-semibold" style={{ color: 'var(--c-text)' }}>Evaluation Signal Notice: </strong>
                 {hasVisionSummary
-                  ? `Multimodal signals integrated from active NLP semantic analysis, speech delivery metrics, and real computer-vision facial composure analysis (${facialSummary.evaluated_takes} takes evaluated).`
+                  ? `Multimodal signals integrated from active NLP semantic analysis, speech delivery metrics, and real computer-vision facial composure analysis (${facialSummary?.evaluated_takes ?? answeredCount} takes evaluated).`
                   : `The composite overall score (${Math.round(overallScore)}%) is computed strictly from active NLP content and acoustic speech signals. Computer-vision facial analysis is unmounted; vision metrics will be integrated upon vision model deployment.`}
               </span>
             </div>
@@ -756,7 +755,7 @@ const EvaluationResults = () => {
                 </div>
                 {hasVisionSummary ? (
                   <p className="c-serif-num text-2xl font-bold text-white pt-0.5">
-                    {facialSummary.dominant_expression}
+                    {facialSummary?.dominant_expression || 'Neutral'}
                   </p>
                 ) : (
                   <p className="text-xs font-bold text-neutral-400 pt-1 font-mono">
@@ -780,7 +779,7 @@ const EvaluationResults = () => {
                 </div>
                 {hasVisionSummary ? (
                   <p className="c-serif-num text-2xl font-bold text-white pt-0.5">
-                    {facialSummary.overall_composure}
+                    {facialSummary?.overall_composure || 'Composed & Stable'}
                   </p>
                 ) : (
                   <p className="text-xs font-bold text-neutral-400 pt-1 font-mono">
@@ -812,8 +811,8 @@ const EvaluationResults = () => {
           </div>
 
           <div className="divide-y" style={{ borderColor: 'var(--c-border)' }}>
-            {interview.questions.map((q, idx) => {
-              const resp = (interview.responses || []).find((r) => (r.question_id || r.questionId) === q.id);
+            {(interview?.questions || []).map((q, idx) => {
+              const resp = (interview?.responses || []).find((r) => (r.question_id || r.questionId) === q.id);
               const qEval = perQuestionEval.find((item) => (item.question_id || item.questionId) === q.id);
               const isRecorded = !!resp;
               const duration = resp?.duration_seconds || resp?.durationSeconds;
@@ -1015,8 +1014,8 @@ const EvaluationResults = () => {
                         <div className="space-y-1 text-[11px] text-neutral-300">
                           <div>
                             <span className="text-neutral-400">Expression: </span>
-                            <span className="text-white font-medium">{facial.dominant_expression}</span>
-                            {facial.expression_distribution && (
+                            <span className="text-white font-medium">{facial?.dominant_expression || 'Neutral'}</span>
+                            {facial?.expression_distribution && facial?.dominant_expression && (
                               <span className="text-neutral-400 ml-1">({facial.expression_distribution[facial.dominant_expression.toLowerCase()] ?? ''}%)</span>
                             )}
                           </div>
