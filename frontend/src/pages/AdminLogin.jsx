@@ -7,12 +7,8 @@ import '../admin-auth-theme.css';
 import { ADMIN_AUTH_HERO } from '../assets/adminAuthImages';
 import logo from '../assets/logo.png';
 
-// Brand mark shared conceptually with Sidebar.jsx's Terminal+"MockAI"+
-// ADMIN badge treatment (same icon, same wordmark), restyled at a much
-// larger, more confident scale for the hero and with this screen's own
-// burgundy accent - this file's tokens are scoped under .admin-auth-shell
-// (admin-auth-theme.css) so nothing here touches the shared indigo
-// styling the rest of Admin still uses.
+// Brand mark shared with Sidebar.jsx's MockAI + ADMIN badge treatment,
+// styled with MockAI's signature Charcoal + Orange theme.
 const Brand = ({ large = false }) => (
   <Link 
     to="/admin/login" 
@@ -22,7 +18,7 @@ const Brand = ({ large = false }) => (
     <img src={logo} alt="MockAI Logo" className={large ? 'c-brand-logo-lg' : 'c-brand-logo'} />
     <span
       className={`font-bold rounded border tracking-widest ${large ? 'text-[11px] px-2 py-0.5' : 'text-[10px] px-1.5 py-0.5'}`}
-      style={{ color: '#e9b39c', borderColor: 'rgba(233,179,156,0.4)', background: 'rgba(233,179,156,0.12)' }}
+      style={{ color: '#FF9F1C', borderColor: 'rgba(255, 107, 53, 0.25)', background: 'rgba(255, 107, 53, 0.10)' }}
     >
       ADMIN
     </span>

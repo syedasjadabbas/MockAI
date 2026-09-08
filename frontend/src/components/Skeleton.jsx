@@ -5,8 +5,8 @@ export const Skeleton = ({ className = '', variant = 'text', width, height }) =>
   const { isDark } = useTheme();
   
   const baseBg = isDark 
-    ? 'bg-slate-800/60' 
-    : 'bg-slate-200/80';
+    ? 'bg-[#202020]' 
+    : 'bg-neutral-200/80';
 
   const style = {};
   if (width) style.width = width;
@@ -30,7 +30,7 @@ export const TableSkeleton = ({ rows = 5, cols = 5 }) => {
             <div 
               key={cIdx} 
               className={`h-4 rounded-md animate-pulse ${
-                isDark ? 'bg-slate-800/50' : 'bg-slate-200/70'
+                isDark ? 'bg-[#202020]' : 'bg-neutral-200/70'
               } ${cIdx === 0 ? 'w-24' : cIdx === 1 ? 'w-40 flex-1' : 'w-20'}`} 
             />
           ))}
@@ -44,15 +44,15 @@ export const CardSkeleton = () => {
   const { isDark } = useTheme();
   return (
     <div className={`p-6 rounded-2xl border animate-pulse ${
-      isDark ? 'bg-slate-900/40 border-slate-800/40' : 'bg-white/80 border-slate-200 shadow-sm'
+      isDark ? 'bg-[#202020] border-[#2A2A2A]' : 'bg-white/80 border-[#E5E0D8] shadow-sm'
     }`}>
       <div className="flex items-start justify-between">
         <div className="space-y-2.5">
-          <div className={`h-3.5 w-24 rounded ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
-          <div className={`h-7 w-32 rounded ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
-          <div className={`h-4 w-28 rounded-full ${isDark ? 'bg-slate-800/60' : 'bg-slate-200/60'}`} />
+          <div className={`h-3.5 w-24 rounded ${isDark ? 'bg-[#2A2A2A]' : 'bg-neutral-200'}`} />
+          <div className={`h-7 w-32 rounded ${isDark ? 'bg-[#2A2A2A]' : 'bg-neutral-200'}`} />
+          <div className={`h-4 w-28 rounded-full ${isDark ? 'bg-[#2A2A2A]/60' : 'bg-neutral-200/60'}`} />
         </div>
-        <div className={`w-12 h-12 rounded-xl ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
+        <div className={`w-12 h-12 rounded-xl ${isDark ? 'bg-[#2A2A2A]' : 'bg-neutral-200'}`} />
       </div>
     </div>
   );

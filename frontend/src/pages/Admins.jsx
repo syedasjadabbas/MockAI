@@ -47,7 +47,7 @@ const Admins = () => {
       </div>
 
       {/* Admins Table */}
-      <div className="glass-card rounded-2xl overflow-hidden hover:border-indigo-500/20 transition-all duration-300">
+      <div className="glass-card rounded-2xl overflow-hidden hover:border-orange-500/20 transition-all duration-300">
         <div className="p-5 border-b border-[var(--border-table)] flex items-center justify-between">
           <div>
             <h3 className="text-base sm:text-lg font-bold text-[var(--text-primary)]">System Administrators</h3>
@@ -76,7 +76,7 @@ const Admins = () => {
                   <tr key={idx} className="hover:bg-[var(--bg-table-row-hover)] transition-colors">
                     <td className="py-4 px-6 font-semibold text-sm text-[var(--text-primary)]">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-500 font-bold text-xs border border-indigo-500/20">
+                        <div className="w-8 h-8 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-400 font-bold text-xs border border-orange-500/20">
                           {admin.name ? admin.name.charAt(0).toUpperCase() : 'A'}
                         </div>
                         <span>{admin.name}</span>
@@ -90,7 +90,7 @@ const Admins = () => {
                     </td>
                     <td className="py-4 px-6">
                       <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold border ${
-                        isDark ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' : 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                        isDark ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' : 'bg-orange-50 text-orange-700 border-orange-200'
                       }`}>
                         <UserCheck className="w-3 h-3" />
                         {admin.role || 'Admin'}

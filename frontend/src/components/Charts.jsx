@@ -80,7 +80,7 @@ export const ScoreDistributionChart = ({ data }) => {
   };
 
   return (
-    <div className="glass-card p-6 rounded-2xl h-80 flex flex-col hover:border-indigo-500/20 transition-all duration-300">
+    <div className="glass-card p-6 rounded-2xl h-80 flex flex-col hover:border-orange-500/30 transition-all duration-300">
       <h3 className="text-base sm:text-lg font-bold text-[var(--text-primary)] mb-4">
         Score Distribution
       </h3>
@@ -103,7 +103,7 @@ export const StatusDistributionChart = ({ data }) => {
         backgroundColor: [
           'rgba(16, 185, 129, 0.85)',
           'rgba(245, 158, 11, 0.85)',
-          'rgba(99, 102, 241, 0.85)',
+          'rgba(255, 107, 53, 0.85)',
         ],
         borderRadius: { topLeft: 8, topRight: 8 },
         barThickness: 36,
@@ -141,7 +141,7 @@ export const StatusDistributionChart = ({ data }) => {
   };
 
   return (
-    <div className="glass-card p-6 rounded-2xl h-80 flex flex-col hover:border-indigo-500/20 transition-all duration-300">
+    <div className="glass-card p-6 rounded-2xl h-80 flex flex-col hover:border-orange-500/30 transition-all duration-300">
       <h3 className="text-base sm:text-lg font-bold text-[var(--text-primary)] mb-4">
         Status Distribution
       </h3>

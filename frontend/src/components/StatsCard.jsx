@@ -21,8 +21,8 @@ const StatsCard = ({ title, value, icon: Icon, subtitle }) => {
       <div className="relative z-10">
         <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border transition-all duration-200 ${
           isDark 
-            ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400' 
-            : 'bg-indigo-50 border-indigo-100 text-indigo-600 shadow-sm'
+            ? 'bg-orange-500/10 border-orange-500/20 text-orange-400' 
+            : 'bg-orange-50 border-orange-100 text-orange-600 shadow-sm'
         }`}>
           {Icon && <Icon className="w-6 h-6" />}
         </div>

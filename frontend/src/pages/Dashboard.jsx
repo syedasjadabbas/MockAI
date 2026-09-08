@@ -85,9 +85,9 @@ const Dashboard = () => {
           ))}
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="glass-card p-6 rounded-2xl h-80 animate-pulse bg-slate-800/30" />
-          <div className="glass-card p-6 rounded-2xl h-80 animate-pulse bg-slate-800/30" />
-          <div className="glass-card p-6 rounded-2xl h-80 animate-pulse bg-slate-800/30" />
+          <div className="glass-card p-6 rounded-2xl h-80 animate-pulse bg-[#202020]" />
+          <div className="glass-card p-6 rounded-2xl h-80 animate-pulse bg-[#202020]" />
+          <div className="glass-card p-6 rounded-2xl h-80 animate-pulse bg-[#202020]" />
         </div>
         <div className="glass-card rounded-2xl p-4">
           <TableSkeleton rows={5} cols={6} />
@@ -128,10 +128,10 @@ const Dashboard = () => {
         <StatusDistributionChart data={chartsData.statusBuckets} />
         
         {/* Performance Highlights Panel */}
-        <div className="glass-card p-6 rounded-2xl flex flex-col hover:border-indigo-500/20 transition-all duration-300">
+        <div className="glass-card p-6 rounded-2xl flex flex-col hover:border-orange-500/30 transition-all duration-300">
           <div className="flex items-center gap-2.5 mb-5">
-            <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
-              <Activity className="w-4 h-4 text-indigo-500" />
+            <div className="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center border border-orange-500/20">
+              <Activity className="w-4 h-4 text-orange-500" />
             </div>
             <h3 className="text-base sm:text-lg font-bold text-[var(--text-primary)]">Performance Highlights</h3>
           </div>
@@ -141,7 +141,7 @@ const Dashboard = () => {
                 key={idx} 
                 className="flex items-start gap-3 p-3.5 rounded-xl border border-[var(--border-table)] bg-[var(--bg-table-header)] transition-all"
               >
-                <Info className="w-4 h-4 text-indigo-500 mt-0.5 flex-shrink-0" />
+                <Info className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
                 <span className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed">{insight}</span>
               </li>
             ))}
@@ -150,7 +150,7 @@ const Dashboard = () => {
       </div>
 
       {/* Recent Activity Table */}
-      <div className="glass-card p-6 rounded-2xl hover:border-indigo-500/20 transition-all duration-300">
+      <div className="glass-card p-6 rounded-2xl hover:border-orange-500/30 transition-all duration-300">
         <div className="flex items-center justify-between mb-5">
           <div>
             <h3 className="text-base sm:text-lg font-bold text-[var(--text-primary)]">Recent Interviews</h3>
@@ -158,7 +158,7 @@ const Dashboard = () => {
           </div>
           <Link 
             to="/admin/interviews" 
-            className="inline-flex items-center gap-1 text-xs font-bold text-indigo-500 hover:text-indigo-600 transition-colors py-1 px-2.5 rounded-lg hover:bg-indigo-500/10"
+            className="inline-flex items-center gap-1 text-xs font-bold text-orange-500 hover:text-orange-600 transition-colors py-1 px-2.5 rounded-lg hover:bg-orange-500/10"
           >
             View All <ArrowRight className="w-3.5 h-3.5" />
           </Link>
@@ -185,7 +185,7 @@ const Dashboard = () => {
               <tbody className="divide-y divide-[var(--border-table)]">
                 {recentInterviews.map((item, idx) => (
                   <tr key={idx} className="hover:bg-[var(--bg-table-row-hover)] transition-colors">
-                    <td className="py-3.5 pr-4 font-mono font-semibold text-xs sm:text-sm text-indigo-500">{item.id}</td>
+                    <td className="py-3.5 pr-4 font-mono font-semibold text-xs sm:text-sm text-orange-400">{item.id}</td>
                     <td className="py-3.5 px-4 font-semibold text-xs sm:text-sm text-[var(--text-primary)]">{item.candidate}</td>
                     <td className="py-3.5 px-4 text-xs sm:text-sm text-[var(--text-secondary)]">{item.type}</td>
                     <td className="py-3.5 px-4 text-xs sm:text-sm">

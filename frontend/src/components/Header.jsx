@@ -412,7 +412,7 @@ const Header = ({ onToggleMobileMenu }) => {
               onFocus={handleSearchFocus}
               onBlur={() => setTimeout(() => setShowSearchDropdown(false), 200)}
               onKeyDown={handleSearch}
-              className="pl-9 pr-4 py-2 rounded-xl text-xs sm:text-sm theme-input border focus:outline-none focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/15 w-48 lg:w-64 transition-all"
+              className="pl-9 pr-4 py-2 rounded-xl text-xs sm:text-sm theme-input border focus:outline-none focus:border-orange-500/60 focus:ring-2 focus:ring-orange-500/20 w-48 lg:w-64 transition-all"
             />
             {showSearchDropdown && searchQuery.trim() && (
               <div className="absolute top-full mt-2 w-full theme-modal rounded-2xl shadow-2xl z-50 overflow-hidden border">
@@ -431,7 +431,7 @@ const Header = ({ onToggleMobileMenu }) => {
                     >
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-semibold text-[var(--text-primary)]">{res.title}</span>
-                        <span className="text-[10px] uppercase font-bold text-indigo-500 bg-indigo-500/10 px-1.5 py-0.5 rounded">{res.type}</span>
+                        <span className="text-[10px] uppercase font-bold text-orange-400 bg-orange-500/10 px-1.5 py-0.5 rounded">{res.type}</span>
                       </div>
                       <span className="text-xs text-[var(--text-secondary)]">{res.subtitle}</span>
                     </div>
@@ -462,7 +462,7 @@ const Header = ({ onToggleMobileMenu }) => {
               <div className="absolute top-12 right-0 w-80 sm:w-96 theme-modal rounded-2xl shadow-2xl z-50 overflow-hidden border">
                 <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-table)] bg-[var(--bg-table-header)]">
                   <h3 className="text-sm font-bold text-[var(--text-primary)]">Notifications</h3>
-                  <button onClick={handleClearNotifications} className="text-[11px] font-semibold text-indigo-500 hover:text-indigo-600">
+                  <button onClick={handleClearNotifications} className="text-[11px] font-semibold text-orange-500 hover:text-orange-600">
                     Clear All
                   </button>
                 </div>
@@ -476,7 +476,7 @@ const Header = ({ onToggleMobileMenu }) => {
                           {n.type === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
                           {n.type === 'error' && <AlertCircle className="w-4 h-4 text-rose-500" />}
                           {n.type === 'warning' && <AlertCircle className="w-4 h-4 text-amber-500" />}
-                          {n.type === 'info' && <Info className="w-4 h-4 text-indigo-500" />}
+                          {n.type === 'info' && <Info className="w-4 h-4 text-orange-500" />}
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-xs sm:text-sm text-[var(--text-primary)] leading-snug break-words">{n.message}</p>
@@ -493,24 +493,24 @@ const Header = ({ onToggleMobileMenu }) => {
           {/* Profile Button & Menu */}
           <div className="flex items-center gap-3 pl-2 border-l border-[var(--border-panel)]">
             <div 
-              className="w-9 h-9 rounded-xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 overflow-hidden cursor-pointer hover:border-indigo-500/50 transition-all" 
+              className="w-9 h-9 rounded-xl bg-orange-500/10 flex items-center justify-center border border-orange-500/20 overflow-hidden cursor-pointer hover:border-orange-500/50 transition-all" 
               onClick={() => setShowProfileModal(true)}
               title="Admin Profile"
             >
               {profilePicture
                 ? <img src={profilePicture} alt="Admin" className="w-full h-full object-cover" onError={() => setProfilePicture(null)} />
-                : <User className="w-4 h-4 text-indigo-500" />}
+                : <User className="w-4 h-4 text-orange-500" />}
             </div>
             <div className="hidden sm:flex flex-col">
               <button
                 onClick={() => setShowProfileModal(true)}
-                className="text-xs sm:text-sm font-semibold text-[var(--text-primary)] text-left hover:text-indigo-500 transition-colors"
+                className="text-xs sm:text-sm font-semibold text-[var(--text-primary)] text-left hover:text-orange-500 transition-colors"
               >
                 {adminInfo.name}
               </button>
               <button
                 onClick={() => setShowPasswordModal(true)}
-                className="text-[11px] text-indigo-500 hover:text-indigo-600 text-left transition-colors flex items-center gap-1 font-medium"
+                className="text-[11px] text-orange-500 hover:text-orange-600 text-left transition-colors flex items-center gap-1 font-medium"
               >
                 <Key className="w-3 h-3" />
                 Password
@@ -532,10 +532,10 @@ const Header = ({ onToggleMobileMenu }) => {
             </button>
             <div className="flex flex-col items-center mb-6 mt-2">
               <div className="relative group w-20 h-20 mb-3">
-                <div className="w-20 h-20 rounded-full bg-indigo-500/10 flex items-center justify-center border-2 border-indigo-500/30 overflow-hidden">
+                <div className="w-20 h-20 rounded-full bg-orange-500/10 flex items-center justify-center border-2 border-orange-500/30 overflow-hidden">
                   {profilePicture
                     ? <img src={profilePicture} alt="Admin" className="w-full h-full object-cover" onError={() => setProfilePicture(null)} />
-                    : <User className="w-10 h-10 text-indigo-500" />}
+                    : <User className="w-10 h-10 text-orange-500" />}
                 </div>
                 <button
                   onClick={() => { setPictureError(''); fileInputRef.current?.click(); }}
@@ -565,7 +565,7 @@ const Header = ({ onToggleMobileMenu }) => {
                     value={nameValue}
                     onChange={e => setNameValue(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter') handleUpdateName(); if (e.key === 'Escape') setNameEditing(false); }}
-                    className="w-full text-center theme-input border rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                    className="w-full text-center theme-input border rounded-xl px-3 py-2 text-sm font-semibold focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
                     disabled={nameLoading}
                     maxLength={60}
                   />
@@ -574,7 +574,7 @@ const Header = ({ onToggleMobileMenu }) => {
                     <button 
                       onClick={handleUpdateName} 
                       disabled={nameLoading} 
-                      className="px-3 py-1.5 text-xs rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold shadow-sm transition-all"
+                      className="px-3 py-1.5 text-xs rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow-sm transition-all"
                     >
                       {nameLoading ? 'Saving…' : 'Save'}
                     </button>
@@ -589,14 +589,14 @@ const Header = ({ onToggleMobileMenu }) => {
               ) : (
                 <button
                   onClick={() => { setNameValue(adminInfo.name); setNameEditing(true); setNameError(''); }}
-                  className="flex items-center gap-1.5 text-xl font-bold text-[var(--text-primary)] hover:text-indigo-500 transition-colors group"
+                  className="flex items-center gap-1.5 text-xl font-bold text-[var(--text-primary)] hover:text-orange-500 transition-colors group"
                   title="Click to edit name"
                 >
                   {adminInfo.name}
-                  <Edit2 className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 text-indigo-500 transition-opacity" />
+                  <Edit2 className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 text-orange-500 transition-opacity" />
                 </button>
               )}
-              <span className="px-2.5 py-0.5 mt-2 bg-indigo-500/10 text-indigo-500 text-xs font-bold rounded-full border border-indigo-500/20 uppercase tracking-wider">
+              <span className="px-2.5 py-0.5 mt-2 bg-orange-500/10 text-orange-400 text-xs font-bold rounded-full border border-orange-500/20 uppercase tracking-wider">
                 {adminInfo.role}
               </span>
               <p className="text-[11px] text-[var(--text-muted)] mt-1.5">Click photo to change (JPG/PNG, max 2MB)</p>
@@ -615,7 +615,7 @@ const Header = ({ onToggleMobileMenu }) => {
 
             <button 
               onClick={() => { setShowProfileModal(false); setShowAddAdminModal(true); }} 
-              className="w-full mt-5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-xl transition-all shadow-md shadow-indigo-500/20 text-sm"
+              className="w-full mt-5 bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2.5 rounded-xl transition-all shadow-md shadow-orange-500/20 text-sm"
             >
               + Add Admin
             </button>
@@ -655,7 +655,7 @@ const Header = ({ onToggleMobileMenu }) => {
                   type="password"
                   value={oldPassword}
                   onChange={(e) => setOldPassword(e.target.value)}
-                  className="w-full theme-input border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                  className="w-full theme-input border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                   required
                 />
               </div>
@@ -665,14 +665,14 @@ const Header = ({ onToggleMobileMenu }) => {
                   type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full theme-input border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                  className="w-full theme-input border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                   required
                 />
               </div>
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-xl transition-all shadow-md shadow-indigo-500/20 disabled:opacity-50 mt-3 text-sm"
+                className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2.5 rounded-xl transition-all shadow-md shadow-orange-500/20 disabled:opacity-50 mt-3 text-sm"
               >
                 {loading ? 'Updating...' : 'Update Password'}
               </button>
@@ -712,7 +712,7 @@ const Header = ({ onToggleMobileMenu }) => {
                     type="text"
                     value={addAdminName}
                     onChange={(e) => setAddAdminName(e.target.value)}
-                    className="w-full theme-input border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                    className="w-full theme-input border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                     required
                   />
                 </div>
@@ -722,7 +722,7 @@ const Header = ({ onToggleMobileMenu }) => {
                     type="email"
                     value={addAdminEmail}
                     onChange={(e) => setAddAdminEmail(e.target.value)}
-                    className="w-full theme-input border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                    className="w-full theme-input border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                     required
                   />
                 </div>
@@ -732,22 +732,22 @@ const Header = ({ onToggleMobileMenu }) => {
                     type="password"
                     value={addAdminPassword}
                     onChange={(e) => setAddAdminPassword(e.target.value)}
-                    className="w-full theme-input border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                    className="w-full theme-input border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
                     required
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={addAdminLoading}
-                  className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-xl transition-all shadow-md shadow-indigo-500/20 disabled:opacity-50 mt-3 text-sm"
+                  className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2.5 rounded-xl transition-all shadow-md shadow-orange-500/20 disabled:opacity-50 mt-3 text-sm"
                 >
                   {addAdminLoading ? 'Sending...' : 'Verify Email'}
                 </button>
               </form>
             ) : (
               <form onSubmit={handleCreateAdmin} className="space-y-4">
-                <div className="p-3.5 bg-indigo-500/10 border border-indigo-500/20 rounded-xl mb-4">
-                  <p className="text-xs text-indigo-500 font-medium">A 6-digit verification code has been sent to <strong>{addAdminEmail}</strong>.</p>
+                <div className="p-3.5 bg-orange-500/10 border border-orange-500/20 rounded-xl mb-4">
+                  <p className="text-xs text-orange-400 font-medium">A 6-digit verification code has been sent to <strong>{addAdminEmail}</strong>.</p>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Enter Verification Code (OTP)</label>
@@ -755,7 +755,7 @@ const Header = ({ onToggleMobileMenu }) => {
                     type="text"
                     value={addAdminOtp}
                     onChange={(e) => setAddAdminOtp(e.target.value)}
-                    className="w-full theme-input border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 tracking-widest text-center font-mono text-lg"
+                    className="w-full theme-input border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 tracking-widest text-center font-mono text-lg"
                     maxLength={6}
                     required
                   />
@@ -763,7 +763,7 @@ const Header = ({ onToggleMobileMenu }) => {
                 <button
                   type="submit"
                   disabled={addAdminLoading || addAdminOtp.length !== 6}
-                  className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-xl transition-all shadow-md shadow-indigo-500/20 disabled:opacity-50 mt-3 text-sm"
+                  className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2.5 rounded-xl transition-all shadow-md shadow-orange-500/20 disabled:opacity-50 mt-3 text-sm"
                 >
                   {addAdminLoading ? 'Creating...' : 'Create Admin'}
                 </button>

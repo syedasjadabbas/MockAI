@@ -11,49 +11,39 @@
  * that shared file, so the rest of Admin is structurally guaranteed to
  * be unaffected regardless of what values are chosen below.
  *
- * Deliberately its own namespace (--aa-*) rather than reusing the
- * Candidate Panel's --c-* tokens/.candidate-app - same brand accent
- * direction (deep burgundy/wine), but a cooler, more graphite-leaning
- * neutral scale and no serif heading font, so the two stay visually
- * distinct per the redesign brief.
+ * Uses MockAI's signature Charcoal (#111111) base with Primary Orange
+ * (#FF6B35) & Highlight Orange (#FF9F1C) matching the Candidate Panel.
  */
 
 .admin-auth-shell {
-  --aa-bg: #f5f4f1;
-  --aa-surface: #ffffff;
-  --aa-surface-muted: #ebe9e4;
-  --aa-border: #ddd9d1;
-  --aa-border-strong: #c8c2b5;
+  --aa-bg: #FAF9F6;
+  --aa-surface: #FFFFFF;
+  --aa-surface-muted: #F3F0EB;
+  --aa-border: #E5E0D8;
+  --aa-border-strong: #D0C8BC;
 
-  --aa-text: #1c1a17;
-  --aa-text-secondary: #5c584f;
-  --aa-text-muted: #918b7d;
-  --aa-on-accent: #fbf3ec;
+  --aa-text: #18181B;
+  --aa-text-secondary: #52525B;
+  --aa-text-muted: #71717A;
+  --aa-on-accent: #FFFFFF;
 
-  --aa-accent: #7a2333;
-  --aa-accent-hover: #661d2a;
-  --aa-accent-soft: rgba(122, 35, 51, 0.08);
-  --aa-accent-soft-strong: rgba(122, 35, 51, 0.16);
+  --aa-accent: #FF6B35;
+  --aa-accent-hover: #E8551E;
+  --aa-accent-soft: rgba(255, 107, 53, 0.12);
+  --aa-accent-soft-strong: rgba(255, 107, 53, 0.20);
 
-  /* Deliberately NOT the same as --aa-accent above. --aa-accent gets
-     lightened in dark mode so it stays legible as TEXT against a
-     near-black page - but a button provides its own background, so it
-     doesn't need that lightening, and reusing the lightened value there
-     is exactly what produced the washed-out "peach" CTA this redesign is
-     fixing. The button fill stays this same rich, deep wine in both
-     themes; only its text/hover shift. */
-  --aa-cta-from: #7d2738;
-  --aa-cta-to: #5c1c28;
-  --aa-cta-hover-from: #8f2e40;
-  --aa-cta-hover-to: #6b2130;
-  --aa-cta-text: #fbf3ec;
+  --aa-cta-from: #FF6B35;
+  --aa-cta-to: #E8551E;
+  --aa-cta-hover-from: #FF7B47;
+  --aa-cta-hover-to: #D64A15;
+  --aa-cta-text: #FFFFFF;
 
-  --aa-danger: #a23b2e;
-  --aa-danger-soft: rgba(162, 59, 46, 0.1);
-  --aa-success: #4b6b4f;
-  --aa-success-soft: rgba(75, 107, 79, 0.1);
+  --aa-danger: #EF4444;
+  --aa-danger-soft: rgba(239, 68, 68, 0.12);
+  --aa-success: #22C55E;
+  --aa-success-soft: rgba(34, 197, 94, 0.12);
 
-  --aa-shadow: 0 20px 48px -18px rgba(20, 18, 15, 0.2);
+  --aa-shadow: 0 20px 48px -18px rgba(0, 0, 0, 0.15);
   --aa-radius-sm: 10px;
   --aa-radius: 16px;
   --aa-font: 'Inter', -apple-system, system-ui, sans-serif;
@@ -64,27 +54,34 @@
   min-height: 100vh;
 }
 
-html[data-theme='dark'] .admin-auth-shell {
-  --aa-bg: #0e0d0c;
-  --aa-surface: #17140f;
-  --aa-surface-muted: #1e1a15;
-  --aa-border: #2c2620;
-  --aa-border-strong: #3d352b;
+html[data-theme='dark'] .admin-auth-shell,
+html.dark .admin-auth-shell {
+  --aa-bg: #111111;
+  --aa-surface: #181818;
+  --aa-surface-muted: #202020;
+  --aa-border: #2A2A2A;
+  --aa-border-strong: #383838;
 
-  --aa-text: #f1ede5;
-  --aa-text-secondary: #ab9f8f;
-  --aa-text-muted: #746a5c;
-  --aa-on-accent: #1a1210;
+  --aa-text: #F5F5F5;
+  --aa-text-secondary: #A3A3A3;
+  --aa-text-muted: #6B6B6B;
+  --aa-on-accent: #FFFFFF;
 
-  --aa-accent: #d99a7f;
-  --aa-accent-hover: #e3ac95;
-  --aa-accent-soft: rgba(217, 154, 127, 0.12);
-  --aa-accent-soft-strong: rgba(217, 154, 127, 0.2);
+  --aa-accent: #FF6B35;
+  --aa-accent-hover: #E8551E;
+  --aa-accent-soft: rgba(255, 107, 53, 0.12);
+  --aa-accent-soft-strong: rgba(255, 107, 53, 0.20);
 
-  --aa-danger: #d98a72;
-  --aa-danger-soft: rgba(217, 138, 114, 0.14);
-  --aa-success: #8fb097;
-  --aa-success-soft: rgba(143, 176, 151, 0.14);
+  --aa-cta-from: #FF6B35;
+  --aa-cta-to: #E8551E;
+  --aa-cta-hover-from: #FF7B47;
+  --aa-cta-hover-to: #D64A15;
+  --aa-cta-text: #FFFFFF;
+
+  --aa-danger: #EF4444;
+  --aa-danger-soft: rgba(239, 68, 68, 0.12);
+  --aa-success: #22C55E;
+  --aa-success-soft: rgba(34, 197, 94, 0.12);
 
   --aa-shadow: 0 24px 56px -18px rgba(0, 0, 0, 0.6);
 }
@@ -146,12 +143,12 @@ html[data-theme='dark'] .admin-auth-shell {
 .admin-auth-shell .aa-btn-primary {
   background: linear-gradient(135deg, var(--aa-cta-from) 0%, var(--aa-cta-to) 100%);
   color: var(--aa-cta-text);
-  box-shadow: 0 8px 20px -8px rgba(92, 28, 40, 0.55);
+  box-shadow: 0 8px 20px -8px rgba(255, 107, 53, 0.45);
 }
 
 .admin-auth-shell .aa-btn-primary:hover:not(:disabled) {
   background: linear-gradient(135deg, var(--aa-cta-hover-from) 0%, var(--aa-cta-hover-to) 100%);
-  box-shadow: 0 10px 24px -8px rgba(92, 28, 40, 0.65);
+  box-shadow: 0 10px 24px -8px rgba(255, 107, 53, 0.6);
 }
 
 .admin-auth-shell .aa-btn-ghost {
@@ -182,14 +179,14 @@ html[data-theme='dark'] .admin-auth-shell {
    wordmark/headline sit; easing off toward the upper-right) instead of a
    flat top-to-bottom gradient. */
 .admin-auth-shell .aa-duotone {
-  background: linear-gradient(135deg, rgba(122, 35, 51, 0.55) 0%, rgba(20, 16, 14, 0.85) 100%);
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.15) 0%, rgba(17, 17, 17, 0.90) 100%);
   mix-blend-mode: multiply;
 }
 
 .admin-auth-shell .aa-scrim {
   background:
-    linear-gradient(90deg, rgba(14, 12, 11, 0.75) 0%, rgba(14, 12, 11, 0.28) 55%, rgba(14, 12, 11, 0.06) 100%),
-    linear-gradient(0deg, rgba(14, 12, 11, 0.55) 0%, rgba(14, 12, 11, 0) 38%);
+    linear-gradient(90deg, rgba(17, 17, 17, 0.88) 0%, rgba(17, 17, 17, 0.45) 55%, rgba(17, 17, 17, 0.12) 100%),
+    linear-gradient(0deg, rgba(17, 17, 17, 0.70) 0%, rgba(17, 17, 17, 0) 45%);
 }
 
 /* Floating access-panel surface for the form, distinct from a plain

@@ -186,7 +186,7 @@ const Results = () => {
         <p className="text-sm text-[var(--text-secondary)] mb-4">{errorMsg}</p>
         <button 
           onClick={() => window.location.reload()} 
-          className="px-4 py-2 text-xs font-semibold rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white transition-all shadow-md shadow-indigo-500/20"
+          className="px-4 py-2 text-xs font-semibold rounded-xl bg-orange-500 hover:bg-orange-600 text-white transition-all shadow-md shadow-orange-500/20"
         >
           Try Again
         </button>
@@ -204,7 +204,7 @@ const Results = () => {
             onClick={handleExport} 
             className="px-3.5 py-2 rounded-xl border border-[var(--border-card)] hover:bg-[var(--bg-card-hover)] text-[var(--text-primary)] font-semibold text-xs transition-all flex items-center gap-2 shadow-sm"
           >
-            <Download className="w-3.5 h-3.5 text-indigo-500" />
+            <Download className="w-3.5 h-3.5 text-orange-500" />
             Export CSV
           </button>
         </div>
@@ -218,7 +218,7 @@ const Results = () => {
               placeholder="Search candidate, ID..." 
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-              className="w-full pl-9 pr-4 py-2 rounded-xl text-xs sm:text-sm theme-input border focus:outline-none focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/20 transition-all"
+              className="w-full pl-9 pr-4 py-2 rounded-xl text-xs sm:text-sm theme-input border focus:outline-none focus:border-orange-500/60 focus:ring-2 focus:ring-orange-500/20 transition-all"
             />
           </div>
           
@@ -328,7 +328,7 @@ const Results = () => {
           />
         </div>
       ) : (
-        <div className="glass-card rounded-2xl overflow-hidden hover:border-indigo-500/20 transition-all duration-300">
+        <div className="glass-card rounded-2xl overflow-hidden hover:border-orange-500/20 transition-all duration-300">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
@@ -345,7 +345,7 @@ const Results = () => {
               <tbody className="divide-y divide-[var(--border-table)]">
                 {pagedResults.map((item, idx) => (
                   <tr key={idx} className="hover:bg-[var(--bg-table-row-hover)] transition-colors">
-                    <td className="py-4 px-6 font-mono font-semibold text-xs sm:text-sm text-indigo-500">RES-{item.id}</td>
+                    <td className="py-4 px-6 font-mono font-semibold text-xs sm:text-sm text-orange-400">RES-{item.id}</td>
                     <td className="py-4 px-6 font-mono text-xs sm:text-sm text-[var(--text-secondary)]">INT-{item.interviewId}</td>
                     <td className="py-4 px-6 font-semibold text-sm text-[var(--text-primary)]">{item.user}</td>
                     <td className="py-4 px-6">
@@ -355,7 +355,7 @@ const Results = () => {
                       {item.confidenceScore !== '-' ? (
                         <div className="flex items-center gap-2">
                           <div className="flex-1 max-w-20 h-2 rounded-full bg-[var(--bg-table-header)] border border-[var(--border-table)] overflow-hidden">
-                            <div className="h-full bg-indigo-500 rounded-full" style={{ width: item.confidenceScore }}></div>
+                            <div className="h-full bg-orange-500 rounded-full" style={{ width: item.confidenceScore }}></div>
                           </div>
                           <span className="text-xs font-bold text-[var(--text-secondary)]">{item.confidenceScore}</span>
                         </div>

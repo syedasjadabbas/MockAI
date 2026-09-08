@@ -504,8 +504,8 @@ const QuestionBank = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
-              <BookOpen className="w-5 h-5 text-indigo-500" />
+            <div className="w-10 h-10 rounded-2xl bg-orange-500/10 flex items-center justify-center border border-orange-500/20">
+              <BookOpen className="w-5 h-5 text-orange-500" />
             </div>
             <div>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] tracking-tight">
@@ -530,7 +530,7 @@ const QuestionBank = () => {
             }`}
             title="Refresh Data"
           >
-            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-indigo-500' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-orange-500' : ''}`} />
           </button>
 
           <button
@@ -541,13 +541,13 @@ const QuestionBank = () => {
                 : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200 shadow-sm'
             }`}
           >
-            <FolderPlus className="w-4 h-4 text-indigo-400" />
+            <FolderPlus className="w-4 h-4 text-orange-400" />
             <span>New Category</span>
           </button>
 
           <button
             onClick={() => openAddQuestionModal()}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/35 transition-all transform active:scale-95"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-500/25 hover:shadow-orange-500/35 transition-all transform active:scale-95"
           >
             <Plus className="w-4 h-4" />
             <span>Add Question</span>
@@ -576,7 +576,7 @@ const QuestionBank = () => {
         <div className="glass-card rounded-2xl p-5 border flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">Difficulty Split</span>
-            <BarChart3 className="w-4 h-4 text-indigo-400" />
+            <BarChart3 className="w-4 h-4 text-orange-400" />
           </div>
           <div className="flex items-center gap-2 my-2">
             <span className={`px-2 py-0.5 rounded-lg text-xs font-bold border ${DIFFICULTY_CONFIG.Easy.colorDark}`}>
@@ -616,8 +616,8 @@ const QuestionBank = () => {
           className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 relative ${
             activeTab === 'questions'
               ? isDark
-                ? 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/30'
-                : 'bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-sm'
+                ? 'bg-orange-500/15 text-orange-400 border border-orange-500/30'
+                : 'bg-orange-50 text-orange-700 border border-orange-200 shadow-sm'
               : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-slate-800/20'
           }`}
         >
@@ -625,7 +625,7 @@ const QuestionBank = () => {
           <span>Questions Repository</span>
           <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
             activeTab === 'questions'
-              ? isDark ? 'bg-indigo-500/30 text-indigo-300' : 'bg-indigo-100 text-indigo-800'
+              ? isDark ? 'bg-orange-500/30 text-orange-300' : 'bg-orange-100 text-orange-800'
               : isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-600'
           }`}>
             {questions.length}
@@ -637,8 +637,8 @@ const QuestionBank = () => {
           className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 relative ${
             activeTab === 'categories'
               ? isDark
-                ? 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/30'
-                : 'bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-sm'
+                ? 'bg-orange-500/15 text-orange-400 border border-orange-500/30'
+                : 'bg-orange-50 text-orange-700 border border-orange-200 shadow-sm'
               : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-slate-800/20'
           }`}
         >
@@ -646,7 +646,7 @@ const QuestionBank = () => {
           <span>Interview Categories</span>
           <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
             activeTab === 'categories'
-              ? isDark ? 'bg-indigo-500/30 text-indigo-300' : 'bg-indigo-100 text-indigo-800'
+              ? isDark ? 'bg-orange-500/30 text-orange-300' : 'bg-orange-100 text-orange-800'
               : isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-600'
           }`}>
             {categories.length}
@@ -683,7 +683,7 @@ const QuestionBank = () => {
                 placeholder="Search questions, answer criteria, tags..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="theme-input w-full pl-10 pr-9 py-2 rounded-xl text-sm border focus:outline-none focus:ring-2 focus:ring-indigo-500/30 transition-all"
+                className="theme-input w-full pl-10 pr-9 py-2 rounded-xl text-sm border focus:outline-none focus:ring-2 focus:ring-orange-500/30 transition-all"
               />
               {searchQuery && (
                 <button
@@ -701,7 +701,7 @@ const QuestionBank = () => {
               <select
                 value={selectedCategoryFilter}
                 onChange={e => setSelectedCategoryFilter(e.target.value)}
-                className="theme-input px-3 py-2 rounded-xl text-xs sm:text-sm font-medium border focus:outline-none focus:ring-2 focus:ring-indigo-500/30 transition-all cursor-pointer"
+                className="theme-input px-3 py-2 rounded-xl text-xs sm:text-sm font-medium border focus:outline-none focus:ring-2 focus:ring-orange-500/30 transition-all cursor-pointer"
               >
                 <option value="all">All Categories</option>
                 {categories.map(c => (
@@ -715,7 +715,7 @@ const QuestionBank = () => {
               <select
                 value={selectedDifficultyFilter}
                 onChange={e => setSelectedDifficultyFilter(e.target.value)}
-                className="theme-input px-3 py-2 rounded-xl text-xs sm:text-sm font-medium border focus:outline-none focus:ring-2 focus:ring-indigo-500/30 transition-all cursor-pointer"
+                className="theme-input px-3 py-2 rounded-xl text-xs sm:text-sm font-medium border focus:outline-none focus:ring-2 focus:ring-orange-500/30 transition-all cursor-pointer"
               >
                 <option value="all">All Difficulties</option>
                 <option value="easy">Easy</option>
@@ -727,7 +727,7 @@ const QuestionBank = () => {
               <select
                 value={selectedStatusFilter}
                 onChange={e => setSelectedStatusFilter(e.target.value)}
-                className="theme-input px-3 py-2 rounded-xl text-xs sm:text-sm font-medium border focus:outline-none focus:ring-2 focus:ring-indigo-500/30 transition-all cursor-pointer"
+                className="theme-input px-3 py-2 rounded-xl text-xs sm:text-sm font-medium border focus:outline-none focus:ring-2 focus:ring-orange-500/30 transition-all cursor-pointer"
               >
                 <option value="all">All Status</option>
                 <option value="active">Active Only</option>
@@ -752,7 +752,7 @@ const QuestionBank = () => {
             <div className="flex items-center gap-2 text-xs text-[var(--text-muted)] flex-wrap px-1">
               <span>Showing {filteredQuestions.length} matching questions</span>
               {selectedCategoryFilter !== 'all' && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-medium">
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-orange-500/10 text-orange-400 border border-orange-500/20 font-medium">
                   Category: {categories.find(c => c._id === selectedCategoryFilter)?.name || selectedCategoryFilter}
                   <button onClick={() => setSelectedCategoryFilter('all')}><X className="w-3 h-3 hover:text-white" /></button>
                 </span>
@@ -830,7 +830,7 @@ const QuestionBank = () => {
                             <button
                               onClick={() => filterBySpecificCategory(q.category_id)}
                               className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-semibold border transition-all hover:scale-105 ${
-                                isDark ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' : 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                                isDark ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' : 'bg-orange-50 text-orange-700 border-orange-200'
                               }`}
                               title="Filter by this category"
                             >
@@ -901,7 +901,7 @@ const QuestionBank = () => {
                               {/* View Details */}
                               <button
                                 onClick={() => setViewingQuestion(q)}
-                                className="p-2 rounded-lg text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 transition-all"
+                                className="p-2 rounded-lg text-slate-400 hover:text-orange-400 hover:bg-orange-500/10 transition-all"
                                 title="View Details"
                               >
                                 <Eye className="w-4 h-4" />
@@ -933,7 +933,7 @@ const QuestionBank = () => {
                               <button
                                 onClick={() => setConfirmDelete({ type: 'question', item: q })}
                                 className="p-2 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
-                                title="Delete Question"
+                                title="Delete Question Permanently"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>
@@ -948,11 +948,11 @@ const QuestionBank = () => {
             )}
 
             {/* Pagination Controls */}
-            {filteredQuestions.length > PAGE_SIZE && (
-              <div className="p-4 border-t border-[var(--border-table)] flex flex-col sm:flex-row items-center justify-between gap-3">
-                <p className="text-xs text-[var(--text-muted)]">
-                  Showing <span className="font-semibold text-[var(--text-primary)]">{(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filteredQuestions.length)}</span> of <span className="font-semibold text-[var(--text-primary)]">{filteredQuestions.length}</span> questions
-                </p>
+            {totalPages > 1 && (
+              <div className="p-4 border-t border-[var(--border-table)] flex items-center justify-between gap-4 flex-wrap">
+                <span className="text-xs text-[var(--text-muted)]">
+                  Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredQuestions.length)} of {filteredQuestions.length} questions
+                </span>
 
                 <div className="flex items-center gap-2">
                   <button
@@ -963,7 +963,7 @@ const QuestionBank = () => {
                     <ChevronLeft className="w-4 h-4" />
                   </button>
 
-                  <span className="text-xs font-semibold px-3 py-1 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                  <span className="text-xs font-semibold px-3 py-1 rounded-lg bg-orange-500/10 text-orange-400 border border-orange-500/20">
                     Page {currentPage} of {totalPages}
                   </span>
 
@@ -991,7 +991,7 @@ const QuestionBank = () => {
             </div>
             <button
               onClick={openAddCategoryModal}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-500/20 transition-all"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-orange-500 hover:bg-orange-600 text-white shadow-md shadow-orange-500/20 transition-all"
             >
               <Plus className="w-4 h-4" />
               <span>Add Category</span>
@@ -1024,7 +1024,7 @@ const QuestionBank = () => {
                 return (
                   <div
                     key={cat._id}
-                    className={`glass-card rounded-2xl p-5 border flex flex-col justify-between transition-all duration-300 hover:border-indigo-500/30 hover:shadow-xl ${
+                    className={`glass-card rounded-2xl p-5 border flex flex-col justify-between transition-all duration-300 hover:border-orange-500/30 hover:shadow-xl ${
                       isArchived ? 'opacity-70' : ''
                     }`}
                   >
@@ -1032,7 +1032,7 @@ const QuestionBank = () => {
                       {/* Top Header */}
                       <div className="flex items-start justify-between gap-3 mb-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-11 h-11 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20">
+                          <div className="w-11 h-11 rounded-2xl bg-orange-500/10 flex items-center justify-center text-orange-400 border border-orange-500/20">
                             {renderCategoryIcon(cat.icon, "w-5 h-5")}
                           </div>
                           <div>
@@ -1069,7 +1069,7 @@ const QuestionBank = () => {
                     {/* Footer Stats & Actions */}
                     <div className="pt-3 border-t border-[var(--border-table)] flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-lg border border-indigo-500/20">
+                        <span className="text-xs font-bold text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded-lg border border-orange-500/20">
                           {qCount} Questions
                         </span>
                         {qCount > 0 && (
@@ -1082,7 +1082,7 @@ const QuestionBank = () => {
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => filterBySpecificCategory(cat._id)}
-                          className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 transition-all"
+                          className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 transition-all"
                           title="View Questions in this Category"
                         >
                           View Qs
@@ -1118,8 +1118,8 @@ const QuestionBank = () => {
             {/* Header */}
             <div className="p-6 border-b border-[var(--border-table)] flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
-                  <BookOpen className="w-5 h-5 text-indigo-500" />
+                <div className="w-10 h-10 rounded-2xl bg-orange-500/10 flex items-center justify-center border border-orange-500/20">
+                  <BookOpen className="w-5 h-5 text-orange-500" />
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-[var(--text-primary)]">
@@ -1156,7 +1156,7 @@ const QuestionBank = () => {
                   value={qFormData.category_id}
                   onChange={e => setQFormData({ ...qFormData, category_id: e.target.value })}
                   required
-                  className="theme-input w-full px-4 py-2.5 rounded-xl text-sm border focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+                  className="theme-input w-full px-4 py-2.5 rounded-xl text-sm border focus:outline-none focus:ring-2 focus:ring-orange-500/30"
                 >
                   <option value="" disabled>Select a Category</option>
                   {categories.map(c => (
@@ -1178,7 +1178,7 @@ const QuestionBank = () => {
                   onChange={e => setQFormData({ ...qFormData, question_text: e.target.value })}
                   placeholder="e.g. Explain how the Virtual DOM works and how reconciliation optimizes render performance in React."
                   required
-                  className="theme-input w-full px-4 py-2.5 rounded-xl text-sm border focus:outline-none focus:ring-2 focus:ring-indigo-500/30 resize-none"
+                  className="theme-input w-full px-4 py-2.5 rounded-xl text-sm border focus:outline-none focus:ring-2 focus:ring-orange-500/30 resize-none"
                 />
               </div>
 
@@ -1219,7 +1219,7 @@ const QuestionBank = () => {
                   <select
                     value={qFormData.type}
                     onChange={e => setQFormData({ ...qFormData, type: e.target.value })}
-                    className="theme-input w-full px-4 py-2.5 rounded-xl text-sm border focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+                    className="theme-input w-full px-4 py-2.5 rounded-xl text-sm border focus:outline-none focus:ring-2 focus:ring-orange-500/30"
                   >
                     {QUESTION_TYPES.map(t => (
                       <option key={t} value={t}>{t}</option>
@@ -1238,7 +1238,7 @@ const QuestionBank = () => {
                   value={qFormData.expected_answer}
                   onChange={e => setQFormData({ ...qFormData, expected_answer: e.target.value })}
                   placeholder="Key concepts, algorithms, edge-cases, or behavioral STAR criteria candidate should mention..."
-                  className="theme-input w-full px-4 py-2.5 rounded-xl text-sm border focus:outline-none focus:ring-2 focus:ring-indigo-500/30 resize-none"
+                  className="theme-input w-full px-4 py-2.5 rounded-xl text-sm border focus:outline-none focus:ring-2 focus:ring-orange-500/30 resize-none"
                 />
               </div>
 
@@ -1253,7 +1253,7 @@ const QuestionBank = () => {
                     value={qFormData.tags}
                     onChange={e => setQFormData({ ...qFormData, tags: e.target.value })}
                     placeholder="React, Virtual DOM, Performance"
-                    className="theme-input w-full px-4 py-2.5 rounded-xl text-sm border focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+                    className="theme-input w-full px-4 py-2.5 rounded-xl text-sm border focus:outline-none focus:ring-2 focus:ring-orange-500/30"
                   />
                 </div>
 
@@ -1269,7 +1269,7 @@ const QuestionBank = () => {
                         value="active"
                         checked={qFormData.status === 'active'}
                         onChange={() => setQFormData({ ...qFormData, status: 'active' })}
-                        className="accent-indigo-600"
+                        className="accent-orange-500"
                       />
                       <span className="text-xs font-semibold text-emerald-400">Active</span>
                     </label>
@@ -1280,7 +1280,7 @@ const QuestionBank = () => {
                         value="archived"
                         checked={qFormData.status === 'archived'}
                         onChange={() => setQFormData({ ...qFormData, status: 'archived' })}
-                        className="accent-indigo-600"
+                        className="accent-orange-500"
                       />
                       <span className="text-xs font-semibold text-slate-400">Archived</span>
                     </label>
@@ -1300,7 +1300,7 @@ const QuestionBank = () => {
                 <button
                   type="submit"
                   disabled={formSubmitting}
-                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/25 transition-all disabled:opacity-50"
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-500/25 transition-all disabled:opacity-50"
                 >
                   {formSubmitting && <RefreshCw className="w-4 h-4 animate-spin" />}
                   <span>{editingQuestion ? 'Update Question' : 'Save Question'}</span>
@@ -1318,8 +1318,8 @@ const QuestionBank = () => {
             {/* Header */}
             <div className="p-6 border-b border-[var(--border-table)] flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
-                  <FolderPlus className="w-5 h-5 text-indigo-500" />
+                <div className="w-10 h-10 rounded-2xl bg-orange-500/10 flex items-center justify-center border border-orange-500/20">
+                  <FolderPlus className="w-5 h-5 text-orange-500" />
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-[var(--text-primary)]">
@@ -1358,7 +1358,7 @@ const QuestionBank = () => {
                   onChange={e => setCatFormData({ ...catFormData, name: e.target.value })}
                   placeholder="e.g. Cloud & DevOps Engineering"
                   required
-                  className="theme-input w-full px-4 py-2.5 rounded-xl text-sm border focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+                  className="theme-input w-full px-4 py-2.5 rounded-xl text-sm border focus:outline-none focus:ring-2 focus:ring-orange-500/30"
                 />
               </div>
 
@@ -1372,7 +1372,7 @@ const QuestionBank = () => {
                   value={catFormData.description}
                   onChange={e => setCatFormData({ ...catFormData, description: e.target.value })}
                   placeholder="Short description of this domain role..."
-                  className="theme-input w-full px-4 py-2.5 rounded-xl text-sm border focus:outline-none focus:ring-2 focus:ring-indigo-500/30 resize-none"
+                  className="theme-input w-full px-4 py-2.5 rounded-xl text-sm border focus:outline-none focus:ring-2 focus:ring-orange-500/30 resize-none"
                 />
               </div>
 
@@ -1392,7 +1392,7 @@ const QuestionBank = () => {
                         onClick={() => setCatFormData({ ...catFormData, icon: iconKey })}
                         className={`p-2.5 rounded-xl border flex flex-col items-center gap-1 transition-all ${
                           isSelected
-                            ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/40 shadow-sm'
+                            ? 'bg-orange-500/20 text-orange-400 border-orange-500/40 shadow-sm'
                             : 'border-[var(--border-input)] text-slate-400 hover:text-slate-200'
                         }`}
                       >
@@ -1417,7 +1417,7 @@ const QuestionBank = () => {
                       value="active"
                       checked={catFormData.status === 'active'}
                       onChange={() => setCatFormData({ ...catFormData, status: 'active' })}
-                      className="accent-indigo-600"
+                      className="accent-orange-500"
                     />
                     <span className="text-xs font-semibold text-emerald-400">Active</span>
                   </label>
@@ -1428,7 +1428,7 @@ const QuestionBank = () => {
                       value="archived"
                       checked={catFormData.status === 'archived'}
                       onChange={() => setCatFormData({ ...catFormData, status: 'archived' })}
-                      className="accent-indigo-600"
+                      className="accent-orange-500"
                     />
                     <span className="text-xs font-semibold text-slate-400">Archived</span>
                   </label>
@@ -1447,7 +1447,7 @@ const QuestionBank = () => {
                 <button
                   type="submit"
                   disabled={formSubmitting}
-                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/25 transition-all disabled:opacity-50"
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-500/25 transition-all disabled:opacity-50"
                 >
                   {formSubmitting && <RefreshCw className="w-4 h-4 animate-spin" />}
                   <span>{editingCategory ? 'Update Category' : 'Create Category'}</span>
@@ -1465,8 +1465,8 @@ const QuestionBank = () => {
             {/* Header */}
             <div className="p-6 border-b border-[var(--border-table)] flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
-                  <Eye className="w-5 h-5 text-indigo-500" />
+                <div className="w-10 h-10 rounded-2xl bg-orange-500/10 flex items-center justify-center border border-orange-500/20">
+                  <Eye className="w-5 h-5 text-orange-500" />
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-[var(--text-primary)]">Question Details</h3>
@@ -1485,7 +1485,7 @@ const QuestionBank = () => {
             <div className="p-6 space-y-5 overflow-y-auto max-h-[70vh]">
               {/* Badges Bar */}
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="px-3 py-1 rounded-xl text-xs font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 flex items-center gap-1.5">
+                <span className="px-3 py-1 rounded-xl text-xs font-bold bg-orange-500/10 text-orange-400 border border-orange-500/20 flex items-center gap-1.5">
                   <Folder className="w-3.5 h-3.5" />
                   {viewingQuestion.category_name}
                 </span>
@@ -1527,7 +1527,7 @@ const QuestionBank = () => {
                   <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Tags</span>
                   <div className="flex items-center gap-1.5 flex-wrap">
                     {viewingQuestion.tags.map((tag, idx) => (
-                      <span key={idx} className="text-xs px-2.5 py-1 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                      <span key={idx} className="text-xs px-2.5 py-1 rounded-lg bg-orange-500/10 text-orange-400 border border-orange-500/20">
                         #{tag}
                       </span>
                     ))}

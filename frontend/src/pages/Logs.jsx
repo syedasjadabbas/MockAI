@@ -98,14 +98,14 @@ const Logs = () => {
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <h2 className="text-lg sm:text-xl font-bold text-[var(--text-primary)] flex items-center gap-2">
-            <Terminal className="w-5 h-5 text-indigo-500" />
+            <Terminal className="w-5 h-5 text-orange-500" />
             Audit Logs
           </h2>
           <button 
             onClick={handleExport} 
             className="px-3.5 py-2 rounded-xl border border-[var(--border-card)] hover:bg-[var(--bg-card-hover)] text-[var(--text-primary)] font-semibold text-xs transition-all flex items-center gap-2 shadow-sm"
           >
-            <Download className="w-3.5 h-3.5 text-indigo-500" />
+            <Download className="w-3.5 h-3.5 text-orange-500" />
             Export CSV
           </button>
         </div>
@@ -119,7 +119,7 @@ const Logs = () => {
               placeholder="Search logs..." 
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-              className="w-full pl-9 pr-4 py-2 rounded-xl text-xs sm:text-sm theme-input border focus:outline-none focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/20 transition-all"
+              className="w-full pl-9 pr-4 py-2 rounded-xl text-xs sm:text-sm theme-input border focus:outline-none focus:border-orange-500/60 focus:ring-2 focus:ring-orange-500/20 transition-all"
             />
           </div>
 
@@ -146,7 +146,7 @@ const Logs = () => {
             className="flex items-center gap-1.5 px-3.5 py-2 border border-[var(--border-card)] hover:bg-[var(--bg-card-hover)] transition-all rounded-xl text-xs font-semibold text-[var(--text-primary)]"
             title="Refresh logs"
           >
-            <RotateCcw className="w-3.5 h-3.5 text-indigo-500" />
+            <RotateCcw className="w-3.5 h-3.5 text-orange-500" />
             Refresh
           </button>
         </div>
@@ -162,7 +162,7 @@ const Logs = () => {
           />
         </div>
       ) : (
-        <div className="glass-card rounded-2xl overflow-hidden hover:border-indigo-500/20 transition-all duration-300">
+        <div className="glass-card rounded-2xl overflow-hidden hover:border-orange-500/20 transition-all duration-300">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
@@ -180,7 +180,7 @@ const Logs = () => {
                   const logType = getLogType(item.action);
                   return (
                     <tr key={idx} className="hover:bg-[var(--bg-table-row-hover)] transition-colors">
-                      <td className="py-4 px-6 font-mono font-semibold text-xs sm:text-sm text-indigo-500">LOG-{item.id}</td>
+                      <td className="py-4 px-6 font-mono font-semibold text-xs sm:text-sm text-orange-400">LOG-{item.id}</td>
                       <td className="py-4 px-6 font-semibold text-sm text-[var(--text-primary)]">
                         <div className="flex items-center gap-2">
                           <User className="w-3.5 h-3.5 text-[var(--text-muted)]" />
@@ -197,7 +197,7 @@ const Logs = () => {
                               ? isDark ? 'bg-rose-500/15 text-rose-400 border-rose-500/30' : 'bg-rose-50 text-rose-700 border-rose-200'
                               : logType === 'Update'
                                 ? isDark ? 'bg-amber-500/15 text-amber-400 border-amber-500/30' : 'bg-amber-50 text-amber-700 border-amber-200'
-                                : isDark ? 'bg-indigo-500/15 text-indigo-400 border-indigo-500/30' : 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                                : isDark ? 'bg-orange-500/15 text-orange-400 border-orange-500/30' : 'bg-orange-50 text-orange-700 border-orange-200'
                         }`}>
                           <Info className="w-3 h-3" />
                           {logType}

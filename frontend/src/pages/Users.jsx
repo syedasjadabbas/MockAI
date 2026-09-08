@@ -185,7 +185,7 @@ const Users = () => {
         <p className="text-sm text-[var(--text-secondary)] mb-4">{loadError}</p>
         <button 
           onClick={() => window.location.reload()} 
-          className="px-4 py-2 text-xs font-semibold rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white transition-all shadow-md shadow-indigo-500/20"
+          className="px-4 py-2 text-xs font-semibold rounded-xl bg-orange-500 hover:bg-orange-600 text-white transition-all shadow-md shadow-orange-500/20"
         >
           Try Again
         </button>
@@ -204,7 +204,7 @@ const Users = () => {
             placeholder="Search by name or email..." 
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm theme-input border focus:outline-none focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/20 transition-all"
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm theme-input border focus:outline-none focus:border-orange-500/60 focus:ring-2 focus:ring-orange-500/20 transition-all"
           />
           {search && (
             <button 
@@ -220,7 +220,7 @@ const Users = () => {
             onClick={handleExport} 
             className="px-4 py-2.5 rounded-xl border border-[var(--border-card)] hover:bg-[var(--bg-card-hover)] text-[var(--text-primary)] font-semibold text-xs sm:text-sm transition-all flex items-center gap-2 shadow-sm"
           >
-            <Download className="w-4 h-4 text-indigo-500" />
+            <Download className="w-4 h-4 text-orange-500" />
             Export CSV
           </button>
         </div>
@@ -238,7 +238,7 @@ const Users = () => {
           />
         </div>
       ) : (
-        <div className="glass-card rounded-2xl overflow-hidden hover:border-indigo-500/20 transition-all duration-300">
+        <div className="glass-card rounded-2xl overflow-hidden hover:border-orange-500/30 transition-all duration-300">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
@@ -258,11 +258,11 @@ const Users = () => {
                     onClick={() => setSelectedUser(user)} 
                     className="hover:bg-[var(--bg-table-row-hover)] transition-colors cursor-pointer"
                   >
-                    <td className="py-4 px-6 font-mono font-semibold text-xs sm:text-sm text-indigo-500">USR-{user.id}</td>
+                    <td className="py-4 px-6 font-mono font-semibold text-xs sm:text-sm text-orange-400">USR-{user.id}</td>
                     <td className="py-4 px-6 font-semibold text-sm text-[var(--text-primary)]">{user.name}</td>
                     <td className="py-4 px-6 text-sm text-[var(--text-secondary)]">{user.email}</td>
                     <td className="py-4 px-6 text-sm text-center">
-                      <span className="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-500/10 text-indigo-500 border border-indigo-500/20">
+                      <span className="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-orange-500/10 text-orange-400 border border-orange-500/20">
                         {user.interviews}
                       </span>
                     </td>
@@ -271,7 +271,7 @@ const Users = () => {
                       <div className="flex items-center justify-end gap-2 relative">
                         <button 
                           onClick={(e) => { e.stopPropagation(); setSelectedUser(user); }} 
-                          className="p-2 rounded-xl border border-[var(--border-card)] text-[var(--text-secondary)] hover:text-indigo-500 hover:bg-[var(--bg-card-hover)] transition-all"
+                          className="p-2 rounded-xl border border-[var(--border-card)] text-[var(--text-secondary)] hover:text-orange-500 hover:bg-[var(--bg-card-hover)] transition-all"
                           title="View user details"
                         >
                           <Eye className="w-4 h-4" />
@@ -324,7 +324,7 @@ const Users = () => {
             <div className="space-y-3.5 p-4 rounded-2xl bg-[var(--bg-table-header)] border border-[var(--border-table)]">
               <div>
                 <p className="text-xs text-[var(--text-muted)] font-medium">User ID</p>
-                <p className="font-mono text-sm font-semibold text-indigo-500">USR-{selectedUser.id}</p>
+                <p className="font-mono text-sm font-semibold text-orange-400">USR-{selectedUser.id}</p>
               </div>
               <div>
                 <p className="text-xs text-[var(--text-muted)] font-medium">Full Name</p>

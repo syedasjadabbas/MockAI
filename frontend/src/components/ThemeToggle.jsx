@@ -11,8 +11,8 @@ const ThemeToggle = ({ className = '', showLabel = false }) => {
       onClick={toggleTheme}
       className={`relative p-2.5 rounded-xl transition-all duration-200 flex items-center gap-2 border ${
         isDark 
-          ? 'bg-slate-800/60 hover:bg-slate-700/60 border-slate-700/50 text-amber-400 hover:text-amber-300' 
-          : 'bg-white hover:bg-slate-50 border-slate-200 text-indigo-600 hover:text-indigo-700 shadow-sm'
+          ? 'bg-[#202020] hover:bg-[#2A2A2A] border-[#2A2A2A] text-amber-400 hover:text-amber-300' 
+          : 'bg-white hover:bg-neutral-50 border-[#E5E0D8] text-orange-600 hover:text-orange-700 shadow-sm'
       } ${className}`}
       title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
       aria-label={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
@@ -21,7 +21,7 @@ const ThemeToggle = ({ className = '', showLabel = false }) => {
         {isDark ? (
           <Sun className="w-5 h-5 transition-transform duration-300 rotate-0 hover:rotate-45 text-amber-400" />
         ) : (
-          <Moon className="w-5 h-5 transition-transform duration-300 -rotate-12 hover:rotate-0 text-indigo-600" />
+          <Moon className="w-5 h-5 transition-transform duration-300 -rotate-12 hover:rotate-0 text-orange-600" />
         )}
       </div>
       {showLabel && (
