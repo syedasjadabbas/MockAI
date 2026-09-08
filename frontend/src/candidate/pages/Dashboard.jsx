@@ -1,4 +1,4 @@
-import React, { useEffect, useState, Suspense, lazy } from 'react';
+import React, { useEffect, useState, Suspense, lazy, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Plus,
@@ -82,6 +82,22 @@ function getCategoryIcon(categoryName = '') {
   return Briefcase;
 }
 
+// Curated multi-industry balance: 12 diverse professional career fields
+const PREFERRED_TRACK_ORDER = [
+  'Frontend Development',
+  'Healthcare & Medicine',
+  'Marketing & Brand Management',
+  'Education & Teaching',
+  'Backend & Distributed Systems',
+  'Law & Legal Practice',
+  'Accounting & Financial Analysis',
+  'Graphic & Visual Design',
+  'Human Resources & Talent Management',
+  'Civil & Structural Engineering',
+  'Sales Leadership & Client Acquisition',
+  'Behavioral & Leadership',
+];
+
 // FR04 / FR05 - Main Candidate Dashboard: Editorial Overview & Session Launcher
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -111,6 +127,20 @@ const Dashboard = () => {
     loadData();
     return () => { isMounted = false; };
   }, []);
+
+  const orderedCategories = useMemo(() => {
+    if (!categories || categories.length === 0) return [];
+    const map = new Map(categories.map((c) => [c.name, c]));
+    const list = [];
+    PREFERRED_TRACK_ORDER.forEach((name) => {
+      if (map.has(name)) {
+        list.push(map.get(name));
+        map.delete(name);
+      }
+    });
+    map.forEach((c) => list.push(c));
+    return list.slice(0, 12);
+  }, [categories]);
 
   const handleLaunchCategory = async (category) => {
     setLaunchingId(category.id);
@@ -333,7 +363,7 @@ const Dashboard = () => {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {categories.slice(0, 6).map((cat) => {
+              {orderedCategories.map((cat) => {
                 const Icon = getCategoryIcon(cat.name);
                 const Schematic = getDomainSchematic(cat.name);
                 const isLaunching = launchingId === cat.id;

@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useState, useEffect, useRef } from 'react';
+import React, { Suspense, lazy, useState, useEffect, useRef, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowRight,
@@ -14,27 +14,153 @@ import {
   Terminal,
   Activity,
   CheckCircle2,
+  Server,
+  Users,
+  Briefcase,
+  Stethoscope,
+  GraduationCap,
+  Calculator,
+  Scale,
+  Megaphone,
+  Palette,
+  HardHat,
 } from 'lucide-react';
 import PublicNav from '../components/PublicNav';
 import AnimatedBackground3D from '../components/AnimatedBackground3D';
 import { CANDIDATE_IMAGES } from '../assets/images';
 import { isAuthenticated } from '../services/candidateAuth';
-import { CornerReticles, LiveAudioWaveform, LiveVideoIndicator } from '../components/TechnicalDoodles';
+import { getCategories } from '../services/candidateApi';
+import {
+  CornerReticles,
+  LiveAudioWaveform,
+  LiveVideoIndicator,
+  FrontendLayoutSchematic,
+  BackendClusterSchematic,
+  NeuralNodesDiagram,
+  BehavioralDialogueSchematic,
+  SqlMatrixSchematic,
+} from '../components/TechnicalDoodles';
 import TypewriterCode from '../components/TypewriterCode';
 
 const HeroScene3D = lazy(() => import('../components/HeroScene3D'));
+
+// Map domain tracks to tailored micro schematics
+function getDomainSchematic(categoryName = '') {
+  const str = categoryName.toLowerCase();
+  if (str.includes('front') || str.includes('web') || str.includes('react') || str.includes('ui')) return FrontendLayoutSchematic;
+  if (str.includes('back') || str.includes('node') || str.includes('server') || str.includes('distribut')) return BackendClusterSchematic;
+  if (str.includes('ai') || str.includes('ml') || str.includes('learning') || str.includes('neural')) return NeuralNodesDiagram;
+  if (str.includes('behav') || str.includes('leader') || str.includes('culture') || str.includes('hr')) return BehavioralDialogueSchematic;
+  if (str.includes('data') || str.includes('sql') || str.includes('db') || str.includes('analyt')) return SqlMatrixSchematic;
+  return null;
+}
+
+// Map tracks to icons
+function getCategoryIcon(categoryName = '') {
+  const str = categoryName.toLowerCase();
+  if (str.includes('health') || str.includes('medic') || str.includes('doctor')) return Stethoscope;
+  if (str.includes('teach') || str.includes('educat')) return GraduationCap;
+  if (str.includes('account') || str.includes('financ')) return Calculator;
+  if (str.includes('law') || str.includes('legal')) return Scale;
+  if (str.includes('market') || str.includes('brand')) return Megaphone;
+  if (str.includes('human') || str.includes('talent') || str.includes('recruit') || str.includes('hr') || str.includes('behav') || str.includes('leader')) return Users;
+  if (str.includes('design') || str.includes('graphic')) return Palette;
+  if (str.includes('civil') || str.includes('structur') || str.includes('construct')) return HardHat;
+  if (str.includes('sale') || str.includes('client') || str.includes('revenue')) return TrendingUp;
+  if (str.includes('front') || str.includes('react') || str.includes('web')) return Code2;
+  if (str.includes('back') || str.includes('node') || str.includes('server') || str.includes('system')) return Server;
+  return Briefcase;
+}
+
+const PREFERRED_TRACK_ORDER = [
+  'Frontend Development',
+  'Healthcare & Medicine',
+  'Marketing & Brand Management',
+  'Education & Teaching',
+  'Backend & Distributed Systems',
+  'Law & Legal Practice',
+  'Accounting & Financial Analysis',
+  'Graphic & Visual Design',
+  'Human Resources & Talent Management',
+  'Civil & Structural Engineering',
+  'Sales Leadership & Client Acquisition',
+  'Behavioral & Leadership',
+];
+
+const CURATED_TRACKS = [
+  {
+    name: 'Frontend Development',
+    description: 'Core web concepts, React, modern JavaScript, CSS architecture, browser APIs, and frontend performance.',
+    questionCount: 5,
+  },
+  {
+    name: 'Healthcare & Medicine',
+    description: 'Clinical diagnosis, patient communication, triage protocols, medical ethics, and evidence-based treatment.',
+    questionCount: 5,
+  },
+  {
+    name: 'Marketing & Brand Management',
+    description: 'Campaign attribution, CAC/LTV economics, brand positioning, growth funnels, and multichannel strategy.',
+    questionCount: 5,
+  },
+  {
+    name: 'Education & Teaching',
+    description: 'Curriculum planning, classroom management, differentiated instruction, student engagement, and pedagogical assessment.',
+    questionCount: 5,
+  },
+  {
+    name: 'Backend & Distributed Systems',
+    description: 'API design, SQL & NoSQL databases, microservices, authentication security, caching, and scalability.',
+    questionCount: 5,
+  },
+  {
+    name: 'Law & Legal Practice',
+    description: 'Contract negotiation, statutory compliance, litigation risk, ethical standards, and client confidentiality.',
+    questionCount: 5,
+  },
+  {
+    name: 'Accounting & Financial Analysis',
+    description: 'Financial reporting, cash flow forecasting, variance analysis, GAAP/IFRS standards, and tax compliance.',
+    questionCount: 5,
+  },
+  {
+    name: 'Graphic & Visual Design',
+    description: 'Design systems, visual hierarchy, typography, brand identity, user empathy, and client critique handling.',
+    questionCount: 5,
+  },
+  {
+    name: 'Human Resources & Talent Management',
+    description: 'Talent acquisition, employee relations, performance reviews, workplace conflict mediation, and labor compliance.',
+    questionCount: 5,
+  },
+  {
+    name: 'Civil & Structural Engineering',
+    description: 'Structural integrity, foundation load calculations, seismic building codes, environmental impact, and site safety.',
+    questionCount: 5,
+  },
+  {
+    name: 'Sales Leadership & Client Acquisition',
+    description: 'Enterprise sales cycles, objection handling, pipeline forecasting, value discovery, and client retention.',
+    questionCount: 5,
+  },
+  {
+    name: 'Behavioral & Leadership',
+    description: 'Conflict resolution, executive presence, team mentorship, strategic prioritization, and workplace values.',
+    questionCount: 5,
+  },
+];
 
 // Typewriter Code Snippets — Calibrated Professional Syntax Highlighting
 const STEP1_CODE_LINES = [
   [{ text: '{', color: '#71717A' }],
   [
     { text: '  "track": ', color: '#A1A1AA' },
-    { text: '"distributed_systems"', color: '#86EFAC' },
+    { text: '"healthcare_medicine"', color: '#86EFAC' },
     { text: ',', color: '#71717A' },
   ],
   [
-    { text: '  "tier": ', color: '#A1A1AA' },
-    { text: '"Senior L5"', color: '#86EFAC' },
+    { text: '  "role": ', color: '#A1A1AA' },
+    { text: '"Clinical Specialist"', color: '#86EFAC' },
     { text: ',', color: '#71717A' },
   ],
   [
@@ -211,6 +337,35 @@ const AnimatedScoreMeter = ({ label, targetPercent, color = '#FF6B35' }) => {
 const LandingPage = () => {
   const authed = isAuthenticated();
   const ctaDestination = authed ? '/interview/goal' : '/register';
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    getCategories()
+      .then((data) => {
+        if (!isMounted) return;
+        if (Array.isArray(data) && data.length > 0) {
+          const map = new Map(data.map((c) => [c.name, c]));
+          const list = [];
+          PREFERRED_TRACK_ORDER.forEach((name) => {
+            if (map.has(name)) {
+              list.push(map.get(name));
+              map.delete(name);
+            }
+          });
+          map.forEach((c) => list.push(c));
+          setCategories(list.slice(0, 12));
+        } else {
+          setCategories(CURATED_TRACKS);
+        }
+      })
+      .catch(() => {
+        if (isMounted) setCategories(CURATED_TRACKS);
+      });
+    return () => { isMounted = false; };
+  }, []);
+
+  const displayTracks = categories.length > 0 ? categories : CURATED_TRACKS;
 
   return (
     <div
@@ -346,7 +501,7 @@ const LandingPage = () => {
                         STEP 01
                       </span>
                       <span className="px-2 py-0.5 rounded-md font-mono text-[10px] font-medium bg-white/[0.04] text-zinc-300 border border-white/[0.08] flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-orange-400/80" /> 5 TRACKS AVAILABLE
+                        <span className="w-1.5 h-1.5 rounded-full bg-orange-400/80" /> 16+ DOMAINS AVAILABLE
                       </span>
                     </div>
 
@@ -357,8 +512,8 @@ const LandingPage = () => {
                         <div className="flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full bg-orange-500" />
                           <div>
-                            <p className="text-[11px] font-bold text-[#F5F5F5] leading-none">Distributed Systems</p>
-                            <p className="text-[9.5px] font-mono text-zinc-400 mt-0.5">High-Scale Backend • L5 Tier</p>
+                            <p className="text-[11px] font-bold text-[#F5F5F5] leading-none">Healthcare & Medicine</p>
+                            <p className="text-[9.5px] font-mono text-zinc-400 mt-0.5">Clinical Protocol • Senior Practitioner</p>
                           </div>
                         </div>
                         <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-orange-500/15 text-orange-200 font-medium uppercase tracking-wider border border-orange-500/30">
@@ -369,13 +524,13 @@ const LandingPage = () => {
                       {/* Secondary Track 1 */}
                       <div className="p-1.5 rounded-md border border-white/[0.06] bg-white/[0.02] flex items-center gap-1.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-zinc-600" />
-                        <span className="text-[10px] text-zinc-400 font-medium truncate">AI & Machine Learning</span>
+                        <span className="text-[10px] text-zinc-400 font-medium truncate">Marketing & Brand</span>
                       </div>
 
                       {/* Secondary Track 2 */}
                       <div className="p-1.5 rounded-md border border-white/[0.06] bg-white/[0.02] flex items-center gap-1.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-zinc-600" />
-                        <span className="text-[10px] text-zinc-400 font-medium truncate">Frontend Architecture</span>
+                        <span className="text-[10px] text-zinc-400 font-medium truncate">Frontend Development</span>
                       </div>
                     </div>
 
@@ -509,6 +664,95 @@ const LandingPage = () => {
                 </div>
               </div>
 
+            </div>
+
+          </div>
+        </section>
+
+        {/* ===================================================================
+            SECTION — INTERVIEW TRACKS / DOMAINS (Multi-Industry Balanced Mix)
+           =================================================================== */}
+        <section id="tracks" aria-label="Available Practice Tracks" className="border-b py-16 sm:py-24" style={{ borderColor: 'var(--c-border)' }}>
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            
+            {/* Section Header */}
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-12 gap-4">
+              <div className="max-w-2xl space-y-2">
+                <p className="c-eyebrow" style={{ color: 'var(--c-accent)' }}>Domains</p>
+                <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight" style={{ color: 'var(--c-text)' }}>
+                  Interview Tracks.
+                </h2>
+                <p className="text-sm sm:text-base leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
+                  Practice realistic, role-tailored mock interviews across diverse professional industries.
+                </p>
+              </div>
+              <Link
+                to={ctaDestination}
+                className="text-xs font-semibold flex items-center gap-1 hover:opacity-80 transition-opacity shrink-0"
+                style={{ color: 'var(--c-text-secondary)' }}
+              >
+                <span>All topics</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+
+            {/* 12 Practice Track Cards Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {displayTracks.map((cat) => {
+                const Icon = getCategoryIcon(cat.name);
+                const Schematic = getDomainSchematic(cat.name);
+
+                return (
+                  <Link
+                    key={cat.id || cat.name}
+                    to={ctaDestination}
+                    className="c-card c-card-hover text-left p-5 rounded-lg flex flex-col justify-between group transition-all relative overflow-hidden block select-none"
+                    style={{
+                      background: 'var(--c-surface-card)',
+                      borderColor: 'var(--c-border)',
+                    }}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <div
+                          className="w-9 h-9 rounded-md flex items-center justify-center border transition-colors group-hover:border-orange-500/50"
+                          style={{
+                            background: 'var(--c-surface-muted)',
+                            borderColor: 'var(--c-border)',
+                            color: 'var(--c-text)',
+                          }}
+                        >
+                          <Icon className="w-4.5 h-4.5" />
+                        </div>
+                        {Schematic && (
+                          <div className="opacity-40 group-hover:opacity-100 transition-opacity" style={{ color: 'var(--c-text-muted)' }}>
+                            <Schematic size={24} />
+                          </div>
+                        )}
+                      </div>
+                      <h3 className="text-sm font-bold mb-1 group-hover:text-orange-500 transition-colors" style={{ color: 'var(--c-text)' }}>
+                        {cat.name}
+                      </h3>
+                      <p className="text-xs leading-relaxed line-clamp-2" style={{ color: 'var(--c-text-secondary)' }}>
+                        {cat.description || 'Targeted interview practice with structured prompts and AI scoring.'}
+                      </p>
+                    </div>
+
+                    <div
+                      className="mt-5 pt-3 border-t flex items-center justify-between text-xs font-medium"
+                      style={{ borderColor: 'var(--c-border)' }}
+                    >
+                      <span style={{ color: 'var(--c-text-muted)' }}>
+                        {cat.questionCount ? `${cat.questionCount} Questions` : 'Official Track'}
+                      </span>
+                      <span className="flex items-center gap-1 font-semibold text-orange-500" style={{ color: 'var(--c-accent)' }}>
+                        <span>Start Practice</span>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </span>
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
 
           </div>
