@@ -11,6 +11,15 @@ import {
   Users,
   Database,
   Briefcase,
+  Stethoscope,
+  HeartPulse,
+  GraduationCap,
+  Calculator,
+  Scale,
+  Megaphone,
+  Palette,
+  HardHat,
+  TrendingUp,
 } from 'lucide-react';
 import CandidateNav from '../components/CandidateNav';
 import AnimatedBackground3D from '../components/AnimatedBackground3D';
@@ -56,10 +65,19 @@ function getDomainSchematic(categoryName = '') {
 // Map tracks to icons
 function getCategoryIcon(categoryName = '') {
   const str = categoryName.toLowerCase();
+  if (str.includes('health') || str.includes('medic') || str.includes('doctor')) return Stethoscope;
+  if (str.includes('nurs') || str.includes('patient')) return HeartPulse;
+  if (str.includes('teach') || str.includes('educat')) return GraduationCap;
+  if (str.includes('account') || str.includes('financ')) return Calculator;
+  if (str.includes('law') || str.includes('legal')) return Scale;
+  if (str.includes('market') || str.includes('brand')) return Megaphone;
+  if (str.includes('human') || str.includes('talent') || str.includes('recruit') || str.includes('hr') || str.includes('behav') || str.includes('leader')) return Users;
+  if (str.includes('design') || str.includes('graphic')) return Palette;
+  if (str.includes('civil') || str.includes('structur') || str.includes('construct')) return HardHat;
+  if (str.includes('sale') || str.includes('client') || str.includes('revenue')) return TrendingUp;
   if (str.includes('front') || str.includes('react') || str.includes('web')) return Code2;
   if (str.includes('back') || str.includes('node') || str.includes('server') || str.includes('system')) return Server;
   if (str.includes('ai') || str.includes('ml') || str.includes('learning')) return Cpu;
-  if (str.includes('behavioral') || str.includes('hr') || str.includes('leader')) return Users;
   if (str.includes('data') || str.includes('sql') || str.includes('database')) return Database;
   return Briefcase;
 }

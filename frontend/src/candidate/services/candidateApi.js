@@ -71,10 +71,10 @@ export async function getQuestionsForCategory(categoryId, { limit } = {}) {
 // FR06 / FR09 / FR10 / FR32 / FR33 - Interview session lifecycle
 // ---------------------------------------------------------------------------
 
-export async function startInterview({ categoryId, interviewType }) {
+export async function startInterview({ categoryId, interviewType, role }) {
   const doc = await fetchCandidateApi('/interviews', {
     method: 'POST',
-    body: JSON.stringify({ category_id: categoryId, type: interviewType }),
+    body: JSON.stringify({ category_id: categoryId, type: interviewType, role }),
   });
   return toFrontendInterview(doc);
 }

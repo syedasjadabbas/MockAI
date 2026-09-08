@@ -123,7 +123,7 @@ def evaluate_question_response(
             strengths.append("Smooth conversational delivery with minimal hesitation.")
         content_score = nlp_result.get("content_score", 0.0)
         if content_score >= 80.0:
-            strengths.append("Thorough technical depth addressing core requirements.")
+            strengths.append("Thorough domain depth addressing core requirements.")
         if facial_analysis_data.get("status") == "completed":
             indicators = facial_analysis_data.get("behavioral_indicators", {})
             if indicators.get("composure_index") == "Composed & Stable":

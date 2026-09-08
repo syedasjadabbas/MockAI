@@ -1,6 +1,26 @@
-﻿import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Code2, Users, Compass, Server, Cpu, BarChart3, AlertCircle, CheckCircle2 } from 'lucide-react';
+import {
+  ArrowRight,
+  Code2,
+  Users,
+  Compass,
+  Server,
+  Cpu,
+  BarChart3,
+  AlertCircle,
+  CheckCircle2,
+  Stethoscope,
+  HeartPulse,
+  GraduationCap,
+  Calculator,
+  Scale,
+  Megaphone,
+  Palette,
+  HardHat,
+  Briefcase,
+  TrendingUp,
+} from 'lucide-react';
 import InterviewFlowLayout from '../layouts/InterviewFlowLayout';
 import { INTERVIEW_TYPES } from '../data/categories';
 import { getCategories, startInterview } from '../services/candidateApi';
@@ -25,10 +45,50 @@ function getDomainSchematic(categoryName = '') {
   return null;
 }
 
-const CATEGORY_ICONS = { Code: Code2, Server, Cpu, BarChart3, Users, Folder: Code2 };
+const CATEGORY_ICONS = {
+  Code: Code2,
+  Server,
+  Cpu,
+  BarChart3,
+  Users,
+  Folder: Briefcase,
+  Stethoscope,
+  HeartPulse,
+  GraduationCap,
+  Calculator,
+  Scale,
+  Megaphone,
+  Palette,
+  HardHat,
+  Briefcase,
+  TrendingUp,
+};
+
+function getCategoryDisplayIcon(cat) {
+  if (cat?.icon && CATEGORY_ICONS[cat.icon]) {
+    return CATEGORY_ICONS[cat.icon];
+  }
+  const name = (cat?.name || '').toLowerCase();
+  if (name.includes('health') || name.includes('medic') || name.includes('doctor')) return Stethoscope;
+  if (name.includes('nurs') || name.includes('patient')) return HeartPulse;
+  if (name.includes('teach') || name.includes('educat')) return GraduationCap;
+  if (name.includes('account') || name.includes('financ')) return Calculator;
+  if (name.includes('law') || name.includes('legal')) return Scale;
+  if (name.includes('market') || name.includes('brand')) return Megaphone;
+  if (name.includes('human') || name.includes('talent') || name.includes('recruit') || name.includes('hr')) return Users;
+  if (name.includes('design') || name.includes('graphic')) return Palette;
+  if (name.includes('civil') || name.includes('structur') || name.includes('construct')) return HardHat;
+  if (name.includes('business') || name.includes('analyst') || name.includes('strateg')) return Briefcase;
+  if (name.includes('sale') || name.includes('client') || name.includes('revenue')) return TrendingUp;
+  if (name.includes('front') || name.includes('web') || name.includes('react')) return Code2;
+  if (name.includes('back') || name.includes('node') || name.includes('server')) return Server;
+  if (name.includes('ai') || name.includes('machine') || name.includes('ml')) return Cpu;
+  if (name.includes('data') || name.includes('sql')) return BarChart3;
+  return Briefcase;
+}
 
 function inferInterviewType(category) {
-  return /behav/i.test(category.name) ? 'behavioral' : 'technical';
+  return /behav|leadership/i.test(category.name) ? 'behavioral' : 'technical';
 }
 
 function getCategoriesByType(categories, typeId) {
@@ -39,20 +99,60 @@ function getCategoriesByType(categories, typeId) {
 }
 
 function matchCategoryFromText(text, categories) {
-  const t = (text || '').toLowerCase();
-  const rules = [
-    { keywords: ['frontend', 'front-end', 'react', 'css', 'javascript', 'ui', 'web'], test: (name) => /frontend/i.test(name) },
-    { keywords: ['backend', 'back-end', 'api', 'database', 'server', 'microservice'], test: (name) => /backend/i.test(name) },
-    { keywords: ['machine learning', ' ai ', 'artificial intelligence', 'nlp', 'data scien', 'model'], test: (name) => /machine learning|artificial intelligence/i.test(name) },
-    { keywords: ['data analy', 'analytics', 'sql', 'dashboard', 'reporting'], test: (name) => /data analytics|sql/i.test(name) },
-    { keywords: ['hr', 'behavioral', 'behaviour', 'leadership', 'situational', 'teamwork', 'manager', 'conflict'], test: (name) => /behavioral|leadership/i.test(name) },
+  const t = (text || '').toLowerCase().trim();
+  if (!t) return null;
+
+  // 1. Direct or partial match on category name
+  const directMatch = categories.find((c) => c.name.toLowerCase() === t);
+  if (directMatch) return directMatch;
+
+  const subMatch = categories.find((c) => c.name.toLowerCase().includes(t) || t.includes(c.name.toLowerCase()));
+  if (subMatch) return subMatch;
+
+  // 2. Comprehensive role synonyms for ALL professional careers
+  const domainRules = [
+    // Healthcare & Medicine
+    { keywords: ['doctor', 'physician', 'medicine', 'medical', 'clinical', 'hospital', 'surgeon', 'pediatrician', 'cardiolog', 'gp', 'resident'], test: (n) => /healthcare|medicine/i.test(n) },
+    // Nursing
+    { keywords: ['nurse', 'nursing', 'patient care', 'triage', 'icu', 'rn', 'vital sign', 'caregiver', 'clinic nurse'], test: (n) => /nursing|patient care/i.test(n) },
+    // Education & Teaching
+    { keywords: ['teacher', 'teaching', 'education', 'educator', 'instructor', 'professor', 'pedagogy', 'curriculum', 'school', 'tutor'], test: (n) => /education|teaching/i.test(n) },
+    // Accounting & Finance
+    { keywords: ['accountant', 'accounting', 'auditor', 'audit', 'financial', 'finance', 'cpa', 'bookkeep', 'tax', 'balance sheet', 'gaap', 'ifrs'], test: (n) => /accounting|financial/i.test(n) },
+    // Law & Legal Practice
+    { keywords: ['lawyer', 'attorney', 'legal', 'law', 'litigation', 'counsel', 'paralegal', 'barrister', 'juris', 'court', 'contract law'], test: (n) => /law|legal/i.test(n) },
+    // Marketing & Brand
+    { keywords: ['marketing', 'brand', 'campaign', 'seo', 'growth', 'advertising', 'marketing manager', 'social media', 'content strategy', 'cmo'], test: (n) => /marketing/i.test(n) },
+    // HR & Talent
+    { keywords: ['hr', 'human resources', 'talent', 'recruiter', 'recruiting', 'onboarding', 'hr manager', 'people ops', 'people operations'], test: (n) => /human resources|talent/i.test(n) },
+    // Graphic & Visual Design
+    { keywords: ['graphic designer', 'graphic design', 'ui/ux', 'visual design', 'illustrator', 'photoshop', 'figma', 'designer', 'art director', 'creative director'], test: (n) => /graphic|design/i.test(n) },
+    // Civil Engineering
+    { keywords: ['civil engineer', 'civil engineering', 'structural engineer', 'autocad', 'construction', 'concrete', 'infrastructure', 'bridge', 'site engineer'], test: (n) => /civil|structural/i.test(n) },
+    // Business Analysis & Strategy
+    { keywords: ['business analyst', 'business analysis', 'requirements', 'stakeholder', 'product owner', 'user stories', 'process optimization', 'bpm'], test: (n) => /business analysis|strategy/i.test(n) },
+    // Sales Leadership
+    { keywords: ['sales', 'sales manager', 'account executive', 'prospecting', 'quota', 'b2b sales', 'client acquisition', 'closer', 'sales director'], test: (n) => /sales/i.test(n) },
+    // IT / Software Tracks
+    { keywords: ['frontend', 'front-end', 'react', 'css', 'javascript', 'vue', 'angular', 'web dev', 'web developer', 'html', 'typescript'], test: (n) => /frontend/i.test(n) },
+    { keywords: ['backend', 'back-end', 'api', 'database', 'server', 'node', 'django', 'microservice', 'distributed', 'fastapi', 'golang', 'java'], test: (n) => /backend/i.test(n) },
+    { keywords: ['machine learning', ' ai ', 'artificial intelligence', 'nlp', 'deep learning', 'model', 'data science', 'llm', 'computer vision'], test: (n) => /machine learning|artificial intelligence/i.test(n) },
+    { keywords: ['data analyst', 'data analytics', 'sql', 'bi', 'tableau', 'powerbi', 'dashboard', 'reporting'], test: (n) => /data analytics|sql/i.test(n) },
+    // Behavioral & Leadership
+    { keywords: ['behavioral', 'behaviour', 'leadership', 'situational', 'teamwork', 'manager', 'conflict', 'soft skill'], test: (n) => /behavioral|leadership/i.test(n) },
   ];
-  for (const rule of rules) {
-    if (rule.keywords.some((k) => t.includes(k))) {
+
+  for (const rule of domainRules) {
+    if (rule.keywords.some((k) => t.includes(k) || k.includes(t))) {
       const found = categories.find((c) => rule.test(c.name));
       if (found) return found;
     }
   }
+
+  // 3. Match within category description
+  const descMatch = categories.find((c) => (c.description || '').toLowerCase().includes(t));
+  if (descMatch) return descMatch;
+
   return null;
 }
 
@@ -65,6 +165,7 @@ const GoalSelection = () => {
   const [stage, setStage] = useState('ask-goal'); // ask-goal -> ask-type -> confirm
   const [selectedType, setSelectedType] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [customRole, setCustomRole] = useState('');
   const [starting, setStarting] = useState(false);
   const [startError, setStartError] = useState('');
   const [categories, setCategories] = useState([]);
@@ -86,11 +187,17 @@ const GoalSelection = () => {
   const pushBot = (text) => setMessages((m) => [...m, { from: 'bot', text }]);
   const pushUser = (text) => setMessages((m) => [...m, { from: 'user', text }]);
 
-  const chooseCategory = (category) => {
-    pushUser(category.name);
+  const chooseCategory = (category, customRoleName = null) => {
+    const roleLabel = customRoleName || category.name;
+    pushUser(roleLabel);
     setSelectedCategory(category);
     setSelectedType(inferInterviewType(category));
-    pushBot(`${category.name} selected. Ready to proceed to setup and calibration?`);
+    if (customRoleName) {
+      setCustomRole(customRoleName);
+    } else {
+      setCustomRole('');
+    }
+    pushBot(`${roleLabel} track selected. Ready to proceed to setup and calibration?`);
     setStage('confirm');
   };
 
@@ -102,7 +209,7 @@ const GoalSelection = () => {
     if (options.length === 1) {
       chooseCategory(options[0]);
     } else {
-      pushBot(`Which domain within ${type.label.toLowerCase()} would you like to focus on?`);
+      pushBot(`Which domain or career track within ${type.label.toLowerCase()} would you like to focus on?`);
       setStage('ask-type');
     }
   };
@@ -115,9 +222,9 @@ const GoalSelection = () => {
 
     const matched = matchCategoryFromText(text, categories);
     if (matched) {
-      chooseCategory(matched);
+      chooseCategory(matched, text);
     } else {
-      pushBot("I didn't catch an exact track â€” pick one of the options below to get started.");
+      pushBot("I didn't catch an exact track — pick one of the options below to get started.");
       setSelectedType(null);
       setStage('ask-type');
     }
@@ -128,7 +235,11 @@ const GoalSelection = () => {
     setStarting(true);
     setStartError('');
     try {
-      const interview = await startInterview({ categoryId: selectedCategory.id, interviewType: selectedType });
+      const interview = await startInterview({
+        categoryId: selectedCategory.id,
+        interviewType: selectedType,
+        role: customRole || selectedCategory.name,
+      });
       navigate(`/interview/${interview.id}/prepare`);
     } catch (err) {
       setStartError(err.message || 'Could not start the interview. Please try again.');
@@ -192,11 +303,11 @@ const GoalSelection = () => {
             </div>
           ) : (
             <>
-              {/* LEVEL 3 â€” Standalone Selectable Track Cards */}
+              {/* LEVEL 3 — Standalone Selectable Track Cards */}
               {stage === 'ask-goal' && (
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                   {INTERVIEW_TYPES.map((type) => {
-                    const Icon = { Code2, Users, Compass }[type.icon] || Code2;
+                    const Icon = { Briefcase, Users, Compass, Code2 }[type.icon] || Briefcase;
                     return (
                       <button
                         key={type.id}
@@ -218,7 +329,7 @@ const GoalSelection = () => {
                             <Icon className="w-4 h-4" />
                           </div>
                           <span className="c-tech-annotation opacity-40 group-hover:opacity-100 transition-opacity">
-                            {type.id === 'technical' ? '[CODE]' : type.id === 'behavioral' ? '[DIALOGUE]' : '[EXPLORE]'}
+                            {type.id === 'technical' ? '[DOMAIN]' : type.id === 'behavioral' ? '[DIALOGUE]' : '[SCENARIO]'}
                           </span>
                         </div>
                         <div>
@@ -226,7 +337,11 @@ const GoalSelection = () => {
                             {type.label}
                           </span>
                           <span className="text-[11px] block mt-0.5" style={{ color: 'var(--c-text-muted)' }}>
-                            {type.id === 'technical' ? 'Algorithmic & architectural prompts' : 'Leadership & team scenarios'}
+                            {type.id === 'technical'
+                              ? 'Domain expertise & role-specific skills'
+                              : type.id === 'behavioral'
+                              ? 'Leadership, ethics & team collaboration'
+                              : 'Real workplace scenarios & decision-making'}
                           </span>
                         </div>
                       </button>
@@ -236,9 +351,9 @@ const GoalSelection = () => {
               )}
 
               {stage === 'ask-type' && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {(selectedType ? getCategoriesByType(categories, selectedType) : categories).map((cat) => {
-                    const Icon = CATEGORY_ICONS[cat.icon] || Code2;
+                    const Icon = getCategoryDisplayIcon(cat);
                     const Schematic = getDomainSchematic(cat.name);
                     return (
                       <button
@@ -286,7 +401,11 @@ const GoalSelection = () => {
                     <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
                     <div>
                       <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--c-text-muted)' }}>Selected Track</p>
-                      <p className="text-base font-bold" style={{ color: 'var(--c-text)' }}>{selectedCategory?.name}</p>
+                      <p className="text-base font-bold" style={{ color: 'var(--c-text)' }}>
+                        {customRole && customRole.toLowerCase() !== selectedCategory?.name?.toLowerCase()
+                          ? `${customRole} (${selectedCategory?.name})`
+                          : selectedCategory?.name}
+                      </p>
                     </div>
                   </div>
 
@@ -295,7 +414,7 @@ const GoalSelection = () => {
                     disabled={starting}
                     className="c-btn c-btn-primary px-6 py-3 text-xs font-bold rounded-md w-full sm:w-auto flex items-center justify-center gap-2"
                   >
-                    <span>{starting ? 'Initializing Sessionâ€¦' : 'Continue to Preparation'}</span>
+                    <span>{starting ? 'Initializing Session…' : 'Continue to Preparation'}</span>
                     {!starting && <ArrowRight className="w-3.5 h-3.5" />}
                   </button>
 
@@ -319,7 +438,7 @@ const GoalSelection = () => {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-              placeholder="Or enter a specific topic â€” e.g., React, System Architecture, Leadership..."
+              placeholder="Or enter any role or domain — e.g., Doctor, Nurse, Teacher, Accountant, Lawyer, React..."
               className="c-input flex-1 px-3.5 py-2.5 rounded-md text-xs"
             />
             <button onClick={handleSend} className="c-btn c-btn-secondary px-4 py-2.5 rounded-md text-xs font-semibold">

@@ -8,20 +8,20 @@
 export const INTERVIEW_TYPES = [
   {
     id: 'technical',
-    label: 'Technical Interview',
-    description: 'Domain knowledge, coding concepts, and system design.',
-    icon: 'Code2',
+    label: 'Domain & Technical Interview',
+    description: 'Domain expertise, core competencies, and practical professional methodologies.',
+    icon: 'Briefcase',
   },
   {
     id: 'behavioral',
-    label: 'HR / Behavioral Interview',
-    description: 'Communication, teamwork, and leadership scenarios.',
+    label: 'HR & Behavioral Interview',
+    description: 'Communication, teamwork, professional ethics, and leadership scenarios.',
     icon: 'Users',
   },
   {
     id: 'situational',
     label: 'Situational Interview',
-    description: 'How you would handle real workplace situations.',
+    description: 'Real-world workplace challenges, decision-making, and critical scenarios.',
     icon: 'Compass',
   },
 ];

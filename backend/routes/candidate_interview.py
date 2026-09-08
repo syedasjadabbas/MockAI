@@ -167,6 +167,8 @@ def _public_interview(doc: dict, include_questions: bool = True) -> dict:
 class StartInterviewRequest(BaseModel):
     category_id: str
     type: Optional[str] = "technical"
+    role: Optional[str] = None
+    target_role: Optional[str] = None
 
 
 @router.post("/interviews", status_code=status.HTTP_201_CREATED)
@@ -200,9 +202,13 @@ def start_interview(data: StartInterviewRequest, token_payload: dict = Depends(v
     now = datetime.utcnow()
     # Candidate identity always comes from the verified JWT, never from the
     # request body - there is no user_id field anywhere in this schema.
+    target_role_name = (data.role or data.target_role or "").strip()
+    role_name = target_role_name if target_role_name else category.get("name")
+
     new_interview = {
         "user_id": token_payload.get("user_id"),
-        "role": category.get("name"),
+        "role": role_name,
+        "target_role": role_name,
         "category_id": data.category_id,
         "type": data.type or "technical",
         "status": "In Progress",

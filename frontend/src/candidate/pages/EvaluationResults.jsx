@@ -196,7 +196,7 @@ const EvaluationResults = () => {
 
   // FR29-01: Performance Dimensions Breakdown Chart
   const dimensionChartData = {
-    labels: ['Technical Content', 'Communication Fluency', 'Behavioral Composure'],
+    labels: ['Domain & Technical Content', 'Communication Fluency', 'Behavioral Composure'],
     datasets: [
       {
         label: 'Score (%)',
@@ -463,7 +463,7 @@ const EvaluationResults = () => {
                   <Bar data={dimensionChartData} options={dimensionChartOptions} />
                 </div>
                 <div className="flex items-center justify-between text-[10px] font-mono text-neutral-400 pt-1 border-t" style={{ borderColor: 'var(--c-border)' }}>
-                  <span>Technical: {Math.round(dimensionScores?.technical_content ?? 0)}%</span>
+                  <span>Domain: {Math.round(dimensionScores?.technical_content ?? 0)}%</span>
                   <span>Fluency: {Math.round(dimensionScores?.communication_fluency ?? 0)}%</span>
                   <span>Composure: {hasVisionSummary ? `${Math.round(dimensionScores?.behavioral_composure ?? 0)}%` : 'Offline'}</span>
                 </div>

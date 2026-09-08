@@ -24,116 +24,116 @@ import TypewriterCode from '../components/TypewriterCode';
 
 const HeroScene3D = lazy(() => import('../components/HeroScene3D'));
 
-// Typewriter Code Snippets
+// Typewriter Code Snippets — Calibrated Professional Syntax Highlighting
 const STEP1_CODE_LINES = [
-  [{ text: '{', color: '#FF9F1C' }],
+  [{ text: '{', color: '#71717A' }],
   [
-    { text: '  "track": ', color: '#A3A3A3' },
-    { text: '"distributed_systems"', color: '#22C55E' },
-    { text: ',', color: '#A3A3A3' },
+    { text: '  "track": ', color: '#A1A1AA' },
+    { text: '"distributed_systems"', color: '#86EFAC' },
+    { text: ',', color: '#71717A' },
   ],
   [
-    { text: '  "tier": ', color: '#A3A3A3' },
-    { text: '"Senior L5"', color: '#22C55E' },
-    { text: ',', color: '#A3A3A3' },
+    { text: '  "tier": ', color: '#A1A1AA' },
+    { text: '"Senior L5"', color: '#86EFAC' },
+    { text: ',', color: '#71717A' },
   ],
   [
-    { text: '  "duration": ', color: '#A3A3A3' },
-    { text: '45', color: '#FF6B35' },
+    { text: '  "duration": ', color: '#A1A1AA' },
+    { text: '45', color: '#FDBA74' },
   ],
-  [{ text: '}', color: '#FF9F1C' }],
+  [{ text: '}', color: '#71717A' }],
 ];
 
 const STEP2_CODE_LINES = [
-  [{ text: '// Live ASR Stream', color: '#FF9F1C' }],
+  [{ text: '// Live ASR Stream', color: '#64748B' }],
   [
-    { text: 'session', color: '#60A5FA' },
-    { text: '.onAudioFrame((chunk) => {', color: '#F5F5F5' },
+    { text: 'session', color: '#93C5FD' },
+    { text: '.onAudioFrame((chunk) => {', color: '#E2E8F0' },
   ],
   [
-    { text: '  evaluator.', color: '#A3A3A3' },
-    { text: 'trackCadence', color: '#FBBF24' },
-    { text: '(chunk.wpm);', color: '#F5F5F5' },
+    { text: '  evaluator.', color: '#A1A1AA' },
+    { text: 'trackCadence', color: '#C4B5FD' },
+    { text: '(chunk.wpm);', color: '#E2E8F0' },
   ],
-  [{ text: '});', color: '#F5F5F5' }],
+  [{ text: '});', color: '#71717A' }],
 ];
 
 const STEP3_CODE_LINES = [
-  [{ text: '// Multimodal Evaluation Output', color: '#FF9F1C' }],
-  [{ text: '{', color: '#FF9F1C' }],
+  [{ text: '// Multimodal Evaluation Output', color: '#64748B' }],
+  [{ text: '{', color: '#71717A' }],
   [
-    { text: '  "content": { "accuracy": ', color: '#A3A3A3' },
-    { text: '94.5', color: '#FF6B35' },
-    { text: ' },', color: '#A3A3A3' },
+    { text: '  "content": { "accuracy": ', color: '#A1A1AA' },
+    { text: '94.5', color: '#FDBA74' },
+    { text: ' },', color: '#71717A' },
   ],
   [
-    { text: '  "speech": { "clarity": ', color: '#A3A3A3' },
-    { text: '91.0', color: '#60A5FA' },
-    { text: ' },', color: '#A3A3A3' },
+    { text: '  "speech": { "clarity": ', color: '#A1A1AA' },
+    { text: '91.0', color: '#FDBA74' },
+    { text: ' },', color: '#71717A' },
   ],
   [
-    { text: '  "vision": { "facial": ', color: '#A3A3A3' },
-    { text: '"ANALYZED"', color: '#22C55E' },
-    { text: ' },', color: '#A3A3A3' },
+    { text: '  "vision": { "facial": ', color: '#A1A1AA' },
+    { text: '"ANALYZED"', color: '#86EFAC' },
+    { text: ' },', color: '#71717A' },
   ],
   [
-    { text: '  "overall_score": ', color: '#A3A3A3' },
-    { text: '93.2', color: '#22C55E' },
+    { text: '  "overall_score": ', color: '#A1A1AA' },
+    { text: '93.2', color: '#FDBA74' },
   ],
-  [{ text: '}', color: '#FF9F1C' }],
+  [{ text: '}', color: '#71717A' }],
 ];
 
 const EVALUATOR_CODE_LINES = [
-  [{ text: '// Multimodal Evaluation Output', color: '#60A5FA' }],
-  [{ text: '{', color: '#FF9F1C' }],
-  [{ text: '  "content": {', color: '#A3A3A3' }],
+  [{ text: '// Multimodal Evaluation Output', color: '#64748B' }],
+  [{ text: '{', color: '#71717A' }],
+  [{ text: '  "content": {', color: '#A1A1AA' }],
   [
-    { text: '    "technical_accuracy": ', color: '#A3A3A3' },
-    { text: '94.5', color: '#FF6B35' },
-    { text: ',', color: '#A3A3A3' },
+    { text: '    "technical_accuracy": ', color: '#A1A1AA' },
+    { text: '94.5', color: '#FDBA74' },
+    { text: ',', color: '#71717A' },
   ],
   [
-    { text: '    "completeness": ', color: '#A3A3A3' },
-    { text: '96.0', color: '#FF6B35' },
+    { text: '    "completeness": ', color: '#A1A1AA' },
+    { text: '96.0', color: '#FDBA74' },
   ],
-  [{ text: '  },', color: '#A3A3A3' }],
-  [{ text: '  "speech": {', color: '#A3A3A3' }],
+  [{ text: '  },', color: '#71717A' }],
+  [{ text: '  "speech": {', color: '#A1A1AA' }],
   [
-    { text: '    "clarity": ', color: '#A3A3A3' },
-    { text: '91.0', color: '#60A5FA' },
-    { text: ',', color: '#A3A3A3' },
-  ],
-  [
-    { text: '    "pacing_wpm": ', color: '#A3A3A3' },
-    { text: '136', color: '#FF6B35' },
-    { text: ',', color: '#A3A3A3' },
+    { text: '    "clarity": ', color: '#A1A1AA' },
+    { text: '91.0', color: '#FDBA74' },
+    { text: ',', color: '#71717A' },
   ],
   [
-    { text: '    "filler_word_ratio": ', color: '#A3A3A3' },
-    { text: '0.012', color: '#22C55E' },
-  ],
-  [{ text: '  },', color: '#A3A3A3' }],
-  [{ text: '  "vision": {', color: '#A3A3A3' }],
-  [
-    { text: '    "facial_expression": ', color: '#A3A3A3' },
-    { text: '"ANALYZED"', color: '#22C55E' },
-    { text: ',', color: '#A3A3A3' },
+    { text: '    "pacing_wpm": ', color: '#A1A1AA' },
+    { text: '136', color: '#FDBA74' },
+    { text: ',', color: '#71717A' },
   ],
   [
-    { text: '    "confidence_indicator": ', color: '#A3A3A3' },
-    { text: '"ANALYZED"', color: '#22C55E' },
-    { text: ',', color: '#A3A3A3' },
+    { text: '    "filler_word_ratio": ', color: '#A1A1AA' },
+    { text: '0.012', color: '#FDBA74' },
+  ],
+  [{ text: '  },', color: '#71717A' }],
+  [{ text: '  "vision": {', color: '#A1A1AA' }],
+  [
+    { text: '    "facial_expression": ', color: '#A1A1AA' },
+    { text: '"ANALYZED"', color: '#86EFAC' },
+    { text: ',', color: '#71717A' },
   ],
   [
-    { text: '    "stress_indicator": ', color: '#A3A3A3' },
-    { text: '"ANALYZED"', color: '#22C55E' },
+    { text: '    "confidence_indicator": ', color: '#A1A1AA' },
+    { text: '"ANALYZED"', color: '#86EFAC' },
+    { text: ',', color: '#71717A' },
   ],
-  [{ text: '  },', color: '#A3A3A3' }],
   [
-    { text: '  "overall_composite": ', color: '#A3A3A3' },
-    { text: '93.2', color: '#22C55E' },
+    { text: '    "stress_indicator": ', color: '#A1A1AA' },
+    { text: '"ANALYZED"', color: '#86EFAC' },
   ],
-  [{ text: '}', color: '#FF9F1C' }],
+  [{ text: '  },', color: '#71717A' }],
+  [
+    { text: '  "overall_composite": ', color: '#A1A1AA' },
+    { text: '93.2', color: '#FDBA74' },
+  ],
+  [{ text: '}', color: '#71717A' }],
 ];
 
 /**
@@ -334,64 +334,57 @@ const LandingPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               
               {/* Step 01 */}
-              <div className="flex flex-col justify-between p-5 rounded-xl border space-y-4"
-                style={{
-                  background: 'var(--c-surface)',
-                  borderColor: 'var(--c-border)',
-                }}
-              >
+              <div className="flex flex-col justify-between p-5 rounded-xl border border-white/[0.07] bg-white/[0.02] hover:border-white/[0.14] transition-all duration-200 space-y-4 group">
                 <div>
                   {/* Step 1 Visual — Interactive Track Selection Matrix */}
                   <div
-                    className="relative aspect-video rounded-lg overflow-hidden border mb-4 p-3 flex flex-col justify-between select-none group"
-                    style={{
-                      background: '#141414',
-                      borderColor: 'var(--c-border)',
-                    }}
+                    className="relative aspect-video rounded-lg overflow-hidden border border-white/[0.08] mb-4 p-3 flex flex-col justify-between select-none bg-[#0F1013]"
                   >
                     {/* Header Tags */}
                     <div className="flex items-center justify-between z-10">
                       <span className="px-2 py-0.5 rounded-md font-mono text-[10px] font-medium bg-white/[0.05] text-zinc-300 border border-white/[0.08]">
                         STEP 01
                       </span>
-                      <span className="px-2 py-0.5 rounded-md font-mono text-[10px] font-medium bg-amber-500/10 text-amber-300 border border-amber-500/20 flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" /> 5 TRACKS AVAILABLE
+                      <span className="px-2 py-0.5 rounded-md font-mono text-[10px] font-medium bg-white/[0.04] text-zinc-300 border border-white/[0.08] flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-orange-400/80" /> 5 TRACKS AVAILABLE
                       </span>
                     </div>
 
                     {/* Track Selection Card Chips */}
                     <div className="grid grid-cols-2 gap-1.5 my-auto z-10">
                       {/* Active Selected Track */}
-                      <div className="col-span-2 p-2 rounded-md border border-orange-500/30 bg-orange-500/10 flex items-center justify-between transition-all">
+                      <div className="col-span-2 p-2 rounded-md border border-orange-500/25 bg-orange-500/[0.06] flex items-center justify-between transition-all">
                         <div className="flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full bg-orange-500" />
                           <div>
                             <p className="text-[11px] font-bold text-[#F5F5F5] leading-none">Distributed Systems</p>
-                            <p className="text-[9.5px] font-mono text-[#A3A3A3] mt-0.5">High-Scale Backend • L5 Tier</p>
+                            <p className="text-[9.5px] font-mono text-zinc-400 mt-0.5">High-Scale Backend • L5 Tier</p>
                           </div>
                         </div>
-                        <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-white/10 text-white font-medium uppercase tracking-wider border border-white/15">
+                        <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-orange-500/15 text-orange-200 font-medium uppercase tracking-wider border border-orange-500/30">
                           SELECTED
                         </span>
                       </div>
 
                       {/* Secondary Track 1 */}
-                      <div className="p-1.5 rounded-md border border-white/10 bg-white/[0.02] flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-white/40" />
-                        <span className="text-[10px] text-[#A3A3A3] font-medium truncate">AI & Machine Learning</span>
+                      <div className="p-1.5 rounded-md border border-white/[0.06] bg-white/[0.02] flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-zinc-600" />
+                        <span className="text-[10px] text-zinc-400 font-medium truncate">AI & Machine Learning</span>
                       </div>
 
                       {/* Secondary Track 2 */}
-                      <div className="p-1.5 rounded-md border border-white/10 bg-white/[0.02] flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-white/40" />
-                        <span className="text-[10px] text-[#A3A3A3] font-medium truncate">Frontend Architecture</span>
+                      <div className="p-1.5 rounded-md border border-white/[0.06] bg-white/[0.02] flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-zinc-600" />
+                        <span className="text-[10px] text-zinc-400 font-medium truncate">Frontend Architecture</span>
                       </div>
                     </div>
 
                     {/* Footer Telemetry */}
-                    <div className="flex items-center justify-between text-[10px] font-mono text-[#888888] pt-1 border-t border-white/5 z-10">
+                    <div className="flex items-center justify-between text-[10px] font-mono text-zinc-500 pt-1 border-t border-white/5 z-10">
                       <span>⏱ 45 MIN SESSION</span>
-                      <span className="text-emerald-400 font-medium">READY TO LAUNCH →</span>
+                      <span className="text-zinc-300 font-medium tracking-wide flex items-center gap-1">
+                        READY TO LAUNCH <span className="text-orange-400">→</span>
+                      </span>
                     </div>
 
                     {/* Ambient coordinate grid watermark */}
@@ -407,53 +400,42 @@ const LandingPage = () => {
                 </div>
 
                 {/* Code Snippet */}
-                <div className="rounded-md p-3 font-mono text-[11px] leading-relaxed border"
-                  style={{
-                    background: '#141414',
-                    borderColor: 'var(--c-border)',
-                    color: '#A3A3A3',
-                  }}
-                >
-                  <div className="flex items-center justify-between text-[10px] text-[#6B6B6B] border-b pb-1.5 mb-2" style={{ borderColor: 'var(--c-border)' }}>
-                    <span className="flex items-center gap-1 text-zinc-300">
+                <div className="rounded-lg p-3 font-mono text-[11px] leading-relaxed border border-white/[0.06] bg-[#0E0F12]">
+                  <div className="flex items-center justify-between text-[10px] text-zinc-500 border-b border-white/[0.05] pb-1.5 mb-2">
+                    <span className="flex items-center gap-1 text-zinc-300 font-mono">
                       <Terminal className="w-3 h-3 text-orange-400" /> config.json
                     </span>
-                    <span>REST API</span>
+                    <span className="text-zinc-500">REST API</span>
                   </div>
                   <TypewriterCode lines={STEP1_CODE_LINES} duration={1800} />
                 </div>
               </div>
 
               {/* Step 02 */}
-              <div className="flex flex-col justify-between p-5 rounded-xl border space-y-4"
-                style={{
-                  background: 'var(--c-surface)',
-                  borderColor: 'var(--c-border)',
-                }}
-              >
+              <div className="flex flex-col justify-between p-5 rounded-xl border border-white/[0.07] bg-white/[0.02] hover:border-white/[0.14] transition-all duration-200 space-y-4 group">
                 <div>
                   {/* Step Image */}
-                  <div className="relative aspect-video rounded-lg overflow-hidden border mb-4 group" style={{ borderColor: 'var(--c-border)' }}>
+                  <div className="relative aspect-video rounded-lg overflow-hidden border border-white/[0.08] mb-4 group">
                     <img
                       src={CANDIDATE_IMAGES.studioMic}
                       alt="Answer realistic questions"
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/40 pointer-events-none" />
 
-                    <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-md font-mono text-[10px] font-medium bg-black/70 backdrop-blur-sm text-zinc-300 border border-white/10">
+                    <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-md font-mono text-[10px] font-medium bg-black/75 backdrop-blur-md text-zinc-300 border border-white/10">
                       STEP 02
                     </span>
 
-                    <span className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-md font-mono text-[10px] font-medium bg-black/70 backdrop-blur-sm text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> LIVE CAPTURE
+                    <span className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-md font-mono text-[10px] font-medium bg-black/75 backdrop-blur-md text-zinc-200 border border-white/10 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" /> LIVE CAPTURE
                     </span>
 
                     <div className="absolute bottom-2 left-2.5 right-2.5 flex items-center justify-between text-[10.5px] font-mono text-white/90">
                       <span className="flex items-center gap-1 text-zinc-300">
                         ● Audio + Video Synced
                       </span>
-                      <span className="text-emerald-400/90 font-medium">44.1kHz • 60fps</span>
+                      <span className="text-zinc-300 font-mono font-medium">44.1kHz • 60fps</span>
                     </div>
                   </div>
 
@@ -466,45 +448,34 @@ const LandingPage = () => {
                 </div>
 
                 {/* Code Snippet */}
-                <div className="rounded-md p-3 font-mono text-[11px] leading-relaxed border"
-                  style={{
-                    background: '#141414',
-                    borderColor: 'var(--c-border)',
-                    color: '#A3A3A3',
-                  }}
-                >
-                  <div className="flex items-center justify-between text-[10px] text-[#6B6B6B] border-b pb-1.5 mb-2" style={{ borderColor: 'var(--c-border)' }}>
-                    <span className="flex items-center gap-1 text-zinc-300">
+                <div className="rounded-lg p-3 font-mono text-[11px] leading-relaxed border border-white/[0.06] bg-[#0E0F12]">
+                  <div className="flex items-center justify-between text-[10px] text-zinc-500 border-b border-white/[0.05] pb-1.5 mb-2">
+                    <span className="flex items-center gap-1 text-zinc-300 font-mono">
                       <Mic className="w-3 h-3 text-orange-400" /> stream.ts
                     </span>
-                    <span className="text-emerald-400 font-medium">44.1kHz REC</span>
+                    <span className="text-zinc-400 font-mono text-[10px]">44.1kHz REC</span>
                   </div>
                   <TypewriterCode lines={STEP2_CODE_LINES} duration={1800} />
                 </div>
               </div>
 
               {/* Step 03 */}
-              <div className="flex flex-col justify-between p-5 rounded-xl border space-y-4"
-                style={{
-                  background: 'var(--c-surface)',
-                  borderColor: 'var(--c-border)',
-                }}
-              >
+              <div className="flex flex-col justify-between p-5 rounded-xl border border-white/[0.07] bg-white/[0.02] hover:border-white/[0.14] transition-all duration-200 space-y-4 group">
                 <div>
                   {/* Step Image */}
-                  <div className="relative aspect-video rounded-lg overflow-hidden border mb-4 group" style={{ borderColor: 'var(--c-border)' }}>
+                  <div className="relative aspect-video rounded-lg overflow-hidden border border-white/[0.08] mb-4 group">
                     <img
                       src={CANDIDATE_IMAGES.evalChart}
                       alt="Review your performance"
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/40 pointer-events-none" />
 
-                    <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-md font-mono text-[10px] font-medium bg-black/70 backdrop-blur-sm text-zinc-300 border border-white/10">
+                    <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-md font-mono text-[10px] font-medium bg-black/75 backdrop-blur-md text-zinc-300 border border-white/10">
                       STEP 03
                     </span>
 
-                    <span className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-md font-mono text-[10px] font-medium bg-black/70 backdrop-blur-sm text-zinc-300 border border-white/10">
+                    <span className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-md font-mono text-[10px] font-medium bg-black/75 backdrop-blur-md text-zinc-300 border border-white/10">
                       MULTIMODAL SYNTHESIS
                     </span>
 
@@ -512,7 +483,9 @@ const LandingPage = () => {
                       <span className="flex items-center gap-1 text-zinc-300">
                         ● Composite Score
                       </span>
-                      <span className="text-emerald-400 font-bold">93.2 / 100</span>
+                      <span className="text-zinc-100 font-mono font-bold">
+                        93.2 <span className="text-zinc-400 font-normal text-[10px]">/ 100</span>
+                      </span>
                     </div>
                   </div>
 
@@ -525,18 +498,12 @@ const LandingPage = () => {
                 </div>
 
                 {/* Code Snippet */}
-                <div className="rounded-md p-3 font-mono text-[11px] leading-relaxed border"
-                  style={{
-                    background: '#141414',
-                    borderColor: 'var(--c-border)',
-                    color: '#A3A3A3',
-                  }}
-                >
-                  <div className="flex items-center justify-between text-[10px] text-[#6B6B6B] border-b pb-1.5 mb-2" style={{ borderColor: 'var(--c-border)' }}>
-                    <span className="flex items-center gap-1 text-zinc-300">
+                <div className="rounded-lg p-3 font-mono text-[11px] leading-relaxed border border-white/[0.06] bg-[#0E0F12]">
+                  <div className="flex items-center justify-between text-[10px] text-zinc-500 border-b border-white/[0.05] pb-1.5 mb-2">
+                    <span className="flex items-center gap-1 text-zinc-300 font-mono">
                       <BarChart3 className="w-3 h-3 text-orange-400" /> report.json
                     </span>
-                    <span className="text-amber-400 font-medium">SCORE: 93.2</span>
+                    <span className="px-1.5 py-0.5 rounded bg-white/[0.04] border border-white/[0.08] text-zinc-300 font-mono text-[10px] font-medium">SCORE: 93.2</span>
                   </div>
                   <TypewriterCode lines={STEP3_CODE_LINES} duration={1800} />
                 </div>

@@ -302,7 +302,7 @@ def _heuristic_analysis(
     if content_score >= 80:
         notes = f"Thorough response covering core concepts ({len(covered)} identified). Strong alignment with expected criteria."
     elif content_score >= 55:
-        notes = f"Satisfactory answer covering basic principles ({len(covered)} concepts), with opportunities for greater technical depth."
+        notes = f"Satisfactory answer covering basic principles ({len(covered)} concepts), with opportunities for greater domain depth."
     else:
         notes = f"Partial response with limited key concept coverage. Key areas were missed."
 
@@ -429,11 +429,11 @@ def analyze_transcript(
 
         # Generate explainable feedback summary
         if content_score >= 80:
-            notes = f"Strong semantic alignment ({round(sem_score)}% similarity) with {len(covered)} key concepts demonstrated. Response is technically accurate and comprehensive."
+            notes = f"Strong semantic alignment ({round(sem_score)}% similarity) with {len(covered)} key concepts demonstrated. Response is domain-accurate and comprehensive."
         elif content_score >= 55:
             notes = f"Satisfactory response ({round(sem_score)}% semantic alignment) demonstrating core principles ({len(covered)} concepts), though some expected depth was omitted."
         else:
-            notes = f"Limited semantic relevance ({round(sem_score)}% alignment) to the prompt criteria. Core technical concepts were missing."
+            notes = f"Limited semantic relevance ({round(sem_score)}% alignment) to the prompt criteria. Core domain concepts were missing."
 
         def _concept_rank(c: str) -> Tuple[int, str]:
             c_low = c.lower()

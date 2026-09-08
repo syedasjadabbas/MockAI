@@ -64,14 +64,14 @@ def generate_interview_insights(
         empty_summary = "No candidate responses were recorded in this interview session. An evaluation cannot be conducted without audio or video submissions."
         empty_rationale = (
             f"The composite score of {round(overall_score)}/100 reflects that 0 of {total_q} prompts were completed. "
-            f"Without recorded audio or video takes, technical content, speech delivery, and facial composure could not be analyzed."
+            f"Without recorded audio or video takes, domain content, speech delivery, and facial composure could not be analyzed."
         )
         return {
             "score_explanation": {
                 "overall_summary": empty_summary,
                 "score_rationale": empty_rationale,
                 "dimension_breakdown": {
-                    "technical": "Technical Content: Unassessed (no submitted text or speech).",
+                    "technical": "Domain & Technical Content: Unassessed (no submitted text or speech).",
                     "communication": "Speech & Delivery: Unassessed (no recorded audio).",
                     "behavioral": "Behavioral Composure: Unassessed (no recorded video).",
                 },
@@ -117,16 +117,16 @@ def generate_interview_insights(
     # Performance tier description
     if overall_score >= 80.0:
         perf_tier = "Strong"
-        perf_verb = "demonstrated strong technical proficiency and confident communication"
+        perf_verb = "demonstrated strong domain proficiency and confident communication"
     elif overall_score >= 60.0:
         perf_tier = "Competent"
         perf_verb = "demonstrated solid foundational understanding with opportunities for greater depth"
     elif overall_score >= 35.0:
         perf_tier = "Developing"
-        perf_verb = "showed emerging familiarity with core concepts but missed key technical details"
+        perf_verb = "showed emerging familiarity with core concepts but missed key domain details"
     else:
         perf_tier = "Limited"
-        perf_verb = "had limited response coverage and key technical areas require review"
+        perf_verb = "had limited response coverage and key domain areas require review"
 
     overall_summary = (
         f"{perf_tier} overall performance with a composite score of {round(overall_score)}/100. "
@@ -145,10 +145,10 @@ def generate_interview_insights(
     if has_nlp:
         covered_n = len(tech_metrics.get("covered_concepts", []))
         score_rationale_parts.append(
-            f"Technical content scored {round(content_score, 1)}%, driven by semantic similarity and concept coverage ({covered_n} key concepts demonstrated)."
+            f"Domain and technical content scored {round(content_score, 1)}%, driven by semantic similarity and concept coverage ({covered_n} key concepts demonstrated)."
         )
     else:
-        score_rationale_parts.append("Technical content was unassessed due to missing transcripts.")
+        score_rationale_parts.append("Domain and technical content was unassessed due to missing transcripts.")
 
     if has_speech:
         avg_wpm = comm_metrics.get("avg_wpm", 0.0)
@@ -177,11 +177,11 @@ def generate_interview_insights(
 
     # Dimension Breakdown
     tech_breakdown = (
-        f"Technical Content ({round(content_score, 1)}%): Semantic matching evaluated response depth against question rubrics. "
+        f"Domain & Technical Content ({round(content_score, 1)}%): Semantic matching evaluated response depth against question rubrics. "
         + (
             f"Successfully covered: {', '.join(tech_metrics.get('covered_concepts', [])[:4])}."
             if tech_metrics.get("covered_concepts")
-            else "Limited technical keyword and concept overlap detected."
+            else "Limited domain keyword and concept overlap detected."
         )
     )
 
@@ -337,7 +337,7 @@ def generate_interview_insights(
     # 1. Technical Gaps & Missing Rubric Concepts (FR 26-01)
     missing = tech_metrics.get("missing_concepts", [])
     if missing:
-        wk_text = f"Key Concept Gaps: Omitted core technical areas from rubric: {', '.join(missing[:3])}."
+        wk_text = f"Key Concept Gaps: Omitted core domain areas from rubric: {', '.join(missing[:3])}."
         weaknesses.append(wk_text)
         weaknesses_detail.append({
             "category": "Technical",
@@ -352,12 +352,12 @@ def generate_interview_insights(
     if low_q:
         weakest_q = min(low_q, key=lambda q: float(q.get("score", 0.0)))
         q_id = weakest_q.get("question_id", "Prompt")
-        wk_text = f"Suboptimal Answer Depth: Underperformed on {q_id} (Score: {round(float(weakest_q.get('score', 0.0)))}%), omitting essential architectural details."
+        wk_text = f"Suboptimal Answer Depth: Underperformed on {q_id} (Score: {round(float(weakest_q.get('score', 0.0)))}%), omitting essential domain details."
         weaknesses.append(wk_text)
         weaknesses_detail.append({
             "category": "Technical",
             "title": f"Suboptimal Depth on {q_id}",
-            "description": "Limited technical explanation compared to expected benchmark.",
+            "description": "Limited domain explanation compared to expected benchmark.",
             "evidence": f"Score: {round(float(weakest_q.get('score', 0.0)))}%",
             "severity": "High",
         })
@@ -366,12 +366,12 @@ def generate_interview_insights(
     if has_speech:
         avg_wpm = comm_metrics.get("avg_wpm", 0.0)
         if avg_wpm > 165.0:
-            wk_text = f"Rushed Speaking Cadence: Average speed of {avg_wpm:.1f} WPM was too rapid, risking loss of technical clarity."
+            wk_text = f"Rushed Speaking Cadence: Average speed of {avg_wpm:.1f} WPM was too rapid, risking loss of answer clarity."
             weaknesses.append(wk_text)
             weaknesses_detail.append({
                 "category": "Communication",
                 "title": "Rushed Speaking Cadence",
-                "description": "Spoke above 165 WPM benchmark, which can make complex algorithms difficult to follow.",
+                "description": "Spoke above 165 WPM benchmark, which can make complex explanations difficult to follow.",
                 "evidence": f"{avg_wpm:.1f} WPM",
                 "severity": "Medium",
             })
@@ -460,11 +460,11 @@ def generate_interview_insights(
 
     # If candidate was near perfect
     if not weaknesses:
-        weaknesses.append("Minor Technical Nuance: Focus on articulating edge-case trade-offs and architectural scalability.")
+        weaknesses.append("Minor Domain Nuance: Focus on articulating edge-case trade-offs and practical depth.")
         weaknesses_detail.append({
             "category": "Refinement",
             "title": "Advanced Trade-offs",
-            "description": "Performance was solid; further polish by discussing performance bottlenecks and edge cases.",
+            "description": "Performance was solid; further polish by discussing performance trade-offs, protocols, and edge cases.",
             "evidence": "Score >= 85%",
             "severity": "Low",
         })
@@ -478,24 +478,24 @@ def generate_interview_insights(
 
     # 1. Suggestions Mapped Directly to Weaknesses (FR 27-01)
     if missing:
-        sug_text = f"Targeted Concept Review: Study and prepare concrete architectural examples illustrating {', '.join(missing[:2])}."
+        sug_text = f"Targeted Concept Review: Study and prepare concrete professional examples illustrating {', '.join(missing[:2])}."
         suggestions.append(sug_text)
         coaching_guidance.append({
-            "domain": "Technical Depth",
+            "domain": "Domain Knowledge",
             "action": f"Review {', '.join(missing[:2])}",
-            "practice_strategy": "Write out definitions and draw system architecture diagrams connecting these missing concepts to real-world code.",
+            "practice_strategy": "Write out definitions and practical case scenarios connecting these missing concepts to real-world professional practice.",
             "target_metric": ">=80% Rubric Concept Coverage",
         })
 
     if has_speech:
         avg_wpm = comm_metrics.get("avg_wpm", 0.0)
         if avg_wpm > 165.0:
-            sug_text = "Cadence Moderation: Use deliberate breathing and target 130–150 WPM to avoid rushing complex architectural explanations."
+            sug_text = "Cadence Moderation: Use deliberate breathing and target 130–150 WPM to avoid rushing complex explanations."
             suggestions.append(sug_text)
             coaching_guidance.append({
                 "domain": "Speech Pacing",
                 "action": "Slow down response delivery",
-                "practice_strategy": "Practice reading technical excerpts with a metronome set to 140 WPM to build muscle memory.",
+                "practice_strategy": "Practice reading domain excerpts or scenario responses with a metronome set to 140 WPM to build muscle memory.",
                 "target_metric": "120–150 WPM Pacing Range",
             })
         elif avg_wpm < 110.0 and avg_wpm > 0.0:
@@ -535,7 +535,7 @@ def generate_interview_insights(
         coaching_guidance.append({
             "domain": "Behavioral Poise",
             "action": "Maintain camera eye contact",
-            "practice_strategy": "Position your webcam at eye level and maintain gentle, natural eye contact during technical delivery.",
+            "practice_strategy": "Position your webcam at eye level and maintain gentle, natural eye contact during response delivery.",
             "target_metric": "Composed & Stable Composure Index",
         })
 
@@ -543,7 +543,7 @@ def generate_interview_insights(
     coaching_guidance.append({
         "domain": "Structured Communication",
         "action": "Apply STAR and Top-Down Frameworks",
-        "practice_strategy": "For situational questions use STAR (Situation, Task, Action, Result). For technical questions state the decision first, then trade-offs.",
+        "practice_strategy": "For situational questions use STAR (Situation, Task, Action, Result). For domain and technical questions state the decision first, then trade-offs.",
         "target_metric": "Clear Answer Hierarchy",
     })
 
@@ -553,7 +553,7 @@ def generate_interview_insights(
     )
     if missing:
         preparation_strategies.append(
-            f"Targeted Domain Drilling: Dedicate your next study session to deep-dive implementations of {', '.join(missing[:2])}."
+            f"Targeted Domain Drilling: Dedicate your next study session to deep-dive practice and case studies on {', '.join(missing[:2])}."
         )
     preparation_strategies.append(
         "MockAI Repetition: Re-attempt this interview track to verify that pacing and concept coverage improve on identical or related prompts."
@@ -562,10 +562,10 @@ def generate_interview_insights(
     # Fallback for near-perfect candidates with no explicit weaknesses
     if not suggestions:
         suggestions.append(
-            "Advanced Trade-Off Analysis: Continue elevating answers by explicitly discussing scalability trade-offs and edge-case handling."
+            "Advanced Trade-Off Analysis: Continue elevating answers by explicitly discussing practical trade-offs, standard protocols, and edge-case handling."
         )
         suggestions.append(
-            "System Architecture Nuances: Elaborate on production monitoring, fault tolerance, and failure recovery mechanisms for complex systems."
+            "Domain Practice Nuances: Elaborate on quality assurance, contingency handling, and industry best practices for complex scenarios."
         )
 
     # Limit top lists to clean numbers
