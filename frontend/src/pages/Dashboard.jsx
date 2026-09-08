@@ -5,23 +5,49 @@ import StatsCard from '../components/StatsCard';
 import { ScoreDistributionChart, StatusDistributionChart } from '../components/Charts';
 import { CardSkeleton, TableSkeleton } from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
-import { fetchWithAuth } from '../api';
+import { fetchWithAuth, getCachedData } from '../api';
 import { useTheme } from '../context/ThemeContext';
 
 const Dashboard = () => {
-  const [stats, setStats] = useState({ totalUsers: 0, totalInterviews: 0, totalResponses: 0, averageScore: 0 });
-  const [recentInterviews, setRecentInterviews] = useState([]);
-  const [chartsData, setChartsData] = useState({
-    scoreBuckets: { high: 0, medium: 0, low: 0, none: 0 },
-    statusBuckets: { completed: 0, progress: 0, pending: 0 },
-    insights: []
+  const cachedStats = getCachedData('/');
+  const cachedInterviews = getCachedData('/interviews?limit=5');
+  const hasCached = Boolean(cachedStats);
+
+  const [stats, setStats] = useState(() => ({
+    totalUsers: cachedStats?.total_users || 0,
+    totalInterviews: cachedStats?.total_interviews || 0,
+    totalResponses: cachedStats?.total_interviews || 0,
+    averageScore: cachedStats?.average_score || 0
+  }));
+
+  const [recentInterviews, setRecentInterviews] = useState(() => {
+    if (Array.isArray(cachedInterviews)) {
+      return cachedInterviews.map(interview => ({
+        id: `INT-${String(interview._id || '').slice(-6).toUpperCase()}`,
+        candidate: interview.candidate_name || 'Deleted User',
+        type: interview.role || '-',
+        score: interview.score,
+        status: interview.status || 'Completed',
+        time: interview.created_at ? new Date(interview.created_at).toLocaleDateString() : '-'
+      }));
+    }
+    return [];
   });
-  const [loading, setLoading] = useState(true);
+
+  const [chartsData, setChartsData] = useState(() => ({
+    scoreBuckets: cachedStats?.score_buckets || { high: 0, medium: 0, low: 0, none: 0 },
+    statusBuckets: cachedStats?.status_buckets || { completed: 0, progress: 0, pending: 0 },
+    insights: cachedStats?.insights || ["Overall candidate evaluation metrics are stable."]
+  }));
+
+  const [loading, setLoading] = useState(!hasCached);
   const { isDark } = useTheme();
 
   useEffect(() => {
     let isMounted = true;
-    setLoading(true);
+    if (!hasCached) {
+      setLoading(true);
+    }
 
     const loadDashboardData = async () => {
       try {
@@ -32,7 +58,7 @@ const Dashboard = () => {
 
         if (!isMounted) return;
 
-        if (statsData) {
+        if (statsData && statsData.total_users !== undefined) {
           setStats({
             totalUsers: statsData.total_users || 0,
             totalInterviews: statsData.total_interviews || 0,
@@ -49,7 +75,7 @@ const Dashboard = () => {
         if (Array.isArray(interviewsData)) {
           setRecentInterviews(
             interviewsData.map(interview => ({
-              id: `INT-${String(interview._id || Math.random().toString(36)).slice(-6).toUpperCase()}`,
+              id: `INT-${String(interview._id || '').slice(-6).toUpperCase()}`,
               candidate: interview.candidate_name || 'Deleted User',
               type: interview.role || '-',
               score: interview.score,
@@ -196,19 +222,22 @@ const Dashboard = () => {
                       )}
                     </td>
                     <td className="py-3.5 px-4">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border ${
-                        item.status === 'Completed' 
-                          ? isDark ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                          : item.status === 'In Progress'
-                            ? isDark ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-amber-50 text-amber-700 border-amber-200'
-                            : isDark ? 'bg-slate-500/10 text-slate-400 border-slate-500/20' : 'bg-slate-100 text-slate-700 border-slate-200'
-                      }`}>
-                        {item.status === 'Completed' && <CheckCircle2 className="w-3 h-3" />}
-                        {item.status === 'In Progress' && <Clock className="w-3 h-3" />}
-                        {item.status === 'Pending' && <Clock className="w-3 h-3" />}
-                        {item.status === 'Failed' && <AlertCircle className="w-3 h-3" />}
-                        {item.status}
-                      </span>
+                      <div className="inline-flex items-center gap-2">
+                        <span 
+                          className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                            item.status === 'Completed'
+                              ? 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]'
+                              : item.status === 'In Progress'
+                                ? 'bg-amber-500 animate-pulse'
+                                : item.status === 'Failed'
+                                  ? 'bg-rose-500'
+                                  : 'bg-slate-400'
+                          }`} 
+                        />
+                        <span className="text-xs font-medium text-[var(--text-secondary)]">
+                          {item.status}
+                        </span>
+                      </div>
                     </td>
                     <td className="py-3.5 pl-4 text-xs text-[var(--text-muted)] text-right">{item.time}</td>
                   </tr>

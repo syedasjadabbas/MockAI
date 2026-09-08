@@ -38,7 +38,8 @@ const forceLogout = () => {
 // In-memory cache store and in-flight promise registry
 const apiCache = new Map();
 const inFlightRequests = new Map();
-const DEFAULT_TTL_MS = 20000; // 20 seconds cache for instant tab transitions
+const DEFAULT_TTL_MS = 60000; // 60 seconds fresh cache
+const STALE_TTL_MS = 10 * 60 * 1000; // 10 minutes stale retention for SWR
 
 export const invalidateApiCache = (endpointSubstring = '') => {
   if (!endpointSubstring) {
@@ -50,6 +51,34 @@ export const invalidateApiCache = (endpointSubstring = '') => {
       }
     }
   }
+  window.dispatchEvent(new CustomEvent('apicache_invalidated', { detail: { endpointSubstring } }));
+};
+
+/**
+ * Synchronously retrieves cached data for immediate component render (0ms initial render).
+ */
+export const getCachedData = (endpoint, method = 'GET') => {
+  const cacheKey = `${method.toUpperCase()}:${endpoint}`;
+  const cached = apiCache.get(cacheKey);
+  if (cached && Date.now() < cached.staleAt) {
+    return cached.data;
+  }
+  return null;
+};
+
+/**
+ * Prefetches an endpoint into memory ahead of time (e.g. on sidebar tab hover).
+ */
+export const prefetch = (endpoint, options = {}) => {
+  const cacheKey = `GET:${endpoint}`;
+  const cached = apiCache.get(cacheKey);
+  if (cached && Date.now() < cached.expiresAt) {
+    return Promise.resolve(cached.data);
+  }
+  if (inFlightRequests.has(cacheKey)) {
+    return inFlightRequests.get(cacheKey);
+  }
+  return fetchWithAuth(endpoint, { ...options, isPrefetch: true }).catch(() => null);
 };
 
 export const fetchWithAuth = async (endpoint, options = {}) => {
@@ -72,11 +101,23 @@ export const fetchWithAuth = async (endpoint, options = {}) => {
 
   const cacheKey = `${method}:${endpoint}`;
 
-  // Check cache for GET requests
+  // Instant return from fresh cache for GET requests
   if (isGet && !skipCache) {
     const cached = apiCache.get(cacheKey);
-    if (cached && Date.now() < cached.expiresAt) {
-      return JSON.parse(JSON.stringify(cached.data));
+    if (cached) {
+      const now = Date.now();
+      // Fresh hit: return immediately
+      if (now < cached.expiresAt) {
+        return cached.data;
+      }
+      // Stale-while-revalidate hit: return stale data immediately, revalidate in background
+      if (now < cached.staleAt && !inFlightRequests.has(cacheKey)) {
+        // Trigger background fetch to freshen cache
+        setTimeout(() => {
+          fetchWithAuth(endpoint, { ...options, forceRefresh: true }).catch(() => {});
+        }, 0);
+        return cached.data;
+      }
     }
   }
 
@@ -112,9 +153,11 @@ export const fetchWithAuth = async (endpoint, options = {}) => {
       // Store in cache if GET request
       if (isGet) {
         const ttl = options.ttl || DEFAULT_TTL_MS;
+        const now = Date.now();
         apiCache.set(cacheKey, {
           data,
-          expiresAt: Date.now() + ttl,
+          expiresAt: now + ttl,
+          staleAt: now + STALE_TTL_MS,
         });
       }
 

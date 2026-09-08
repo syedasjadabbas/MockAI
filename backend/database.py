@@ -84,6 +84,7 @@ def init_db_indexes():
         users_collection.create_index([("email", 1)], unique=True, sparse=True, background=True)
         users_collection.create_index([("role", 1)], background=True)
         users_collection.create_index([("created_at", -1)], background=True)
+        users_collection.create_index([("role", 1), ("created_at", -1)], background=True)
 
         # Interviews indexes
         interviews_collection.create_index([("user_id", 1)], background=True)
@@ -91,11 +92,14 @@ def init_db_indexes():
         interviews_collection.create_index([("role", 1)], background=True)
         interviews_collection.create_index([("created_at", -1)], background=True)
         interviews_collection.create_index([("score", 1)], background=True)
+        interviews_collection.create_index([("status", 1), ("created_at", -1)], background=True)
+        interviews_collection.create_index([("role", 1), ("created_at", -1)], background=True)
 
         # Categories indexes
         categories_collection.create_index([("name", 1)], background=True)
         categories_collection.create_index([("status", 1)], background=True)
         categories_collection.create_index([("created_at", -1)], background=True)
+        categories_collection.create_index([("status", 1), ("created_at", -1)], background=True)
 
         # Questions indexes
         questions_collection.create_index([("category_id", 1)], background=True)
@@ -103,6 +107,7 @@ def init_db_indexes():
         questions_collection.create_index([("difficulty", 1)], background=True)
         questions_collection.create_index([("type", 1)], background=True)
         questions_collection.create_index([("created_at", -1)], background=True)
+        questions_collection.create_index([("category_id", 1), ("status", 1)], background=True)
 
         # Admin logs indexes
         admin_logs_collection.create_index([("created_at", -1)], background=True)

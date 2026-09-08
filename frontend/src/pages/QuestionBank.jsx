@@ -32,7 +32,7 @@ import {
   Check,
   Hash
 } from 'lucide-react';
-import { fetchWithAuth } from '../api';
+import { fetchWithAuth, getCachedData } from '../api';
 import { useTheme } from '../context/ThemeContext';
 import StatsCard from '../components/StatsCard';
 import { TableSkeleton } from '../components/Skeleton';
@@ -81,11 +81,16 @@ const QuestionBank = () => {
   // Active Tab: 'questions' | 'categories'
   const [activeTab, setActiveTab] = useState('questions');
 
+  const cachedCats = getCachedData('/categories');
+  const cachedQs = getCachedData('/questions');
+  const cachedSt = getCachedData('/question-bank/stats');
+  const hasCached = Boolean(cachedCats && cachedQs);
+
   // Main Data States
-  const [questions, setQuestions] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [questions, setQuestions] = useState(() => Array.isArray(cachedQs) ? cachedQs : []);
+  const [categories, setCategories] = useState(() => Array.isArray(cachedCats) ? cachedCats : []);
+  const [stats, setStats] = useState(() => cachedSt || null);
+  const [loading, setLoading] = useState(!hasCached);
   const [refreshing, setRefreshing] = useState(false);
   const [loadError, setLoadError] = useState(null);
 
@@ -137,7 +142,7 @@ const QuestionBank = () => {
   // Fetch All Data
   const loadData = async (isManualRefresh = false) => {
     if (isManualRefresh) setRefreshing(true);
-    else setLoading(true);
+    else if (!hasCached) setLoading(true);
     setLoadError(null);
 
     try {
@@ -951,7 +956,7 @@ const QuestionBank = () => {
             {totalPages > 1 && (
               <div className="p-4 border-t border-[var(--border-table)] flex items-center justify-between gap-4 flex-wrap">
                 <span className="text-xs text-[var(--text-muted)]">
-                  Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredQuestions.length)} of {filteredQuestions.length} questions
+                  Showing {(currentPage - 1) * PAGE_SIZE + 1} to {Math.min(currentPage * PAGE_SIZE, filteredQuestions.length)} of {filteredQuestions.length} questions
                 </span>
 
                 <div className="flex items-center gap-2">

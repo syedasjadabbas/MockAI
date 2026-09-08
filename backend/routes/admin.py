@@ -503,10 +503,16 @@ from typing import Optional
 
 @router.get("/results")
 def get_completed_results(token_payload: dict = Depends(verify_admin)):
+    cached = get_cached("admin_results_completed")
+    if cached is not None:
+        return cached
+
     query = {"status": "Completed"}
     interviews = list(interviews_collection.find(query, INTERVIEW_LIST_PROJECTION).sort("created_at", -1))
     attach_candidate_names(interviews)
-    return [serialize_mongo(interview) for interview in interviews]
+    res = [serialize_mongo(interview) for interview in interviews]
+    set_cached("admin_results_completed", res, ttl_seconds=20)
+    return res
 
 @router.get("/interviews")
 def get_interviews(
@@ -516,6 +522,11 @@ def get_interviews(
     limit: Optional[int] = None,
     token_payload: dict = Depends(verify_admin)
 ):
+    cache_key = f"admin_interviews_{role}_{status_filter}_{date}_{limit}"
+    cached = get_cached(cache_key)
+    if cached is not None:
+        return cached
+
     query = {}
     if role and role != 'All':
         query["role"] = role
@@ -533,7 +544,9 @@ def get_interviews(
     if date:
         interviews = [i for i in interviews if i.get("created_at") and i["created_at"].strftime('%Y-%m-%d') == date]
             
-    return [serialize_mongo(interview) for interview in interviews]
+    res = [serialize_mongo(interview) for interview in interviews]
+    set_cached(cache_key, res, ttl_seconds=20)
+    return res
 
 @router.get("/interviews/{id}")
 def get_interview(id: str, token_payload: dict = Depends(verify_admin)):
@@ -565,6 +578,10 @@ def delete_interview(id: str, token_payload: dict = Depends(verify_admin)):
 
 @router.get("/logs")
 def get_logs(token_payload: dict = Depends(verify_admin)):
+    cached = get_cached("admin_logs_recent")
+    if cached is not None:
+        return cached
+
     logs = list(admin_logs_collection.find({}).sort("created_at", -1).limit(50))
     if not logs:
         # Provide dummy logs if empty
@@ -574,9 +591,12 @@ def get_logs(token_payload: dict = Depends(verify_admin)):
             {"action": "DELETE_USER", "admin_email": "admin@mockai.com", "target": "John Doe", "created_at": "2023-10-25T09:15:00Z"},
             {"action": "DELETE_INTERVIEW", "admin_email": "admin@mockai.com", "target": "INT-123456", "created_at": "2023-10-24T14:20:00Z"}
         ]
-        return [serialize_mongo(log) for log in dummy_logs]
+        res = [serialize_mongo(log) for log in dummy_logs]
+    else:
+        res = [serialize_mongo(log) for log in logs]
         
-    return [serialize_mongo(log) for log in logs]
+    set_cached("admin_logs_recent", res, ttl_seconds=20)
+    return res
 
 import re
 
@@ -658,9 +678,11 @@ def get_all_admins(token_payload: dict = Depends(verify_admin)):
     admins = list(admins_collection.find({}, {"password": 0}))
     return [
         {
+            "id": str(admin.get("_id", "")),
             "name": admin.get("name", "Unknown Admin"),
             "email": admin.get("email"),
-            "role": admin.get("role", "admin")
+            "role": admin.get("role", "admin"),
+            "profile_picture": admin.get("profile_picture")
         }
         for admin in admins
     ]
@@ -710,6 +732,11 @@ def get_categories(
     status_filter: Optional[str] = None,
     token_payload: dict = Depends(verify_admin)
 ):
+    cache_key = f"admin_categories_{search}_{status_filter}"
+    cached = get_cached(cache_key)
+    if cached is not None:
+        return cached
+
     query = {}
     if status_filter and status_filter.lower() != "all":
         query["status"] = status_filter.lower()
@@ -745,6 +772,7 @@ def get_categories(
         cat_data["active_question_count"] = counts.get("active", 0)
         result.append(cat_data)
         
+    set_cached(cache_key, result, ttl_seconds=30)
     return result
 
 @router.get("/categories/{id}")
@@ -788,6 +816,7 @@ def create_category(data: CreateCategoryRequest, token_payload: dict = Depends(v
     res = categories_collection.insert_one(new_cat)
     created = categories_collection.find_one({"_id": res.inserted_id})
     invalidate_cache("qb_stats")
+    invalidate_cache("admin_categories")
     
     admin_user = admins_collection.find_one({"_id": ObjectId(token_payload.get("user_id"))})
     admin_email = admin_user.get("email") if admin_user else "Admin"
@@ -835,6 +864,8 @@ def update_category(id: str, data: UpdateCategoryRequest, token_payload: dict = 
     
     categories_collection.update_one({"_id": obj_id}, {"$set": update_fields})
     invalidate_cache("qb_stats")
+    invalidate_cache("admin_categories")
+    invalidate_cache("admin_questions")
     
     # If category name changed, update denormalized category_name in questions
     if "name" in update_fields:
@@ -871,6 +902,7 @@ def toggle_category_status(id: str, data: StatusToggleRequest, token_payload: di
         {"$set": {"status": status_val, "updated_at": datetime.utcnow()}}
     )
     invalidate_cache("qb_stats")
+    invalidate_cache("admin_categories")
     
     admin_user = admins_collection.find_one({"_id": ObjectId(token_payload.get("user_id"))})
     admin_email = admin_user.get("email") if admin_user else "Admin"
@@ -898,6 +930,8 @@ def delete_category(id: str, token_payload: dict = Depends(verify_admin)):
     q_del_result = questions_collection.delete_many({"category_id": id})
     categories_collection.delete_one({"_id": obj_id})
     invalidate_cache("qb_stats")
+    invalidate_cache("admin_categories")
+    invalidate_cache("admin_questions")
     
     admin_user = admins_collection.find_one({"_id": ObjectId(token_payload.get("user_id"))})
     admin_email = admin_user.get("email") if admin_user else "Admin"
@@ -919,6 +953,11 @@ def get_questions(
     type: Optional[str] = None,
     token_payload: dict = Depends(verify_admin)
 ):
+    cache_key = f"admin_questions_{search}_{category_id}_{difficulty}_{status_filter}_{type}"
+    cached = get_cached(cache_key)
+    if cached is not None:
+        return cached
+
     query = {}
     if category_id and category_id.lower() != "all":
         query["category_id"] = category_id
@@ -939,7 +978,9 @@ def get_questions(
         ]
         
     questions = list(questions_collection.find(query).sort("created_at", -1))
-    return [serialize_mongo(q) for q in questions]
+    res = [serialize_mongo(q) for q in questions]
+    set_cached(cache_key, res, ttl_seconds=30)
+    return res
 
 @router.get("/questions/{id}")
 def get_question(id: str, token_payload: dict = Depends(verify_admin)):
@@ -995,6 +1036,8 @@ def create_question(data: CreateQuestionRequest, token_payload: dict = Depends(v
     res = questions_collection.insert_one(new_q)
     created = questions_collection.find_one({"_id": res.inserted_id})
     invalidate_cache("qb_stats")
+    invalidate_cache("admin_questions")
+    invalidate_cache("admin_categories")
     
     admin_user = admins_collection.find_one({"_id": ObjectId(token_payload.get("user_id"))})
     admin_email = admin_user.get("email") if admin_user else "Admin"
@@ -1048,6 +1091,8 @@ def update_question(id: str, data: UpdateQuestionRequest, token_payload: dict = 
     
     questions_collection.update_one({"_id": obj_id}, {"$set": update_fields})
     invalidate_cache("qb_stats")
+    invalidate_cache("admin_questions")
+    invalidate_cache("admin_categories")
     updated = questions_collection.find_one({"_id": obj_id})
     
     admin_user = admins_collection.find_one({"_id": ObjectId(token_payload.get("user_id"))})
@@ -1076,6 +1121,8 @@ def toggle_question_status(id: str, data: StatusToggleRequest, token_payload: di
         {"$set": {"status": status_val, "updated_at": datetime.utcnow()}}
     )
     invalidate_cache("qb_stats")
+    invalidate_cache("admin_questions")
+    invalidate_cache("admin_categories")
     
     admin_user = admins_collection.find_one({"_id": ObjectId(token_payload.get("user_id"))})
     admin_email = admin_user.get("email") if admin_user else "Admin"
@@ -1098,6 +1145,8 @@ def delete_question(id: str, token_payload: dict = Depends(verify_admin)):
     q_text = q.get("question_text", id)
     questions_collection.delete_one({"_id": obj_id})
     invalidate_cache("qb_stats")
+    invalidate_cache("admin_questions")
+    invalidate_cache("admin_categories")
     
     admin_user = admins_collection.find_one({"_id": ObjectId(token_payload.get("user_id"))})
     admin_email = admin_user.get("email") if admin_user else "Admin"
@@ -1176,10 +1225,11 @@ def trigger_seed_question_bank(token_payload: dict = Depends(verify_admin)):
     from seed_question_bank import seed_question_bank
     res = seed_question_bank(force=True)
     invalidate_cache("qb_stats")
+    invalidate_cache("admin_questions")
+    invalidate_cache("admin_categories")
     
     admin_user = admins_collection.find_one({"_id": ObjectId(token_payload.get("user_id"))})
     admin_email = admin_user.get("email") if admin_user else "Admin"
     log_action("SEED_QUESTION_BANK", admin_email, "Question Bank Data", severity="info")
     
     return res
-

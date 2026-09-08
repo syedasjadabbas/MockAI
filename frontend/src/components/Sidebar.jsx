@@ -14,6 +14,50 @@ import {
   X
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
+import { prefetch } from '../api';
+
+const prefetchedItems = new Set();
+
+const prefetchRouteData = (path) => {
+  if (prefetchedItems.has(path)) return;
+  prefetchedItems.add(path);
+
+  switch (path) {
+    case '/admin/dashboard':
+      import('../pages/Dashboard');
+      prefetch('/');
+      prefetch('/interviews?limit=5');
+      break;
+    case '/admin/users':
+      import('../pages/Users');
+      prefetch('/users');
+      break;
+    case '/admin/interviews':
+      import('../pages/Interviews');
+      prefetch('/interviews');
+      break;
+    case '/admin/questions':
+      import('../pages/QuestionBank');
+      prefetch('/categories');
+      prefetch('/questions');
+      prefetch('/question-bank/stats');
+      break;
+    case '/admin/results':
+      import('../pages/Results');
+      prefetch('/results');
+      break;
+    case '/admin/logs':
+      import('../pages/Logs');
+      prefetch('/logs');
+      break;
+    case '/admin/admins':
+      import('../pages/Admins');
+      prefetch('/all-admins');
+      break;
+    default:
+      break;
+  }
+};
 
 const Sidebar = ({ mobileOpen = false, setMobileOpen = () => {} }) => {
   const location = useLocation();
@@ -72,6 +116,8 @@ const Sidebar = ({ mobileOpen = false, setMobileOpen = () => {} }) => {
                 key={item.path}
                 to={item.path}
                 onClick={() => setMobileOpen(false)}
+                onMouseEnter={() => prefetchRouteData(item.path)}
+                onFocus={() => prefetchRouteData(item.path)}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
                   isActive 
                     ? isDark

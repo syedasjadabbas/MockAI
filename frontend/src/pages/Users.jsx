@@ -1,12 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Eye, MoreVertical, X, AlertCircle, CheckCircle2, Download, ChevronLeft, ChevronRight, UserPlus, Users as UsersIcon } from 'lucide-react';
-import { fetchWithAuth } from '../api';
+import { fetchWithAuth, getCachedData } from '../api';
 import { useLocation } from 'react-router-dom';
 import { exportToCSV } from '../utils/csvExport';
 import { formatDateOnly } from '../utils/dateFormat';
 import { TableSkeleton } from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
 import { useTheme } from '../context/ThemeContext';
+
+const formatUserItems = (data) => {
+  if (!Array.isArray(data)) return [];
+  return data.map(u => ({ 
+    ...u, 
+    id: u._id ? u._id.slice(-6).toUpperCase() : u.id,
+    interviews: u.interview_count || 0,
+    joined: u.created_at ? formatDateOnly(u.created_at) : '-'
+  }));
+};
 
 const Users = () => {
   const location = useLocation();
@@ -15,15 +25,18 @@ const Users = () => {
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 10;
 
+  const cachedUsers = getCachedData('/users');
+  const hasCached = Array.isArray(cachedUsers) && cachedUsers.length > 0;
+
   useEffect(() => {
     const query = new URLSearchParams(location.search).get('search');
     if (query !== null) setSearch(query);
   }, [location.search]);
 
   const [selectedUser, setSelectedUser] = useState(null);
-  const [users, setUsers] = useState([]);
+  const [users, setUsers] = useState(() => hasCached ? formatUserItems(cachedUsers) : []);
   const [activeDropdown, setActiveDropdown] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!hasCached);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -76,14 +89,10 @@ const Users = () => {
   };
 
   useEffect(() => {
+    if (!hasCached) setLoading(true);
     fetchWithAuth('/users')
       .then(data => {
-        setUsers(data.map(u => ({ 
-          ...u, 
-          id: u._id ? u._id.slice(-6).toUpperCase() : u.id,
-          interviews: u.interview_count || 0,
-          joined: u.created_at ? formatDateOnly(u.created_at) : '-'
-        })));
+        setUsers(formatUserItems(data));
       })
       .catch(() => setLoadError("Failed to load users. Please try again."))
       .finally(() => setLoading(false));

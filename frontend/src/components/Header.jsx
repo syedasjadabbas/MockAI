@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { Bell, Search, User, Key, X, CheckCircle2, AlertCircle, Info, Camera, Edit2, Menu } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { fetchWithAuth, API_BASE } from '../api';
@@ -308,7 +308,12 @@ const Header = ({ onToggleMobileMenu }) => {
       const data = await res.json();
       const fullUrl = `${API_BASE}${data.url}`;
       setProfilePicture(fullUrl);
-      setAdminInfo(prev => ({ ...prev, profile_picture: data.url }));
+      setAdminInfo(prev => {
+        const next = { ...prev, profile_picture: data.url };
+        localStorage.setItem('mockai_admin_info', JSON.stringify(next));
+        return next;
+      });
+      window.dispatchEvent(new CustomEvent('admin_info_updated'));
     } catch (err) {
       setPictureError(err.message || 'Upload failed');
     } finally {
@@ -325,7 +330,12 @@ const Header = ({ onToggleMobileMenu }) => {
         method: 'PATCH',
         body: JSON.stringify({ name: nameValue.trim() })
       });
-      setAdminInfo(prev => ({ ...prev, name: data.name }));
+      setAdminInfo(prev => {
+        const next = { ...prev, name: data.name };
+        localStorage.setItem('mockai_admin_info', JSON.stringify(next));
+        return next;
+      });
+      window.dispatchEvent(new CustomEvent('admin_info_updated'));
       setNameEditing(false);
     } catch (err) {
       setNameError(err.message || 'Failed to update name');
@@ -334,33 +344,41 @@ const Header = ({ onToggleMobileMenu }) => {
     }
   };
 
-  const getSearchResults = () => {
+  const searchResults = useMemo(() => {
     if (!searchQuery.trim()) return [];
     const query = searchQuery.toLowerCase();
     const results = [];
 
-    globalSearchData.users.forEach(u => {
+    const users = globalSearchData.users || [];
+    for (let i = 0; i < users.length; i++) {
+      const u = users[i];
       if (u.name?.toLowerCase().includes(query) || u.email?.toLowerCase().includes(query)) {
         results.push({ type: 'User', id: u._id, title: u.name, subtitle: u.email, path: `/admin/users?search=${encodeURIComponent(u.email)}` });
+        if (results.length >= 5) return results;
       }
-    });
+    }
 
-    globalSearchData.interviews.forEach(i => {
-      const interviewId = `INT-${i._id.slice(-6).toUpperCase()}`;
+    const interviews = globalSearchData.interviews || [];
+    for (let i = 0; i < interviews.length; i++) {
+      const item = interviews[i];
+      const interviewId = `INT-${(item._id || '').slice(-6).toUpperCase()}`;
       if (
         interviewId.toLowerCase().includes(query) ||
-        i.candidate_name?.toLowerCase().includes(query) ||
-        i.role?.toLowerCase().includes(query)
+        item.candidate_name?.toLowerCase().includes(query) ||
+        item.role?.toLowerCase().includes(query)
       ) {
-        if (i.score != null) {
-          results.push({ type: 'Result', id: i._id, title: `${interviewId} - ${i.candidate_name || 'Unknown'}`, subtitle: `${i.role || 'No Role'} • Score: ${i.score}%`, path: `/admin/results?search=${encodeURIComponent(interviewId)}` });
+        if (item.score != null) {
+          results.push({ type: 'Result', id: item._id, title: `${interviewId} - ${item.candidate_name || 'Unknown'}`, subtitle: `${item.role || 'No Role'} • Score: ${item.score}%`, path: `/admin/results?search=${encodeURIComponent(interviewId)}` });
         } else {
-          results.push({ type: 'Interview', id: i._id, title: `${interviewId} - ${i.candidate_name || 'Unknown'}`, subtitle: i.role || 'No Role', path: `/admin/interviews?search=${encodeURIComponent(interviewId)}` });
+          results.push({ type: 'Interview', id: item._id, title: `${interviewId} - ${item.candidate_name || 'Unknown'}`, subtitle: item.role || 'No Role', path: `/admin/interviews?search=${encodeURIComponent(interviewId)}` });
         }
+        if (results.length >= 5) return results;
       }
-    });
+    }
 
-    globalSearchData.logs?.forEach(l => {
+    const logs = globalSearchData.logs || [];
+    for (let i = 0; i < logs.length; i++) {
+      const l = logs[i];
       const logId = `LOG-${l._id?.slice(-6).toUpperCase() || 'UNKNOWN'}`;
       if (
         logId.toLowerCase().includes(query) ||
@@ -369,13 +387,12 @@ const Header = ({ onToggleMobileMenu }) => {
         l.target?.toLowerCase().includes(query)
       ) {
         results.push({ type: 'Log', id: l._id || logId, title: `${l.action} - ${l.admin_email || 'System'}`, subtitle: `Target: ${l.target || 'None'}`, path: `/admin/logs?search=${encodeURIComponent(l.target || l.action)}` });
+        if (results.length >= 5) return results;
       }
-    });
+    }
 
     return results.slice(0, 5);
-  };
-
-  const searchResults = getSearchResults();
+  }, [searchQuery, globalSearchData]);
 
   return (
     <>

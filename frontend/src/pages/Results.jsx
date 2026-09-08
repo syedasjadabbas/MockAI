@@ -1,12 +1,31 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Award, ShieldAlert, AlertCircle, Search, Filter, ChevronLeft, ChevronRight, TrendingUp, Download, CheckCircle2 } from 'lucide-react';
-import { fetchWithAuth } from '../api';
+import { fetchWithAuth, getCachedData } from '../api';
 import { useLocation } from 'react-router-dom';
 import { exportToCSV } from '../utils/csvExport';
 import { formatDateOnly } from '../utils/dateFormat';
 import { TableSkeleton } from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
 import { useTheme } from '../context/ThemeContext';
+
+const formatResultsItems = (data) => {
+  if (!Array.isArray(data)) return [];
+  const completedOnly = data.filter(r => {
+    const status = r.status || (r.score != null ? 'Completed' : 'In Progress');
+    return status === 'Completed' && r.score !== null && r.score !== undefined;
+  });
+  return completedOnly.map(r => ({
+    id: (r._id || '').slice(-6).toUpperCase(),
+    interviewId: (r._id || '').slice(-6).toUpperCase(),
+    user: r.candidate_name || 'Deleted User',
+    overallScore: `${r.score}%`,
+    scoreValue: r.score,
+    confidenceScore: r.confidence != null ? `${r.confidence}%` : '-',
+    stressIndicator: r.stress ? r.stress : '-',
+    date: r.created_at ? formatDateOnly(r.created_at) : '-',
+    rawDate: r.created_at || ''
+  })).sort((a, b) => new Date(b.rawDate || b.date) - new Date(a.rawDate || a.date));
+};
 
 const ScoreIndicator = ({ scoreStr }) => {
   const { isDark } = useTheme();
@@ -40,8 +59,12 @@ const ScoreIndicator = ({ scoreStr }) => {
 const Results = () => {
   const location = useLocation();
   const { isDark } = useTheme();
-  const [mappedResults, setMappedResults] = useState([]);
-  const [loading, setLoading] = useState(true);
+
+  const cachedResults = getCachedData('/results');
+  const hasCached = Array.isArray(cachedResults) && cachedResults.length > 0;
+
+  const [mappedResults, setMappedResults] = useState(() => hasCached ? formatResultsItems(cachedResults) : []);
+  const [loading, setLoading] = useState(!hasCached);
   const [search, setSearch] = useState(() => new URLSearchParams(location.search).get('search') || '');
   const [scoreFilter, setScoreFilter] = useState('All Scores');
   const [errorMsg, setErrorMsg] = useState(null);
@@ -55,30 +78,10 @@ const Results = () => {
   }, [location.search]);
 
   useEffect(() => {
+    if (!hasCached) setLoading(true);
     fetchWithAuth('/results')
       .then(data => {
-        const completedOnly = data.filter(r => {
-          const status = r.status || (r.score != null ? 'Completed' : 'In Progress');
-          return status === 'Completed' && r.score !== null && r.score !== undefined;
-        });
-        setMappedResults(completedOnly.map(r => {
-          const hasScore = true;
-          return {
-            id: r._id.slice(-6).toUpperCase(),
-            interviewId: r._id.slice(-6).toUpperCase(),
-            user: r.candidate_name || 'Deleted User',
-            overallScore: hasScore ? `${r.score}%` : '-',
-            scoreValue: hasScore ? r.score : null,
-            confidenceScore: hasScore && r.confidence != null ? `${r.confidence}%` : '-',
-            stressIndicator: hasScore && r.stress ? r.stress : '-',
-            date: r.created_at ? formatDateOnly(r.created_at) : '-'
-          };
-        }).sort((a, b) => {
-          if (a.date === '-' && b.date === '-') return 0;
-          if (a.date === '-') return 1;
-          if (b.date === '-') return -1;
-          return new Date(b.date) - new Date(a.date);
-        }));
+        setMappedResults(formatResultsItems(data));
       })
       .catch(() => {
         setErrorMsg("Failed to load evaluation results. Please try again.");
@@ -365,17 +368,20 @@ const Results = () => {
                     </td>
                     <td className="py-4 px-6">
                       {item.stressIndicator !== '-' ? (
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border ${
-                          item.stressIndicator === 'Low' 
-                            ? isDark ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                            : item.stressIndicator === 'Medium'
-                              ? isDark ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-amber-50 text-amber-700 border-amber-200'
-                              : isDark ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' : 'bg-rose-50 text-rose-700 border-rose-200'
-                        }`}>
-                          {item.stressIndicator === 'High' && <ShieldAlert className="w-3.5 h-3.5" />}
-                          {item.stressIndicator === 'Medium' && <AlertCircle className="w-3.5 h-3.5" />}
-                          {item.stressIndicator}
-                        </span>
+                        <div className="inline-flex items-center gap-2">
+                          <span 
+                            className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                              item.stressIndicator === 'Low'
+                                ? 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]'
+                                : item.stressIndicator === 'Medium'
+                                  ? 'bg-amber-500'
+                                  : 'bg-rose-500'
+                            }`}
+                          />
+                          <span className="text-xs font-medium text-[var(--text-secondary)]">
+                            {item.stressIndicator}
+                          </span>
+                        </div>
                       ) : (
                         <span className="text-[var(--text-muted)] font-medium text-xs">-</span>
                       )}

@@ -1,18 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { Shield, Mail, UserCheck, ShieldCheck } from 'lucide-react';
-import { fetchWithAuth } from '../api';
+import { fetchWithAuth, getCachedData, API_BASE } from '../api';
 import StatsCard from '../components/StatsCard';
 import { TableSkeleton } from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
 import { useTheme } from '../context/ThemeContext';
 
 const Admins = () => {
-  const [admins, setAdmins] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const cachedAdmins = getCachedData('/all-admins');
+  const hasCached = Array.isArray(cachedAdmins) && cachedAdmins.length > 0;
+
+  const [admins, setAdmins] = useState(() => hasCached ? cachedAdmins : []);
+  const [loading, setLoading] = useState(!hasCached);
   const { isDark } = useTheme();
 
-  useEffect(() => {
-    fetchWithAuth('/all-admins')
+  const loadAdmins = (force = false) => {
+    if (!hasCached || force) setLoading(true);
+    fetchWithAuth('/all-admins', { forceRefresh: force })
       .then(data => {
         setAdmins(data || []);
       })
@@ -20,6 +24,13 @@ const Admins = () => {
         console.error("Failed to fetch admins:", err);
       })
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    loadAdmins();
+    const onAdminUpdated = () => loadAdmins(true);
+    window.addEventListener('admin_info_updated', onAdminUpdated);
+    return () => window.removeEventListener('admin_info_updated', onAdminUpdated);
   }, []);
 
   if (loading) {
@@ -72,16 +83,42 @@ const Admins = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--border-table)]">
-                {admins.map((admin, idx) => (
-                  <tr key={idx} className="hover:bg-[var(--bg-table-row-hover)] transition-colors">
-                    <td className="py-4 px-6 font-semibold text-sm text-[var(--text-primary)]">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-400 font-bold text-xs border border-orange-500/20">
-                          {admin.name ? admin.name.charAt(0).toUpperCase() : 'A'}
+                {admins.map((admin, idx) => {
+                  const cachedAdmin = (() => {
+                    try {
+                      return JSON.parse(localStorage.getItem('mockai_admin_info') || '{}');
+                    } catch {
+                      return {};
+                    }
+                  })();
+                  const rawPic = admin.profile_picture || (admin.email && admin.email.toLowerCase() === cachedAdmin.email?.toLowerCase() ? cachedAdmin.profile_picture : null);
+                  const avatarUrl = rawPic ? (rawPic.startsWith('http') ? rawPic : `${API_BASE}${rawPic}`) : null;
+
+                  return (
+                    <tr key={idx} className="hover:bg-[var(--bg-table-row-hover)] transition-colors">
+                      <td className="py-4 px-6 font-semibold text-sm text-[var(--text-primary)]">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-400 font-bold text-xs border border-orange-500/20 overflow-hidden shrink-0">
+                            {avatarUrl ? (
+                              <img 
+                                src={avatarUrl} 
+                                alt={admin.name || 'Admin'} 
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                  if (e.currentTarget.nextElementSibling) {
+                                    e.currentTarget.nextElementSibling.style.display = 'inline';
+                                  }
+                                }}
+                              />
+                            ) : null}
+                            <span style={{ display: avatarUrl ? 'none' : 'inline' }}>
+                              {admin.name ? admin.name.charAt(0).toUpperCase() : 'A'}
+                            </span>
+                          </div>
+                          <span>{admin.name}</span>
                         </div>
-                        <span>{admin.name}</span>
-                      </div>
-                    </td>
+                      </td>
                     <td className="py-4 px-6 text-sm text-[var(--text-secondary)]">
                       <div className="flex items-center gap-2">
                         <Mail className="w-3.5 h-3.5 text-[var(--text-muted)]" />
@@ -89,15 +126,16 @@ const Admins = () => {
                       </div>
                     </td>
                     <td className="py-4 px-6">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold border ${
-                        isDark ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' : 'bg-orange-50 text-orange-700 border-orange-200'
-                      }`}>
-                        <UserCheck className="w-3 h-3" />
-                        {admin.role || 'Admin'}
-                      </span>
+                      <div className="inline-flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-orange-400 shadow-[0_0_6px_rgba(251,146,60,0.5)]" />
+                        <span className="text-xs font-medium text-[var(--text-secondary)]">
+                          {admin.role || 'Admin'}
+                        </span>
+                      </div>
                     </td>
-                  </tr>
-                ))}
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

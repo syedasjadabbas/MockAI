@@ -1,12 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { Filter, Calendar, Clock, CheckCircle2, AlertCircle, Eye, X, Search, Download, ChevronLeft, ChevronRight, Briefcase } from 'lucide-react';
-import { fetchWithAuth } from '../api';
+import { fetchWithAuth, getCachedData } from '../api';
 import { useLocation } from 'react-router-dom';
 import { exportToCSV } from '../utils/csvExport';
 import { formatDateOnly } from '../utils/dateFormat';
 import { TableSkeleton } from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
 import { useTheme } from '../context/ThemeContext';
+
+const formatInterviewItems = (data) => {
+  if (!Array.isArray(data)) return [];
+  return data.map(i => ({
+    id: (i._id || '').slice(-6).toUpperCase(),
+    _id: i._id,
+    user: i.candidate_name || 'Deleted User',
+    type: i.role || '-',
+    status: i.status || (i.score != null ? 'Completed' : 'In Progress'),
+    date: i.created_at ? formatDateOnly(i.created_at) : '-',
+    score: i.score,
+    confidence: i.confidence,
+    stress: i.stress,
+    transcript: i.transcript,
+    created_at: i.created_at || ''
+  }));
+};
 
 const Interviews = () => {
   const location = useLocation();
@@ -18,14 +35,17 @@ const Interviews = () => {
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 10;
 
+  const cachedInterviews = getCachedData('/interviews');
+  const hasCached = Array.isArray(cachedInterviews) && cachedInterviews.length > 0;
+
   useEffect(() => {
     const query = new URLSearchParams(location.search).get('search');
     if (query !== null) setSearch(query);
   }, [location.search]);
 
   const [selectedInterview, setSelectedInterview] = useState(null);
-  const [interviewsData, setInterviewsData] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [interviewsData, setInterviewsData] = useState(() => hasCached ? formatInterviewItems(cachedInterviews) : []);
+  const [loading, setLoading] = useState(!hasCached);
   const [loadError, setLoadError] = useState(null);
   const [toast, setToast] = useState(null);
 
@@ -35,20 +55,9 @@ const Interviews = () => {
   };
 
   useEffect(() => {
+    if (!hasCached) setLoading(true);
     fetchWithAuth('/interviews')
-      .then(data => setInterviewsData(data.map(i => ({
-        id: i._id.slice(-6).toUpperCase(),
-        _id: i._id,
-        user: i.candidate_name || 'Deleted User',
-        type: i.role || '-',
-        status: i.status || (i.score != null ? 'Completed' : 'In Progress'),
-        date: i.created_at ? formatDateOnly(i.created_at) : '-',
-        score: i.score,
-        confidence: i.confidence,
-        stress: i.stress,
-        transcript: i.transcript,
-        created_at: i.created_at || ''
-      }))))
+      .then(data => setInterviewsData(formatInterviewItems(data)))
       .catch(() => setLoadError("Failed to load interviews. Please try again."))
       .finally(() => setLoading(false));
   }, []);
@@ -234,19 +243,22 @@ const Interviews = () => {
                       )}
                     </td>
                     <td className="py-4 px-6">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border ${
-                        item.status === 'Completed' 
-                          ? isDark ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                          : item.status === 'In Progress'
-                            ? isDark ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-amber-50 text-amber-700 border-amber-200'
-                            : isDark ? 'bg-slate-500/10 text-slate-400 border-slate-500/20' : 'bg-slate-100 text-slate-700 border-slate-200'
-                      }`}>
-                        {item.status === 'Completed' && <CheckCircle2 className="w-3 h-3" />}
-                        {item.status === 'In Progress' && <Clock className="w-3 h-3" />}
-                        {item.status === 'Pending' && <Clock className="w-3 h-3" />}
-                        {item.status === 'Failed' && <AlertCircle className="w-3 h-3" />}
-                        {item.status}
-                      </span>
+                      <div className="inline-flex items-center gap-2">
+                        <span 
+                          className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                            item.status === 'Completed'
+                              ? 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]'
+                              : item.status === 'In Progress'
+                                ? 'bg-amber-500 animate-pulse'
+                                : item.status === 'Failed'
+                                  ? 'bg-rose-500'
+                                  : 'bg-slate-400'
+                          }`} 
+                        />
+                        <span className="text-xs font-medium text-[var(--text-secondary)]">
+                          {item.status}
+                        </span>
+                      </div>
                     </td>
                     <td className="py-4 px-6 text-sm text-[var(--text-muted)]">{item.date}</td>
                     <td className="py-4 px-6 text-right">

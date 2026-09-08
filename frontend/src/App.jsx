@@ -1,5 +1,5 @@
 import React, { useState, Suspense } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import { routes } from './routes';
@@ -25,19 +25,6 @@ function PrivateCandidateRoute({ children }) {
   return isCandidateAuthenticated() ? children : <Navigate to="/login" />;
 }
 
-// Wraps /login, /register, and bare / so the authenticated-redirect check
-// re-runs on every render of THIS route, exactly like PrivateCandidateRoute
-// already does for protected routes. A plain inline ternary evaluated
-// directly in App()'s render body is only recomputed when App itself
-// re-renders (effectively once per full page load, since App has no state
-// of its own) - so its result can go stale for the rest of that SPA
-// session. Concretely: reload while authenticated bakes in "redirect to
-// /dashboard" for /login; a later logout (a client-side navigate, no
-// reload) clears the token but that baked-in redirect never updates, so
-// /login bounces to /dashboard, PrivateCandidateRoute correctly bounces
-// back to /login, and the two ping-pong forever ("Maximum update depth
-// exceeded"). Wrapping in a real component fixes this the same way
-// PrivateCandidateRoute already avoids it.
 function PublicCandidateRoute({ children }) {
   return isCandidateAuthenticated() ? <Navigate to="/dashboard" /> : children;
 }
@@ -46,16 +33,16 @@ function RootRedirect() {
   return <Navigate to={isCandidateAuthenticated() ? '/dashboard' : '/login'} />;
 }
 
-function AdminLayout({ children }) {
+function AdminLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
     <div className="flex min-h-screen bg-[var(--bg-app)] text-[var(--text-primary)] transition-colors duration-200">
       <Sidebar mobileOpen={mobileMenuOpen} setMobileOpen={setMobileMenuOpen} />
       <div className="flex-1 lg:ml-64 flex flex-col min-w-0">
-        <Header onToggleMobileMenu={() => setMobileMenuOpen(!mobileMenuOpen)} />
-        <main className="pt-20 px-4 sm:px-6 lg:px-8 pb-12 flex-1 w-full max-w-7xl mx-auto">
-          {children}
+        <Header onToggleMobileMenu={() => setMobileMenuOpen(prev => !prev)} />
+        <main className="pt-20 px-4 sm:px-6 lg:px-8 pb-12 flex-1 w-full max-w-7xl mx-auto page-content-transition">
+          <Outlet />
         </main>
       </div>
     </div>
@@ -63,35 +50,36 @@ function AdminLayout({ children }) {
 }
 
 function App() {
+  const loginRoute = routes.find(r => r.path === '/admin/login');
+  const adminPanelRoutes = routes.filter(r => r.path !== '/admin/login');
+
   return (
     <ThemeProvider>
       <BrowserRouter>
         <Suspense fallback={<PageFallback />}>
           <Routes>
-            {routes.map((route, idx) => {
-              if (route.path === '/admin/login') {
-                return (
-                  <Route 
-                    key={idx} 
-                    path={route.path} 
-                    element={
-                      localStorage.getItem('mockai_admin_token') 
-                      ? <Navigate to="/admin/dashboard" /> 
-                      : route.element
-                    } 
-                  />
-                );
-              }
+            {/* Admin Login Route */}
+            {loginRoute && (
+              <Route 
+                path="/admin/login" 
+                element={
+                  localStorage.getItem('mockai_admin_token') 
+                  ? <Navigate to="/admin/dashboard" /> 
+                  : loginRoute.element
+                } 
+              />
+            )}
 
-              const element = route.layout ? <AdminLayout>{route.element}</AdminLayout> : route.element;
-              return (
+            {/* Persistent Admin Layout Route (keeps Header & Sidebar mounted) */}
+            <Route element={<PrivateRoute><AdminLayout /></PrivateRoute>}>
+              {adminPanelRoutes.map((route, idx) => (
                 <Route 
-                  key={idx} 
+                  key={route.path || idx} 
                   path={route.path} 
-                  element={<PrivateRoute>{element}</PrivateRoute>} 
+                  element={route.element} 
                 />
-              );
-            })}
+              ))}
+            </Route>
 
             {/* Candidate/User Panel routes */}
             {candidateRoutes.map((route, idx) => {
