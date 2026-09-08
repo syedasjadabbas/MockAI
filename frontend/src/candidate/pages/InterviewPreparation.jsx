@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Camera,
@@ -32,14 +32,8 @@ const InterviewPreparation = () => {
   const [micStatus, setMicStatus] = useState('idle');
   const [permissionError, setPermissionError] = useState('');
 
-  // Audio stream & analysis
-  const [micLevel, setMicLevel] = useState(0);
-
   const videoRef = useRef(null);
   const streamRef = useRef(null);
-  const audioContextRef = useRef(null);
-  const analyserRef = useRef(null);
-  const animFrameRef = useRef(null);
 
   // Load interview metadata
   useEffect(() => {
@@ -93,42 +87,6 @@ const InterviewPreparation = () => {
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
       }
-
-      // Initialize Web Audio API Analyser for real-time mic volume level
-      try {
-        const AudioCtx = window.AudioContext || window.webkitAudioContext;
-        const audioCtx = new AudioCtx();
-        audioContextRef.current = audioCtx;
-
-        const analyser = audioCtx.createAnalyser();
-        analyser.fftSize = 256;
-        analyserRef.current = analyser;
-
-        const source = audioCtx.createMediaStreamSource(stream);
-        source.connect(analyser);
-
-        const dataArray = new Uint8Array(analyser.frequencyBinCount);
-
-        const updateMicLevel = () => {
-          if (!analyserRef.current) return;
-          analyserRef.current.getByteFrequencyData(dataArray);
-
-          // Calculate RMS volume level
-          let sum = 0;
-          for (let i = 0; i < dataArray.length; i++) {
-            sum += dataArray[i] * dataArray[i];
-          }
-          const rms = Math.sqrt(sum / dataArray.length);
-          const normalized = Math.min(100, Math.round((rms / 128) * 100));
-          setMicLevel(normalized);
-
-          animFrameRef.current = requestAnimationFrame(updateMicLevel);
-        };
-
-        updateMicLevel();
-      } catch (audioErr) {
-        console.warn('AudioContext analyser could not be initialized:', audioErr);
-      }
     } catch (err) {
       console.error('Media permission error:', err);
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
@@ -149,15 +107,11 @@ const InterviewPreparation = () => {
     }
   };
 
-  // Clean up media streams and audio context on unmount
+  // Clean up media streams on unmount
   useEffect(() => {
     return () => {
-      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
-      }
-      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-        audioContextRef.current.close().catch(() => {});
       }
     };
   }, []);

@@ -39,17 +39,18 @@ const AnimatedBackground3D = () => {
     
     let width = window.innerWidth;
     let height = window.innerHeight;
+    const isMobile = width < 768;
 
     const camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 100);
     camera.position.set(0, 0, 24);
 
     const renderer = new THREE.WebGLRenderer({
-      antialias: true,
+      antialias: !isMobile,
       alpha: true,
       powerPreference: 'low-power',
     });
     renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    renderer.setPixelRatio(isMobile ? 1.0 : Math.min(window.devicePixelRatio, 1.5));
     renderer.setClearColor(0x000000, 0); // Transparent canvas
     container.appendChild(renderer.domElement);
 
@@ -59,8 +60,9 @@ const AnimatedBackground3D = () => {
     // =========================================================================
     // 1. FLOATING PARTICLES & 2. NEURAL NETWORK CONNECTIONS
     // =========================================================================
-    const nodeCount = 65;
-    const maxDistance = 5.2;
+    // Adaptive node count: 26 on mobile (< 768px), 60 on desktop to preserve performance
+    const nodeCount = isMobile ? 26 : 60;
+    const maxDistance = isMobile ? 4.6 : 5.2;
     const bounds = { x: 22, y: 14, z: 10 };
 
     const nodePositions = new Float32Array(nodeCount * 3);
@@ -179,6 +181,16 @@ const AnimatedBackground3D = () => {
     };
     window.addEventListener('resize', handleResize);
 
+    // Tab visibility handling to pause idle rendering
+    let isTabVisible = !document.hidden;
+    const handleVisibilityChange = () => {
+      isTabVisible = !document.hidden;
+      if (isTabVisible) {
+        lastTime = performance.now();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     // =========================================================================
     // RENDER LOOP
     // =========================================================================
@@ -187,6 +199,7 @@ const AnimatedBackground3D = () => {
 
     const animate = (time) => {
       animId = requestAnimationFrame(animate);
+      if (!isTabVisible) return;
 
       const delta = (time - lastTime) * 0.001 || 0.016;
       lastTime = time;
@@ -277,6 +290,7 @@ const AnimatedBackground3D = () => {
       cancelAnimationFrame(animId);
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('resize', handleResize);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
 
       scene.traverse((obj) => {
         if (obj.geometry) obj.geometry.dispose();

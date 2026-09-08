@@ -1314,7 +1314,7 @@ const QuestionBank = () => {
       {/* ----------------- MODAL 2: ADD / EDIT CATEGORY ----------------- */}
       {showCategoryModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in">
-          <div className="theme-modal rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl border flex flex-col animate-scale-up">
+          <div className="theme-modal rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl border flex flex-col max-h-[90vh] animate-scale-up">
             {/* Header */}
             <div className="p-6 border-b border-[var(--border-table)] flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -1339,7 +1339,7 @@ const QuestionBank = () => {
             </div>
 
             {/* Form Body */}
-            <form onSubmit={handleCategorySubmit} className="p-6 space-y-4">
+            <form onSubmit={handleCategorySubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
               {formError && (
                 <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-semibold flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 flex-shrink-0" />
@@ -1461,7 +1461,7 @@ const QuestionBank = () => {
       {/* ----------------- MODAL 3: VIEW QUESTION DETAILS ----------------- */}
       {viewingQuestion && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in">
-          <div className="theme-modal rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl border flex flex-col animate-scale-up">
+          <div className="theme-modal rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl border flex flex-col max-h-[90vh] animate-scale-up">
             {/* Header */}
             <div className="p-6 border-b border-[var(--border-table)] flex items-center justify-between">
               <div className="flex items-center gap-3">

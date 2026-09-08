@@ -28,6 +28,17 @@ const InterviewTopBar = ({ activeStep, onExit }) => {
           <img src={logo} alt="MockAI Logo" className="c-brand-logo" />
         </Link>
 
+        {/* Mobile / Tablet Step Badge */}
+        <div 
+          className="flex lg:hidden items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] sm:text-xs font-medium"
+          style={{ background: 'var(--c-surface-card)', borderColor: 'var(--c-border)', color: 'var(--c-text)' }}
+        >
+          <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: 'var(--c-accent)' }} />
+          <span style={{ color: 'var(--c-text-muted)' }}>Step {activeIndex >= 0 ? activeIndex + 1 : 1}/{FLOW_STEPS.length}:</span>
+          <span className="font-semibold">{FLOW_STEPS[activeIndex]?.label || 'Interview'}</span>
+        </div>
+
+        {/* Desktop Step Progress */}
         <div className="hidden lg:flex items-center gap-2 flex-1 min-w-0 justify-center overflow-x-auto">
           {FLOW_STEPS.map((step, idx) => {
             const isDone = idx < activeIndex;

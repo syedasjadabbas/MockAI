@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   Search,
   Filter,
@@ -52,6 +52,7 @@ function getCategoryIcon(role = '', type = '') {
 
 // FR31 - Comprehensive Candidate Interview History Ledger
 const InterviewHistory = () => {
+  const navigate = useNavigate();
   const [interviews, setInterviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -282,7 +283,7 @@ const InterviewHistory = () => {
                 title="No interview sessions recorded"
                 description="Start your first simulated interview to begin capturing speech recordings and evaluation dossiers."
                 actionLabel="Start Interview"
-                onAction={() => (window.location.href = '/interview/goal')}
+                onAction={() => navigate('/interview/goal')}
               />
             ) : (
               <div className="space-y-3">

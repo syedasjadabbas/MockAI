@@ -207,18 +207,19 @@ const HeroScene3D = () => {
 
     const width = container.clientWidth || 600;
     const height = container.clientHeight || 450;
+    const isMobile = width < 768;
 
     const camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 100);
     camera.position.set(0, 1.2, 8.8);
 
     const renderer = new THREE.WebGLRenderer({
-      antialias: true,
+      antialias: !isMobile,
       powerPreference: 'high-performance',
       alpha: false,
     });
     renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.shadowMap.enabled = true;
+    renderer.setPixelRatio(isMobile ? 1.0 : Math.min(window.devicePixelRatio, 1.5));
+    renderer.shadowMap.enabled = !isMobile;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.15;
@@ -230,9 +231,9 @@ const HeroScene3D = () => {
 
     const keyLight = new THREE.DirectionalLight('#FFFFFF', 2.5);
     keyLight.position.set(5, 8, 6);
-    keyLight.castShadow = true;
-    keyLight.shadow.mapSize.width = 1024;
-    keyLight.shadow.mapSize.height = 1024;
+    keyLight.castShadow = !isMobile;
+    keyLight.shadow.mapSize.width = 512;
+    keyLight.shadow.mapSize.height = 512;
     keyLight.shadow.camera.near = 0.5;
     keyLight.shadow.camera.far = 25;
     keyLight.shadow.bias = -0.001;
@@ -454,7 +455,7 @@ const HeroScene3D = () => {
     worldGroup.add(neuralOrbit);
 
     // --- Floating Particle Cloud ---
-    const particleCount = 75;
+    const particleCount = isMobile ? 32 : 70;
     const particleGeo = new THREE.BufferGeometry();
     const particlePositions = new Float32Array(particleCount * 3);
     const particleSpeeds = [];
@@ -564,12 +565,31 @@ const HeroScene3D = () => {
     };
     window.addEventListener('resize', handleResize);
 
+    // Viewport intersection & tab visibility management
+    let isVisible = true;
+    let isTabActive = !document.hidden;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        isVisible = entry.isIntersecting;
+      },
+      { threshold: 0.05 }
+    );
+    observer.observe(container);
+
+    const handleVisibilityChange = () => {
+      isTabActive = !document.hidden;
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     // --- Animation Render Loop ---
     let animId;
     let clock = new THREE.Clock();
 
     const animate = () => {
       animId = requestAnimationFrame(animate);
+
+      if (!isVisible || !isTabActive) return;
 
       const elapsed = clock.getElapsedTime();
 
@@ -638,6 +658,8 @@ const HeroScene3D = () => {
     // --- Cleanup on Unmount ---
     return () => {
       cancelAnimationFrame(animId);
+      observer.disconnect();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('resize', handleResize);
       container.removeEventListener('mousemove', handleMouseMove);
 

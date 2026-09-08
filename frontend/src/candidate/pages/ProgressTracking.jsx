@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { TrendingUp } from 'lucide-react';
 import CandidateLayout from '../layouts/CandidateLayout';
 import CandidateEmptyState from '../components/CandidateEmptyState';
@@ -6,6 +7,7 @@ import { ScoreTrendChart, CategoryBreakdownChart } from '../components/ProgressC
 import { getProgress } from '../services/candidateApi';
 
 const ProgressTracking = () => {
+  const navigate = useNavigate();
   const [progress, setProgress] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -42,7 +44,7 @@ const ProgressTracking = () => {
               title="No progress data yet"
               description="Complete mock interviews to begin visualizing your progress trends and domain breakdown here."
               actionLabel="Start Interview"
-              onAction={() => (window.location.href = '/interview/goal')}
+              onAction={() => navigate('/interview/goal')}
             />
           </div>
         ) : (

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import {
   RotateCcw,
@@ -195,7 +195,7 @@ const EvaluationResults = () => {
   const totalQuestions = (interview.questions || []).length;
 
   // FR29-01: Performance Dimensions Breakdown Chart
-  const dimensionChartData = {
+  const dimensionChartData = useMemo(() => ({
     labels: ['Domain & Technical Content', 'Communication Fluency', 'Behavioral Composure'],
     datasets: [
       {
@@ -219,9 +219,9 @@ const EvaluationResults = () => {
         borderRadius: 4,
       },
     ],
-  };
+  }), [dimensionScores, hasVisionSummary]);
 
-  const dimensionChartOptions = {
+  const dimensionChartOptions = useMemo(() => ({
     indexAxis: 'y',
     responsive: true,
     maintainAspectRatio: false,
@@ -259,49 +259,51 @@ const EvaluationResults = () => {
         grid: { display: false },
       },
     },
-  };
+  }), [hasVisionSummary]);
 
   // FR29-01: Per-Question Performance Trajectory Chart
-  const questionLabels = (interview.questions || []).map((_, i) => `Q${(i + 1).toString().padStart(2, '0')}`);
-  const questionScores = (interview.questions || []).map((q) => {
-    const resp = (interview.responses || []).find((r) => (r.question_id || r.questionId) === q.id);
-    const qEval = perQuestionEval.find((item) => (item.question_id || item.questionId) === q.id);
-    if (!resp) return 0;
-    if (qEval?.status === 'failed') return 0;
-    return Math.min(100, Math.max(0, Math.round(qEval?.multimodal?.score ?? qEval?.score ?? 0)));
-  });
+  const trajectoryChartData = useMemo(() => {
+    const questionLabels = (interview.questions || []).map((_, i) => `Q${(i + 1).toString().padStart(2, '0')}`);
+    const questionScores = (interview.questions || []).map((q) => {
+      const resp = (interview.responses || []).find((r) => (r.question_id || r.questionId) === q.id);
+      const qEval = perQuestionEval.find((item) => (item.question_id || item.questionId) === q.id);
+      if (!resp) return 0;
+      if (qEval?.status === 'failed') return 0;
+      return Math.min(100, Math.max(0, Math.round(qEval?.multimodal?.score ?? qEval?.score ?? 0)));
+    });
 
-  const questionColors = (interview.questions || []).map((q) => {
-    const resp = (interview.responses || []).find((r) => (r.question_id || r.questionId) === q.id);
-    const qEval = perQuestionEval.find((item) => (item.question_id || item.questionId) === q.id);
-    if (!resp) return 'rgba(100, 116, 139, 0.35)'; // Skipped
-    if (qEval?.status === 'failed') return 'rgba(239, 68, 68, 0.7)'; // Failed
-    return 'rgba(255, 107, 53, 0.85)'; // Evaluated
-  });
+    const questionColors = (interview.questions || []).map((q) => {
+      const resp = (interview.responses || []).find((r) => (r.question_id || r.questionId) === q.id);
+      const qEval = perQuestionEval.find((item) => (item.question_id || item.questionId) === q.id);
+      if (!resp) return 'rgba(100, 116, 139, 0.35)'; // Skipped
+      if (qEval?.status === 'failed') return 'rgba(239, 68, 68, 0.7)'; // Failed
+      return 'rgba(255, 107, 53, 0.85)'; // Evaluated
+    });
 
-  const questionBorderColors = (interview.questions || []).map((q) => {
-    const resp = (interview.responses || []).find((r) => (r.question_id || r.questionId) === q.id);
-    const qEval = perQuestionEval.find((item) => (item.question_id || item.questionId) === q.id);
-    if (!resp) return '#64748B';
-    if (qEval?.status === 'failed') return '#EF4444';
-    return '#FF6B35';
-  });
+    const questionBorderColors = (interview.questions || []).map((q) => {
+      const resp = (interview.responses || []).find((r) => (r.question_id || r.questionId) === q.id);
+      const qEval = perQuestionEval.find((item) => (item.question_id || item.questionId) === q.id);
+      if (!resp) return '#64748B';
+      if (qEval?.status === 'failed') return '#EF4444';
+      return '#FF6B35';
+    });
 
-  const trajectoryChartData = {
-    labels: questionLabels,
-    datasets: [
-      {
-        label: 'Question Score (%)',
-        data: questionScores,
-        backgroundColor: questionColors,
-        borderColor: questionBorderColors,
-        borderWidth: 1.5,
-        borderRadius: 4,
-      },
-    ],
-  };
+    return {
+      labels: questionLabels,
+      datasets: [
+        {
+          label: 'Question Score (%)',
+          data: questionScores,
+          backgroundColor: questionColors,
+          borderColor: questionBorderColors,
+          borderWidth: 1.5,
+          borderRadius: 4,
+        },
+      ],
+    };
+  }, [interview.questions, interview.responses, perQuestionEval]);
 
-  const trajectoryChartOptions = {
+  const trajectoryChartOptions = useMemo(() => ({
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -340,7 +342,7 @@ const EvaluationResults = () => {
         grid: { display: false },
       },
     },
-  };
+  }), [interview.questions, interview.responses, perQuestionEval]);
 
   return (
     <InterviewFlowLayout step="results">

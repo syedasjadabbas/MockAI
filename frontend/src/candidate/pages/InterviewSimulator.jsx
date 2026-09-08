@@ -52,7 +52,6 @@ const InterviewSimulator = () => {
   // Media states
   const [streamReady, setStreamReady] = useState(false);
   const [streamError, setStreamError] = useState('');
-  const [micLevel, setMicLevel] = useState(0);
 
   // References for live streams & hardware recording
   const videoRef = useRef(null);
@@ -60,9 +59,6 @@ const InterviewSimulator = () => {
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
   const timerRef = useRef(null);
-  const audioContextRef = useRef(null);
-  const analyserRef = useRef(null);
-  const animFrameRef = useRef(null);
   const [pendingRecording, setPendingRecording] = useState(null);
 
   // 1. Fetch active interview session on mount
@@ -133,41 +129,6 @@ const InterviewSimulator = () => {
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
         }
-
-        // Web Audio Analyser for live VU meter
-        try {
-          const AudioCtx = window.AudioContext || window.webkitAudioContext;
-          const audioCtx = new AudioCtx();
-          audioContextRef.current = audioCtx;
-
-          const analyser = audioCtx.createAnalyser();
-          analyser.fftSize = 256;
-          analyserRef.current = analyser;
-
-          const source = audioCtx.createMediaStreamSource(stream);
-          source.connect(analyser);
-
-          const dataArray = new Uint8Array(analyser.frequencyBinCount);
-
-          const measureVolume = () => {
-            if (!analyserRef.current) return;
-            analyserRef.current.getByteFrequencyData(dataArray);
-
-            let sum = 0;
-            for (let i = 0; i < dataArray.length; i++) {
-              sum += dataArray[i] * dataArray[i];
-            }
-            const rms = Math.sqrt(sum / dataArray.length);
-            const normalized = Math.min(100, Math.round((rms / 128) * 100));
-            setMicLevel(normalized);
-
-            animFrameRef.current = requestAnimationFrame(measureVolume);
-          };
-
-          measureVolume();
-        } catch (audioErr) {
-          console.warn('AudioContext volume metering disabled:', audioErr);
-        }
       } catch (err) {
         console.error('Camera/Mic feed connection error:', err);
         if (active) {
@@ -181,12 +142,8 @@ const InterviewSimulator = () => {
 
     return () => {
       active = false;
-      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((t) => t.stop());
-      }
-      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-        audioContextRef.current.close().catch(() => {});
       }
     };
   }, []);
