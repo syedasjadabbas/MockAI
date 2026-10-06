@@ -330,6 +330,33 @@ def list_my_appointments(
     return [_serialize_appointment(a) for a in apts]
 
 
+@router.get("/appointments/{appointment_id}")
+def get_appointment(
+    appointment_id: str,
+    token_payload: dict = Depends(verify_candidate),
+):
+    """
+    Fetch a single appointment by ID.
+    Enforces candidate ownership: candidates can only view their own appointments.
+    """
+    user_id = token_payload.get("user_id") or token_payload.get("sub")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Invalid user authentication")
+
+    apt_obj_id = _object_id_or_400(appointment_id, "appointment ID")
+    apt = appointments_collection.find_one({"_id": apt_obj_id})
+    if not apt:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+
+    if str(apt.get("candidate_id")) != str(user_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not authorized to view this appointment.",
+        )
+
+    return _serialize_appointment(apt)
+
+
 @router.delete("/appointments/{appointment_id}")
 def cancel_appointment(
     appointment_id: str,

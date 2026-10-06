@@ -26,7 +26,7 @@ from services.multimodal_fusion import fuse_per_question, _facial_to_score
 from services.question_evaluator import evaluate_question_response
 from services.delivery_analyzer import analyze_delivery
 from services.facial_analyzer import FacialAnalyzer
-from routes.candidate_mentors import list_mentors, get_mentor, get_mentor_availability, book_appointment, list_my_appointments, cancel_appointment, BookAppointmentRequest
+from routes.candidate_mentors import list_mentors, get_mentor, get_mentor_availability, book_appointment, list_my_appointments, get_appointment, cancel_appointment, BookAppointmentRequest
 from routes.candidate_interview import get_candidate_statistics
 from routes.admin import get_admin_dashboard
 
@@ -332,6 +332,16 @@ def run_all_tests():
 
     cand2_apts = list_my_appointments(token_payload=token_candidate_2)
     expect(not any(a["id"] == apt_id for a in cand2_apts), "Mentors: Candidate 2 cannot see Candidate 1's appointment (strict isolation)")
+
+    # 8b. Single appointment lookup & ownership check
+    cand1_single = get_appointment(apt_id, token_payload=token_candidate)
+    expect(cand1_single["id"] == apt_id, "Mentors: Candidate 1 can fetch single appointment by ID")
+    try:
+        get_appointment(apt_id, token_payload=token_candidate_2)
+        expect(False, "Mentors: Candidate 2 fetching Candidate 1 appointment should be forbidden!")
+    except Exception as e:
+        status_code = getattr(e, "status_code", None)
+        expect(status_code == 403, f"Mentors: Unauthorized appointment lookup rejected with 403 Forbidden (got {status_code})")
 
     # 9. Cancel appointment ownership protection
     try:

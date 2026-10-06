@@ -130,6 +130,8 @@ def init_db_indexes():
         appointments_collection.create_index([("date", 1), ("start_time", 1)], background=True)
         appointments_collection.create_index([("mentor_id", 1), ("date", 1), ("start_time", 1)], background=True)
         appointments_collection.create_index([("status", 1)], background=True)
+        appointments_collection.create_index([("mentor_id", 1), ("date", 1), ("start_time", 1), ("status", 1)], background=True)
+        appointments_collection.create_index([("candidate_id", 1), ("date", 1), ("start_time", 1), ("status", 1)], background=True)
         print("Database indexes initialized successfully.")
     except Exception as e:
         print(f"Database index creation notice: {e}")
