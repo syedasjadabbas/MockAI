@@ -150,7 +150,7 @@ MockAI includes a full-stack mentor scheduling platform integrated into the cand
 | **ASGI Server** | Uvicorn | Asynchronous server runtime |
 | **Database** | MongoDB Atlas | Cloud document store with compound indexing |
 | **Auth & Cryptography** | JWT (PyJWT), Bcrypt, Passlib | Role-based token verification and salted password hashing |
-| **Media Processing** | FFmpeg, Soundfile, PyDub | WebM stream chunking, WAV extraction, MP4 normalization |
+| **Media Processing** | FFmpeg, Soundfile, PyDub | LocalFilesystemMediaStorage, WebM stream chunking, WAV extraction, MP4 normalization |
 | **Speech ASR** | Google Cloud Speech-to-Text | Real-time speech transcription |
 | **NLP Semantics** | DistilBERT (`all-MiniLM-L6-v2`) | Dense transformer embeddings & rubric cosine similarity |
 | **Face Detection** | OpenCV YuNet ONNX | Real-time bounding box and 5-landmark face localization |
@@ -173,7 +173,7 @@ MockAI includes a full-stack mentor scheduling platform integrated into the cand
 
 ## 🧪 Testing & Verification Evidence
 
-The MockAI platform has been exhaustively tested and verified across 12 automated regression and compliance suites:
+The MockAI platform has been exhaustively tested and verified across 12 primary regression and compliance suites (out of 23 automated test modules in `backend/`):
 
 ```text
 ======================================================================

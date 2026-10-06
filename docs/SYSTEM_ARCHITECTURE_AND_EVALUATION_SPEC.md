@@ -44,8 +44,8 @@ The MockAI architecture adopts a modular, decoupled tier structure comprising a 
 ┌──────────────────────────────────────┐  ┌──────────────────────────────────┐
 │      PERSISTENCE LAYER (MONGODB)     │  │       MEDIA STORAGE SUBSYSTEM    │
 │  MongoDB Atlas Replica Set           │  │  - Local Chunk Buffer /uploads   │
-│  - users, admins, interviews         │  │  - Normalized Artifacts /media   │
-│  - categories, questions, otps       │  │  - Cloudinary Storage Adapter    │
+│  - users, admins, interviews         │  │  - Normalized Media /media       │
+│  - categories, questions, otps       │  │  - LocalFilesystemMediaStorage   │
 │  - mentors, appointments, admin_logs │  │  - FFmpeg Transcoding Pipeline   │
 └──────────────────────────────────────┘  └──────────────────────────────────┘
                    │                                       │
@@ -140,21 +140,26 @@ When a candidate completes an interview session, the asynchronous evaluation pip
 - **Architecture:** Transformer Sentence Embeddings (`sentence-transformers/all-MiniLM-L6-v2`, DistilBERT family).
 - **Rubric Matcher:** Evaluates candidate transcript against predefined domain answers and essential concept keywords.
 - **Scoring Formulation:**
-  $$\text{Content Score} = \text{round}\Big(0.60 \times \text{Semantic Similarity} + 0.40 \times \text{Concept Coverage Ratio}, 1\Big)$$
-  where Semantic Similarity is the cosine similarity between dense embeddings:
-  $$\text{Semantic Similarity} = \max\left(0, \frac{\mathbf{u} \cdot \mathbf{v}}{\|\mathbf{u}\|_2 \|\mathbf{v}\|_2}\right) \times 100$$
+  $$\text{Content Score} = \text{round}\Big(0.40 \times \text{Semantic Alignment} + 0.35 \times \text{Concept Mastery} + 0.15 \times \text{Question Relevance} + 0.10 \times \text{Answer Depth}, 1\Big)$$
+  where:
+  - **Semantic Alignment** ($\text{sem\_score}$): Calibrated dense cosine similarity between candidate transcript and reference rubric criteria ($\frac{\text{sim} - 0.10}{0.70} \times 100$).
+  - **Concept Mastery** ($\text{cov\_score}$): Ratio of core domain concepts identified either lexically or via embedding similarity ($\ge 0.48$).
+  - **Question Relevance** ($\text{rel\_score}$): Dense semantic similarity between transcript and prompt text ($\frac{\text{sim} - 0.05}{0.65} \times 100$).
+  - **Answer Depth** ($\text{comp\_score}$): Word volume evaluated against difficulty target lengths (Easy: 25 words, Medium: 45 words, Hard: 70 words).
 - **Output:** `content_score` (0–100), `covered_concepts` (list), `missing_concepts` (list), `evaluation_notes`.
 
 ### 3.3 Speech Delivery & Fluency Analysis
 - **Module:** `backend/services/delivery_analyzer.py`
 - **Acoustic Features Extracted:**
   - **Words Per Minute (WPM):** $\text{WPM} = \frac{\text{Word Count}}{\text{Duration (seconds)}} \times 60.0$
-    - Optimal Cadence: $120 \le \text{WPM} \le 150$
-    - Rushed Cadence: $\text{WPM} > 160$
-    - Hesitant Cadence: $\text{WPM} < 100$
+    - Optimal Cadence: $110.0 \le \text{WPM} \le 165.0$
+    - Deliberate Cadence: $80.0 \le \text{WPM} < 110.0$
+    - Slow Cadence: $0.0 < \text{WPM} < 80.0$
+    - Fast Cadence: $165.0 < \text{WPM} \le 195.0$
+    - Rushed Cadence: $\text{WPM} > 195.0$ (or unpaced erratic speech)
   - **Acoustic Pauses:** Calculated using root-mean-square (RMS) energy thresholding; logs pause frequency and total pause seconds.
   - **Filler Word Detection:** Scans transcripts against lexical filler patterns (`"um"`, `"uh"`, `"like"`, `"basically"`, `"actually"`, `"you know"`).
-  - **Fluency Score:** Derived by penalizing pacing deviation, filler density, and excessive pause ratios.
+  - **Fluency Score:** Derived by scoring pacing alignment (up to 40 pts), filler hesitation control (up to 35 pts), pause control (up to 15 pts), and articulation flow (up to 10 pts).
 
 ### 3.4 Facial Expression & Behavioral Analysis
 - **Module:** `backend/services/facial_analyzer.py` (Implements FR17)
@@ -222,12 +227,12 @@ When hardware is legitimately absent or unmounted:
 ### 5.1 Dual-Modality Confidence Score (FR22)
 Combines acoustic stability and visual poise:
 $$\text{Confidence Score} = \Big(0.60 \times \text{Speech Confidence}\Big) + \Big(0.40 \times \text{Visual Confidence}\Big)$$
-- High: $\ge 80.0$ | Moderate: $60.0 - 79.9$ | Developing: $< 60.0$
+- High: $\ge 80.0$ | Moderate: $60.0 - 79.9$ | Developing: $40.0 - 59.9$ | Low: $< 40.0$
 
 ### 5.2 Dual-Modality Stress Level (FR23)
 Evaluates speech hesitation, pause frequency, facial tension, and negative emotion spikes:
 $$\text{Stress Score} = \Big(0.50 \times \text{Speech Stress}\Big) + \Big(0.50 \times \text{Visual Stress}\Big)$$
-- Low: $< 35.0$ | Moderate: $35.0 - 65.0$ | Elevated: $> 65.0$
+- Low: $< 35.0$ | Moderate: $35.0 - 64.9$ | Elevated: $\ge 65.0$
 
 ### 5.3 Explainable Coaching Engine (FR24 – FR27)
 - **Mathematical Rationale (FR24):** Details exactly how modality scores and difficulty weights yielded the final score.
@@ -290,7 +295,7 @@ To bridge the gap between AI practice and real-world industry feedback, MockAI i
 
 ## 10. Verification & Test Evidence
 
-The MockAI platform has undergone exhaustive verification across 12 distinct test suites with **100% pass rates**:
+The MockAI platform has undergone exhaustive verification across 12 primary regression, compliance, and acceptance test suites (out of 23 automated test modules in `backend/`) with **100% pass rates**:
 
 | Test Suite File | Scope of Verification | Pass Rate |
 | :--- | :--- | :---: |
