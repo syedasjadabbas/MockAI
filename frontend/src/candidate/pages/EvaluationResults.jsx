@@ -624,7 +624,7 @@ const EvaluationResults = () => {
                 </div>
                 <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
                   {hasVisionSummary
-                    ? `Observable facial composure: ${facialSummary?.overall_composure || 'Composed & Stable'}. Dominant expression: ${facialSummary?.dominant_expression || 'Neutral'}.`
+                    ? `Observable facial composure: ${facialSummary?.overall_composure || 'Not Assessed'}. Dominant expression: ${facialSummary?.dominant_expression || 'Not Observed'}.`
                     : 'Facial expression valence, eye gaze attentiveness, head pose composure, and observable micro-hesitations.'}
                 </p>
               </div>
@@ -755,7 +755,7 @@ const EvaluationResults = () => {
                 </div>
                 {hasVisionSummary ? (
                   <p className="c-serif-num text-2xl font-bold text-white pt-0.5">
-                    {facialSummary?.dominant_expression || 'Neutral'}
+                    {facialSummary?.dominant_expression || 'Not Observed'}
                   </p>
                 ) : (
                   <p className="text-xs font-bold text-neutral-400 pt-1 font-mono">
@@ -779,7 +779,7 @@ const EvaluationResults = () => {
                 </div>
                 {hasVisionSummary ? (
                   <p className="c-serif-num text-2xl font-bold text-white pt-0.5">
-                    {facialSummary?.overall_composure || 'Composed & Stable'}
+                    {facialSummary?.overall_composure || 'Not Assessed'}
                   </p>
                 ) : (
                   <p className="text-xs font-bold text-neutral-400 pt-1 font-mono">
@@ -1014,18 +1014,18 @@ const EvaluationResults = () => {
                         <div className="space-y-1 text-[11px] text-neutral-300">
                           <div>
                             <span className="text-neutral-400">Expression: </span>
-                            <span className="text-white font-medium">{facial?.dominant_expression || 'Neutral'}</span>
-                            {facial?.expression_distribution && facial?.dominant_expression && (
+                            <span className="text-white font-medium">{facial?.dominant_expression || 'Not Observed'}</span>
+                            {facial?.expression_distribution && facial?.dominant_expression && facial.dominant_expression !== 'Not Observed' && (
                               <span className="text-neutral-400 ml-1">({facial.expression_distribution[facial.dominant_expression.toLowerCase()] ?? ''}%)</span>
                             )}
                           </div>
                           <div>
                             <span className="text-neutral-400">Composure: </span>
-                            <span className="text-white font-medium">{facial.behavioral_indicators?.composure_index || 'Stable'}</span>
+                            <span className="text-white font-medium">{facial.behavioral_indicators?.composure_index || 'Not Assessed'}</span>
                           </div>
                           <div>
                             <span className="text-neutral-400">Engagement: </span>
-                            <span className="text-white font-medium">{facial.behavioral_indicators?.engagement_level || 'High'}</span>
+                            <span className="text-white font-medium">{facial.behavioral_indicators?.engagement_level || 'Not Assessed'}</span>
                           </div>
                         </div>
                       ) : (

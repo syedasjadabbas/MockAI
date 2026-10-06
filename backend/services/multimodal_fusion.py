@@ -106,22 +106,27 @@ def fuse_per_question(
     # -----------------------------------------------------------------------
     # 1. Determine modality availability and extract raw scores
     # -----------------------------------------------------------------------
+    # NLP is available if completed with a score, OR if evaluated as empty (silence = 0.0 score)
+    nlp_status = nlp_result.get("status") if nlp_result else "missing"
     nlp_available = (
         nlp_result is not None
-        and nlp_result.get("status") == "completed"
-        and nlp_result.get("content_score", 0.0) is not None
+        and nlp_status in ("completed", "empty")
+        and nlp_result.get("content_score") is not None
     )
     nlp_score = float(nlp_result.get("content_score", 0.0)) if nlp_available else None
 
+    # Speech is available if completed with fluency score, OR if evaluated as empty (0 words = 0.0 score)
+    speech_status = delivery_result.get("status") if delivery_result else "missing"
     speech_available = (
         delivery_result is not None
-        and delivery_result.get("status") == "completed"
-        and delivery_result.get("word_count", 0) > 0
+        and speech_status in ("completed", "empty")
+        and delivery_result.get("fluency_score") is not None
     )
     speech_score = float(delivery_result.get("fluency_score", 0.0)) if speech_available else None
 
     vision_score = _facial_to_score(facial_result) if facial_result else None
-    vision_available = vision_score is not None
+    vision_status = facial_result.get("status") if facial_result else "missing"
+    vision_available = vision_score is not None and vision_status == "completed"
 
     modality_status = {
         "nlp":    "available" if nlp_available else "unavailable",
@@ -149,18 +154,51 @@ def fuse_per_question(
         }
 
     # -----------------------------------------------------------------------
-    # 3. Redistribute weights proportionally among available modalities
+    # 3. Determine weights with strict verbal primacy & adjunct vision capping
     # -----------------------------------------------------------------------
-    raw_weights = {}
-    if nlp_available:
-        raw_weights["nlp"] = BASE_WEIGHTS["nlp"]
-    if speech_available:
-        raw_weights["speech"] = BASE_WEIGHTS["speech"]
-    if vision_available:
-        raw_weights["vision"] = BASE_WEIGHTS["vision"]
+    # Vision is strictly an adjunct modality (baseline 0.20). In an interview,
+    # visual composure alone must NEVER absorb verbal weights (NLP + Speech)
+    # or score above its 20% baseline contribution.
+    weights_used = {"nlp": 0.0, "speech": 0.0, "vision": 0.0}
 
-    weight_sum = sum(raw_weights.values())
-    weights_used = {k: round(v / weight_sum, 4) for k, v in raw_weights.items()}
+    if nlp_available and speech_available and vision_available:
+        # Standard trimodal: 50% NLP, 30% Speech, 20% Vision
+        weights_used = {"nlp": BASE_WEIGHTS["nlp"], "speech": BASE_WEIGHTS["speech"], "vision": BASE_WEIGHTS["vision"]}
+    elif nlp_available and speech_available and not vision_available:
+        # Camera unmounted: proportional verbal redistribution (62.5% NLP, 37.5% Speech)
+        verbal_sum = BASE_WEIGHTS["nlp"] + BASE_WEIGHTS["speech"]
+        weights_used["nlp"] = round(BASE_WEIGHTS["nlp"] / verbal_sum, 4)
+        weights_used["speech"] = round(BASE_WEIGHTS["speech"] / verbal_sum, 4)
+        weights_used["vision"] = 0.0
+    elif nlp_available and not speech_available and not vision_available:
+        # Text-only interview mode
+        weights_used["nlp"] = 1.0
+        weights_used["speech"] = 0.0
+        weights_used["vision"] = 0.0
+    elif nlp_available and vision_available and not speech_available:
+        # Text + video (e.g., typed answer with camera on)
+        sub_sum = BASE_WEIGHTS["nlp"] + BASE_WEIGHTS["vision"]
+        weights_used["nlp"] = round(BASE_WEIGHTS["nlp"] / sub_sum, 4)
+        weights_used["vision"] = round(BASE_WEIGHTS["vision"] / sub_sum, 4)
+        weights_used["speech"] = 0.0
+    elif speech_available and vision_available and not nlp_available:
+        # Speech delivery + video without NLP
+        sub_sum = BASE_WEIGHTS["speech"] + BASE_WEIGHTS["vision"]
+        weights_used["speech"] = round(BASE_WEIGHTS["speech"] / sub_sum, 4)
+        weights_used["vision"] = round(BASE_WEIGHTS["vision"] / sub_sum, 4)
+        weights_used["nlp"] = 0.0
+    elif speech_available and not nlp_available and not vision_available:
+        # Speech delivery only
+        weights_used["speech"] = 1.0
+        weights_used["nlp"] = 0.0
+        weights_used["vision"] = 0.0
+    elif vision_available and not nlp_available and not speech_available:
+        # Vision ONLY (no verbal response or audio hardware missing):
+        # Vision remains capped at its 0.20 baseline contribution.
+        # It NEVER absorbs verbal weight to fabricate a high score on an unanswered question.
+        weights_used["vision"] = BASE_WEIGHTS["vision"]
+        weights_used["nlp"] = 0.0
+        weights_used["speech"] = 0.0
 
     # -----------------------------------------------------------------------
     # 4. Compute weighted fusion score
@@ -172,7 +210,7 @@ def fuse_per_question(
     speech_contribution = None
     vision_contribution = None
 
-    if nlp_available:
+    if nlp_available and weights_used["nlp"] > 0:
         w = weights_used["nlp"]
         contrib = nlp_score * w
         fused_score += contrib
@@ -184,7 +222,7 @@ def fuse_per_question(
         }
         contributions.append(f"NLP/Content {round(nlp_score, 1)}% × {w:.2f} = {round(contrib, 1)}")
 
-    if speech_available:
+    if speech_available and weights_used["speech"] > 0:
         w = weights_used["speech"]
         contrib = speech_score * w
         fused_score += contrib
@@ -198,7 +236,7 @@ def fuse_per_question(
         }
         contributions.append(f"Speech/Delivery {round(speech_score, 1)}% × {w:.2f} = {round(contrib, 1)}")
 
-    if vision_available:
+    if vision_available and weights_used["vision"] > 0:
         w = weights_used["vision"]
         contrib = vision_score * w
         fused_score += contrib
@@ -238,11 +276,20 @@ def fuse_per_question(
     rationale_parts = [
         f"Fused from {available_count}/3 modalities ({', '.join(modality_names)}).",
     ]
+    if nlp_status == "empty" and speech_status == "empty" and vision_available:
+        rationale_parts.append(
+            "Candidate was silent: verbal modalities evaluated at 0.0%; non-verbal composure capped at 20% baseline."
+        )
     rationale_parts.extend(contributions)
     if unavailable_names:
-        rationale_parts.append(
-            f"Unavailable: {', '.join(unavailable_names)} — weights redistributed proportionally."
-        )
+        if "NLP" in unavailable_names and "Speech" in unavailable_names and vision_available:
+            rationale_parts.append(
+                "Verbal modalities unavailable: Vision capped at 20% baseline contribution (no verbal absorption)."
+            )
+        else:
+            rationale_parts.append(
+                f"Unavailable: {', '.join(unavailable_names)} — weights redistributed proportionally."
+            )
     rationale = " | ".join(rationale_parts)
 
     return {

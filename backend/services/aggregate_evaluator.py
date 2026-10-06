@@ -185,7 +185,7 @@ def aggregate_interview_evaluation(per_question_results: List[Dict]) -> Dict:
             "compiled_metrics": {
                 "technical": {"avg_content_score": 0.0, "avg_semantic_similarity": 0.0, "covered_concepts": [], "missing_concepts": []},
                 "communication": {"avg_wpm": 0.0, "avg_fluency_score": 0.0, "total_fillers": 0, "avg_hesitation_rate": 0.0},
-                "behavioral": {"evaluated_takes": 0, "dominant_expression": "Unavailable", "overall_composure": "Not Assessed"},
+                "behavioral": {"evaluated_takes": 0, "dominant_expression": "Not Observed", "overall_composure": "Not Assessed"},
             },
         }
         empty_dimensions = {
@@ -209,10 +209,10 @@ def aggregate_interview_evaluation(per_question_results: List[Dict]) -> Dict:
             "formula": "0.60 * speech_confidence + 0.40 * facial_confidence | 0.50 * speech_stress + 0.50 * facial_stress",
         }
         empty_facial = {
-            "status": "not_implemented",
+            "status": "unavailable",
             "evaluated_takes": 0,
-            "dominant_expression": None,
-            "overall_composure": None,
+            "dominant_expression": "Not Observed",
+            "overall_composure": "Not Assessed",
         }
         empty_insights = generate_interview_insights(
             per_question_results=[],
@@ -396,7 +396,7 @@ def aggregate_interview_evaluation(per_question_results: List[Dict]) -> Dict:
         if f_score is not None:
             facial_scores.append(f_score)
 
-    most_common_expression = max(set(dominant_expressions), key=dominant_expressions.count) if dominant_expressions else "Neutral"
+    most_common_expression = max(set(dominant_expressions), key=dominant_expressions.count) if dominant_expressions else "Not Observed"
     stable_count = sum(1 for c in composure_indices if c == "Composed & Stable")
     overall_composure = "Composed & Stable" if stable_count >= (len(facial_results) / 2) and facial_results else ("Moderate Composure" if facial_results else "Not Assessed")
     avg_facial_score = round(sum(facial_scores) / len(facial_scores), 1) if facial_scores else None
@@ -410,10 +410,10 @@ def aggregate_interview_evaluation(per_question_results: List[Dict]) -> Dict:
         }
     else:
         facial_summary = {
-            "status": "not_implemented",
+            "status": "unavailable",
             "evaluated_takes": 0,
-            "dominant_expression": None,
-            "overall_composure": None,
+            "dominant_expression": "Not Observed",
+            "overall_composure": "Not Assessed",
         }
 
     # FR20: Compiled Aggregate Dataset

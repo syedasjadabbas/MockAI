@@ -218,8 +218,8 @@ def generate_interview_insights(
             observations.append("Acoustic Pauses: Continuous speech stream without extended dead air.")
 
     if has_vision:
-        dominant = facial_summary.get("dominant_expression", "Neutral")
-        composure = facial_summary.get("overall_composure", "Moderate")
+        dominant = facial_summary.get("dominant_expression") or "Not Observed"
+        composure = facial_summary.get("overall_composure") or "Moderate"
         observations.append(f"Facial Tracking: Primary expression '{dominant}' with '{composure}' stability across takes.")
 
     observations.append(f"Confidence Assessment: Evaluated at {round(confidence_score, 1)}% ({confidence_level}).")

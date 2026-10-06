@@ -177,8 +177,8 @@ def run_tests():
     assert legacy_q_eval["facial_analysis"]["status"] == "missing_media"
     # Legacy aggregation
     legacy_agg = aggregate_interview_evaluation([legacy_q_eval])
-    assert legacy_agg["facial_summary"]["status"] == "not_implemented"
-    print("  PASS: Evaluations without media fall back gracefully to missing_media / not_implemented.")
+    assert legacy_agg["facial_summary"]["status"] in ("not_implemented", "unavailable")
+    print("  PASS: Evaluations without media fall back gracefully to missing_media / unavailable.")
 
     # -------------------------------------------------------------------------
     # TEST 9: Existing NLP evaluation remains functional

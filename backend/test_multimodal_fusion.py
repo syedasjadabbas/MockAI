@@ -140,11 +140,11 @@ def run_tests():
     print("  PASS: NLP + Speech fused; Vision weight redistributed.")
 
     # -------------------------------------------------------------------------
-    # TEST 3: NLP + Vision, Speech Unavailable
+    # TEST 3: NLP + Vision, Speech Unavailable (Hardware Missing)
     # -------------------------------------------------------------------------
     print("\n[TEST 3] NLP + Vision (Speech Unavailable):")
-    empty_speech = _make_delivery(fluency_score=0.0, word_count=0, status="empty")
-    result3 = fuse_per_question(nlp, empty_speech, vision)
+    missing_speech = {"status": "missing"}
+    result3 = fuse_per_question(nlp, missing_speech, vision)
     assert result3["status"] == "partial"
     assert result3["modality_status"]["speech"] == "unavailable"
     assert result3["speech_contribution"] is None
@@ -154,11 +154,11 @@ def run_tests():
     print("  PASS: NLP + Vision fused; Speech weight redistributed.")
 
     # -------------------------------------------------------------------------
-    # TEST 4: Speech + Vision, NLP Unavailable
+    # TEST 4: Speech + Vision, NLP Unavailable (Hardware Missing)
     # -------------------------------------------------------------------------
     print("\n[TEST 4] Speech + Vision (NLP Unavailable):")
-    empty_nlp = _make_nlp(content_score=0.0, status="empty")
-    result4 = fuse_per_question(empty_nlp, speech, vision)
+    missing_nlp = {"status": "missing"}
+    result4 = fuse_per_question(missing_nlp, speech, vision)
     assert result4["status"] == "partial"
     assert result4["modality_status"]["nlp"] == "unavailable"
     assert result4["nlp_contribution"] is None
@@ -172,7 +172,7 @@ def run_tests():
     # TEST 5: Only NLP Available
     # -------------------------------------------------------------------------
     print("\n[TEST 5] Only NLP Available:")
-    result5 = fuse_per_question(nlp, empty_speech, {"status": "missing_media"})
+    result5 = fuse_per_question(nlp, {"status": "missing"}, {"status": "missing_media"})
     assert result5["status"] == "partial"
     assert abs(result5["weights_used"]["nlp"] - 1.0) < 0.01
     assert abs(result5["score"] - 85.0) < 0.2
@@ -183,7 +183,7 @@ def run_tests():
     # TEST 6: Only Speech Available
     # -------------------------------------------------------------------------
     print("\n[TEST 6] Only Speech Available:")
-    result6 = fuse_per_question(empty_nlp, speech, {"status": "missing_media"})
+    result6 = fuse_per_question({"status": "missing"}, speech, {"status": "missing_media"})
     assert result6["status"] == "partial"
     assert abs(result6["weights_used"]["speech"] - 1.0) < 0.01
     assert abs(result6["score"] - 72.0) < 0.2
@@ -191,21 +191,25 @@ def run_tests():
     print("  PASS: Speech-only fusion with weight = 1.0.")
 
     # -------------------------------------------------------------------------
-    # TEST 7: Only Vision Available
+    # TEST 7: Silent Candidate with Composed Face (Phase 2A Fix)
     # -------------------------------------------------------------------------
-    print("\n[TEST 7] Only Vision Available:")
+    print("\n[TEST 7] Silent Candidate with Composed Face:")
+    empty_nlp = _make_nlp(content_score=0.0, status="empty")
+    empty_speech = _make_delivery(fluency_score=0.0, word_count=0, status="empty")
     result7 = fuse_per_question(empty_nlp, empty_speech, vision)
-    assert result7["status"] == "partial"
-    assert abs(result7["weights_used"]["vision"] - 1.0) < 0.01
-    assert result7["score"] == facial_score
+    assert result7["status"] == "completed"
+    assert abs(result7["weights_used"]["vision"] - 0.20) < 0.01
+    # 0.0*0.5 + 0.0*0.3 + 85.0*0.2 = 17.0
+    assert result7["score"] <= 20.0
+    assert result7["score"] > 0.0
     print(f"  Score: {result7['score']}%")
-    print("  PASS: Vision-only fusion with weight = 1.0.")
+    print("  PASS: Silent candidate with composed face receives ~17.0% score; composure does not inflate silent interview.")
 
     # -------------------------------------------------------------------------
     # TEST 8: All Modalities Unavailable
     # -------------------------------------------------------------------------
     print("\n[TEST 8] All Modalities Unavailable:")
-    result8 = fuse_per_question(empty_nlp, empty_speech, {"status": "missing_media"})
+    result8 = fuse_per_question({"status": "missing"}, {"status": "missing"}, {"status": "missing_media"})
     assert result8["status"] == "unavailable"
     assert result8["score"] == 0.0
     assert result8["nlp_contribution"] is None

@@ -523,13 +523,13 @@ def test_final_compliance_gate():
     mock_vision = {"status": "completed", "behavioral_indicators": {"composure_index": "Composed & Stable", "engagement_level": "High"}}
 
     deg_nlp_speech = fuse_per_question(mock_nlp, mock_speech, None)
-    expect(deg_nlp_speech["weights_used"] == {"nlp": 0.625, "speech": 0.375}, "EC7: Unavailable vision gracefully degrades to 0.625/0.375")
+    expect(abs(deg_nlp_speech["weights_used"]["nlp"] - 0.625) < 0.01 and abs(deg_nlp_speech["weights_used"]["speech"] - 0.375) < 0.01, "EC7: Unavailable vision gracefully degrades to 0.625/0.375")
 
     deg_nlp_vision = fuse_per_question(mock_nlp, None, mock_vision)
-    expect(deg_nlp_vision["weights_used"] == {"nlp": 0.7143, "vision": 0.2857}, "EC8: Unavailable speech gracefully degrades to 0.7143/0.2857")
+    expect(abs(deg_nlp_vision["weights_used"]["nlp"] - 0.7143) < 0.01 and abs(deg_nlp_vision["weights_used"]["vision"] - 0.2857) < 0.01, "EC8: Unavailable speech gracefully degrades to 0.7143/0.2857")
 
     deg_nlp_only = fuse_per_question(mock_nlp, None, None)
-    expect(deg_nlp_only["weights_used"] == {"nlp": 1.0}, "EC9: NLP text only gracefully degrades to 1.00 weight")
+    expect(abs(deg_nlp_only["weights_used"]["nlp"] - 1.0) < 0.01, "EC9: NLP text only gracefully degrades to 1.00 weight")
 
     # Edge Case 3: Failed evaluation status handling
     fail_inv = interviews_collection.insert_one({

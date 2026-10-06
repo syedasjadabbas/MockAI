@@ -5,6 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from routes.admin import router as admin_router
 from routes.candidate import router as candidate_router
 from routes.candidate_interview import router as candidate_interview_router
+from routes.candidate_mentors import router as candidate_mentors_router
 from routes.candidate_evaluation import router as candidate_evaluation_router
 from routes.internal_evaluation import router as internal_evaluation_router
 from database import admins_collection, admin_collection, client, init_db_indexes
@@ -54,6 +55,9 @@ app.include_router(candidate_interview_router, prefix="/api/v1/candidate")  # ve
 
 app.include_router(candidate_evaluation_router, prefix="/candidate")
 app.include_router(candidate_evaluation_router, prefix="/api/v1/candidate")  # versioned alias
+
+app.include_router(candidate_mentors_router, prefix="/candidate")
+app.include_router(candidate_mentors_router, prefix="/api/v1/candidate")  # versioned alias
 
 app.include_router(internal_evaluation_router, prefix="/internal")
 
@@ -132,6 +136,13 @@ async def startup_event():
             seed_question_bank(force=False)
         except Exception as seed_err:
             print(f"Question bank auto-seed notice: {seed_err}")
+
+        # Ensure default technical mentors exist for candidate mentorship
+        try:
+            from seed_mentors import ensure_default_mentors
+            ensure_default_mentors(force_refresh=False)
+        except Exception as mentor_seed_err:
+            print(f"Mentor auto-seed notice: {mentor_seed_err}")
     except Exception as e:
         print(f"Startup database check notice: {e}")
 

@@ -81,15 +81,15 @@ def _evaluate_interview_job_unlocked(interview_id: str) -> Dict:
         per_question_results: List[Dict] = []
 
         for q in questions:
-            q_id = q.get("question_id")
-            q_text = q.get("question_text", "")
+            q_id = q.get("question_id") or q.get("id")
+            q_text = q.get("question_text") or q.get("question") or ""
             q_difficulty = q.get("difficulty", "Medium")
 
             # Look up criteria from questions_collection for expected_answer and tags
-            expected_answer = None
+            expected_answer = q.get("expected_answer")
             tags = q.get("tags", [])
             try:
-                if q_id:
+                if q_id and not expected_answer:
                     q_db = questions_collection.find_one({"_id": ObjectId(q_id)})
                     if q_db:
                         expected_answer = q_db.get("expected_answer")

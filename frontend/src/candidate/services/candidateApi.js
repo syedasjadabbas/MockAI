@@ -166,100 +166,13 @@ export async function getRealEvaluation(interviewId) {
 }
 
 // ---------------------------------------------------------------------------
-// FR17-FR20 / FR21-FR23 / FR35 - Evaluation & feedback (PLACEHOLDER OVERLAY)
-// ---------------------------------------------------------------------------
-
-const STRENGTH_POOL = [
-  'Clear, structured explanations that were easy to follow.',
-  'Stayed calm and composed when the question got harder.',
-  'Gave concrete examples instead of speaking in generalities.',
-  'Good pacing — answers were neither rushed nor overly long.',
-  'Demonstrated solid grasp of core fundamentals in this domain.',
-];
-
-const WEAKNESS_POOL = [
-  'A few answers trailed off without a clear conclusion.',
-  'Some technical terms were used without fully explaining them.',
-  'Noticeable hesitation before answering follow-up-style questions.',
-  'Could provide more specific, quantified examples from past experience.',
-];
-
-const SUGGESTION_POOL = [
-  'Practice summarizing each answer in one closing sentence before moving on.',
-  'When using a technical term, briefly define it as part of your answer.',
-  'Prepare 2-3 concrete project examples in advance so they come out naturally.',
-  'Try the STAR method (Situation, Task, Action, Result) for behavioral questions.',
-];
-
-// Small deterministic PRNG (mulberry32) seeded from the interview's own id,
-// so the same interview always renders the same placeholder numbers across
-// repeated views/refreshes instead of re-randomizing every load - a purely
-// cosmetic consistency detail, not a claim of real, reproducible analysis.
-function seededRandom(seedStr) {
-  let h = 1779033703 ^ seedStr.length;
-  for (let i = 0; i < seedStr.length; i++) {
-    h = Math.imul(h ^ seedStr.charCodeAt(i), 3432918353);
-    h = (h << 13) | (h >>> 19);
-  }
-  return function next() {
-    h = Math.imul(h ^ (h >>> 16), 2246822507);
-    h = Math.imul(h ^ (h >>> 13), 3266489909);
-    h ^= h >>> 16;
-    return (h >>> 0) / 4294967296;
-  };
-}
-
-function seededPick(pool, n, rand) {
-  const shuffled = [...pool].sort(() => rand() - 0.5);
-  return shuffled.slice(0, n);
-}
-
-// PLACEHOLDER ONLY - replace with a real call to the multimodal evaluation
-// service once FR13-FR16/FR34/FR15-19 (report numbering) are implemented.
-// No audio/video is analyzed here; scores are structured, seeded mock data
-// for frontend/demo purposes, applied only for display and never persisted.
-function generateMockEvaluation(interview) {
-  const rand = seededRandom(interview.id || 'seed');
-  const overallScore = Math.floor(65 + rand() * 30); // 65-95
-  const confidenceScore = Math.floor(55 + rand() * 40); // 55-95
-  const stressPool = ['Low', 'Medium', 'High'];
-  const stressLevel = stressPool[Math.floor(rand() * stressPool.length)];
-
-  const perQuestion = (interview.questions || []).map((q) => ({
-    questionId: q.id,
-    questionText: q.question_text,
-    score: Math.floor(55 + rand() * 40),
-    note: 'Placeholder per-question note — populated by real evaluation once AI modules are integrated.',
-  }));
-
-  return {
-    score: overallScore,
-    confidence: confidenceScore,
-    stress: stressLevel,
-    strengths: seededPick(STRENGTH_POOL, 3, rand),
-    weaknesses: seededPick(WEAKNESS_POOL, 2, rand),
-    suggestions: seededPick(SUGGESTION_POOL, 3, rand),
-    perQuestion,
-  };
-}
-
-// ---------------------------------------------------------------------------
 // FR24-FR27 / FR36 - Results, history, progress
 // ---------------------------------------------------------------------------
 
 // Used by EvaluationResults.jsx, Feedback.jsx, and InterviewCompletion.jsx.
-// This is the ONLY function in this file that ever attaches placeholder
-// evaluation data - see the file header and generateMockEvaluation() above.
-//
-// Real-first, mock-as-fallback: this always checks the real evaluation
-// (GET /candidate/interviews/{id}/evaluation) before ever touching the
-// mock overlay. The moment a real evaluation is actually "completed" -
-// which nothing in this codebase can produce yet, only the internal
-// endpoint a future AI worker calls - this starts returning genuine
-// MongoDB data with zero changes needed here or in either page. Every
-// returned object carries `evaluationSource` ("real" | "mock") and
-// `evaluationStatus` (the real pending_evaluation/processing/completed/
-// failed value) so the UI can be honest about which it's showing.
+// Returns ONLY real, persisted evaluation data from MongoDB. Never fabricates
+// mock scores or pseudo-random evaluation placeholders. If evaluation is pending,
+// processing, or failed, it returns an honest state without simulated numbers.
 export async function getInterviewById(id) {
   try {
     const doc = await fetchCandidateApi(`/interviews/${id}`);
@@ -275,24 +188,43 @@ export async function getInterviewById(id) {
         ...interview,
         evaluationSource: 'real',
         evaluationStatus,
-        score: evaluation.overall_score,
-        confidence: evaluation.confidence_score,
-        confidenceLevel: evaluation.confidence_level,
-        stress: evaluation.stress_level,
-        stressScore: evaluation.stress_score,
+        score: evaluation.overall_score ?? interview.score,
+        confidence: evaluation.confidence_score ?? interview.confidence,
+        confidenceLevel: evaluation.confidence_level ?? interview.confidenceLevel,
+        stress: evaluation.stress_level ?? interview.stress,
+        stressScore: evaluation.stress_score ?? interview.stressScore,
         confidenceAndStressSummary: evaluation.confidence_and_stress_summary,
         interpretation: evaluation.interpretation,
-        strengths: evaluation.strengths,
-        weaknesses: evaluation.weaknesses,
-        suggestions: evaluation.suggestions,
+        strengths: evaluation.strengths || [],
+        weaknesses: evaluation.weaknesses || [],
+        suggestions: evaluation.suggestions || [],
         insights: evaluation.insights,
         summaryReport: evaluation.summary_report,
         dimensionScores: evaluation.dimension_scores,
-        perQuestion: evaluation.per_question,
+        perQuestion: evaluation.per_question || [],
       };
     }
 
-    return { ...interview, evaluationSource: 'mock', evaluationStatus, ...generateMockEvaluation(interview) };
+    // Persisted or honest pending/failed/processing state — zero mock scores fabricated
+    return {
+      ...interview,
+      evaluationSource: 'real',
+      evaluationStatus: evaluationStatus || interview.evaluationStatus || 'pending_evaluation',
+      score: interview.score ?? null,
+      confidence: interview.confidence ?? null,
+      confidenceLevel: interview.confidenceLevel ?? null,
+      stress: interview.stress ?? null,
+      stressScore: interview.stressScore ?? null,
+      confidenceAndStressSummary: null,
+      interpretation: '',
+      strengths: [],
+      weaknesses: [],
+      suggestions: [],
+      insights: null,
+      summaryReport: null,
+      dimensionScores: null,
+      perQuestion: [],
+    };
   } catch {
     return null;
   }
@@ -306,48 +238,82 @@ export async function getHistory() {
   return list.map(toFrontendInterview);
 }
 
-export async function getDashboardSummary() {
-  const history = await getHistory();
-  const completed = history.filter((i) => i.status === 'Completed');
-  const scored = completed.filter((i) => i.score != null);
-  const avgScore = scored.length
-    ? Math.round(scored.reduce((sum, i) => sum + i.score, 0) / scored.length)
-    : null;
-
-  return {
-    totalInterviews: history.length,
-    completedInterviews: completed.length,
-    averageScore: avgScore,
-    lastInterview: history[0] || null,
-    recent: history.slice(0, 5),
-  };
+export async function getCandidateStats() {
+  return fetchCandidateApi('/stats');
 }
 
-// Only calculates trends from interviews that actually have a real score -
-// currently none, since Evaluation doesn't exist yet, so these arrays stay
-// empty and the existing "Not enough data yet" EmptyState in
-// ProgressTracking.jsx handles it exactly as it already does for a
-// brand-new candidate. This is the "clean API/data contract for future
-// evaluation integration" - once real scores exist, this starts populating
-// with zero changes needed in ProgressTracking.jsx itself.
-export async function getProgress() {
-  const history = await getHistory();
-  const completed = history
-    .filter((i) => i.status === 'Completed')
-    .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-  const scored = completed.filter((i) => i.score != null);
+export async function getDashboardSummary() {
+  try {
+    const stats = await getCandidateStats();
+    const history = await getHistory();
+    return {
+      totalInterviews: stats.total_interviews,
+      completedInterviews: stats.completed_interviews,
+      averageScore: stats.average_score,
+      bestScore: stats.best_score,
+      dimensionAverages: stats.dimension_averages,
+      averageConfidence: stats.average_confidence,
+      averageStress: stats.average_stress,
+      lastInterview: history[0] || null,
+      recent: history.slice(0, 5),
+    };
+  } catch (err) {
+    console.warn('[DashboardSummary] Backend stats endpoint error, falling back to history:', err);
+    const history = await getHistory();
+    const completed = history.filter(
+      (i) => i.status === 'Completed' && i.evaluationStatus === 'completed'
+    );
+    const scored = completed.filter((i) => i.score != null);
+    const avgScore = scored.length
+      ? Math.round(scored.reduce((sum, i) => sum + i.score, 0) / scored.length)
+      : null;
+    const bestScore = scored.length ? Math.max(...scored.map((i) => i.score)) : null;
 
-  return {
-    scoreTrend: scored.map((i) => ({ date: i.createdAt, score: i.score, label: i.role })),
-    confidenceTrend: scored.map((i) => ({ date: i.createdAt, confidence: i.confidence, label: i.role })),
-    byCategory: Object.values(
-      scored.reduce((acc, i) => {
-        acc[i.role] = acc[i.role] || { category: i.role, count: 0, avgScore: 0, totalScore: 0 };
-        acc[i.role].count += 1;
-        acc[i.role].totalScore += i.score;
-        acc[i.role].avgScore = Math.round(acc[i.role].totalScore / acc[i.role].count);
-        return acc;
-      }, {})
-    ),
-  };
+    return {
+      totalInterviews: history.length,
+      completedInterviews: completed.length,
+      averageScore: avgScore,
+      bestScore: bestScore,
+      dimensionAverages: null,
+      lastInterview: history[0] || null,
+      recent: history.slice(0, 5),
+    };
+  }
+}
+
+export async function getProgress() {
+  try {
+    const stats = await getCandidateStats();
+    return {
+      scoreTrend: stats.score_trend || [],
+      confidenceTrend: stats.confidence_trend || [],
+      stressTrend: stats.stress_trend || [],
+      byCategory: stats.by_category || [],
+      bestScore: stats.best_score,
+      averageScore: stats.average_score,
+      dimensionAverages: stats.dimension_averages || {},
+    };
+  } catch (err) {
+    console.warn('[Progress] Backend stats endpoint error, falling back to history:', err);
+    const history = await getHistory();
+    const completed = history
+      .filter((i) => i.status === 'Completed' && i.evaluationStatus === 'completed')
+      .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    const scored = completed.filter((i) => i.score != null);
+
+    return {
+      scoreTrend: scored.map((i) => ({ date: i.createdAt, score: i.score, label: i.role })),
+      confidenceTrend: scored.map((i) => ({ date: i.createdAt, confidence: i.confidence, label: i.role })),
+      stressTrend: scored.map((i) => ({ date: i.createdAt, stress: i.stress, label: i.role })),
+      byCategory: Object.values(
+        scored.reduce((acc, i) => {
+          acc[i.role] = acc[i.role] || { category: i.role, count: 0, avgScore: 0, totalScore: 0 };
+          acc[i.role].count += 1;
+          acc[i.role].totalScore += i.score;
+          acc[i.role].avgScore = Math.round(acc[i.role].totalScore / acc[i.role].count);
+          return acc;
+        }, {})
+      ),
+    };
+  }
 }

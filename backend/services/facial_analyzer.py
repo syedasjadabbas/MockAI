@@ -114,12 +114,16 @@ class FacialAnalyzer:
                 "face_detected": False,
                 "face_presence_ratio": 0.0,
                 "total_frames_sampled": 0,
-                "dominant_expression": "Unavailable",
+                "dominant_expression": "Not Observed",
+                "baseline_expression": "Not Observed",
+                "secondary_expression": "Not Observed",
+                "expressive_ratio": 0.0,
+                "peak_moment": None,
                 "expression_distribution": {},
                 "behavioral_indicators": {
-                    "engagement_level": "Unavailable",
-                    "composure_index": "Unavailable",
-                    "observable_tension": "Unavailable",
+                    "engagement_level": "Not Assessed",
+                    "composure_index": "Not Assessed",
+                    "observable_tension": "Not Assessed",
                 },
                 "model": "fer-cnn-onnx-v1",
                 "error": "Media recording not found on disk",
@@ -132,12 +136,16 @@ class FacialAnalyzer:
                 "face_detected": False,
                 "face_presence_ratio": 0.0,
                 "total_frames_sampled": 0,
-                "dominant_expression": "Unavailable",
+                "dominant_expression": "Not Observed",
+                "baseline_expression": "Not Observed",
+                "secondary_expression": "Not Observed",
+                "expressive_ratio": 0.0,
+                "peak_moment": None,
                 "expression_distribution": {},
                 "behavioral_indicators": {
-                    "engagement_level": "Unavailable",
-                    "composure_index": "Unavailable",
-                    "observable_tension": "Unavailable",
+                    "engagement_level": "Not Assessed",
+                    "composure_index": "Not Assessed",
+                    "observable_tension": "Not Assessed",
                 },
                 "model": "fer-cnn-onnx-v1",
                 "error": "Media recording is empty (0 bytes)",
@@ -155,12 +163,16 @@ class FacialAnalyzer:
                 "face_detected": False,
                 "face_presence_ratio": 0.0,
                 "total_frames_sampled": 0,
-                "dominant_expression": "Unavailable",
+                "dominant_expression": "Not Observed",
+                "baseline_expression": "Not Observed",
+                "secondary_expression": "Not Observed",
+                "expressive_ratio": 0.0,
+                "peak_moment": None,
                 "expression_distribution": {},
                 "behavioral_indicators": {
-                    "engagement_level": "Unavailable",
-                    "composure_index": "Unavailable",
-                    "observable_tension": "Unavailable",
+                    "engagement_level": "Not Assessed",
+                    "composure_index": "Not Assessed",
+                    "observable_tension": "Not Assessed",
                 },
                 "model": "fer-cnn-onnx-v1",
                 "error": "Media recording contains no video stream (audio-only)",
@@ -215,12 +227,16 @@ class FacialAnalyzer:
                 "face_detected": False,
                 "face_presence_ratio": 0.0,
                 "total_frames_sampled": 0,
-                "dominant_expression": "Unavailable",
+                "dominant_expression": "Not Observed",
+                "baseline_expression": "Not Observed",
+                "secondary_expression": "Not Observed",
+                "expressive_ratio": 0.0,
+                "peak_moment": None,
                 "expression_distribution": {},
                 "behavioral_indicators": {
-                    "engagement_level": "Unavailable",
-                    "composure_index": "Unavailable",
-                    "observable_tension": "Unavailable",
+                    "engagement_level": "Not Assessed",
+                    "composure_index": "Not Assessed",
+                    "observable_tension": "Not Assessed",
                 },
                 "model": "fer-cnn-onnx-v1",
                 "error": "Unable to decode video streams",
@@ -243,12 +259,16 @@ class FacialAnalyzer:
                         "face_detected": False,
                         "face_presence_ratio": 0.0,
                         "total_frames_sampled": 0,
-                        "dominant_expression": "Unavailable",
+                        "dominant_expression": "Not Observed",
+                        "baseline_expression": "Not Observed",
+                        "secondary_expression": "Not Observed",
+                        "expressive_ratio": 0.0,
+                        "peak_moment": None,
                         "expression_distribution": {},
                         "behavioral_indicators": {
-                            "engagement_level": "Unavailable",
-                            "composure_index": "Unavailable",
-                            "observable_tension": "Unavailable",
+                            "engagement_level": "Not Assessed",
+                            "composure_index": "Not Assessed",
+                            "observable_tension": "Not Assessed",
                         },
                         "model": "fer-cnn-onnx-v1",
                         "error": "Video contains no readable frames",
@@ -263,6 +283,7 @@ class FacialAnalyzer:
             next_sample_time_ms = 0.0
 
             sampled_emotions: List[np.ndarray] = []
+            sampled_timestamps: List[float] = []
             face_detected_count = 0
             total_sampled_count = 0
             face_centers_x: List[float] = []
@@ -316,6 +337,7 @@ class FacialAnalyzer:
 
                 if should_sample:
                     total_sampled_count += 1
+                    sample_sec = max(0.0, float(pos_ms / 1000.0)) if pos_ms >= 0 else float(frame_counter / (video_fps or 25.0))
                     face_crop, face_bbox = self._extract_face(frame, yunet_detector, width, height)
 
                     if face_crop is not None:
@@ -327,6 +349,7 @@ class FacialAnalyzer:
                         probs = self._classify_face_expression(face_crop)
                         if probs is not None:
                             sampled_emotions.append(probs)
+                            sampled_timestamps.append(sample_sec)
 
             if total_sampled_count == 0:
                 return {
@@ -334,12 +357,16 @@ class FacialAnalyzer:
                     "face_detected": False,
                     "face_presence_ratio": 0.0,
                     "total_frames_sampled": 0,
-                    "dominant_expression": "Unavailable",
+                    "dominant_expression": "Not Observed",
+                    "baseline_expression": "Not Observed",
+                    "secondary_expression": "Not Observed",
+                    "expressive_ratio": 0.0,
+                    "peak_moment": None,
                     "expression_distribution": {},
                     "behavioral_indicators": {
-                        "engagement_level": "Unavailable",
-                        "composure_index": "Unavailable",
-                        "observable_tension": "Unavailable",
+                        "engagement_level": "Not Assessed",
+                        "composure_index": "Not Assessed",
+                        "observable_tension": "Not Assessed",
                     },
                     "model": "fer-cnn-onnx-v1",
                     "error": "No frames could be extracted from recording",
@@ -354,31 +381,62 @@ class FacialAnalyzer:
                     "face_detected": False,
                     "face_presence_ratio": 0.0,
                     "total_frames_sampled": total_sampled_count,
-                    "dominant_expression": "No Face Detected",
+                    "dominant_expression": "Not Observed",
+                    "baseline_expression": "Not Observed",
+                    "secondary_expression": "Not Observed",
+                    "expressive_ratio": 0.0,
+                    "peak_moment": None,
                     "expression_distribution": {},
                     "behavioral_indicators": {
                         "engagement_level": "Low (No Face Detected)",
-                        "composure_index": "Undetermined",
-                        "observable_tension": "Undetermined",
+                        "composure_index": "Not Assessed",
+                        "observable_tension": "Not Assessed",
                     },
                     "model": "fer-cnn-onnx-v1",
                     "error": None,
                 }
 
-            # Aggregate expression distributions across all sampled frames
+            # -------------------------------------------------------------------
+            # Sophisticated multi-moment facial expression analysis:
+            # 1. Temporal probability distribution across all valid sampled frames
+            # 2. Baseline/resting facial state determination
+            # 3. Peak/salient expressive moments (smiles, surprise, agitation) with timestamps
+            # 4. Secondary active expression detection
+            # -------------------------------------------------------------------
             avg_probs = np.mean(sampled_emotions, axis=0)
-            distribution = {
-                EMOTION_LABELS[i]: round(float(avg_probs[i]) * 100, 1)
-                for i in range(len(EMOTION_LABELS))
-            }
+            max_overall_conf = float(np.max(avg_probs))
 
-            dominant_idx = int(np.argmax(avg_probs))
-            dominant_name = EMOTION_LABELS[dominant_idx].capitalize()
+            # If maximum probability is negligible or model output is degenerate/insufficient
+            if max_overall_conf < 0.20:
+                return {
+                    "status": "insufficient_data",
+                    "face_detected": True,
+                    "face_presence_ratio": presence_ratio,
+                    "total_frames_sampled": total_sampled_count,
+                    "dominant_expression": "Not Observed",
+                    "baseline_expression": "Not Observed",
+                    "secondary_expression": "None Observed",
+                    "expressive_ratio": 0.0,
+                    "peak_moment": None,
+                    "expression_distribution": {},
+                    "behavioral_indicators": {
+                        "engagement_level": "Moderate",
+                        "composure_index": "Not Assessed",
+                        "observable_tension": "Not Assessed",
+                    },
+                    "model": "fer-cnn-onnx-v1",
+                    "error": "Facial expression confidence below classification threshold",
+                }
+
+            agg = self._aggregate_expression_sequence(
+                sampled_emotions=sampled_emotions,
+                sampled_timestamps=sampled_timestamps,
+            )
 
             # Derive report-aligned behavioral indicators
             engagement_level, composure_index, observable_tension = self._derive_indicators(
                 presence_ratio=presence_ratio,
-                distribution=distribution,
+                distribution=agg["expression_distribution"],
                 face_centers_x=face_centers_x,
             )
 
@@ -388,8 +446,12 @@ class FacialAnalyzer:
                 "face_presence_ratio": presence_ratio,
                 "total_frames_sampled": total_sampled_count,
                 "frames_with_face": face_detected_count,
-                "dominant_expression": dominant_name,
-                "expression_distribution": distribution,
+                "dominant_expression": agg["dominant_expression"],
+                "baseline_expression": agg["baseline_expression"],
+                "secondary_expression": agg["secondary_expression"],
+                "expressive_ratio": agg["expressive_ratio"],
+                "peak_moment": agg["peak_moment"],
+                "expression_distribution": agg["expression_distribution"],
                 "behavioral_indicators": {
                     "engagement_level": engagement_level,
                     "composure_index": composure_index,
@@ -407,12 +469,16 @@ class FacialAnalyzer:
                 "face_detected": False,
                 "face_presence_ratio": 0.0,
                 "total_frames_sampled": 0,
-                "dominant_expression": "Unavailable",
+                "dominant_expression": "Not Observed",
+                "baseline_expression": "Not Observed",
+                "secondary_expression": "Not Observed",
+                "expressive_ratio": 0.0,
+                "peak_moment": None,
                 "expression_distribution": {},
                 "behavioral_indicators": {
-                    "engagement_level": "Unavailable",
-                    "composure_index": "Unavailable",
-                    "observable_tension": "Unavailable",
+                    "engagement_level": "Not Assessed",
+                    "composure_index": "Not Assessed",
+                    "observable_tension": "Not Assessed",
                 },
                 "model": "fer-cnn-onnx-v1",
                 "error": str(e),
@@ -427,6 +493,127 @@ class FacialAnalyzer:
                     os.unlink(temp_normalized_path)
                 except OSError:
                     pass
+
+    def _aggregate_expression_sequence(
+        self,
+        sampled_emotions: List[Any],
+        sampled_timestamps: Optional[List[float]] = None,
+    ) -> Dict:
+        """
+        Aggregates frame-by-frame expression distributions across time:
+        - Computes baseline resting state
+        - Identifies active secondary expression
+        - Detects peak expressive moment with timestamp
+        - Determines dominant expression
+        """
+        from collections import Counter
+
+        if not sampled_emotions:
+            return {
+                "dominant_expression": "Not Observed",
+                "baseline_expression": "Not Observed",
+                "secondary_expression": "None Observed",
+                "expressive_ratio": 0.0,
+                "peak_moment": None,
+                "expression_distribution": {},
+            }
+
+        # Normalize elements to np.ndarray of shape (8,)
+        normalized_emotions = []
+        for item in sampled_emotions:
+            if isinstance(item, dict):
+                vec = np.array([float(item.get(lbl, 0.0)) for lbl in EMOTION_LABELS], dtype=np.float32)
+                s = float(np.sum(vec))
+                if s > 0:
+                    vec = vec / s
+                normalized_emotions.append(vec)
+            elif isinstance(item, (list, tuple, np.ndarray)):
+                vec = np.array(item, dtype=np.float32)
+                s = float(np.sum(vec))
+                if s > 0:
+                    vec = vec / s
+                normalized_emotions.append(vec)
+
+        if not normalized_emotions:
+            return {
+                "dominant_expression": "Not Observed",
+                "baseline_expression": "Not Observed",
+                "secondary_expression": "None Observed",
+                "expressive_ratio": 0.0,
+                "peak_moment": None,
+                "expression_distribution": {},
+            }
+
+        timestamps = sampled_timestamps or [float(i) for i in range(len(normalized_emotions))]
+
+        avg_probs = np.mean(normalized_emotions, axis=0)
+        distribution = {
+            EMOTION_LABELS[i]: round(float(avg_probs[i]) * 100, 1)
+            for i in range(len(EMOTION_LABELS))
+        }
+
+        baseline_idx = int(np.argmax(avg_probs))
+        baseline_expression = EMOTION_LABELS[baseline_idx].capitalize()
+
+        frame_top_indices = [int(np.argmax(p)) for p in normalized_emotions]
+        non_neutral_indices = [idx for idx in frame_top_indices if EMOTION_LABELS[idx] != "neutral"]
+
+        secondary_expression = "None Observed"
+        peak_moment = None
+
+        best_active_idx = None
+        best_active_conf = 0.0
+        best_active_frame_idx = -1
+
+        for f_idx, probs in enumerate(normalized_emotions):
+            for e_idx in range(1, len(EMOTION_LABELS)):
+                c = float(probs[e_idx])
+                if c > best_active_conf:
+                    best_active_conf = c
+                    best_active_idx = e_idx
+                    best_active_frame_idx = f_idx
+
+        if non_neutral_indices:
+            nn_counts = Counter(non_neutral_indices)
+            top_nn_idx, top_nn_count = nn_counts.most_common(1)[0]
+            top_nn_label = EMOTION_LABELS[top_nn_idx].capitalize()
+            max_conf_top = max(float(p[top_nn_idx]) for p in normalized_emotions)
+            freq_ratio = top_nn_count / len(normalized_emotions)
+
+            if freq_ratio >= 0.10 or max_conf_top >= 0.30:
+                secondary_expression = top_nn_label
+                peak_frame = max(range(len(normalized_emotions)), key=lambda k: float(normalized_emotions[k][top_nn_idx]))
+                peak_moment = {
+                    "expression": top_nn_label,
+                    "confidence": round(max_conf_top * 100, 1),
+                    "timestamp_seconds": round(timestamps[peak_frame], 1) if peak_frame < len(timestamps) else None,
+                    "frame_frequency_ratio": round(freq_ratio, 2),
+                }
+        elif best_active_idx is not None and best_active_conf >= 0.35:
+            active_label = EMOTION_LABELS[best_active_idx].capitalize()
+            secondary_expression = active_label
+            peak_moment = {
+                "expression": active_label,
+                "confidence": round(best_active_conf * 100, 1),
+                "timestamp_seconds": round(timestamps[best_active_frame_idx], 1) if best_active_frame_idx < len(timestamps) else None,
+                "frame_frequency_ratio": round(1.0 / len(normalized_emotions), 2),
+            }
+
+        expressive_ratio = round(len(non_neutral_indices) / max(1, len(normalized_emotions)), 3)
+
+        if non_neutral_indices and (len(non_neutral_indices) / len(normalized_emotions)) >= 0.30:
+            dominant_name = secondary_expression
+        else:
+            dominant_name = baseline_expression
+
+        return {
+            "dominant_expression": dominant_name,
+            "baseline_expression": baseline_expression,
+            "secondary_expression": secondary_expression,
+            "expressive_ratio": expressive_ratio,
+            "peak_moment": peak_moment,
+            "expression_distribution": distribution,
+        }
 
     def _extract_face(
         self,
@@ -479,8 +666,8 @@ class FacialAnalyzer:
     def _classify_face_expression(self, face_crop: np.ndarray) -> Optional[np.ndarray]:
         """Runs the Emotion-FERPlus CNN model to classify probabilities across 8 emotions."""
         if self.ort_session is None:
-            # If model file is absent, return neutral baseline
-            return np.array([0.7, 0.15, 0.05, 0.03, 0.02, 0.01, 0.02, 0.02], dtype=np.float32)
+            logger.warning("Emotion-FERPlus model session is uninitialized; facial expression analysis unavailable.")
+            return None
 
         try:
             # Preprocess to 1x1x64x64 float32 grayscale

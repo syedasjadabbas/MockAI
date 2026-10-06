@@ -50,19 +50,25 @@ def evaluate_question_response(
     diff_normalized = difficulty.capitalize() if difficulty else "Medium"
     diff_weight = get_difficulty_weight(diff_normalized)
 
+    # If media was recorded or ASR completed/empty, an omitted/None transcript
+    # represents a recorded silent response (status="empty"), not missing hardware.
+    effective_transcript = transcript
+    if effective_transcript is None and (media_url or asr_status in ("completed", "empty")):
+        effective_transcript = ""
+
     # 1. NLP Content Analysis (FR16: BERT/DistilBERT semantic analysis)
     nlp_result = analyze_transcript(
         question_text=question_text,
         expected_answer=expected_answer,
         tags=tags,
         difficulty=diff_normalized,
-        transcript=transcript,
+        transcript=effective_transcript,
         rubric=rubric,
     )
 
     # 2. Delivery Analysis (FR15 / FR22 / FR23)
     delivery_result = analyze_delivery(
-        transcript=transcript,
+        transcript=effective_transcript,
         duration_seconds=duration_seconds,
         media_url=media_url,
     )

@@ -73,6 +73,8 @@ admin_collection = admins_collection  # alias for backward compatibility
 otps_collection = db["otps"]
 categories_collection = db["categories"]
 questions_collection = db["questions"]
+mentors_collection = db["mentors"]
+appointments_collection = db["appointments"]
 
 def init_db_indexes():
     """
@@ -116,6 +118,18 @@ def init_db_indexes():
 
         # Admins indexes
         admins_collection.create_index([("email", 1)], unique=True, background=True)
+
+        # Mentors indexes
+        mentors_collection.create_index([("specialization", 1)], background=True)
+        mentors_collection.create_index([("name", 1)], background=True)
+        mentors_collection.create_index([("is_active", 1)], background=True)
+
+        # Appointments indexes
+        appointments_collection.create_index([("candidate_id", 1)], background=True)
+        appointments_collection.create_index([("mentor_id", 1)], background=True)
+        appointments_collection.create_index([("date", 1), ("start_time", 1)], background=True)
+        appointments_collection.create_index([("mentor_id", 1), ("date", 1), ("start_time", 1)], background=True)
+        appointments_collection.create_index([("status", 1)], background=True)
         print("Database indexes initialized successfully.")
     except Exception as e:
         print(f"Database index creation notice: {e}")

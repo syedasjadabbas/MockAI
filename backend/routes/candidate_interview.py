@@ -465,3 +465,203 @@ def list_my_interviews(token_payload: dict = Depends(verify_candidate)):
         {"user_id": token_payload.get("user_id")}
     ).sort("created_at", -1)
     return [_public_interview(doc, include_questions=False) for doc in interviews]
+
+
+# ---------------------------------------------------------------------------
+# Statistics - Phase 2C
+# ---------------------------------------------------------------------------
+
+@router.get("/stats")
+def get_candidate_statistics(token_payload: dict = Depends(verify_candidate)):
+    """
+    Computes rigorous candidate performance analytics directly from MongoDB.
+    Strictly scoped to the authenticated candidate.
+    Excludes pending, processing, failed, or incomplete evaluations.
+    Deduplicates duplicate sessions to prevent statistical skew.
+    Uses numeric evaluation.stress_score and genuine system stress levels (Low, Moderate, Elevated).
+    """
+    user_id = token_payload.get("user_id") or token_payload.get("sub")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Invalid user authentication")
+
+    # Fetch all candidate interviews sorted by created_at ascending for trend analysis
+    all_interviews = list(interviews_collection.find({"user_id": str(user_id)}).sort("created_at", 1))
+
+    total_interviews = len(all_interviews)
+
+    # Filter to completed evaluated sessions only, deduplicating if identical session IDs exist
+    seen_ids = set()
+    completed_scored = []
+
+    for doc in all_interviews:
+        doc_id = str(doc["_id"])
+        if doc_id in seen_ids:
+            continue
+        seen_ids.add(doc_id)
+
+        # Must be status == "Completed" and evaluation_status == "completed" and have real score
+        if doc.get("status") != "Completed":
+            continue
+        if doc.get("evaluation_status") != "completed":
+            continue
+        if doc.get("score") is None:
+            continue
+
+        completed_scored.append(doc)
+
+    completed_count = len(completed_scored)
+
+    if completed_count == 0:
+        return {
+            "total_interviews": total_interviews,
+            "completed_interviews": 0,
+            "average_score": None,
+            "best_score": None,
+            "dimension_averages": {
+                "content_score": None,
+                "delivery_score": None,
+                "facial_score": None,
+            },
+            "average_confidence": None,
+            "average_stress": None,
+            "stress_distribution": {"Low": 0, "Moderate": 0, "Elevated": 0},
+            "score_trend": [],
+            "confidence_trend": [],
+            "stress_trend": [],
+            "by_category": [],
+            "recent": [_public_interview(doc, include_questions=False) for doc in reversed(all_interviews[-5:])],
+        }
+
+    scores = [float(doc["score"]) for doc in completed_scored]
+    avg_score = round(sum(scores) / completed_count, 1)
+    best_score = round(max(scores), 1)
+
+    # Dimension scores
+    nlp_scores = []
+    speech_scores = []
+    vision_scores = []
+
+    # Stress & confidence
+    confidence_scores = []
+    stress_scores = []
+    stress_dist = {"Low": 0, "Moderate": 0, "Elevated": 0}
+
+    # Trends
+    score_trend = []
+    confidence_trend = []
+    stress_trend = []
+    category_map = {}
+
+    for doc in completed_scored:
+        evaluation = doc.get("evaluation") or {}
+        dim_scores = evaluation.get("dimension_scores") or {}
+
+        # Content / NLP
+        c_score = dim_scores.get("nlp_score") if dim_scores.get("nlp_score") is not None else dim_scores.get("content_score")
+        if c_score is not None:
+            nlp_scores.append(float(c_score))
+
+        # Delivery / Speech
+        d_score = dim_scores.get("speech_score") if dim_scores.get("speech_score") is not None else dim_scores.get("delivery_score")
+        if d_score is not None:
+            speech_scores.append(float(d_score))
+
+        # Facial / Vision
+        f_score = dim_scores.get("vision_score") if dim_scores.get("vision_score") is not None else dim_scores.get("facial_score")
+        if f_score is not None:
+            vision_scores.append(float(f_score))
+
+        # Confidence
+        conf = evaluation.get("confidence_score")
+        if conf is None and isinstance(doc.get("confidence"), (int, float)):
+            conf = float(doc.get("confidence"))
+        if conf is not None:
+            confidence_scores.append(float(conf))
+
+        # Stress score
+        str_val = evaluation.get("stress_score")
+        if str_val is None and isinstance(doc.get("stress_score"), (int, float)):
+            str_val = float(doc.get("stress_score"))
+        if str_val is not None:
+            stress_scores.append(float(str_val))
+
+        # Discrete Stress Level (Low, Moderate, Elevated)
+        str_lvl = evaluation.get("stress_level") or doc.get("stress") or "Low"
+        if str_lvl in stress_dist:
+            stress_dist[str_lvl] += 1
+        elif str_lvl == "Medium":
+            stress_dist["Moderate"] += 1
+        elif str_lvl == "High":
+            stress_dist["Elevated"] += 1
+
+        # Date formatting
+        c_at = doc.get("created_at")
+        date_str = c_at.isoformat() if hasattr(c_at, "isoformat") else str(c_at)
+        role = doc.get("role") or doc.get("target_role") or "Technical"
+
+        score_trend.append({
+            "date": date_str,
+            "score": round(float(doc["score"]), 1),
+            "label": role,
+            "confidence": round(float(conf), 1) if conf is not None else None,
+            "stress": round(float(str_val), 1) if str_val is not None else None,
+        })
+
+        if conf is not None:
+            confidence_trend.append({
+                "date": date_str,
+                "confidence": round(float(conf), 1),
+                "label": role,
+            })
+
+        if str_val is not None:
+            stress_trend.append({
+                "date": date_str,
+                "stress": round(float(str_val), 1),
+                "stress_level": str_lvl,
+                "label": role,
+            })
+
+        # By category aggregation
+        if role not in category_map:
+            category_map[role] = {"category": role, "count": 0, "totalScore": 0.0, "scores": []}
+        category_map[role]["count"] += 1
+        category_map[role]["totalScore"] += float(doc["score"])
+        category_map[role]["scores"].append(float(doc["score"]))
+
+    by_category = []
+    for cat_name, cat_data in category_map.items():
+        by_category.append({
+            "category": cat_name,
+            "count": cat_data["count"],
+            "avgScore": round(cat_data["totalScore"] / cat_data["count"], 1),
+            "totalScore": round(cat_data["totalScore"], 1),
+            "bestScore": round(max(cat_data["scores"]), 1),
+        })
+
+    avg_nlp = round(sum(nlp_scores) / len(nlp_scores), 1) if nlp_scores else None
+    avg_speech = round(sum(speech_scores) / len(speech_scores), 1) if speech_scores else None
+    avg_vision = round(sum(vision_scores) / len(vision_scores), 1) if vision_scores else None
+
+    avg_conf = round(sum(confidence_scores) / len(confidence_scores), 1) if confidence_scores else None
+    avg_str = round(sum(stress_scores) / len(stress_scores), 1) if stress_scores else None
+
+    return {
+        "total_interviews": total_interviews,
+        "completed_interviews": completed_count,
+        "average_score": avg_score,
+        "best_score": best_score,
+        "dimension_averages": {
+            "content_score": avg_nlp,
+            "delivery_score": avg_speech,
+            "facial_score": avg_vision,
+        },
+        "average_confidence": avg_conf,
+        "average_stress": avg_str,
+        "stress_distribution": stress_dist,
+        "score_trend": score_trend,
+        "confidence_trend": confidence_trend,
+        "stress_trend": stress_trend,
+        "by_category": by_category,
+        "recent": [_public_interview(doc, include_questions=False) for doc in reversed(all_interviews[-5:])],
+    }

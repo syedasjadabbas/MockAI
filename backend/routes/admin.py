@@ -249,15 +249,32 @@ def get_admin_dashboard(token_payload: dict = Depends(verify_admin)):
             "$facet": {
                 "averages": [
                     {
+                        "$match": {
+                            "status": "Completed",
+                            "evaluation_status": "completed",
+                            "score": {"$ne": None}
+                        }
+                    },
+                    {
                         "$group": {
                             "_id": None,
                             "avg_score": {"$avg": "$score"},
-                            "avg_confidence": {"$avg": "$confidence"},
-                            "avg_stress": {"$avg": "$stress"}
+                            "avg_confidence": {
+                                "$avg": {"$ifNull": ["$evaluation.confidence_score", "$confidence"]}
+                            },
+                            "avg_stress": {
+                                "$avg": {"$ifNull": ["$evaluation.stress_score", "$stress_score"]}
+                            }
                         }
                     }
                 ],
                 "score_groups": [
+                    {
+                        "$match": {
+                            "status": "Completed",
+                            "evaluation_status": "completed"
+                        }
+                    },
                     {
                         "$group": {
                             "_id": {
@@ -285,7 +302,12 @@ def get_admin_dashboard(token_payload: dict = Depends(verify_admin)):
                     {
                         "$match": {
                             "status": "Completed",
-                            "stress": "High"
+                            "evaluation_status": "completed",
+                            "$or": [
+                                {"stress": "Elevated"},
+                                {"evaluation.stress_level": "Elevated"},
+                                {"evaluation.stress_score": {"$gte": 65.0}}
+                            ]
                         }
                     },
                     {"$count": "count"}
@@ -293,7 +315,8 @@ def get_admin_dashboard(token_payload: dict = Depends(verify_admin)):
                 "total_completed": [
                     {
                         "$match": {
-                            "status": "Completed"
+                            "status": "Completed",
+                            "evaluation_status": "completed"
                         }
                     },
                     {"$count": "count"}
@@ -340,7 +363,7 @@ def get_admin_dashboard(token_payload: dict = Depends(verify_admin)):
         if average_score < 60:
             insights.append("Average performance score is below 60%. Candidates require improvement.")
         if high_stress_val > completed_val * 0.4:
-            insights.append("High stress levels recorded across multiple interview sessions.")
+            insights.append("Elevated stress levels recorded across multiple interview sessions.")
             
     if status_buckets["pending"] > status_buckets["completed"]:
         insights.append("Pending interviews exceed completed evaluations.")
