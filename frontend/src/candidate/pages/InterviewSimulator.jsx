@@ -232,6 +232,13 @@ const InterviewSimulator = () => {
       }
     };
 
+    if (mediaRecorderRef.current.state === 'recording' && typeof mediaRecorderRef.current.requestData === 'function') {
+      try {
+        mediaRecorderRef.current.requestData();
+      } catch (e) {
+        // ignore
+      }
+    }
     mediaRecorderRef.current.stop();
   };
 

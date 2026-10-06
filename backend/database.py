@@ -43,13 +43,27 @@ def invalidate_cache(pattern: str = ""):
             _cache_store.pop(k, None)
             _cache_ttl.pop(k, None)
 
+# Ensure reliable DNS resolution for MongoDB Atlas SRV records
+try:
+    import dns.resolver
+    try:
+        _default_res = dns.resolver.get_default_resolver()
+        for _ns in ['8.8.8.8', '1.1.1.1']:
+            if _ns not in _default_res.nameservers:
+                _default_res.nameservers.insert(0, _ns)
+    except Exception:
+        dns.resolver.default_resolver = dns.resolver.Resolver(configure=False)
+        dns.resolver.default_resolver.nameservers = ['8.8.8.8', '1.1.1.1']
+except Exception:
+    pass
+
 try:
     # Create MongoDB client with optimized connection pooling
     client = MongoClient(
         MONGO_URI,
-        serverSelectionTimeoutMS=4000,
-        connectTimeoutMS=4000,
-        socketTimeoutMS=5000,
+        serverSelectionTimeoutMS=12000,
+        connectTimeoutMS=10000,
+        socketTimeoutMS=10000,
         maxPoolSize=50,
         minPoolSize=5,
         maxIdleTimeMS=45000,
@@ -57,9 +71,9 @@ try:
     )
     # Verify the connection
     client.admin.command('ping')
-except (ConnectionFailure, OperationFailure, PyMongoError) as e:
+except (ConnectionFailure, OperationFailure, PyMongoError, Exception) as e:
     print(f"MongoDB connection notice: {e}")
-    client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=4000)
+    client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=12000, connectTimeoutMS=10000)
 
 # Database instance
 db = client[DATABASE_NAME]
