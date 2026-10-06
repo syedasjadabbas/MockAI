@@ -247,12 +247,30 @@ def get_admin_dashboard(token_payload: dict = Depends(verify_admin)):
     pipeline = [
         {
             "$facet": {
+                "total_responses": [
+                    {
+                        "$project": {
+                            "resp_count": {
+                                "$cond": [
+                                    {"$isArray": "$responses"},
+                                    {"$size": "$responses"},
+                                    0
+                                ]
+                            }
+                        }
+                    },
+                    {
+                        "$group": {
+                            "_id": None,
+                            "total": {"$sum": "$resp_count"}
+                        }
+                    }
+                ],
                 "averages": [
                     {
                         "$match": {
                             "status": "Completed",
-                            "evaluation_status": "completed",
-                            "score": {"$ne": None}
+                            "score": {"$type": "number"}
                         }
                     },
                     {
@@ -271,15 +289,14 @@ def get_admin_dashboard(token_payload: dict = Depends(verify_admin)):
                 "score_groups": [
                     {
                         "$match": {
-                            "status": "Completed",
-                            "evaluation_status": "completed"
+                            "status": "Completed"
                         }
                     },
                     {
                         "$group": {
                             "_id": {
                                 "$cond": [
-                                    {"$eq": ["$score", None]}, "none",
+                                    {"$not": [{"$isNumber": "$score"}]}, "none",
                                     {"$cond": [
                                         {"$gte": ["$score", 80]}, "high",
                                         {"$cond": [{"$gte": ["$score", 60]}, "medium", "low"]}
@@ -302,7 +319,6 @@ def get_admin_dashboard(token_payload: dict = Depends(verify_admin)):
                     {
                         "$match": {
                             "status": "Completed",
-                            "evaluation_status": "completed",
                             "$or": [
                                 {"stress": "Elevated"},
                                 {"evaluation.stress_level": "Elevated"},
@@ -315,8 +331,7 @@ def get_admin_dashboard(token_payload: dict = Depends(verify_admin)):
                 "total_completed": [
                     {
                         "$match": {
-                            "status": "Completed",
-                            "evaluation_status": "completed"
+                            "status": "Completed"
                         }
                     },
                     {"$count": "count"}
@@ -328,6 +343,9 @@ def get_admin_dashboard(token_payload: dict = Depends(verify_admin)):
     aggr_res = list(interviews_collection.aggregate(pipeline))
     res = aggr_res[0] if aggr_res else {}
     
+    resp_list = res.get("total_responses", [{}])
+    total_responses = resp_list[0].get("total", 0) if resp_list else 0
+
     averages = res.get("averages", [{}])
     avg_data = averages[0] if averages else {}
     average_score = round(avg_data.get("avg_score") or 0, 1)
@@ -376,6 +394,7 @@ def get_admin_dashboard(token_payload: dict = Depends(verify_admin)):
     result = {
         "total_users": total_users,
         "total_interviews": total_interviews,
+        "total_responses": total_responses,
         "average_score": average_score,
         "average_confidence": average_confidence,
         "average_stress": average_stress,

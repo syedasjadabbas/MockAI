@@ -16,8 +16,9 @@ const Dashboard = () => {
   const [stats, setStats] = useState(() => ({
     totalUsers: cachedStats?.total_users || 0,
     totalInterviews: cachedStats?.total_interviews || 0,
-    totalResponses: cachedStats?.total_interviews || 0,
-    averageScore: cachedStats?.average_score || 0
+    totalResponses: cachedStats?.total_responses || 0,
+    averageScore: cachedStats?.average_score || 0,
+    averageStress: cachedStats?.average_stress || 0
   }));
 
   const [recentInterviews, setRecentInterviews] = useState(() => {
@@ -62,8 +63,9 @@ const Dashboard = () => {
           setStats({
             totalUsers: statsData.total_users || 0,
             totalInterviews: statsData.total_interviews || 0,
-            totalResponses: statsData.total_interviews || 0,
-            averageScore: statsData.average_score || 0
+            totalResponses: statsData.total_responses || 0,
+            averageScore: statsData.average_score || 0,
+            averageStress: statsData.average_stress || 0
           });
           setChartsData({
             scoreBuckets: statsData.score_buckets || { high: 0, medium: 0, low: 0, none: 0 },
@@ -100,7 +102,7 @@ const Dashboard = () => {
     };
   }, []);
 
-  const { totalUsers, totalInterviews, totalResponses, averageScore: avgPerformance } = stats;
+  const { totalUsers, totalInterviews, totalResponses, averageScore: avgPerformance, averageStress } = stats;
 
   if (loading) {
     return (
@@ -145,6 +147,7 @@ const Dashboard = () => {
           title="Avg. Performance" 
           value={`${avgPerformance}%`} 
           icon={TrendingUp} 
+          subtitle={`Avg. Stress: ${averageStress}%`}
         />
       </div>
 
@@ -155,11 +158,16 @@ const Dashboard = () => {
         
         {/* Performance Highlights Panel */}
         <div className="glass-card p-6 rounded-2xl flex flex-col hover:border-orange-500/30 transition-all duration-300">
-          <div className="flex items-center gap-2.5 mb-5">
-            <div className="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center border border-orange-500/20">
-              <Activity className="w-4 h-4 text-orange-500" />
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center border border-orange-500/20">
+                <Activity className="w-4 h-4 text-orange-500" />
+              </div>
+              <h3 className="text-base sm:text-lg font-bold text-[var(--text-primary)]">Performance Highlights</h3>
             </div>
-            <h3 className="text-base sm:text-lg font-bold text-[var(--text-primary)]">Performance Highlights</h3>
+            <span className="text-xs px-2.5 py-1 rounded-full bg-orange-500/10 text-orange-400 border border-orange-500/20 font-medium">
+              Avg. Stress: {averageStress}%
+            </span>
           </div>
           <ul className="space-y-3.5 flex-1">
             {chartsData.insights.map((insight, idx) => (

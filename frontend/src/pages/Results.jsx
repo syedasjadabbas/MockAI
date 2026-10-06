@@ -123,7 +123,7 @@ const Results = () => {
       return { avg: 0, highPct: 0, lowPct: 0, empty: true };
     }
     
-    const avg = Math.round(completed.reduce((a, b) => a + b.scoreValue, 0) / totalCompleted);
+    const avg = Math.round((completed.reduce((a, b) => a + b.scoreValue, 0) / totalCompleted) * 10) / 10;
     const high = completed.filter(r => r.scoreValue >= 80).length;
     const low = completed.filter(r => r.scoreValue < 60).length;
     
