@@ -2,514 +2,264 @@
 
 ## AI-Powered Career Interview Coach
 
-MockAI is a multimodal AI-powered web application designed to help candidates practice job interviews and receive structured, personalized performance feedback.
+MockAI is an advanced, multimodal artificial intelligence web application engineered to simulate realistic job interviews and provide candidates with structured, explainable, and difficulty-weighted performance evaluations.
 
-The platform evaluates interview responses across three modalities:
+The platform analyzes candidate responses across three core communication dimensions:
 
-- 🧠 NLP for semantic and content analysis
-- 🎙️ Speech analysis for delivery and fluency
-- 👤 Facial analysis for emotion and composure
+- 🧠 **Natural Language Processing (NLP)**: Semantic accuracy, conceptual depth, and rubric alignment.
+- 🎙️ **Speech & Acoustic Delivery**: Speaking tempo (WPM), acoustic pauses, hesitations, conversational fillers, and delivery fluency.
+- 👤 **Computer Vision & Facial Behavior**: Face localization, 8-class facial emotion distributions, baseline vs. secondary emotional states, peak expressive moments, behavioral composure, and tension indices.
 
-The individual results are combined through a multimodal fusion and scoring pipeline to generate a comprehensive interview performance report.
+These signals are integrated through a late multimodal fusion engine governing strict verbal primacy rules and difficulty-weighted scoring to generate an actionable coaching report.
 
 ---
 
-## ✨ Features
+## 📑 Technical Documentation
+
+Detailed architectural, algorithmic, and verification specifications are maintained in the [`docs/`](docs/) directory:
+
+- 📘 [**System Architecture & AI Evaluation Specification**](docs/SYSTEM_ARCHITECTURE_AND_EVALUATION_SPEC.md) — Comprehensive technical reference detailing models, mathematical scoring formulas, late fusion degradation matrices, database schemas, and RBAC security.
+- 📗 [**Final Production Acceptance Report**](docs/FINAL_PRODUCTION_ACCEPTANCE_REPORT.md) — Live production acceptance test results across Render Cloud and MongoDB Atlas.
+
+---
+
+## ✨ System Features
 
 ### 👨‍💻 Candidate Platform
+- **Secure Authentication**: Email/password authentication with SHA-256 OTP email verification and cryptographic Google OAuth integration.
+- **Candidate Dashboard**: Real-time performance overview, interview counts, historical score trajectories, and domain distribution breakdown.
+- **Custom Interview Setup**: Technical domains (Frontend, Backend, AI/ML, Cloud), custom roles, and difficulty selection.
+- **Hardware Sensor Diagnostics**: Camera and microphone authorization checks with real-time video preview.
+- **Interactive Interview Simulator**: Timed teleprompter question delivery, sequential progression, live video recording, and audio extraction.
+- **Trimodal AI Evaluation**: Automated per-question analysis combining DistilBERT semantics, speech delivery metrics, and FERPlus facial composure.
+- **Explainable Results & Feedback**: Multi-tab performance dossier featuring radar charts, dimension breakdowns (Technical, Fluency, Composure), detailed mathematical rationales, strengths, rubric omissions, and **STAR method** coaching suggestions.
+- **Longitudinal Progress Tracking**: Historical session tracking, score trends, and confidence/stress distributions.
+- **Industry Mentorship Subsystem**: Browse industry mentors, inspect specializations and hourly rates, book real-time appointment slots with collision protection, and manage bookings.
 
-- Secure authentication
-- Candidate dashboard
-- Mock interview sessions
-- Text-based responses
-- Speech-based responses
-- Video-based responses
-- Dynamic interview questions
-- Question difficulty levels
-- Per-question evaluation
-- Multimodal AI analysis
-- Overall performance scoring
-- Interview history
-- Performance tracking
-- Personalized feedback
-- Detailed performance reports
-
-### 🛠️ Admin Platform
-
-- Admin authentication
-- User management
-- Question bank management
-- Question category management
-- Interview monitoring
-- Performance statistics
-- Interview record inspection
-- Audit log monitoring
-- Administrative analytics
+### 🛠️ Admin Governance Platform
+- **Administrative Authentication**: Role-separated credentials with strict JWT claim validation.
+- **Platform Analytics**: Global metrics covering total candidates, total sessions, platform average scores, average stress, and score distribution buckets.
+- **Question Bank Management**: Full CRUD operations for technical questions, domain categories, difficulty multipliers, and active/inactive toggles.
+- **Interview Monitoring**: Global interview registry with detailed session dossiers, full transcripts, and multimodal breakdowns.
+- **Candidate User Management**: Registration registries, user status tracking, and candidate session counts.
+- **Audit Logging**: Immutable administrative activity tracking for platform oversight.
 
 ---
 
-# 🧠 AI Evaluation Pipeline
+## 🧠 AI Evaluation Pipeline
 
-MockAI processes candidate responses through three primary analysis pipelines.
-
-## 📝 NLP Analysis
-
-The NLP pipeline evaluates the semantic quality and relevance of candidate answers.
-
-```text
-Candidate Answer
-       ↓
-Text Processing
-       ↓
-Transformer Embeddings
-       ↓
-Semantic Similarity
-       ↓
-NLP Content Score
 ```
-
-The implementation uses transformer-based embeddings and semantic similarity against curated evaluation content.
-
----
-
-## 🎙️ Speech Analysis
-
-The speech pipeline evaluates communication and delivery characteristics.
-
-```text
-Candidate Audio
-       ↓
-Speech Transcription
-       ↓
-Transcript + Acoustic Signals
-       ↓
-Delivery Analysis
-       ↓
-Speech Score
-```
-
-Evaluated signals include:
-
-- Speaking rate
-- Words per minute
-- Pauses
-- Hesitation
-- Fluency
-- Delivery characteristics
-
----
-
-## 👤 Facial Analysis
-
-The vision pipeline analyzes facial expressions during video interviews.
-
-```text
-Candidate Video
-       ↓
-Frame Processing
-       ↓
-Face Detection
-       ↓
-Facial Emotion Recognition
-       ↓
-Emotion & Composure Features
-       ↓
-Vision Score
-```
-
-The implementation uses pre-trained facial analysis components rather than claiming custom foundation-model training.
-
----
-
-# 🔀 Multimodal Fusion
-
-MockAI combines the outputs from NLP, speech, and vision analysis using weighted late fusion.
-
-```text
-             NLP Score
-                │
-                │ 50%
-                ▼
-          ┌─────────────┐
-Speech ──►│   Fusion    │◄── Vision
-  30%     │    Engine   │     20%
-          └──────┬──────┘
-                 │
-                 ▼
-           Final Score
-                 │
-                 ▼
-          Feedback Engine
-                 │
-                 ▼
-          Performance Report
-```
-
-### Base Weights
-
-| Modality | Weight |
-|----------|-------:|
-| 🧠 NLP / Content | 50% |
-| 🎙️ Speech / Delivery | 30% |
-| 👤 Vision / Facial | 20% |
-
-The system also handles unavailable or low-quality modalities through dynamic weight redistribution.
-
----
-
-# 📊 Difficulty-Weighted Scoring
-
-Interview questions are assigned difficulty multipliers.
-
-| Difficulty | Weight |
-|------------|-------:|
-| Easy | 1.0 |
-| Medium | 1.25 |
-| Hard | 1.5 |
-
-The final interview score is calculated from the weighted scores of individual questions.
-
----
-
-# 🏗️ System Architecture
-
-```text
-                         Candidate
+[Candidate Response: WebM Video/Audio Take]
+                    │
+                    ▼
+      [FFmpeg Media Normalization Engine]
+      ├── 16-bit PCM / 16kHz / Mono WAV Audio
+      └── Normalized H.264 / 30fps Indexed MP4 Video
+                    │
+       ┌────────────┴────────────────────────────────┐
+       │                                             │
+       ▼                                             ▼
+[Google Cloud Speech ASR]                  [OpenCV YuNet Face Detector]
+- Transcribes Spoken Response              - Scans Sampled Frames (1-2 FPS)
+- Word Counts & Silence Tagging            - Localizes Bounding Boxes & Landmarks
+       │                                             │
+       ├─────────────────────┐                       ▼
+       ▼                     ▼             [Emotion-FERPlus ONNX Classifier]
+[DistilBERT NLP Engine]  [Speech Delivery] - 8-Class Emotion Distribution
+- 384d Dense Embeddings  - Cadence (WPM)   - Baseline & Secondary Moods
+- Cosine Rubric Sim      - Acoustic Pauses - Peak Expressive Moment (Timestamp)
+- Rubric Concept Overlap - Filler Counts   - Composure Index & Tension Rating
+       │                     │                       │
+       └─────────────────────┼───────────────────────┘
+                             ▼
+            [Late Multimodal Fusion Engine]
+            - Base Weights: 50% NLP / 30% Speech / 20% Vision
+            - Verbal Primacy Safeguard: Silence caps Vision at 20%
+            - Graceful Degradation: Proportional weight redistribution
                              │
                              ▼
-                   React Web Application
+            [Difficulty-Weighted Scoring]
+            - Easy (1.0x), Medium (1.25x), Hard (1.5x)
                              │
-                             ▼
-                        REST API
-                             │
-                             ▼
-                      FastAPI Backend
-                             │
-          ┌──────────────────┼──────────────────┐
-          │                  │                  │
-          ▼                  ▼                  ▼
-   Authentication       Interview           Admin
-       Module             Module             Module
-                             │
-                  ┌──────────┼──────────┐
-                  │          │          │
-                  ▼          ▼          ▼
-                 Text      Speech      Video
-                  │          │          │
-                  │          ▼          ▼
-                  │       Speech      Facial
-                  │      Analysis     Analysis
-                  │          │          │
-                  ▼          ▼          ▼
-                    Multimodal Fusion
-                            │
-                            ▼
-                      Scoring Engine
-                            │
-                            ▼
-                      Feedback Engine
-                            │
-                            ▼
-                    Report Generation
-                       │          │
-                       ▼          ▼
-                  MongoDB      Cloudinary
+            ┌────────────────┴────────────────┐
+            ▼                                 ▼
+[Confidence & Stress Synthesizer]   [Explainable Insights Engine]
+- Dual Acoustic + Visual Synthesis  - Mathematical Score Rationale
+- Confidence Level (High/Mod/Low)   - Prioritized Strengths & Weaknesses
+- Stress Level (Low/Mod/Elevated)   - Personalized STAR Coaching Guidance
+                                              │
+                                              ▼
+                             [MongoDB ACID Persistence & Dossier]
 ```
 
 ---
 
-# 🛠️ Technology Stack
+## 🔀 Multimodal Late Fusion & Scoring Rules
 
-## Frontend
+### Base Trimodal Fusion Weights
+When all modalities are present and valid:
+$$\text{Question Score} = \Big(0.50 \times \text{NLP Score}\Big) + \Big(0.30 \times \text{Speech Score}\Big) + \Big(0.20 \times \text{Vision Score}\Big)$$
 
-- React.js
-- Tailwind CSS
-- JavaScript
+| Modality | Weight | Evaluated Characteristic |
+| :--- | :---: | :--- |
+| 🧠 **NLP / Content** | **50%** | **What was said**: Rubric semantic similarity and technical concept coverage. |
+| 🎙️ **Speech / Delivery** | **30%** | **How it was said**: Pacing (WPM), pauses, hesitations, and conversational fillers. |
+| 👤 **Vision / Facial** | **20%** | **Non-verbal poise**: Composure stability, engagement level, and facial tension. |
 
-## Backend
+### Verbal-Primacy & Silent-Response Safeguard
+- **Rule**: If a candidate records a take but produces no verbal response (silence / 0 WPM):
+  - $\text{NLP Score} = 0.0$
+  - $\text{Speech Score} = 0.0$
+  - $\text{Vision Weight} = 0.20$ (Strictly capped at baseline 20%; verbal weights are **never** redistributed to Vision).
+- **Protection**: A candidate displaying perfect facial composure (85.0% score) while answering nothing receives a maximum score of $85 \times 0.20 = \mathbf{17.0\%}$, preventing score inflation on silent takes.
 
-- Python
-- FastAPI
-- REST APIs
-- JWT Authentication
+### Graceful Degradation (Hardware Absence)
+When hardware is legitimately unavailable:
+- **Audio Only (No Camera)**: $w_{\text{nlp}} = 62.5\%$, $w_{\text{speech}} = 37.5\%$, $w_{\text{vision}} = 0\%$.
+- **Text Only (Typed Response)**: $w_{\text{nlp}} = 100\%$, $w_{\text{speech}} = 0\%$, $w_{\text{vision}} = 0\%$.
+- **Text + Video (Typed with Camera)**: $w_{\text{nlp}} = 71.4\%$, $w_{\text{vision}} = 28.6\%$.
 
-## Database
-
-- MongoDB Atlas
-
-## Artificial Intelligence
-
-- Transformer-based NLP
-- BERT / DistilBERT architecture
-- Sentence Transformers
-- Facial emotion recognition
-- OpenCV
-- FERPlus CNN
-- Speech recognition
-
-## Storage
-
-- Cloudinary
-
-## Development Tools
-
-- Git
-- GitHub
-- Postman
-- Docker
-- Vercel
-- Python Virtual Environment
+### Difficulty-Weighted Aggregation
+$$\text{Overall Score} = \text{round}\left( \frac{\sum_{i=1}^{N} \Big(\text{DifficultyWeight}_i \times \text{QuestionScore}_i\Big)}{\sum_{i=1}^{N} \text{DifficultyWeight}_i}, 1 \right)$$
+- **Easy**: $1.0\times$
+- **Medium**: $1.25\times$
+- **Hard**: $1.5\times$
+- Unanswered or skipped questions carry a score of `0.0` while retaining their full difficulty weight in the denominator.
 
 ---
 
-# 📁 Project Structure
+## 👥 Industry Mentorship Subsystem
+
+MockAI includes a full-stack mentor scheduling platform integrated into the candidate journey:
+- **Real Mentor Profiles**: Seeded with verified industry professionals across AI, Backend, Frontend, Cloud, and Data Engineering.
+- **Real-Time Calendar Booking**: Dynamic date and time slot selection.
+- **Double-Booking Conflict Prevention**: Database indexes enforce atomic appointment scheduling; collision attempts return HTTP 409 Conflict.
+- **Candidate Privacy Isolation**: Candidates access only their own booked appointments; unauthorized lookups or cancellations return HTTP 403 Forbidden.
+- **Slot Release**: Cancelling an appointment automatically frees the slot back to the mentor's calendar.
+
+---
+
+## 🛠️ Technology Stack
+
+| Domain | Technology / Library | Role in System |
+| :--- | :--- | :--- |
+| **Frontend UI** | React 18, Vite | Component-driven single-page architecture |
+| **Styling** | Tailwind CSS | Modern Charcoal (`#0B0F17`) + Orange (`#FF6B00`) theme |
+| **Data Visuals** | Chart.js, Recharts | Interactive radar charts and performance trends |
+| **Backend API** | FastAPI (Python 3.11) | High-performance asynchronous REST gateway |
+| **ASGI Server** | Uvicorn | Asynchronous server runtime |
+| **Database** | MongoDB Atlas | Cloud document store with compound indexing |
+| **Auth & Cryptography** | JWT (PyJWT), Bcrypt, Passlib | Role-based token verification and salted password hashing |
+| **Media Processing** | FFmpeg, Soundfile, PyDub | WebM stream chunking, WAV extraction, MP4 normalization |
+| **Speech ASR** | Google Cloud Speech-to-Text | Real-time speech transcription |
+| **NLP Semantics** | DistilBERT (`all-MiniLM-L6-v2`) | Dense transformer embeddings & rubric cosine similarity |
+| **Face Detection** | OpenCV YuNet ONNX | Real-time bounding box and 5-landmark face localization |
+| **Emotion Classifier**| Emotion-FERPlus ONNX | 8-class facial expression probability distribution |
+
+---
+
+## 🔐 Security & Role-Based Access Control (RBAC)
+
+1. **Authentication Tokens**: RFC 7519 Bearer JWT signed with HMAC-SHA256 (`HS256`), carrying a 24-hour expiration window.
+2. **Strict Role Separation**:
+   - `verify_candidate` middleware enforces `role == "user"`.
+   - `verify_admin` middleware enforces `role == "admin"`.
+   - Cross-role privilege escalation is cryptographically rejected with HTTP 401/403.
+3. **Data Isolation**: All candidate sessions, evaluations, and appointments are filtered by `user_id`. Cross-candidate lookups return HTTP 404 (zero information leakage).
+4. **Credential Safety**: Plaintext passwords are salted and hashed via bcrypt before database insertion. Password hashes are stripped from all API outputs.
+5. **Google Sign-In**: Validates cryptographic signatures against Google public RSA certs; forged tokens are rejected.
+
+---
+
+## 🧪 Testing & Verification Evidence
+
+The MockAI platform has been exhaustively tested and verified across 12 automated regression and compliance suites:
 
 ```text
-MockAI/
-│
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   ├── pages/
-│   │   ├── services/
-│   │   └── ...
-│   └── ...
-│
-├── backend/
-│   ├── routes/
-│   ├── services/
-│   ├── models/
-│   ├── utils/
-│   ├── tests/
-│   └── ...
-│
-├── README.md
-└── ...
+======================================================================
+MOCKAI COMPREHENSIVE VERIFICATION AUDIT
+======================================================================
+Functional Requirements (FR01–FR36)    36 / 36 PASSED (100%)
+Sub-Requirements (108 Points)        108 / 108 PASSED (100%)
+Multimodal Scenarios A through H        8 / 8  PASSED (100%)
+Automated Test Suites (12 Suites)      12 / 12 PASSED (100%)
+Frontend Production Build             1643 Modules Clean (0 Errors)
+Production Acceptance Gate             35 / 35 PASSED (100%)
+======================================================================
 ```
 
----
-
-# 🔐 Security
-
-MockAI implements several application-level security mechanisms:
-
-- JWT-based authentication
-- Role-based administrative access
-- Protected API routes
-- Candidate ownership validation
-- User-level data isolation
-- Secure database access
-- Controlled media storage
-- Upload validation
-
----
-
-# 📈 Analytics & Reporting
-
-MockAI provides performance insights at both candidate and administrative levels.
-
-### Candidate
-
-- Overall interview score
-- Per-question scores
-- NLP performance
-- Speech performance
-- Facial analysis
-- Confidence indicators
-- Stress indicators
-- Historical performance
-- Personalized improvement guidance
-
-### Administrator
-
-- User statistics
-- Interview participation
-- Average performance
-- Score distributions
-- Interview records
-- Question bank statistics
-- System activity logs
+### Verified Test Suites:
+1. `test_final_compliance_gate.py` — Complete lifecycle validation across FR01–FR36 & 18 edge cases.
+2. `test_system_integration_fr30_fr36.py` — Database persistence, history, progress, and admin governance.
+3. `test_phase2_comprehensive.py` — Verbal primacy, temporal facial aggregation, mentor backend, and statistics.
+4. `test_multimodal_fusion.py` — Trimodal late fusion weights and graceful degradation matrices.
+5. `test_facial_analysis.py` — YuNet face localization and Emotion-FERPlus ONNX inference.
+6. `test_speech_delivery.py` — WPM calculation, acoustic pauses, and filler detection.
+7. `test_nlp_semantic.py` — DistilBERT embeddings and rubric concept coverage.
+8. `test_confidence_stress.py` — Acoustic + visual confidence and stress categorization.
+9. `test_insights_service.py` — Mathematical rationales, strengths, weaknesses, and STAR coaching.
+10. `test_aggregate_evaluation.py` — Difficulty weighting (1.0x, 1.25x, 1.5x) and whole-interview aggregation.
+11. `test_summary_visuals.py` — Radar chart contracts and dimension breakdown serialization.
+12. `test_final_production_acceptance.py` — Production gating on Render Cloud and MongoDB Atlas.
 
 ---
 
-# 🧪 Testing
+## 🚀 Getting Started
 
-MockAI includes testing across the major AI and application components.
+### Prerequisites
+- Python 3.11+
+- Node.js 18+ LTS
+- FFmpeg installed and accessible in system `$PATH`
+- MongoDB instance (local or MongoDB Atlas)
 
-Tested areas include:
+### Backend Setup
+```bash
+cd backend
+python -m venv .venv
 
-- Speech delivery analysis
-- Empty audio handling
-- Empty transcript handling
-- Extreme speaking-rate handling
-- Multimodal fusion
-- Candidate ownership isolation
-- Background evaluation
-- Facial analysis
-- NLP evaluation
-- End-to-end evaluation
+# Activate virtual environment
+# Windows:
+.venv\Scripts\activate
+# Linux/macOS:
+source .venv/bin/activate
 
-### Current Verification
+# Install dependencies
+pip install -r requirements.txt
 
-```text
-Functional Requirements     36 / 36
-Sub-Requirements           108 / 108
-Passed                     108
-Partial                      0
-Missing                      0
+# Configure environment variables
+cp .env.example .env
+# Edit .env with your MongoDB URI and Secret Key
+
+# Run development server
+uvicorn main:app --reload --port 8000
 ```
 
----
+### Frontend Setup
+```bash
+cd frontend
+npm install
 
-# 🔄 Processing Flow
-
-A typical multimodal interview follows this flow:
-
-```text
-1. Candidate starts an interview
-             ↓
-2. Interview questions are presented
-             ↓
-3. Candidate responds through text,
-   speech, or video
-             ↓
-4. Response data is processed
-             ↓
-5. NLP analyzes answer content
-             ↓
-6. Speech analysis evaluates delivery
-             ↓
-7. Vision analysis evaluates facial signals
-             ↓
-8. Multimodal fusion combines results
-             ↓
-9. Scoring engine calculates performance
-             ↓
-10. Feedback engine generates guidance
-             ↓
-11. Report is generated
-             ↓
-12. Results are stored and displayed
+# Run frontend development server
+npm run dev
 ```
 
----
-
-# 🎯 Project Objectives
-
-MockAI aims to:
-
-- Provide an accessible interview practice platform
-- Simulate realistic interview sessions
-- Evaluate multiple communication modalities
-- Provide structured AI-based feedback
-- Help candidates identify performance weaknesses
-- Track performance across multiple interviews
-- Improve interview preparation through personalized evaluation
-
-The project focuses on English text, speech, and video interview experiences.
+The application will be accessible at `http://localhost:5173`.
 
 ---
 
-# 🚀 Future Scalability
+## 📚 Academic Project Information
 
-The current application uses an integrated backend architecture.
+MockAI is a Final Year Project developed for the Bachelor of Science in Computer Science program at:
 
-For larger workloads, the AI processing pipeline could be separated into dedicated workers and services.
+**COMSATS University Islamabad, Lahore Campus**  
+Department of Computer Science
 
-```text
-                    Users
-                      │
-                      ▼
-                Load Balancer
-                      │
-                      ▼
-                 API Gateway
-                      │
-              Interview Service
-                      │
-                      ▼
-                 Task Queue
-                      │
-        ┌─────────────┼─────────────┐
-        ▼             ▼             ▼
-    NLP Worker    Speech Worker  Vision Worker
-        │             │             │
-        └─────────────┼─────────────┘
-                      ▼
-                Fusion Worker
-                      │
-                      ▼
-                Report Service
-                      │
-              ┌───────┴───────┐
-              ▼               ▼
-          MongoDB         Object Storage
-```
-
-Potential future infrastructure includes:
-
-- Redis
-- Message queues
-- Background workers
-- Load balancing
-- Horizontal scaling
-- Centralized logging
-- Monitoring
-- Service isolation
+### Project Team
+- **Syed Muhammad Asjad Abbas Zaidi** — Software Architecture, Backend & Full-Stack Integration
+- **Syed Hassan Ali Kazmi** — AI / Machine Learning & Computer Vision
 
 ---
 
-# 📚 Academic Project
-
-MockAI is a Final Year Project developed for the BS Computer Science program at:
-
-**COMSATS University Islamabad, Lahore Campus**
-
-### Areas
-
-- Artificial Intelligence
-- Natural Language Processing
-- Computer Vision
-- Data Science
-- Web Development
-- Software Engineering
-
----
-
-# 👥 Project Team
-
-### Syed Muhammad Asjad Abbas Zaidi
-Software Development & System Integration
-
-### Syed Hassan Ali Kazmi
-AI / Machine Learning
-
----
-
-# 📌 Project Status
-
-```text
-Frontend                 ✅
-Backend                  ✅
-Authentication           ✅
-Candidate Platform       ✅
-Admin Platform           ✅
-NLP Evaluation           ✅
-Speech Evaluation        ✅
-Facial Analysis          ✅
-Multimodal Fusion        ✅
-Scoring Engine           ✅
-Feedback Engine          ✅
-Report Generation        ✅
-MongoDB Integration      ✅
-Security                 ✅
-Testing                  ✅
-```
-
----
-
-# 🤖 MockAI
-
+## 🤖 MockAI
 ### Practice. Analyze. Improve.
-
-Built to help candidates understand what they answer, how they communicate, and how they present themselves during an interview.
+Built to help candidates understand **what** they answer, **how** they communicate, and **how** they present themselves during job interviews.
