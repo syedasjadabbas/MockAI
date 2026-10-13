@@ -86,10 +86,11 @@ class FacialAnalyzer:
 
             if FER_MODEL_PATH.is_file():
                 so = ort.SessionOptions()
-                so.intra_op_num_threads = 1
+                so.intra_op_num_threads = min(4, os.cpu_count() or 1)
                 so.inter_op_num_threads = 1
                 so.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
                 self.ort_session = ort.InferenceSession(str(FER_MODEL_PATH), so)
+                self._fer_input_name = self.ort_session.get_inputs()[0].name
                 logger.info("Emotion-FERPlus ONNX model loaded successfully.")
         except Exception as e:
             logger.error(f"Failed to initialize facial analysis models: {e}", exc_info=True)
@@ -114,6 +115,9 @@ class FacialAnalyzer:
                 "face_detected": False,
                 "face_presence_ratio": 0.0,
                 "total_frames_sampled": 0,
+                "frames_with_face": 0,
+                "frames_with_multiple_faces": 0,
+                "detection_coverage": 0.0,
                 "dominant_expression": "Not Observed",
                 "baseline_expression": "Not Observed",
                 "secondary_expression": "Not Observed",
@@ -124,6 +128,18 @@ class FacialAnalyzer:
                     "engagement_level": "Not Assessed",
                     "composure_index": "Not Assessed",
                     "observable_tension": "Not Assessed",
+                },
+                "quality_metadata": {
+                    "valid_frames_processed": 0,
+                    "frames_with_detected_faces": 0,
+                    "frames_with_multiple_faces": 0,
+                    "detection_coverage_ratio": 0.0,
+                    "resolution": "0x0",
+                    "fps": 0.0,
+                    "duration_seconds": 0.0,
+                    "inference_errors": 0,
+                    "model": "yunet-onnx + emotion-ferplus-8",
+                    "model_notes": "Predictions reflect observable facial movements and expression classifications, not candidate internal emotional state, competence, or psychological truth.",
                 },
                 "model": "fer-cnn-onnx-v1",
                 "error": "Media recording not found on disk",
@@ -136,6 +152,9 @@ class FacialAnalyzer:
                 "face_detected": False,
                 "face_presence_ratio": 0.0,
                 "total_frames_sampled": 0,
+                "frames_with_face": 0,
+                "frames_with_multiple_faces": 0,
+                "detection_coverage": 0.0,
                 "dominant_expression": "Not Observed",
                 "baseline_expression": "Not Observed",
                 "secondary_expression": "Not Observed",
@@ -146,6 +165,18 @@ class FacialAnalyzer:
                     "engagement_level": "Not Assessed",
                     "composure_index": "Not Assessed",
                     "observable_tension": "Not Assessed",
+                },
+                "quality_metadata": {
+                    "valid_frames_processed": 0,
+                    "frames_with_detected_faces": 0,
+                    "frames_with_multiple_faces": 0,
+                    "detection_coverage_ratio": 0.0,
+                    "resolution": "0x0",
+                    "fps": 0.0,
+                    "duration_seconds": 0.0,
+                    "inference_errors": 1,
+                    "model": "yunet-onnx + emotion-ferplus-8",
+                    "model_notes": "Predictions reflect observable facial movements and expression classifications, not candidate internal emotional state, competence, or psychological truth.",
                 },
                 "model": "fer-cnn-onnx-v1",
                 "error": "Media recording is empty (0 bytes)",
@@ -163,6 +194,9 @@ class FacialAnalyzer:
                 "face_detected": False,
                 "face_presence_ratio": 0.0,
                 "total_frames_sampled": 0,
+                "frames_with_face": 0,
+                "frames_with_multiple_faces": 0,
+                "detection_coverage": 0.0,
                 "dominant_expression": "Not Observed",
                 "baseline_expression": "Not Observed",
                 "secondary_expression": "Not Observed",
@@ -174,11 +208,33 @@ class FacialAnalyzer:
                     "composure_index": "Not Assessed",
                     "observable_tension": "Not Assessed",
                 },
+                "quality_metadata": {
+                    "valid_frames_processed": 0,
+                    "frames_with_detected_faces": 0,
+                    "frames_with_multiple_faces": 0,
+                    "detection_coverage_ratio": 0.0,
+                    "resolution": "0x0",
+                    "fps": 0.0,
+                    "duration_seconds": 0.0,
+                    "inference_errors": 0,
+                    "model": "yunet-onnx + emotion-ferplus-8",
+                    "model_notes": "Predictions reflect observable facial movements and expression classifications, not candidate internal emotional state, competence, or psychological truth.",
+                },
                 "model": "fer-cnn-onnx-v1",
                 "error": "Media recording contains no video stream (audio-only)",
             }
 
-        if is_ffmpeg_available() and target_video_path.lower().endswith(".webm"):
+        # Check for persistent normalized sibling file before transcode
+        video_p = Path(video_path)
+        candidate_norm_mp4 = video_p.parent / f"{video_p.stem}_normalized.mp4"
+        candidate_mp4 = video_p.with_suffix(".mp4")
+        if candidate_norm_mp4.is_file() and candidate_norm_mp4.stat().st_size > 0:
+            target_video_path = str(candidate_norm_mp4)
+            temp_normalized_path = None
+        elif candidate_mp4.is_file() and candidate_mp4.stat().st_size > 0 and candidate_mp4 != video_p:
+            target_video_path = str(candidate_mp4)
+            temp_normalized_path = None
+        elif is_ffmpeg_available() and target_video_path.lower().endswith(".webm"):
             import tempfile
             try:
                 temp_fd, temp_normalized_path = tempfile.mkstemp(suffix=".mp4", prefix="mockai_norm_")
@@ -227,6 +283,9 @@ class FacialAnalyzer:
                 "face_detected": False,
                 "face_presence_ratio": 0.0,
                 "total_frames_sampled": 0,
+                "frames_with_face": 0,
+                "frames_with_multiple_faces": 0,
+                "detection_coverage": 0.0,
                 "dominant_expression": "Not Observed",
                 "baseline_expression": "Not Observed",
                 "secondary_expression": "Not Observed",
@@ -237,6 +296,18 @@ class FacialAnalyzer:
                     "engagement_level": "Not Assessed",
                     "composure_index": "Not Assessed",
                     "observable_tension": "Not Assessed",
+                },
+                "quality_metadata": {
+                    "valid_frames_processed": 0,
+                    "frames_with_detected_faces": 0,
+                    "frames_with_multiple_faces": 0,
+                    "detection_coverage_ratio": 0.0,
+                    "resolution": "0x0",
+                    "fps": 0.0,
+                    "duration_seconds": 0.0,
+                    "inference_errors": 1,
+                    "model": "yunet-onnx + emotion-ferplus-8",
+                    "model_notes": "Predictions reflect observable facial movements and expression classifications, not candidate internal emotional state, competence, or psychological truth.",
                 },
                 "model": "fer-cnn-onnx-v1",
                 "error": "Unable to decode video streams",
@@ -259,6 +330,9 @@ class FacialAnalyzer:
                         "face_detected": False,
                         "face_presence_ratio": 0.0,
                         "total_frames_sampled": 0,
+                        "frames_with_face": 0,
+                        "frames_with_multiple_faces": 0,
+                        "detection_coverage": 0.0,
                         "dominant_expression": "Not Observed",
                         "baseline_expression": "Not Observed",
                         "secondary_expression": "Not Observed",
@@ -270,6 +344,18 @@ class FacialAnalyzer:
                             "composure_index": "Not Assessed",
                             "observable_tension": "Not Assessed",
                         },
+                        "quality_metadata": {
+                            "valid_frames_processed": 0,
+                            "frames_with_detected_faces": 0,
+                            "frames_with_multiple_faces": 0,
+                            "detection_coverage_ratio": 0.0,
+                            "resolution": "0x0",
+                            "fps": 0.0,
+                            "duration_seconds": 0.0,
+                            "inference_errors": 1,
+                            "model": "yunet-onnx + emotion-ferplus-8",
+                            "model_notes": "Predictions reflect observable facial movements and expression classifications, not candidate internal emotional state, competence, or psychological truth.",
+                        },
                         "model": "fer-cnn-onnx-v1",
                         "error": "Video contains no readable frames",
                     }
@@ -277,16 +363,6 @@ class FacialAnalyzer:
                     height, width, _ = frame.shape
                     total_video_frames = 1
                     first_frame = frame
-
-            # Sample frames using millisecond timestamps for robust temporal stepping
-            interval_ms = (1000.0 / fps_sample_rate) if fps_sample_rate > 0 else 1000.0
-            next_sample_time_ms = 0.0
-
-            sampled_emotions: List[np.ndarray] = []
-            sampled_timestamps: List[float] = []
-            face_detected_count = 0
-            total_sampled_count = 0
-            face_centers_x: List[float] = []
 
             # Determine temporal duration
             if duration_seconds and duration_seconds > 0:
@@ -296,14 +372,20 @@ class FacialAnalyzer:
             else:
                 inferred_duration = 30.0
 
-            # Initialize YuNet Face Detector for the video resolution
+            # Scale detector dimensions if resolution exceeds standard 480p
+            det_w, det_h = width, height
+            if width > 640 or height > 480:
+                scale = min(640.0 / width, 480.0 / height)
+                det_w, det_h = int(width * scale), int(height * scale)
+
+            # Initialize YuNet Face Detector for resolution
             yunet_detector = None
             if YUNET_MODEL_PATH.is_file():
                 try:
                     yunet_detector = cv2.FaceDetectorYN.create(
                         str(YUNET_MODEL_PATH),
                         "",
-                        (width, height),
+                        (det_w, det_h),
                         score_threshold=0.55,
                         nms_threshold=0.3,
                         top_k=5000,
@@ -311,34 +393,40 @@ class FacialAnalyzer:
                 except Exception as e:
                     logger.warning(f"YuNet creation failed: {e}")
 
-            frame_counter = 0
-            step_fallback = max(1, int(video_fps)) if video_fps > 0 else 30
+            # Efficient frame stepping using cap.grab() for intermediate frames
+            frame_step = max(1, round(video_fps / fps_sample_rate)) if (video_fps > 0 and fps_sample_rate > 0) else 30
+            sampled_emotions: List[np.ndarray] = []
+            sampled_timestamps: List[float] = []
+            face_detected_count = 0
+            total_sampled_count = 0
+            multi_face_count = 0
+            inference_errors = 0
+            face_centers_x: List[float] = []
 
+            frame_idx = 0
             while total_sampled_count < max_samples:
+                is_sample_frame = (frame_idx % frame_step == 0)
                 if first_frame is not None:
                     frame = first_frame
                     ret = True
                     first_frame = None
-                else:
+                elif is_sample_frame:
                     ret, frame = cap.read()
-                if not ret or frame is None:
+                else:
+                    ret = cap.grab()
+                    frame = None
+
+                if not ret:
                     break
 
-                pos_ms = cap.get(cv2.CAP_PROP_POS_MSEC)
-                should_sample = False
-
-                if pos_ms >= 0 and pos_ms >= next_sample_time_ms:
-                    should_sample = True
-                    next_sample_time_ms = pos_ms + interval_ms
-                elif pos_ms <= 0 and frame_counter % step_fallback == 0:
-                    should_sample = True
-
-                frame_counter += 1
-
-                if should_sample:
+                if is_sample_frame and frame is not None:
                     total_sampled_count += 1
-                    sample_sec = max(0.0, float(pos_ms / 1000.0)) if pos_ms >= 0 else float(frame_counter / (video_fps or 25.0))
-                    face_crop, face_bbox = self._extract_face(frame, yunet_detector, width, height)
+                    pos_ms = cap.get(cv2.CAP_PROP_POS_MSEC)
+                    sample_sec = max(0.0, float(pos_ms / 1000.0)) if pos_ms >= 0 else float(frame_idx / (video_fps or 25.0))
+
+                    face_crop, face_bbox, f_count = self._extract_face(frame, yunet_detector, width, height, return_count=True)
+                    if f_count > 1:
+                        multi_face_count += 1
 
                     if face_crop is not None:
                         face_detected_count += 1
@@ -346,10 +434,16 @@ class FacialAnalyzer:
                         face_centers_x.append((x + w_box / 2.0) / width if width > 0 else 0.5)
 
                         # Classify facial expression
-                        probs = self._classify_face_expression(face_crop)
-                        if probs is not None:
-                            sampled_emotions.append(probs)
-                            sampled_timestamps.append(sample_sec)
+                        try:
+                            probs = self._classify_face_expression(face_crop)
+                            if probs is not None:
+                                sampled_emotions.append(probs)
+                                sampled_timestamps.append(sample_sec)
+                        except Exception as e:
+                            logger.debug(f"Emotion classification error on frame {frame_idx}: {e}")
+                            inference_errors += 1
+
+                frame_idx += 1
 
             if total_sampled_count == 0:
                 return {
@@ -357,6 +451,9 @@ class FacialAnalyzer:
                     "face_detected": False,
                     "face_presence_ratio": 0.0,
                     "total_frames_sampled": 0,
+                    "frames_with_face": 0,
+                    "frames_with_multiple_faces": 0,
+                    "detection_coverage": 0.0,
                     "dominant_expression": "Not Observed",
                     "baseline_expression": "Not Observed",
                     "secondary_expression": "Not Observed",
@@ -367,6 +464,18 @@ class FacialAnalyzer:
                         "engagement_level": "Not Assessed",
                         "composure_index": "Not Assessed",
                         "observable_tension": "Not Assessed",
+                    },
+                    "quality_metadata": {
+                        "valid_frames_processed": 0,
+                        "frames_with_detected_faces": 0,
+                        "frames_with_multiple_faces": 0,
+                        "detection_coverage_ratio": 0.0,
+                        "resolution": f"{width}x{height}",
+                        "fps": round(video_fps, 2),
+                        "duration_seconds": round(inferred_duration, 2),
+                        "inference_errors": inference_errors,
+                        "model": "yunet-onnx + emotion-ferplus-8",
+                        "model_notes": "Predictions reflect observable facial movements and expression classifications, not candidate internal emotional state, competence, or psychological truth.",
                     },
                     "model": "fer-cnn-onnx-v1",
                     "error": "No frames could be extracted from recording",
@@ -381,6 +490,9 @@ class FacialAnalyzer:
                     "face_detected": False,
                     "face_presence_ratio": 0.0,
                     "total_frames_sampled": total_sampled_count,
+                    "frames_with_face": 0,
+                    "frames_with_multiple_faces": multi_face_count,
+                    "detection_coverage": 0.0,
                     "dominant_expression": "Not Observed",
                     "baseline_expression": "Not Observed",
                     "secondary_expression": "Not Observed",
@@ -391,6 +503,18 @@ class FacialAnalyzer:
                         "engagement_level": "Low (No Face Detected)",
                         "composure_index": "Not Assessed",
                         "observable_tension": "Not Assessed",
+                    },
+                    "quality_metadata": {
+                        "valid_frames_processed": total_sampled_count,
+                        "frames_with_detected_faces": 0,
+                        "frames_with_multiple_faces": multi_face_count,
+                        "detection_coverage_ratio": 0.0,
+                        "resolution": f"{width}x{height}",
+                        "fps": round(video_fps, 2),
+                        "duration_seconds": round(inferred_duration, 2),
+                        "inference_errors": inference_errors,
+                        "model": "yunet-onnx + emotion-ferplus-8",
+                        "model_notes": "Predictions reflect observable facial movements and expression classifications, not candidate internal emotional state, competence, or psychological truth.",
                     },
                     "model": "fer-cnn-onnx-v1",
                     "error": None,
@@ -413,6 +537,9 @@ class FacialAnalyzer:
                     "face_detected": True,
                     "face_presence_ratio": presence_ratio,
                     "total_frames_sampled": total_sampled_count,
+                    "frames_with_face": face_detected_count,
+                    "frames_with_multiple_faces": multi_face_count,
+                    "detection_coverage": presence_ratio,
                     "dominant_expression": "Not Observed",
                     "baseline_expression": "Not Observed",
                     "secondary_expression": "None Observed",
@@ -423,6 +550,18 @@ class FacialAnalyzer:
                         "engagement_level": "Moderate",
                         "composure_index": "Not Assessed",
                         "observable_tension": "Not Assessed",
+                    },
+                    "quality_metadata": {
+                        "valid_frames_processed": total_sampled_count,
+                        "frames_with_detected_faces": face_detected_count,
+                        "frames_with_multiple_faces": multi_face_count,
+                        "detection_coverage_ratio": presence_ratio,
+                        "resolution": f"{width}x{height}",
+                        "fps": round(video_fps, 2),
+                        "duration_seconds": round(inferred_duration, 2),
+                        "inference_errors": inference_errors,
+                        "model": "yunet-onnx + emotion-ferplus-8",
+                        "model_notes": "Predictions reflect observable facial movements and expression classifications, not candidate internal emotional state, competence, or psychological truth.",
                     },
                     "model": "fer-cnn-onnx-v1",
                     "error": "Facial expression confidence below classification threshold",
@@ -446,6 +585,8 @@ class FacialAnalyzer:
                 "face_presence_ratio": presence_ratio,
                 "total_frames_sampled": total_sampled_count,
                 "frames_with_face": face_detected_count,
+                "frames_with_multiple_faces": multi_face_count,
+                "detection_coverage": presence_ratio,
                 "dominant_expression": agg["dominant_expression"],
                 "baseline_expression": agg["baseline_expression"],
                 "secondary_expression": agg["secondary_expression"],
@@ -456,6 +597,18 @@ class FacialAnalyzer:
                     "engagement_level": engagement_level,
                     "composure_index": composure_index,
                     "observable_tension": observable_tension,
+                },
+                "quality_metadata": {
+                    "valid_frames_processed": total_sampled_count,
+                    "frames_with_detected_faces": face_detected_count,
+                    "frames_with_multiple_faces": multi_face_count,
+                    "detection_coverage_ratio": presence_ratio,
+                    "resolution": f"{width}x{height}",
+                    "fps": round(video_fps, 2),
+                    "duration_seconds": round(inferred_duration, 2),
+                    "inference_errors": inference_errors,
+                    "model": "yunet-onnx + emotion-ferplus-8",
+                    "model_notes": "Predictions reflect observable facial movements and expression classifications, not candidate internal emotional state, competence, or psychological truth.",
                 },
                 "model": "fer-cnn-onnx-v1",
                 "analyzed_at": datetime.utcnow().isoformat(),
@@ -469,6 +622,9 @@ class FacialAnalyzer:
                 "face_detected": False,
                 "face_presence_ratio": 0.0,
                 "total_frames_sampled": 0,
+                "frames_with_face": 0,
+                "frames_with_multiple_faces": 0,
+                "detection_coverage": 0.0,
                 "dominant_expression": "Not Observed",
                 "baseline_expression": "Not Observed",
                 "secondary_expression": "Not Observed",
@@ -479,6 +635,18 @@ class FacialAnalyzer:
                     "engagement_level": "Not Assessed",
                     "composure_index": "Not Assessed",
                     "observable_tension": "Not Assessed",
+                },
+                "quality_metadata": {
+                    "valid_frames_processed": 0,
+                    "frames_with_detected_faces": 0,
+                    "frames_with_multiple_faces": 0,
+                    "detection_coverage_ratio": 0.0,
+                    "resolution": "0x0",
+                    "fps": 0.0,
+                    "duration_seconds": 0.0,
+                    "inference_errors": 1,
+                    "model": "yunet-onnx + emotion-ferplus-8",
+                    "model_notes": "Predictions reflect observable facial movements and expression classifications, not candidate internal emotional state, competence, or psychological truth.",
                 },
                 "model": "fer-cnn-onnx-v1",
                 "error": str(e),
@@ -621,27 +789,50 @@ class FacialAnalyzer:
         detector,
         frame_width: int,
         frame_height: int,
-    ) -> Tuple[Optional[np.ndarray], Tuple[int, int, int, int]]:
-        """Detects and crops the primary face from a frame with padding."""
+        return_count: bool = False,
+    ):
+        """
+        Detects and crops the primary face from a frame with padding.
+        Returns (face_crop, bounding_box) or (face_crop, bounding_box, face_count) if return_count=True.
+        """
         if detector is not None:
             try:
-                _, faces = detector.detect(frame)
-                if faces is not None and len(faces) > 0:
-                    # Select largest face bounding box
-                    largest_face = max(faces, key=lambda f: f[2] * f[3])
-                    x, y, w, h = [int(v) for v in largest_face[:4]]
-
-                    # Add 10% padding
-                    pad_w = int(w * 0.1)
-                    pad_h = int(h * 0.1)
-                    x1 = max(0, x - pad_w)
-                    y1 = max(0, y - pad_h)
-                    x2 = min(frame_width, x + w + pad_w)
-                    y2 = min(frame_height, y + h + pad_h)
-
-                    face_crop = frame[y1:y2, x1:x2]
-                    if face_crop.shape[0] >= 20 and face_crop.shape[1] >= 20:
-                        return face_crop, (x, y, w, h)
+                # If frame is large (e.g. > 640x480), scale down for fast YuNet detection
+                if frame_width > 640 or frame_height > 480:
+                    scale = min(640.0 / frame_width, 480.0 / frame_height)
+                    det_w, det_h = int(frame_width * scale), int(frame_height * scale)
+                    det_frame = cv2.resize(frame, (det_w, det_h), interpolation=cv2.INTER_AREA)
+                    detector.setInputSize((det_w, det_h))
+                    _, faces = detector.detect(det_frame)
+                    face_count = len(faces) if faces is not None else 0
+                    if faces is not None and len(faces) > 0:
+                        largest = max(faces, key=lambda f: f[2] * f[3])
+                        x = int(largest[0] / scale)
+                        y = int(largest[1] / scale)
+                        w = int(largest[2] / scale)
+                        h = int(largest[3] / scale)
+                        pad_w, pad_h = int(w * 0.1), int(h * 0.1)
+                        x1 = max(0, x - pad_w)
+                        y1 = max(0, y - pad_h)
+                        x2 = min(frame_width, x + w + pad_w)
+                        y2 = min(frame_height, y + h + pad_h)
+                        face_crop = frame[y1:y2, x1:x2]
+                        if face_crop.shape[0] >= 20 and face_crop.shape[1] >= 20:
+                            return (face_crop, (x, y, w, h), face_count) if return_count else (face_crop, (x, y, w, h))
+                else:
+                    _, faces = detector.detect(frame)
+                    face_count = len(faces) if faces is not None else 0
+                    if faces is not None and len(faces) > 0:
+                        largest_face = max(faces, key=lambda f: f[2] * f[3])
+                        x, y, w, h = [int(v) for v in largest_face[:4]]
+                        pad_w, pad_h = int(w * 0.1), int(h * 0.1)
+                        x1 = max(0, x - pad_w)
+                        y1 = max(0, y - pad_h)
+                        x2 = min(frame_width, x + w + pad_w)
+                        y2 = min(frame_height, y + h + pad_h)
+                        face_crop = frame[y1:y2, x1:x2]
+                        if face_crop.shape[0] >= 20 and face_crop.shape[1] >= 20:
+                            return (face_crop, (x, y, w, h), face_count) if return_count else (face_crop, (x, y, w, h))
             except Exception as e:
                 logger.debug(f"YuNet detection error: {e}")
 
@@ -654,14 +845,15 @@ class FacialAnalyzer:
                     face_cascade = cv2.CascadeClassifier(cascade_path)
                     if not face_cascade.empty():
                         faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=4, minSize=(30, 30))
+                        face_count = len(faces) if faces is not None else 0
                         if len(faces) > 0:
                             largest = max(faces, key=lambda b: b[2] * b[3])
                             x, y, w, h = largest
-                            return frame[y:y+h, x:x+w], (x, y, w, h)
+                            return (frame[y:y+h, x:x+w], (x, y, w, h), face_count) if return_count else (frame[y:y+h, x:x+w], (x, y, w, h))
             except Exception:
                 pass
 
-        return None, (0, 0, 0, 0)
+        return (None, (0, 0, 0, 0), 0) if return_count else (None, (0, 0, 0, 0))
 
     def _classify_face_expression(self, face_crop: np.ndarray) -> Optional[np.ndarray]:
         """Runs the Emotion-FERPlus CNN model to classify probabilities across 8 emotions."""
@@ -675,8 +867,11 @@ class FacialAnalyzer:
             resized = cv2.resize(gray, (64, 64), interpolation=cv2.INTER_AREA).astype(np.float32)
             tensor = np.expand_dims(np.expand_dims(resized, axis=0), axis=0)
 
-            # ONNX Inference
-            input_name = self.ort_session.get_inputs()[0].name
+            # ONNX Inference using cached input tensor name
+            input_name = getattr(self, "_fer_input_name", None)
+            if not input_name:
+                input_name = self.ort_session.get_inputs()[0].name
+                self._fer_input_name = input_name
             logits = self.ort_session.run(None, {input_name: tensor})[0][0]
 
             # Softmax
