@@ -521,6 +521,9 @@ def get_candidate_statistics(token_payload: dict = Depends(verify_candidate)):
                 "content_score": None,
                 "delivery_score": None,
                 "facial_score": None,
+                "technical_content": None,
+                "communication_fluency": None,
+                "behavioral_composure": None,
             },
             "average_confidence": None,
             "average_stress": None,
@@ -556,43 +559,69 @@ def get_candidate_statistics(token_payload: dict = Depends(verify_candidate)):
         evaluation = doc.get("evaluation") or {}
         dim_scores = evaluation.get("dimension_scores") or {}
 
-        # Content / NLP
-        c_score = dim_scores.get("nlp_score") if dim_scores.get("nlp_score") is not None else dim_scores.get("content_score")
+        # Content / Technical (prefer modern technical_content, fallback to legacy nlp_score, content_score)
+        c_score = (
+            dim_scores.get("technical_content")
+            if dim_scores.get("technical_content") is not None
+            else (dim_scores.get("nlp_score") if dim_scores.get("nlp_score") is not None else dim_scores.get("content_score"))
+        )
         if c_score is not None:
             nlp_scores.append(float(c_score))
 
-        # Delivery / Speech
-        d_score = dim_scores.get("speech_score") if dim_scores.get("speech_score") is not None else dim_scores.get("delivery_score")
+        # Delivery / Communication (prefer modern communication_fluency, fallback to legacy speech_score, delivery_score)
+        d_score = (
+            dim_scores.get("communication_fluency")
+            if dim_scores.get("communication_fluency") is not None
+            else (dim_scores.get("speech_score") if dim_scores.get("speech_score") is not None else dim_scores.get("delivery_score"))
+        )
         if d_score is not None:
             speech_scores.append(float(d_score))
 
-        # Facial / Vision
-        f_score = dim_scores.get("vision_score") if dim_scores.get("vision_score") is not None else dim_scores.get("facial_score")
-        if f_score is not None:
-            vision_scores.append(float(f_score))
+        # Facial / Behavioral
+        facial_summary = evaluation.get("facial_summary")
+        has_facial_data = False
+        if isinstance(facial_summary, dict):
+            if facial_summary.get("status") == "completed" and facial_summary.get("evaluated_takes", 0) > 0:
+                has_facial_data = True
+        elif "behavioral_composure" in dim_scores and dim_scores["behavioral_composure"] is not None:
+            if float(dim_scores["behavioral_composure"]) > 0:
+                has_facial_data = True
+        elif any(k in dim_scores for k in ("vision_score", "facial_score")):
+            has_facial_data = True
+
+        if has_facial_data:
+            f_score = (
+                dim_scores.get("behavioral_composure")
+                if dim_scores.get("behavioral_composure") is not None
+                else (dim_scores.get("vision_score") if dim_scores.get("vision_score") is not None else dim_scores.get("facial_score"))
+            )
+            if f_score is not None:
+                vision_scores.append(float(f_score))
 
         # Confidence
+        conf_lvl = evaluation.get("confidence_level") or doc.get("confidence_level")
         conf = evaluation.get("confidence_score")
         if conf is None and isinstance(doc.get("confidence"), (int, float)):
             conf = float(doc.get("confidence"))
-        if conf is not None:
+        if conf is not None and conf_lvl != "Not Assessed":
             confidence_scores.append(float(conf))
 
         # Stress score
+        str_lvl = evaluation.get("stress_level") or doc.get("stress")
         str_val = evaluation.get("stress_score")
         if str_val is None and isinstance(doc.get("stress_score"), (int, float)):
             str_val = float(doc.get("stress_score"))
-        if str_val is not None:
+        if str_val is not None and str_lvl != "Not Assessed":
             stress_scores.append(float(str_val))
 
         # Discrete Stress Level (Low, Moderate, Elevated)
-        str_lvl = evaluation.get("stress_level") or doc.get("stress") or "Low"
-        if str_lvl in stress_dist:
-            stress_dist[str_lvl] += 1
-        elif str_lvl == "Medium":
-            stress_dist["Moderate"] += 1
-        elif str_lvl == "High":
-            stress_dist["Elevated"] += 1
+        if str_lvl and str_lvl != "Not Assessed":
+            if str_lvl in stress_dist:
+                stress_dist[str_lvl] += 1
+            elif str_lvl == "Medium":
+                stress_dist["Moderate"] += 1
+            elif str_lvl == "High":
+                stress_dist["Elevated"] += 1
 
         # Date formatting
         c_at = doc.get("created_at")
@@ -603,18 +632,18 @@ def get_candidate_statistics(token_payload: dict = Depends(verify_candidate)):
             "date": date_str,
             "score": round(float(doc["score"]), 1),
             "label": role,
-            "confidence": round(float(conf), 1) if conf is not None else None,
-            "stress": round(float(str_val), 1) if str_val is not None else None,
+            "confidence": round(float(conf), 1) if (conf is not None and conf_lvl != "Not Assessed") else None,
+            "stress": round(float(str_val), 1) if (str_val is not None and str_lvl != "Not Assessed") else None,
         })
 
-        if conf is not None:
+        if conf is not None and conf_lvl != "Not Assessed":
             confidence_trend.append({
                 "date": date_str,
                 "confidence": round(float(conf), 1),
                 "label": role,
             })
 
-        if str_val is not None:
+        if str_val is not None and str_lvl != "Not Assessed":
             stress_trend.append({
                 "date": date_str,
                 "stress": round(float(str_val), 1),
@@ -625,9 +654,13 @@ def get_candidate_statistics(token_payload: dict = Depends(verify_candidate)):
         # By category aggregation
         if role not in category_map:
             category_map[role] = {"category": role, "count": 0, "totalScore": 0.0, "scores": []}
-        category_map[role]["count"] += 1
-        category_map[role]["totalScore"] += float(doc["score"])
-        category_map[role]["scores"].append(float(doc["score"]))
+            category_map[role]["count"] += 1
+            category_map[role]["totalScore"] += float(doc["score"])
+            category_map[role]["scores"].append(float(doc["score"]))
+        else:
+            category_map[role]["count"] += 1
+            category_map[role]["totalScore"] += float(doc["score"])
+            category_map[role]["scores"].append(float(doc["score"]))
 
     by_category = []
     for cat_name, cat_data in category_map.items():
@@ -655,6 +688,9 @@ def get_candidate_statistics(token_payload: dict = Depends(verify_candidate)):
             "content_score": avg_nlp,
             "delivery_score": avg_speech,
             "facial_score": avg_vision,
+            "technical_content": avg_nlp,
+            "communication_fluency": avg_speech,
+            "behavioral_composure": avg_vision,
         },
         "average_confidence": avg_conf,
         "average_stress": avg_str,

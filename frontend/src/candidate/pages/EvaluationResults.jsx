@@ -196,7 +196,9 @@ const EvaluationResults = () => {
           label: (context) => {
             const val = context.raw;
             if (context.dataIndex === 2 && !hasVisionSummary) {
-              return 'Behavioral Composure: Unassessed (Vision Offline)';
+              return facialSummary?.status === 'no_face_detected'
+                ? 'Behavioral Composure: Not Observed (No Face Detected)'
+                : 'Behavioral Composure: Unassessed (Vision Offline)';
             }
             return `${context.label}: ${val}%`;
           },
@@ -616,6 +618,14 @@ const EvaluationResults = () => {
                     <span className="text-[10px] font-mono px-2 py-0.5 rounded border font-medium bg-emerald-500/10 text-emerald-400/90 border-emerald-500/20">
                       ACTIVE
                     </span>
+                  ) : facialSummary?.status === 'no_face_detected' ? (
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded border font-medium bg-amber-500/10 text-amber-400/90 border-amber-500/20">
+                      NO FACE
+                    </span>
+                  ) : facialSummary?.status === 'analysis_failed' || facialSummary?.status === 'corrupt_media' ? (
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded border font-medium bg-rose-500/10 text-rose-400/90 border-rose-500/20">
+                      FAILED
+                    </span>
                   ) : (
                     <span className="text-[10px] font-mono px-2 py-0.5 rounded border font-medium bg-neutral-800 text-neutral-400 border-neutral-700">
                       OFFLINE
@@ -625,6 +635,10 @@ const EvaluationResults = () => {
                 <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
                   {hasVisionSummary
                     ? `Observable facial composure: ${facialSummary?.overall_composure || 'Not Assessed'}. Dominant expression: ${facialSummary?.dominant_expression || 'Not Observed'}.`
+                    : facialSummary?.status === 'no_face_detected'
+                    ? 'Camera was recorded, but no human face was detected in responses. Non-verbal signals omitted without penalty.'
+                    : facialSummary?.status === 'analysis_failed' || facialSummary?.status === 'corrupt_media'
+                    ? 'Facial video analysis encountered an unreadable clip. Non-verbal signals omitted without penalty.'
                     : 'Facial expression valence, eye gaze attentiveness, head pose composure, and observable micro-hesitations.'}
                 </p>
               </div>
@@ -640,6 +654,8 @@ const EvaluationResults = () => {
                 <strong className="font-semibold" style={{ color: 'var(--c-text)' }}>Evaluation Signal Notice: </strong>
                 {hasVisionSummary
                   ? `Multimodal signals integrated from active NLP semantic analysis, speech delivery metrics, and real computer-vision facial composure analysis (${facialSummary?.evaluated_takes ?? answeredCount} takes evaluated).`
+                  : facialSummary?.status === 'no_face_detected'
+                  ? `Camera was active, but no valid face was detected across interview takes. Vision weight was safely redistributed to verbal modalities without penalty.`
                   : `The composite overall score (${Math.round(overallScore)}%) is computed strictly from active NLP content and acoustic speech signals. Computer-vision facial analysis is unmounted; vision metrics will be integrated upon vision model deployment.`}
               </span>
             </div>
@@ -668,12 +684,12 @@ const EvaluationResults = () => {
                     Confidence Indicator
                   </p>
                   <span className="text-[10px] font-mono text-neutral-400">
-                    {hasVisionSummary ? 'MULTIMODAL' : 'ACOUSTIC'}
+                    {confidenceLevel === 'Not Assessed' || confidenceScore == null ? 'UNASSESSED' : (hasVisionSummary ? 'MULTIMODAL' : 'ACOUSTIC')}
                   </span>
                 </div>
                 <div className="flex items-baseline gap-2">
                   <p className="c-serif-num text-3xl font-bold" style={{ color: 'var(--c-text)' }}>
-                    {confidenceScore != null && confidenceLevel !== 'Not Assessed' ? `${Math.round(confidenceScore)}%` : 'Active'}
+                    {confidenceScore != null && confidenceLevel !== 'Not Assessed' ? `${Math.round(confidenceScore)}%` : 'Not Assessed'}
                   </p>
                   {confidenceLevel && confidenceLevel !== 'Not Assessed' && (
                     <span className="text-xs font-sans font-semibold text-neutral-300">
@@ -682,22 +698,32 @@ const EvaluationResults = () => {
                   )}
                 </div>
                 {/* Visual Level Meter Bar */}
-                <div className="pt-1 space-y-1">
-                  <div className="h-2 w-full rounded-full bg-slate-800/80 overflow-hidden relative border border-white/5">
-                    <div
-                      className="h-full rounded-full transition-all duration-1000"
-                      style={{
-                        width: `${confidenceScore != null && confidenceLevel !== 'Not Assessed' ? Math.min(100, Math.max(0, confidenceScore)) : 0}%`,
-                        background: (confidenceScore ?? 0) >= 80 ? '#FF6B35' : ((confidenceScore ?? 0) >= 60 ? '#FF9F1C' : '#94A3B8'),
-                      }}
-                    />
+                {confidenceScore != null && confidenceLevel !== 'Not Assessed' ? (
+                  <div className="pt-1 space-y-1">
+                    <div className="h-2 w-full rounded-full bg-slate-800/80 overflow-hidden relative border border-white/5">
+                      <div
+                        className="h-full rounded-full transition-all duration-1000"
+                        style={{
+                          width: `${Math.min(100, Math.max(0, confidenceScore))}%`,
+                          background: confidenceScore >= 80 ? '#FF6B35' : ((confidenceScore ?? 0) >= 60 ? '#FF9F1C' : '#94A3B8'),
+                        }}
+                      />
+                    </div>
+                    <div className="flex justify-between text-[9px] font-mono text-neutral-500">
+                      <span>0% Dev</span>
+                      <span>60% Mod</span>
+                      <span>80% High</span>
+                    </div>
                   </div>
-                  <div className="flex justify-between text-[9px] font-mono text-neutral-500">
-                    <span>0% Dev</span>
-                    <span>60% Mod</span>
-                    <span>80% High</span>
+                ) : (
+                  <div className="pt-1 space-y-1">
+                    <div className="h-2 w-full rounded-full bg-neutral-800/50 border border-white/5 overflow-hidden" />
+                    <div className="flex justify-between text-[9px] font-mono text-neutral-500">
+                      <span>Not Assessed</span>
+                      <span>Unmeasured</span>
+                    </div>
                   </div>
-                </div>
+                )}
                 <p className="text-[11px] leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
                   Synthesized from vocal pacing, articulation fluency, and non-verbal poise.
                 </p>
@@ -710,12 +736,12 @@ const EvaluationResults = () => {
                     Composure Indicator
                   </p>
                   <span className="text-[10px] font-mono text-neutral-400">
-                    {hasVisionSummary ? 'MULTIMODAL' : 'BEHAVIORAL'}
+                    {stressLevel === 'Not Assessed' || stressScore == null ? 'UNASSESSED' : (hasVisionSummary ? 'MULTIMODAL' : 'BEHAVIORAL')}
                   </span>
                 </div>
                 <div className="flex items-baseline gap-2">
                   <p className="c-serif-num text-3xl font-bold" style={{ color: 'var(--c-text)' }}>
-                    {stressLevel || 'Stable'}
+                    {stressLevel && stressLevel !== 'Not Assessed' ? stressLevel : 'Not Assessed'}
                   </p>
                   {stressScore != null && stressLevel !== 'Not Assessed' && (
                     <span className="text-xs font-sans font-semibold text-neutral-400">
@@ -724,22 +750,32 @@ const EvaluationResults = () => {
                   )}
                 </div>
                 {/* Visual Level Meter Bar */}
-                <div className="pt-1 space-y-1">
-                  <div className="h-2 w-full rounded-full bg-slate-800/80 overflow-hidden relative border border-white/5">
-                    <div
-                      className="h-full rounded-full transition-all duration-1000"
-                      style={{
-                        width: `${stressScore != null && stressLevel !== 'Not Assessed' ? Math.min(100, Math.max(0, stressScore)) : 0}%`,
-                        background: (stressScore ?? 0) >= 65 ? '#EF4444' : ((stressScore ?? 0) >= 35 ? '#FF9F1C' : '#10B981'),
-                      }}
-                    />
+                {stressScore != null && stressLevel !== 'Not Assessed' ? (
+                  <div className="pt-1 space-y-1">
+                    <div className="h-2 w-full rounded-full bg-slate-800/80 overflow-hidden relative border border-white/5">
+                      <div
+                        className="h-full rounded-full transition-all duration-1000"
+                        style={{
+                          width: `${Math.min(100, Math.max(0, stressScore))}%`,
+                          background: (stressScore ?? 0) >= 65 ? '#EF4444' : ((stressScore ?? 0) >= 35 ? '#FF9F1C' : '#10B981'),
+                        }}
+                      />
+                    </div>
+                    <div className="flex justify-between text-[9px] font-mono text-neutral-500">
+                      <span>0% Low</span>
+                      <span>35% Mod</span>
+                      <span>65% Elev</span>
+                    </div>
                   </div>
-                  <div className="flex justify-between text-[9px] font-mono text-neutral-500">
-                    <span>0% Low</span>
-                    <span>35% Mod</span>
-                    <span>65% Elev</span>
+                ) : (
+                  <div className="pt-1 space-y-1">
+                    <div className="h-2 w-full rounded-full bg-neutral-800/50 border border-white/5 overflow-hidden" />
+                    <div className="flex justify-between text-[9px] font-mono text-neutral-500">
+                      <span>Not Assessed</span>
+                      <span>Unmeasured</span>
+                    </div>
                   </div>
-                </div>
+                )}
                 <p className="text-[11px] leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
                   Observable stability and tension minimization across sequential prompt takes.
                 </p>
@@ -757,6 +793,10 @@ const EvaluationResults = () => {
                   <p className="c-serif-num text-2xl font-bold text-white pt-0.5">
                     {facialSummary?.dominant_expression || 'Not Observed'}
                   </p>
+                ) : facialSummary?.status === 'no_face_detected' ? (
+                  <p className="c-serif-num text-2xl font-bold text-neutral-300 pt-0.5">
+                    Not Observed
+                  </p>
                 ) : (
                   <p className="text-xs font-bold text-neutral-400 pt-1 font-mono">
                     [Vision Offline]
@@ -765,6 +805,8 @@ const EvaluationResults = () => {
                 <p className="text-[11px] leading-relaxed text-neutral-400">
                   {hasVisionSummary
                     ? 'Model-derived primary facial expression observed across interview takes.'
+                    : facialSummary?.status === 'no_face_detected'
+                    ? 'Camera was active, but no valid human face was observed in recorded takes.'
                     : 'Camera was unmounted; facial expression cues omitted without fabrication.'}
                 </p>
               </div>
@@ -781,6 +823,10 @@ const EvaluationResults = () => {
                   <p className="c-serif-num text-2xl font-bold text-white pt-0.5">
                     {facialSummary?.overall_composure || 'Not Assessed'}
                   </p>
+                ) : facialSummary?.status === 'no_face_detected' ? (
+                  <p className="c-serif-num text-2xl font-bold text-neutral-300 pt-0.5">
+                    Not Assessed
+                  </p>
                 ) : (
                   <p className="text-xs font-bold text-neutral-400 pt-1 font-mono">
                     [Vision Offline]
@@ -789,6 +835,8 @@ const EvaluationResults = () => {
                 <p className="text-[11px] leading-relaxed text-neutral-400">
                   {hasVisionSummary
                     ? 'Eye presence consistency and observable non-verbal composure.'
+                    : facialSummary?.status === 'no_face_detected'
+                    ? 'No face detected in recording; behavioral composure unassessed.'
                     : 'Attentiveness and head pose cues unrecorded; non-verbal analysis omitted.'}
                 </p>
               </div>
@@ -1006,6 +1054,12 @@ const EvaluationResults = () => {
                         </span>
                         {hasRealVision ? (
                           <span className="text-[10px] font-mono text-emerald-400/90 font-medium">[ACTIVE]</span>
+                        ) : facial?.status === 'no_face_detected' ? (
+                          <span className="text-[10px] font-mono text-amber-400/90 font-medium">[NO FACE]</span>
+                        ) : facial?.status === 'analysis_failed' || facial?.status === 'corrupt_media' ? (
+                          <span className="text-[10px] font-mono text-rose-400/90 font-medium">[FAILED]</span>
+                        ) : facial?.status === 'insufficient_data' ? (
+                          <span className="text-[10px] font-mono text-amber-400/90 font-medium">[UNCERTAIN]</span>
                         ) : (
                           <span className="text-[10px] font-mono text-neutral-500">[OFFLINE]</span>
                         )}
@@ -1028,6 +1082,28 @@ const EvaluationResults = () => {
                             <span className="text-white font-medium">{facial.behavioral_indicators?.engagement_level || 'Not Assessed'}</span>
                           </div>
                         </div>
+                      ) : facial?.status === 'no_face_detected' ? (
+                        <div className="space-y-1 text-[11px] text-neutral-300">
+                          <div>
+                            <span className="text-neutral-400">Expression: </span>
+                            <span className="text-neutral-300 font-medium">Not Observed</span>
+                          </div>
+                          <div>
+                            <span className="text-neutral-400">Composure: </span>
+                            <span className="text-neutral-300 font-medium">Not Assessed</span>
+                          </div>
+                          <p className="text-[10px] text-neutral-400 pt-0.5 leading-tight">
+                            No face detected in video. Vision weight redistributed to verbal signals without penalty.
+                          </p>
+                        </div>
+                      ) : facial?.status === 'analysis_failed' || facial?.status === 'corrupt_media' ? (
+                        <p className="text-[11px] text-neutral-400 leading-relaxed">
+                          Video analysis error ({facial?.error || 'unreadable media'}). Non-verbal signals omitted without penalty.
+                        </p>
+                      ) : facial?.status === 'insufficient_data' ? (
+                        <p className="text-[11px] text-neutral-400 leading-relaxed">
+                          Facial expression confidence below classification threshold. Non-verbal signals omitted without penalty.
+                        </p>
                       ) : (
                         <p className="text-[11px] text-neutral-500 leading-relaxed">
                           Vision analysis unavailable. Facial analysis will appear here when vision evaluation is enabled.
