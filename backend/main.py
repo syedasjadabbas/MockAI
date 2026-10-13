@@ -143,8 +143,20 @@ async def startup_event():
             ensure_default_mentors(force_refresh=False)
         except Exception as mentor_seed_err:
             print(f"Mentor auto-seed notice: {mentor_seed_err}")
+
     except Exception as e:
         print(f"Startup database check notice: {e}")
+
+    # 3. Pre-warm NLP semantic model once at application startup to eliminate per-request latency
+    try:
+        from services.nlp_analyzer import BertSemanticAnalyzer
+        model = BertSemanticAnalyzer().get_model()
+        if model is not None:
+            print("Startup check: NLP semantic model pre-warmed successfully.")
+        else:
+            print("Startup check: NLP semantic model unavailable (fallback active).")
+    except Exception as nlp_warm_err:
+        print(f"NLP model pre-warm notice: {nlp_warm_err}")
 
 @app.get("/")
 async def root():

@@ -53,13 +53,17 @@ def _count_fillers(text: Optional[str]) -> Tuple[int, List[str]]:
     return len(detected), detected
 
 
-def _analyze_acoustic_pauses(media_url: Optional[str]) -> Tuple[float, int, float]:
+def _analyze_acoustic_pauses(
+    media_url: Optional[str],
+    audio_wav_path: Optional[str] = None,
+) -> Tuple[float, int, float]:
     """
     Extracts acoustic silent pause metrics from the candidate's recording.
     Returns:
         (pause_duration_seconds, pause_count, speech_duration_seconds)
+    Reuses pre-extracted or cached WAV files when available to avoid redundant FFmpeg transcoding.
     """
-    if not media_url:
+    if not media_url and not audio_wav_path:
         return 0.0, 0, 0.0
 
     try:
@@ -71,20 +75,74 @@ def _analyze_acoustic_pauses(media_url: Optional[str]) -> Tuple[float, int, floa
         from pathlib import Path
         import uuid
 
-        media_path = get_media_storage().resolve_path(media_url)
-        if not media_path and os.path.isfile(str(media_url)):
-            media_path = Path(media_url)
+        target_wav: Optional[Path] = None
+        is_temp_wav = False
 
-        if not media_path or not Path(media_path).is_file():
+        # 1. Direct audio_wav_path provided
+        if audio_wav_path and Path(audio_wav_path).is_file() and Path(audio_wav_path).stat().st_size > 0:
+            target_wav = Path(audio_wav_path)
+            is_temp_wav = False
+
+        # 2. Resolve media_url and check for existing or sibling WAV files
+        if target_wav is None and media_url:
+            media_path = get_media_storage().resolve_path(media_url)
+            if not media_path and os.path.isfile(str(media_url)):
+                media_path = Path(media_url)
+
+            if media_path and media_path.is_file():
+                # Case 2a: media_path is already a WAV file
+                if media_path.suffix.lower() == ".wav" and media_path.stat().st_size > 0:
+                    target_wav = media_path
+                    is_temp_wav = False
+                else:
+                    # Case 2b: Check for pre-extracted sibling WAV in same directory
+                    sibling_wav = media_path.with_suffix(".wav")
+                    if sibling_wav.is_file() and sibling_wav.stat().st_size > 0:
+                        target_wav = sibling_wav
+                        is_temp_wav = False
+                    else:
+                        temp_dir = Path(tempfile.gettempdir()).resolve()
+                        if media_path.parent.resolve() != temp_dir:
+                            named_wav = media_path.parent / "response.wav"
+                            if named_wav.is_file() and named_wav.stat().st_size > 0:
+                                target_wav = named_wav
+                                is_temp_wav = False
+
+        # 3. If no pre-extracted WAV found, extract via FFmpeg
+        if target_wav is None and media_url:
+            media_path = get_media_storage().resolve_path(media_url)
+            if not media_path and os.path.isfile(str(media_url)):
+                media_path = Path(media_url)
+
+            if not media_path or not media_path.is_file():
+                return 0.0, 0, 0.0
+
+            if not is_ffmpeg_available():
+                return 0.0, 0, 0.0
+
+            temp_dir = Path(tempfile.gettempdir()).resolve()
+            # Attempt extraction to sibling WAV if storage directory is persistent & writable
+            if media_path.parent.is_dir() and media_path.parent.resolve() != temp_dir and os.access(str(media_path.parent), os.W_OK):
+                try:
+                    candidate_target = media_path.with_suffix(".wav")
+                    extract_audio_to_wav(media_path, candidate_target)
+                    if candidate_target.is_file() and candidate_target.stat().st_size > 0:
+                        target_wav = candidate_target
+                        is_temp_wav = False
+                except Exception:
+                    target_wav = None
+
+            if target_wav is None:
+                temp_wav = Path(tempfile.gettempdir()) / f"mockai_pause_{uuid.uuid4().hex}.wav"
+                extract_audio_to_wav(media_path, temp_wav)
+                target_wav = temp_wav
+                is_temp_wav = True
+
+        if target_wav is None or not target_wav.is_file() or target_wav.stat().st_size == 0:
             return 0.0, 0, 0.0
 
-        if not is_ffmpeg_available():
-            return 0.0, 0, 0.0
-
-        wav_path = Path(tempfile.gettempdir()) / f"mockai_pause_{uuid.uuid4().hex}.wav"
         try:
-            extract_audio_to_wav(media_path, wav_path)
-            rate, data = wavfile.read(str(wav_path))
+            rate, data = wavfile.read(str(target_wav))
             if len(data) == 0:
                 return 0.0, 0, 0.0
 
@@ -134,7 +192,8 @@ def _analyze_acoustic_pauses(media_url: Optional[str]) -> Tuple[float, int, floa
             return pause_duration, pause_count, speech_duration
 
         finally:
-            wav_path.unlink(missing_ok=True)
+            if is_temp_wav and target_wav and target_wav.exists():
+                target_wav.unlink(missing_ok=True)
     except Exception:
         return 0.0, 0, 0.0
 
@@ -143,26 +202,11 @@ def analyze_delivery(
     transcript: Optional[str],
     duration_seconds: Optional[float] = None,
     media_url: Optional[str] = None,
+    audio_wav_path: Optional[str] = None,
 ) -> Dict:
     """
     Analyzes the speaking delivery, rate, pacing, and fluency of a candidate response.
-
-    Returns:
-        Dict with:
-            - word_count: int
-            - duration_seconds: float
-            - words_per_minute: float
-            - pacing: "Optimal" | "Deliberate" | "Slow" | "Fast" | "Rushed" | "Unpaced"
-            - filler_count: int
-            - filler_words: List[str]
-            - hesitation_rate: float (percentage)
-            - hesitation_level: "None" | "Low" | "Moderate" | "Elevated"
-            - fluency_score: float (0.0 to 100.0)
-            - fluency_indicator: "Fluent" | "Moderate" | "Hesitant" | "No Spoken Data"
-            - pause_duration_seconds: float
-            - pause_count: int
-            - articulation_wpm: float
-            - notes: str
+    Supports reusing pre-extracted audio_wav_path or discovering cached WAV next to media_url.
     """
     dur = max(0.0, float(duration_seconds or 0.0))
     if not transcript or not transcript.strip():
@@ -188,8 +232,8 @@ def analyze_delivery(
     word_count = len(words)
     filler_count, detected_fillers = _count_fillers(transcript)
 
-    # Acoustic pause extraction if media file exists
-    pause_duration, pause_count, speech_dur = _analyze_acoustic_pauses(media_url)
+    # Acoustic pause extraction reusing existing or sibling WAV files
+    pause_duration, pause_count, speech_dur = _analyze_acoustic_pauses(media_url, audio_wav_path=audio_wav_path)
 
     # 1. Words Per Minute
     if dur > 0.0:

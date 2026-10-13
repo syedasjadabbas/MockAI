@@ -190,23 +190,27 @@ def test_aggregation_and_lifecycle_scenarios():
     print("\n--- Testing Scenarios 10-15: Aggregation, Worker Lifecycle & Auth Candidates ---\n")
 
     # 10. Multiple Recorded Responses Aggregation
+    # Note: Durations calibrated to optimal conversational speaking pace (110-165 WPM):
+    # q1: 19 words / 10s = 114 WPM; q2: 24 words / 12s = 120 WPM; q3: 32 words / 16s = 120 WPM.
+    # Under SYSTEM_ARCHITECTURE_AND_EVALUATION_SPEC.md Section 3.3, pacing < 80 WPM is classified
+    # as 'Slow' (Moderate confidence ~68%), whereas 110-165 WPM yields High speech confidence (> 70.0).
     q1 = evaluate_question_response(
         "q1", "Explain React Hooks", "Hooks allow functional components to use state and lifecycle methods",
         ["React", "Hooks", "State", "Lifecycle"], "Easy",
         "React hooks allow developers to use state and component lifecycle capabilities inside functional components using useState and useEffect cleanly.",
-        15.0
+        10.0
     )
     q2 = evaluate_question_response(
         "q2", "Explain Event Loop", "Microtask and Macrotask queues in JavaScript engine",
         ["JavaScript", "Event Loop", "Microtask", "Macrotask"], "Medium",
         "The JavaScript event loop continuously monitors the call stack and event queues, executing microtasks like promises before processing macrotasks from setTimeout and DOM events.",
-        20.0
+        12.0
     )
     q3 = evaluate_question_response(
         "q3", "Optimize Core Web Vitals", "Strategies for improving LCP, FID, INP, and CLS",
         ["Performance", "Web Vitals", "LCP", "CLS", "Optimization"], "Hard",
         "To optimize Core Web Vitals, improve LCP by preloading critical hero images and using CDNs, reduce INP by breaking up long tasks, and prevent CLS by defining explicit dimensions for layout containers.",
-        25.0
+        16.0
     )
 
     multi_agg = aggregate_interview_evaluation([q1, q2, q3])

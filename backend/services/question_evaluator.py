@@ -121,13 +121,21 @@ def evaluate_question_response(
     else:
         strengths = []
         covered = nlp_result.get("covered_concepts", [])
-        if covered:
-            strengths.append(f"Clear grasp of key concepts: {', '.join(covered[:3])}.")
+        target_covered = nlp_result.get("covered_target_concepts", [])
+        content_score = nlp_result.get("content_score", 0.0)
+        is_echo = nlp_result.get("is_echo", False)
+        is_fragment = nlp_result.get("is_fragment", False)
+
+        # Grounding check: Only credit key concept grasp when evidence shows substantive understanding
+        # (Must have >= 55% content score, demonstrate target concepts, and not be an echo or fragment)
+        display_concepts = target_covered if target_covered else covered
+        if content_score >= 55.0 and len(display_concepts) >= 1 and not is_echo and not is_fragment:
+            strengths.append(f"Clear grasp of key concepts: {', '.join(display_concepts[:3])}.")
+
         if delivery_result.get("pacing") == "Optimal":
             strengths.append(f"Optimal speaking pace ({delivery_result.get('words_per_minute')} WPM).")
         elif delivery_result.get("fluency_indicator") == "Fluent":
             strengths.append("Smooth conversational delivery with minimal hesitation.")
-        content_score = nlp_result.get("content_score", 0.0)
         if content_score >= 80.0:
             strengths.append("Thorough domain depth addressing core requirements.")
         if facial_analysis_data.get("status") == "completed":
@@ -136,7 +144,7 @@ def evaluate_question_response(
                 strengths.append("Maintained calm facial composure throughout response.")
 
         missing_concepts = nlp_result.get("missing_concepts", [])
-        feedback = f"{nlp_result['notes']} {delivery_result['notes']}"
+        feedback = f"{nlp_result['notes']} {delivery_result['notes']}".strip()
 
     asr_data = {
         "status": asr_status or ("completed" if transcript else "empty"),
