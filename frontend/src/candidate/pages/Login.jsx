@@ -12,7 +12,6 @@ import {
   KeyRound,
   ShieldCheck,
 } from 'lucide-react';
-import ThemeToggle from '../../components/ThemeToggle';
 import {
   login,
   sendPasswordResetOtp,
@@ -182,10 +181,6 @@ const Login = () => {
         className="flex items-center justify-center px-6 sm:px-10 py-12 relative"
         style={{ background: 'var(--c-bg)' }}
       >
-        <div className="absolute top-5 right-5 z-20">
-          <ThemeToggle />
-        </div>
-
         <div className="w-full max-w-[24rem] px-2 relative z-10">
 
           {/* FORGOT PASSWORD: STEP 1 */}

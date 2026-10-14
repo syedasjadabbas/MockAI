@@ -3,8 +3,10 @@
 @tailwind utilities;
 
 :root,
+html,
 html.dark,
 [data-theme="dark"] {
+  color-scheme: dark;
   --bg-app: #111111;
   --bg-gradient: none;
   --bg-panel: rgba(24, 24, 24, 0.95);
@@ -26,34 +28,6 @@ html.dark,
   --shadow-card: 0 10px 30px -5px rgba(0, 0, 0, 0.6);
   --scrollbar-thumb: rgba(255, 255, 255, 0.12);
   --scrollbar-thumb-hover: rgba(255, 255, 255, 0.22);
-  --admin-accent: #FF6B35;
-  --admin-accent-hover: #E8551E;
-  --admin-accent-highlight: #FF9F1C;
-}
-
-html.light,
-[data-theme="light"] {
-  --bg-app: #FAF9F6;
-  --bg-gradient: none;
-  --bg-panel: rgba(255, 255, 255, 0.95);
-  --bg-panel-solid: #ffffff;
-  --border-panel: #E5E0D8;
-  --bg-card: #ffffff;
-  --bg-card-hover: #fafafa;
-  --border-card: #E5E0D8;
-  --border-card-hover: rgba(255, 107, 53, 0.35);
-  --text-primary: #18181B;
-  --text-secondary: #52525B;
-  --text-muted: #71717A;
-  --bg-input: #ffffff;
-  --border-input: #E5E0D8;
-  --bg-table-header: #F3F0EB;
-  --bg-table-row-hover: rgba(0, 0, 0, 0.02);
-  --border-table: #E5E0D8;
-  --bg-modal: #ffffff;
-  --shadow-card: 0 10px 25px -5px rgba(0, 0, 0, 0.06), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
-  --scrollbar-thumb: rgba(0, 0, 0, 0.16);
-  --scrollbar-thumb-hover: rgba(0, 0, 0, 0.28);
   --admin-accent: #FF6B35;
   --admin-accent-hover: #E8551E;
   --admin-accent-highlight: #FF9F1C;

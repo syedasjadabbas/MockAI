@@ -2,11 +2,10 @@
  * MockAI Candidate Panel — Charcoal + Orange Design System
  *
  * Scoped strictly under `.candidate-app` to prevent collision with Admin Panel.
- * Dark Theme: Charcoal (#111111) base with Primary Orange (#FF6B35) & Highlight Orange (#FF9F1C).
- * Light Theme: Clean warm slate with vibrant orange accents.
+ * Exclusively Dark Theme: Charcoal (#111111) base with Primary Orange (#FF6B35) & Highlight Orange (#FF9F1C).
  */
 
-/* ─── DARK THEME (Default) ─── */
+/* ─── DARK THEME (Exclusively Supported) ─── */
 .candidate-app,
 html.dark .candidate-app,
 [data-theme='dark'] .candidate-app {
@@ -80,82 +79,6 @@ html.dark .candidate-app,
 
   /* Table / List hover */
   --c-hover-bg: rgba(255, 255, 255, 0.03);
-}
-
-/* ─── LIGHT THEME ─── */
-html.light .candidate-app,
-[data-theme='light'] .candidate-app,
-.light .candidate-app {
-  /* Surfaces */
-  --c-bg: #FAF9F6;
-  --c-bg-subtle: #FFFFFF;
-  --c-surface: #FFFFFF;
-  --c-surface-card: #FFFFFF;
-  --c-surface-muted: #F3F0EB;
-
-  /* Borders */
-  --c-border: #E5E0D8;
-  --c-border-strong: #D0C8BC;
-
-  /* Typography */
-  --c-text: #181818;
-  --c-text-secondary: #555555;
-  --c-text-muted: #888888;
-  --c-on-accent: #FFFFFF;
-
-  /* Primary Actions — Orange */
-  --c-accent: #EA580C;              /* Slightly deeper orange for light contrast */
-  --c-accent-hover: #C2410C;
-  --c-accent-highlight: #FF6B35;
-  --c-accent-soft: rgba(234, 88, 12, 0.08);
-  --c-accent-soft-strong: rgba(234, 88, 12, 0.15);
-
-  /* Secondary Button */
-  --c-btn-secondary-bg: #F3F0EB;
-  --c-btn-secondary-hover: #E8E2D8;
-  --c-btn-secondary-text: #181818;
-
-  /* Status Indicators */
-  --c-success: #16A34A;
-  --c-success-soft: rgba(22, 163, 74, 0.08);
-  --c-warning: #EA580C;
-  --c-warning-soft: rgba(234, 88, 12, 0.08);
-  --c-danger: #DC2626;
-  --c-danger-soft: rgba(220, 38, 38, 0.08);
-
-  /* Badges */
-  --c-badge-accent-bg: rgba(234, 88, 12, 0.08);
-  --c-badge-accent-text: #C2410C;
-  --c-badge-accent-border: rgba(234, 88, 12, 0.2);
-
-  --c-badge-success-bg: #F0FDF4;
-  --c-badge-success-text: #15803D;
-  --c-badge-success-border: #BBF7D0;
-
-  --c-badge-warning-bg: #FFF7ED;
-  --c-badge-warning-text: #C2410C;
-  --c-badge-warning-border: #FED7AA;
-
-  --c-badge-danger-bg: #FEF2F2;
-  --c-badge-danger-text: #B91C1C;
-  --c-badge-danger-border: #FECACA;
-
-  --c-badge-muted-bg: #F3F0EB;
-  --c-badge-muted-text: #555555;
-  --c-badge-muted-border: #E5E0D8;
-
-  /* Shadows */
-  --c-shadow-sm: 0 1px 2px rgba(24, 24, 24, 0.06);
-  --c-shadow: 0 4px 12px rgba(24, 24, 24, 0.07);
-  --c-shadow-lg: 0 10px 25px rgba(24, 24, 24, 0.09);
-
-  /* Inputs */
-  --c-input-bg: #FFFFFF;
-  --c-input-border: #D0C8BC;
-  --c-input-border-focus: #EA580C;
-
-  /* Table / List hover */
-  --c-hover-bg: rgba(24, 24, 24, 0.03);
 }
 
 .candidate-app {

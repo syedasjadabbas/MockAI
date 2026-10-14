@@ -2,13 +2,10 @@ import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { Bell, Search, User, Key, X, CheckCircle2, AlertCircle, Info, Camera, Edit2, Menu } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { fetchWithAuth, API_BASE } from '../api';
-import ThemeToggle from './ThemeToggle';
-import { useTheme } from '../context/ThemeContext';
 
 const Header = ({ onToggleMobileMenu }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { isDark } = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [globalSearchData, setGlobalSearchData] = useState({ users: [], interviews: [], logs: [] });
@@ -457,9 +454,6 @@ const Header = ({ onToggleMobileMenu }) => {
               </div>
             )}
           </div>
-
-          {/* Theme Toggle Button */}
-          <ThemeToggle />
 
           {/* Notifications Dropdown */}
           <div className="relative">

@@ -13,7 +13,6 @@ import {
   BookOpen,
   X
 } from 'lucide-react';
-import { useTheme } from '../context/ThemeContext';
 import { prefetch } from '../api';
 
 const prefetchedItems = new Set();
@@ -61,7 +60,6 @@ const prefetchRouteData = (path) => {
 
 const Sidebar = ({ mobileOpen = false, setMobileOpen = () => {} }) => {
   const location = useLocation();
-  const { isDark } = useTheme();
 
   const menuItems = [
     { title: 'Dashboard', icon: LayoutDashboard, path: '/admin/dashboard' },
@@ -120,18 +118,12 @@ const Sidebar = ({ mobileOpen = false, setMobileOpen = () => {} }) => {
                 onFocus={() => prefetchRouteData(item.path)}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
                   isActive 
-                    ? isDark
-                      ? 'bg-orange-500/15 text-orange-400 border border-orange-500/30 shadow-sm shadow-orange-500/10'
-                      : 'bg-orange-50 text-orange-600 border border-orange-200 shadow-sm'
-                    : isDark
-                      ? 'text-neutral-400 hover:text-neutral-100 hover:bg-[#202020]'
-                      : 'text-neutral-600 hover:text-orange-600 hover:bg-neutral-100'
+                    ? 'bg-orange-500/15 text-orange-400 border border-orange-500/30 shadow-sm shadow-orange-500/10'
+                    : 'text-neutral-400 hover:text-neutral-100 hover:bg-[#202020]'
                 }`}
               >
                 <item.icon className={`w-5 h-5 transition-colors ${
-                  isActive 
-                    ? isDark ? 'text-orange-400' : 'text-orange-600' 
-                    : isDark ? 'text-neutral-400' : 'text-neutral-500'
+                  isActive ? 'text-orange-400' : 'text-neutral-400'
                 }`} />
                 {item.title}
               </Link>
@@ -147,11 +139,7 @@ const Sidebar = ({ mobileOpen = false, setMobileOpen = () => {} }) => {
               localStorage.removeItem('mockai_admin_token');
               window.location.href = '/admin/login';
             }} 
-            className={`flex items-center gap-3 w-full px-4 py-2.5 text-sm font-semibold rounded-xl transition-all ${
-              isDark 
-                ? 'text-neutral-400 hover:text-rose-400 hover:bg-rose-500/10' 
-                : 'text-neutral-600 hover:text-rose-600 hover:bg-rose-50'
-            }`}
+            className="flex items-center gap-3 w-full px-4 py-2.5 text-sm font-semibold rounded-xl transition-all text-neutral-400 hover:text-rose-400 hover:bg-rose-500/10"
           >
             <LogOut className="w-5 h-5" />
             Logout

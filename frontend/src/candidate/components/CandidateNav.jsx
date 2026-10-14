@@ -12,7 +12,6 @@ import {
   Home,
   Users,
 } from 'lucide-react';
-import ThemeToggle from '../../components/ThemeToggle';
 import { getSession, logout } from '../services/candidateAuth';
 import logo from '../../assets/logo.png';
 
@@ -118,7 +117,7 @@ const CandidateNav = () => {
         </div>
 
         {/* ===================================================================
-            2. RIGHT UTILITIES (CTA, Theme Toggle, User Profile)
+            2. RIGHT UTILITIES (CTA, User Profile)
            =================================================================== */}
         <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
           
@@ -134,9 +133,6 @@ const CandidateNav = () => {
             <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
             <span>Start Interview</span>
           </Link>
-
-          {/* Theme Toggle */}
-          <ThemeToggle className="!p-2 !rounded-md !border-[var(--c-border)] !bg-[var(--c-surface)] hover:!bg-[var(--c-surface-muted)]" />
 
           {/* User Profile Pill & Dropdown */}
           <div className="relative" ref={dropdownRef}>

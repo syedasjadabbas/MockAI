@@ -6,7 +6,6 @@ import { exportToCSV } from '../utils/csvExport';
 import { formatDateOnly } from '../utils/dateFormat';
 import { TableSkeleton } from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
-import { useTheme } from '../context/ThemeContext';
 
 const formatResultsItems = (data) => {
   if (!Array.isArray(data)) return [];
@@ -28,15 +27,12 @@ const formatResultsItems = (data) => {
 };
 
 const ScoreIndicator = ({ scoreStr }) => {
-  const { isDark } = useTheme();
   if (!scoreStr || scoreStr === '-') return <span className="text-[var(--text-muted)] font-medium text-xs">-</span>;
   
   const score = parseInt(scoreStr.replace('%', ''));
   if (score < 60) {
     return (
-      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${
-        isDark ? 'bg-rose-500/15 text-rose-400 border-rose-500/30' : 'bg-rose-50 text-rose-700 border-rose-200'
-      }`}>
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border bg-rose-500/15 text-rose-400 border-rose-500/30">
         <AlertCircle className="w-3.5 h-3.5" />
         Needs Improvement ({score}%)
       </span>
@@ -47,8 +43,8 @@ const ScoreIndicator = ({ scoreStr }) => {
   return (
     <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${
       isHigh
-        ? isDark ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-        : isDark ? 'bg-amber-500/15 text-amber-400 border-amber-500/30' : 'bg-amber-50 text-amber-700 border-amber-200'
+        ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+        : 'bg-amber-500/15 text-amber-400 border-amber-500/30'
     }`}>
       {isHigh && <CheckCircle2 className="w-3.5 h-3.5" />}
       {score}%
@@ -58,7 +54,6 @@ const ScoreIndicator = ({ scoreStr }) => {
 
 const Results = () => {
   const location = useLocation();
-  const { isDark } = useTheme();
 
   const cachedResults = getCachedData('/results');
   const hasCached = Array.isArray(cachedResults) && cachedResults.length > 0;
@@ -266,19 +261,15 @@ const Results = () => {
             {insightData.empty ? '-' : `${insightData.avg}%`}
           </span>
         </div>
-        <div className={`glass-card p-4 rounded-2xl flex items-center justify-between border ${
-          isDark ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-emerald-200 bg-emerald-50/50'
-        }`}>
-          <span className="text-xs sm:text-sm text-emerald-600 dark:text-emerald-400 font-semibold">High Performers</span>
-          <span className="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">
+        <div className="glass-card p-4 rounded-2xl flex items-center justify-between border border-emerald-500/20 bg-emerald-500/5">
+          <span className="text-xs sm:text-sm text-emerald-400 font-semibold">High Performers</span>
+          <span className="text-xl font-extrabold text-emerald-400">
             {insightData.empty ? '-' : `${insightData.highPct}%`}
           </span>
         </div>
-        <div className={`glass-card p-4 rounded-2xl flex items-center justify-between border ${
-          isDark ? 'border-rose-500/20 bg-rose-500/5' : 'border-rose-200 bg-rose-50/50'
-        }`}>
-          <span className="text-xs sm:text-sm text-rose-600 dark:text-rose-400 font-semibold">Low Performers</span>
-          <span className="text-xl font-extrabold text-rose-600 dark:text-rose-400">
+        <div className="glass-card p-4 rounded-2xl flex items-center justify-between border border-rose-500/20 bg-rose-500/5">
+          <span className="text-xs sm:text-sm text-rose-400 font-semibold">Low Performers</span>
+          <span className="text-xl font-extrabold text-rose-400">
             {insightData.empty ? '-' : `${insightData.lowPct}%`}
           </span>
         </div>

@@ -6,7 +6,6 @@ import { exportToCSV } from '../utils/csvExport';
 import { formatDateOnly } from '../utils/dateFormat';
 import { TableSkeleton } from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
-import { useTheme } from '../context/ThemeContext';
 
 const formatUserItems = (data) => {
   if (!Array.isArray(data)) return [];
@@ -20,7 +19,6 @@ const formatUserItems = (data) => {
 
 const Users = () => {
   const location = useLocation();
-  const { isDark } = useTheme();
   const [search, setSearch] = useState(() => new URLSearchParams(location.search).get('search') || '');
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 10;

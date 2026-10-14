@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useTheme } from '../../context/ThemeContext';
 import { loginWithGoogle } from '../services/candidateAuth';
 
 const GoogleIcon = () => (
@@ -28,7 +27,6 @@ export default function GoogleAuthButton({
   const onErrorRef = useRef(onError);
   const onSuccessRef = useRef(onSuccess);
   const navigate = useNavigate();
-  const { isDark } = useTheme();
 
   // Keep callback refs synchronized
   useEffect(() => {
@@ -98,7 +96,7 @@ export default function GoogleAuthButton({
             googleBtnContainerRef.current.innerHTML = '';
             window.google.accounts.id.renderButton(googleBtnContainerRef.current, {
               type: 'standard',
-              theme: isDark ? 'filled_black' : 'outline',
+              theme: 'filled_black',
               size: 'large',
               text: mode === 'register' ? 'signup_with' : 'continue_with',
               shape: 'rectangular',
@@ -127,7 +125,7 @@ export default function GoogleAuthButton({
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
-  }, [mode, isDark, GOOGLE_CLIENT_ID]);
+  }, [mode, GOOGLE_CLIENT_ID]);
 
   const handleCustomFallbackClick = () => {
     if (!GOOGLE_CLIENT_ID) {
@@ -172,9 +170,9 @@ export default function GoogleAuthButton({
           onClick={handleCustomFallbackClick}
           className="w-full flex items-center justify-center py-2.5 px-4 rounded-md text-xs font-semibold border transition-colors hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed shadow-sm"
           style={{
-            backgroundColor: isDark ? '#121A2A' : '#FFFFFF',
+            backgroundColor: '#121A2A',
             borderColor: 'var(--c-border)',
-            color: isDark ? '#FFFFFF' : '#181818',
+            color: '#FFFFFF',
           }}
         >
           {loading ? (

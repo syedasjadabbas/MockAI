@@ -1,14 +1,34 @@
 const normalizeApiUrl = (url, fallback) => {
-  if (!url || typeof url !== 'string' || !url.trim()) return fallback;
-  let trimmed = url.trim().replace(/\/+$/, '');
-  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
-    return trimmed;
+  let resolved = url;
+  if (!resolved || typeof resolved !== 'string' || !resolved.trim()) {
+    resolved = fallback;
   }
-  // If provided as a bare Render service slug or hostname (e.g. 'mockai-backend-4gxp')
-  if (!trimmed.includes('.')) {
-    return `https://${trimmed}.onrender.com`;
+  let trimmed = resolved.trim().replace(/\/+$/, '');
+  if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+    if (!trimmed.includes('.')) {
+      trimmed = `https://${trimmed}.onrender.com`;
+    } else {
+      trimmed = `https://${trimmed}`;
+    }
   }
-  return `https://${trimmed}`;
+
+  // If accessed remotely (e.g. from a friend's device on LAN), rewrite localhost/127.0.0.1 to current hostname
+  if (typeof window !== 'undefined' && window.location && window.location.hostname) {
+    const currentHost = window.location.hostname;
+    if (currentHost !== 'localhost' && currentHost !== '127.0.0.1' && currentHost !== '::1') {
+      try {
+        const parsed = new URL(trimmed);
+        if (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1') {
+          parsed.hostname = currentHost;
+          return parsed.toString().replace(/\/+$/, '');
+        }
+      } catch {
+        // keep trimmed as-is
+      }
+    }
+  }
+
+  return trimmed;
 };
 
 const rawApiBase = import.meta.env.VITE_API_BASE;

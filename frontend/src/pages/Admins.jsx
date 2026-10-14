@@ -4,7 +4,6 @@ import { fetchWithAuth, getCachedData, API_BASE } from '../api';
 import StatsCard from '../components/StatsCard';
 import { TableSkeleton } from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
-import { useTheme } from '../context/ThemeContext';
 
 const Admins = () => {
   const cachedAdmins = getCachedData('/all-admins');
@@ -12,7 +11,6 @@ const Admins = () => {
 
   const [admins, setAdmins] = useState(() => hasCached ? cachedAdmins : []);
   const [loading, setLoading] = useState(!hasCached);
-  const { isDark } = useTheme();
 
   const loadAdmins = (force = false) => {
     if (!hasCached || force) setLoading(true);

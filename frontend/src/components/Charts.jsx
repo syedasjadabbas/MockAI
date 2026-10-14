@@ -13,7 +13,6 @@ import {
   ArcElement
 } from 'chart.js';
 import { Bar, Pie } from 'react-chartjs-2';
-import { useTheme } from '../context/ThemeContext';
 
 ChartJS.register(
   CategoryScale,
@@ -29,8 +28,6 @@ ChartJS.register(
 );
 
 export const ScoreDistributionChart = ({ data }) => {
-  const { isDark } = useTheme();
-
   const chartData = {
     labels: ['High (>=80)', 'Medium (60-79)', 'Low (<60)', 'Not Evaluated'],
     datasets: [
@@ -40,13 +37,13 @@ export const ScoreDistributionChart = ({ data }) => {
           'rgba(16, 185, 129, 0.85)',
           'rgba(245, 158, 11, 0.85)',
           'rgba(244, 63, 94, 0.85)',
-          isDark ? 'rgba(100, 116, 139, 0.7)' : 'rgba(148, 163, 184, 0.7)',
+          'rgba(100, 116, 139, 0.7)',
         ],
         borderColor: [
           'rgba(16, 185, 129, 1)',
           'rgba(245, 158, 11, 1)',
           'rgba(244, 63, 94, 1)',
-          isDark ? 'rgba(100, 116, 139, 1)' : 'rgba(148, 163, 184, 1)',
+          'rgba(100, 116, 139, 1)',
         ],
         borderWidth: 1.5,
       },
@@ -60,7 +57,7 @@ export const ScoreDistributionChart = ({ data }) => {
       legend: { 
         position: 'right', 
         labels: { 
-          color: isDark ? '#cbd5e1' : '#475569', 
+          color: '#cbd5e1', 
           font: { size: 12, weight: '500' },
           padding: 14,
           usePointStyle: true,
@@ -68,7 +65,7 @@ export const ScoreDistributionChart = ({ data }) => {
         } 
       },
       tooltip: {
-        backgroundColor: isDark ? 'rgba(15, 23, 42, 0.95)' : 'rgba(15, 23, 42, 0.9)',
+        backgroundColor: 'rgba(15, 23, 42, 0.95)',
         titleColor: '#fff',
         bodyColor: '#cbd5e1',
         padding: 12,
@@ -92,8 +89,6 @@ export const ScoreDistributionChart = ({ data }) => {
 };
 
 export const StatusDistributionChart = ({ data }) => {
-  const { isDark } = useTheme();
-
   const chartData = {
     labels: ['Completed', 'In Progress', 'Pending'],
     datasets: [
@@ -117,7 +112,7 @@ export const StatusDistributionChart = ({ data }) => {
     plugins: {
       legend: { display: false },
       tooltip: {
-        backgroundColor: isDark ? 'rgba(15, 23, 42, 0.95)' : 'rgba(15, 23, 42, 0.9)',
+        backgroundColor: 'rgba(15, 23, 42, 0.95)',
         titleColor: '#fff',
         bodyColor: '#cbd5e1',
         padding: 12,
@@ -129,12 +124,12 @@ export const StatusDistributionChart = ({ data }) => {
     scales: {
       x: { 
         grid: { display: false }, 
-        ticks: { color: isDark ? '#94a3b8' : '#64748b', font: { size: 11, weight: '500' } }, 
+        ticks: { color: '#94a3b8', font: { size: 11, weight: '500' } }, 
         border: { display: false } 
       },
       y: { 
-        grid: { color: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)' }, 
-        ticks: { color: isDark ? '#94a3b8' : '#64748b', font: { size: 11 } }, 
+        grid: { color: 'rgba(255,255,255,0.06)' }, 
+        ticks: { color: '#94a3b8', font: { size: 11 } }, 
         border: { display: false } 
       }
     },

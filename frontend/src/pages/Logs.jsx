@@ -6,7 +6,6 @@ import { exportToCSV } from '../utils/csvExport';
 import { formatDate } from '../utils/dateFormat';
 import { TableSkeleton } from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
-import { useTheme } from '../context/ThemeContext';
 
 const formatLogItems = (data) => {
   if (!Array.isArray(data)) return [];
@@ -21,7 +20,6 @@ const formatLogItems = (data) => {
 
 const Logs = () => {
   const location = useLocation();
-  const { isDark } = useTheme();
 
   const cachedLogs = getCachedData('/logs');
   const hasCached = Array.isArray(cachedLogs) && cachedLogs.length > 0;

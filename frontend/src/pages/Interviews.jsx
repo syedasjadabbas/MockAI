@@ -6,7 +6,6 @@ import { exportToCSV } from '../utils/csvExport';
 import { formatDateOnly } from '../utils/dateFormat';
 import { TableSkeleton } from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
-import { useTheme } from '../context/ThemeContext';
 
 const formatInterviewItems = (data) => {
   if (!Array.isArray(data)) return [];
@@ -27,7 +26,6 @@ const formatInterviewItems = (data) => {
 
 const Interviews = () => {
   const location = useLocation();
-  const { isDark } = useTheme();
   const [statusFilter, setStatusFilter] = useState('All');
   const [typeFilter, setTypeFilter] = useState('All');
   const [dateFilter, setDateFilter] = useState('');

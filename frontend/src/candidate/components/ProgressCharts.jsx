@@ -11,7 +11,6 @@ import {
   Filler,
 } from 'chart.js';
 import { Line, Bar } from 'react-chartjs-2';
-import { useTheme } from '../../context/ThemeContext';
 import { formatDateOnly } from '../../utils/dateFormat';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Tooltip, Legend, Filler);
@@ -20,13 +19,11 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarEleme
 const ACCENT = '0, 102, 255';
 const SUCCESS = '16, 185, 129';
 
-const getGridColor = (isDark) => (isDark ? '#243044' : '#E5E0D8');
-const getTickColor = (isDark) => (isDark ? '#94A3B8' : '#52525B');
+const GRID_COLOR = '#243044';
+const TICK_COLOR = '#94A3B8';
 
 // Progress Awareness Support: score trend over completed interviews.
 export const ScoreTrendChart = ({ data }) => {
-  const { isDark } = useTheme();
-
   const chartData = {
     labels: data.map((d) => formatDateOnly(d.date)),
     datasets: [
@@ -63,23 +60,23 @@ export const ScoreTrendChart = ({ data }) => {
     plugins: {
       legend: {
         labels: {
-          color: getTickColor(isDark),
+          color: TICK_COLOR,
           font: { size: 11, weight: '600', family: 'Inter' }
         }
       },
       tooltip: {
-        backgroundColor: isDark ? '#111827' : '#FFFFFF',
-        titleColor: isDark ? '#FFFFFF' : '#181818',
-        bodyColor: isDark ? '#94A3B8' : '#555555',
-        borderColor: isDark ? '#243044' : '#E5E0D8',
+        backgroundColor: '#111827',
+        titleColor: '#FFFFFF',
+        bodyColor: '#94A3B8',
+        borderColor: '#243044',
         borderWidth: 1,
         padding: 8,
         cornerRadius: 6,
       }
     },
     scales: {
-      x: { grid: { color: getGridColor(isDark) }, ticks: { color: getTickColor(isDark), font: { size: 11, family: 'Inter' } } },
-      y: { min: 0, max: 100, grid: { color: getGridColor(isDark) }, ticks: { color: getTickColor(isDark), font: { size: 11, family: 'Inter' } } },
+      x: { grid: { color: GRID_COLOR }, ticks: { color: TICK_COLOR, font: { size: 11, family: 'Inter' } } },
+      y: { min: 0, max: 100, grid: { color: GRID_COLOR }, ticks: { color: TICK_COLOR, font: { size: 11, family: 'Inter' } } },
     },
   };
 
@@ -88,8 +85,6 @@ export const ScoreTrendChart = ({ data }) => {
 
 // Category breakdown - average score per interview category practiced.
 export const CategoryBreakdownChart = ({ data }) => {
-  const { isDark } = useTheme();
-
   const chartData = {
     labels: data.map((d) => d.category),
     datasets: [
@@ -110,18 +105,18 @@ export const CategoryBreakdownChart = ({ data }) => {
     plugins: { 
       legend: { display: false },
       tooltip: {
-        backgroundColor: isDark ? '#111827' : '#FFFFFF',
-        titleColor: isDark ? '#FFFFFF' : '#181818',
-        bodyColor: isDark ? '#94A3B8' : '#555555',
-        borderColor: isDark ? '#243044' : '#E5E0D8',
+        backgroundColor: '#111827',
+        titleColor: '#FFFFFF',
+        bodyColor: '#94A3B8',
+        borderColor: '#243044',
         borderWidth: 1,
         padding: 8,
         cornerRadius: 6,
       }
     },
     scales: {
-      x: { grid: { display: false }, ticks: { color: getTickColor(isDark), font: { size: 11, family: 'Inter' } } },
-      y: { min: 0, max: 100, grid: { color: getGridColor(isDark) }, ticks: { color: getTickColor(isDark), font: { size: 11, family: 'Inter' } } },
+      x: { grid: { display: false }, ticks: { color: TICK_COLOR, font: { size: 11, family: 'Inter' } } },
+      y: { min: 0, max: 100, grid: { color: GRID_COLOR }, ticks: { color: TICK_COLOR, font: { size: 11, family: 'Inter' } } },
     },
   };
 

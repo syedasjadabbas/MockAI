@@ -1,9 +1,6 @@
 import React from 'react';
-import { useTheme } from '../context/ThemeContext';
 
 const StatsCard = ({ title, value, icon: Icon, subtitle }) => {
-  const { isDark } = useTheme();
-
   return (
     <div className="glass-card p-6 rounded-2xl flex items-start justify-between relative overflow-hidden group hover:shadow-md transition-all duration-200">
       {/* Info Section */}
@@ -19,11 +16,7 @@ const StatsCard = ({ title, value, icon: Icon, subtitle }) => {
 
       {/* Icon Section */}
       <div className="relative z-10">
-        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border transition-all duration-200 ${
-          isDark 
-            ? 'bg-orange-500/10 border-orange-500/20 text-orange-400' 
-            : 'bg-orange-50 border-orange-100 text-orange-600 shadow-sm'
-        }`}>
+        <div className="w-12 h-12 rounded-2xl flex items-center justify-center border transition-all duration-200 bg-orange-500/10 border-orange-500/20 text-orange-400">
           {Icon && <Icon className="w-6 h-6" />}
         </div>
       </div>

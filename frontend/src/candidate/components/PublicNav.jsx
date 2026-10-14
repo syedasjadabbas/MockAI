@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Menu, X, Plus, ArrowRight, LogIn, LayoutDashboard } from 'lucide-react';
-import ThemeToggle from '../../components/ThemeToggle';
 import { isAuthenticated, getSession } from '../services/candidateAuth';
 import logo from '../../assets/logo.png';
 
@@ -73,11 +72,9 @@ const PublicNav = () => {
         </div>
 
         {/* ===================================================================
-            2. RIGHT UTILITIES (Log In / Dashboard, Start Practicing, Theme)
+            2. RIGHT UTILITIES (Log In / Dashboard, Start Practicing)
            =================================================================== */}
         <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
-          <ThemeToggle className="!p-2 !rounded-lg" />
-
           {authed ? (
             /* Logged in candidate quick dashboard link */
             <Link

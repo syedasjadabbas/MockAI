@@ -16,46 +16,6 @@
  */
 
 .admin-auth-shell {
-  --aa-bg: #FAF9F6;
-  --aa-surface: #FFFFFF;
-  --aa-surface-muted: #F3F0EB;
-  --aa-border: #E5E0D8;
-  --aa-border-strong: #D0C8BC;
-
-  --aa-text: #18181B;
-  --aa-text-secondary: #52525B;
-  --aa-text-muted: #71717A;
-  --aa-on-accent: #FFFFFF;
-
-  --aa-accent: #FF6B35;
-  --aa-accent-hover: #E8551E;
-  --aa-accent-soft: rgba(255, 107, 53, 0.12);
-  --aa-accent-soft-strong: rgba(255, 107, 53, 0.20);
-
-  --aa-cta-from: #FF6B35;
-  --aa-cta-to: #E8551E;
-  --aa-cta-hover-from: #FF7B47;
-  --aa-cta-hover-to: #D64A15;
-  --aa-cta-text: #FFFFFF;
-
-  --aa-danger: #EF4444;
-  --aa-danger-soft: rgba(239, 68, 68, 0.12);
-  --aa-success: #22C55E;
-  --aa-success-soft: rgba(34, 197, 94, 0.12);
-
-  --aa-shadow: 0 20px 48px -18px rgba(0, 0, 0, 0.15);
-  --aa-radius-sm: 10px;
-  --aa-radius: 16px;
-  --aa-font: 'Inter', -apple-system, system-ui, sans-serif;
-
-  background: var(--aa-bg);
-  color: var(--aa-text);
-  font-family: var(--aa-font);
-  min-height: 100vh;
-}
-
-html[data-theme='dark'] .admin-auth-shell,
-html.dark .admin-auth-shell {
   --aa-bg: #111111;
   --aa-surface: #181818;
   --aa-surface-muted: #202020;
@@ -84,6 +44,14 @@ html.dark .admin-auth-shell {
   --aa-success-soft: rgba(34, 197, 94, 0.12);
 
   --aa-shadow: 0 24px 56px -18px rgba(0, 0, 0, 0.6);
+  --aa-radius-sm: 10px;
+  --aa-radius: 16px;
+  --aa-font: 'Inter', -apple-system, system-ui, sans-serif;
+
+  background: var(--aa-bg);
+  color: var(--aa-text);
+  font-family: var(--aa-font);
+  min-height: 100vh;
 }
 
 .admin-auth-shell .aa-panel {

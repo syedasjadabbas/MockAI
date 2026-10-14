@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Terminal, Mail, Lock, AlertCircle, ArrowLeft, ShieldCheck, Eye, EyeOff } from 'lucide-react';
 import { fetchWithAuth } from '../api';
-import ThemeToggle from '../components/ThemeToggle';
 import '../admin-auth-theme.css';
 import { ADMIN_AUTH_HERO } from '../assets/adminAuthImages';
 import logo from '../assets/logo.png';
@@ -84,10 +83,6 @@ const AdminLogin = () => {
       />
       <div className="absolute inset-0 aa-duotone" />
       <div className="absolute inset-0 aa-scrim" />
-
-      <div className="absolute top-6 right-6 z-20">
-        <ThemeToggle />
-      </div>
 
       <div className="relative z-10 min-h-screen flex flex-col lg:flex-row">
         {/* Brand + editorial headline - uses the space a form-only layout

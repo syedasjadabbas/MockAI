@@ -6,7 +6,6 @@ import { ScoreDistributionChart, StatusDistributionChart } from '../components/C
 import { CardSkeleton, TableSkeleton } from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
 import { fetchWithAuth, getCachedData } from '../api';
-import { useTheme } from '../context/ThemeContext';
 
 const Dashboard = () => {
   const cachedStats = getCachedData('/');
@@ -42,7 +41,6 @@ const Dashboard = () => {
   }));
 
   const [loading, setLoading] = useState(!hasCached);
-  const { isDark } = useTheme();
 
   useEffect(() => {
     let isMounted = true;

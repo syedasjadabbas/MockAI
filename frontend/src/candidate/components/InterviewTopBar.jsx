@@ -1,7 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Check, X } from 'lucide-react';
-import ThemeToggle from '../../components/ThemeToggle';
 import logo from '../../assets/logo.png';
 
 export const FLOW_STEPS = [
@@ -76,7 +75,6 @@ const InterviewTopBar = ({ activeStep, onExit }) => {
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          <ThemeToggle />
           <button
             onClick={() => (onExit ? onExit() : navigate('/dashboard'))}
             className="c-btn c-btn-secondary p-2 rounded-md"

@@ -33,7 +33,6 @@ import {
   Hash
 } from 'lucide-react';
 import { fetchWithAuth, getCachedData } from '../api';
-import { useTheme } from '../context/ThemeContext';
 import StatsCard from '../components/StatsCard';
 import { TableSkeleton } from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
@@ -58,26 +57,21 @@ const DIFFICULTY_CONFIG = {
   Easy: {
     label: 'Easy',
     colorDark: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
-    colorLight: 'bg-emerald-50 text-emerald-700 border-emerald-200',
     dot: 'bg-emerald-500'
   },
   Medium: {
     label: 'Medium',
     colorDark: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
-    colorLight: 'bg-amber-50 text-amber-700 border-amber-200',
     dot: 'bg-amber-500'
   },
   Hard: {
     label: 'Hard',
     colorDark: 'bg-rose-500/15 text-rose-400 border-rose-500/30',
-    colorLight: 'bg-rose-50 text-rose-700 border-rose-200',
     dot: 'bg-rose-500'
   }
 };
 
 const QuestionBank = () => {
-  const { isDark } = useTheme();
-
   // Active Tab: 'questions' | 'categories'
   const [activeTab, setActiveTab] = useState('questions');
 
@@ -528,11 +522,7 @@ const QuestionBank = () => {
           <button
             onClick={() => loadData(true)}
             disabled={refreshing}
-            className={`p-2.5 rounded-xl border transition-all ${
-              isDark 
-                ? 'bg-slate-800/60 border-slate-700 text-slate-300 hover:bg-slate-800' 
-                : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-            }`}
+            className="p-2.5 rounded-xl border transition-all bg-slate-800/60 border-slate-700 text-slate-300 hover:bg-slate-800"
             title="Refresh Data"
           >
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-orange-500' : ''}`} />
@@ -540,11 +530,7 @@ const QuestionBank = () => {
 
           <button
             onClick={openAddCategoryModal}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border transition-all ${
-              isDark
-                ? 'bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 border-slate-700'
-                : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200 shadow-sm'
-            }`}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border transition-all bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 border-slate-700"
           >
             <FolderPlus className="w-4 h-4 text-orange-400" />
             <span>New Category</span>
@@ -620,9 +606,7 @@ const QuestionBank = () => {
           onClick={() => setActiveTab('questions')}
           className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 relative ${
             activeTab === 'questions'
-              ? isDark
-                ? 'bg-orange-500/15 text-orange-400 border border-orange-500/30'
-                : 'bg-orange-50 text-orange-700 border border-orange-200 shadow-sm'
+              ? 'bg-orange-500/15 text-orange-400 border border-orange-500/30'
               : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-slate-800/20'
           }`}
         >
@@ -630,8 +614,8 @@ const QuestionBank = () => {
           <span>Questions Repository</span>
           <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
             activeTab === 'questions'
-              ? isDark ? 'bg-orange-500/30 text-orange-300' : 'bg-orange-100 text-orange-800'
-              : isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-600'
+              ? 'bg-orange-500/30 text-orange-300'
+              : 'bg-slate-800 text-slate-400'
           }`}>
             {questions.length}
           </span>
@@ -641,9 +625,7 @@ const QuestionBank = () => {
           onClick={() => setActiveTab('categories')}
           className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 relative ${
             activeTab === 'categories'
-              ? isDark
-                ? 'bg-orange-500/15 text-orange-400 border border-orange-500/30'
-                : 'bg-orange-50 text-orange-700 border border-orange-200 shadow-sm'
+              ? 'bg-orange-500/15 text-orange-400 border border-orange-500/30'
               : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-slate-800/20'
           }`}
         >
@@ -651,8 +633,8 @@ const QuestionBank = () => {
           <span>Interview Categories</span>
           <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
             activeTab === 'categories'
-              ? isDark ? 'bg-orange-500/30 text-orange-300' : 'bg-orange-100 text-orange-800'
-              : isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-600'
+              ? 'bg-orange-500/30 text-orange-300'
+              : 'bg-slate-800 text-slate-400'
           }`}>
             {categories.length}
           </span>
@@ -834,9 +816,7 @@ const QuestionBank = () => {
                           <td className="py-4 px-6 whitespace-nowrap">
                             <button
                               onClick={() => filterBySpecificCategory(q.category_id)}
-                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-semibold border transition-all hover:scale-105 ${
-                                isDark ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' : 'bg-orange-50 text-orange-700 border-orange-200'
-                              }`}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-semibold border transition-all hover:scale-105 bg-orange-500/10 text-orange-400 border-orange-500/20"
                               title="Filter by this category"
                             >
                               <Folder className="w-3 h-3" />
@@ -846,9 +826,7 @@ const QuestionBank = () => {
 
                           {/* Difficulty */}
                           <td className="py-4 px-6 whitespace-nowrap">
-                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold border ${
-                              isDark ? diffCfg.colorDark : diffCfg.colorLight
-                            }`}>
+                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold border ${diffCfg.colorDark}`}>
                               <span className={`w-1.5 h-1.5 rounded-full ${diffCfg.dot}`} />
                               {q.difficulty || 'Medium'}
                             </span>
@@ -886,12 +864,8 @@ const QuestionBank = () => {
                               onClick={() => handleToggleQuestionStatus(q)}
                               className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border transition-all ${
                                 q.status === 'active'
-                                  ? isDark
-                                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20'
-                                    : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
-                                  : isDark
-                                    ? 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'
-                                    : 'bg-slate-100 text-slate-600 border-slate-300 hover:bg-slate-200'
+                                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20'
+                                  : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'
                               }`}
                               title={`Click to ${q.status === 'active' ? 'Archive' : 'Activate'}`}
                             >
@@ -1055,8 +1029,8 @@ const QuestionBank = () => {
                           onClick={() => handleToggleCategoryStatus(cat)}
                           className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold border transition-all ${
                             cat.status === 'active'
-                              ? isDark ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                              : isDark ? 'bg-slate-800 text-slate-400 border-slate-700' : 'bg-slate-100 text-slate-600 border-slate-300'
+                              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                              : 'bg-slate-800 text-slate-400 border-slate-700'
                           }`}
                           title={`Click to ${cat.status === 'active' ? 'Archive' : 'Activate'}`}
                         >
