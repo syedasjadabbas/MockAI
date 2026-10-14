@@ -173,8 +173,9 @@ const Mentors = () => {
           className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl border text-xs font-semibold backdrop-blur-md transition-all ${
             toast.type === 'error'
               ? 'bg-rose-950/90 text-rose-200 border-rose-500/40'
-              : 'bg-[#181818] text-white border-[#FF6B35]/40 shadow-black/60'
+              : 'border-[#FF6B35]/40 shadow-black/60'
           }`}
+          style={toast.type !== 'error' ? { background: 'var(--c-surface)', color: 'var(--c-text)' } : {}}
         >
           {toast.type === 'error' ? (
             <AlertCircle className="w-4 h-4 text-rose-400" />
@@ -192,7 +193,7 @@ const Mentors = () => {
             <p className="c-eyebrow" style={{ color: 'var(--c-accent, #FF6B35)' }}>
               1-on-1 Guidance
             </p>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white mt-1">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mt-1" style={{ color: 'var(--c-text)' }}>
               Technical Mentors & Coaching
             </h1>
             <p className="text-xs sm:text-sm mt-1" style={{ color: 'var(--c-text-secondary, #A3A3A3)' }}>
@@ -207,10 +208,11 @@ const Mentors = () => {
               else loadAppointments();
             }}
             disabled={loadingMentors || loadingAppointments}
-            className="self-start sm:self-auto p-2 rounded-lg border text-xs font-semibold text-neutral-300 hover:text-white flex items-center gap-1.5 transition-colors"
+            className="self-start sm:self-auto p-2 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-colors hover:border-[var(--c-border-strong)]"
             style={{
               background: 'var(--c-surface, #181818)',
               borderColor: 'var(--c-border, #2A2A2A)',
+              color: 'var(--c-text-secondary)',
             }}
             title="Refresh"
           >
@@ -232,13 +234,13 @@ const Mentors = () => {
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
               activeTab === 'browse'
                 ? 'bg-[#FF6B35]/15 text-[#FF6B35] border border-[#FF6B35]/30'
-                : 'text-neutral-400 hover:text-white hover:bg-neutral-800/40'
+                : 'text-neutral-500 dark:text-neutral-400 hover:text-[var(--c-text)] hover:bg-[var(--c-surface-muted)]'
             }`}
           >
             <Users className="w-3.5 h-3.5" />
             <span>Discover Mentors</span>
             {mentors.length > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-neutral-800 text-neutral-300">
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 dark:bg-neutral-800 text-zinc-700 dark:text-neutral-300">
                 {mentors.length}
               </span>
             )}
@@ -250,13 +252,13 @@ const Mentors = () => {
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
               activeTab === 'appointments'
                 ? 'bg-[#FF6B35]/15 text-[#FF6B35] border border-[#FF6B35]/30'
-                : 'text-neutral-400 hover:text-white hover:bg-neutral-800/40'
+                : 'text-neutral-500 dark:text-neutral-400 hover:text-[var(--c-text)] hover:bg-[var(--c-surface-muted)]'
             }`}
           >
             <CalendarCheck2 className="w-3.5 h-3.5" />
             <span>My Bookings</span>
             {appointments.length > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-neutral-800 text-neutral-300">
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 dark:bg-neutral-800 text-zinc-700 dark:text-neutral-300">
                 {appointments.length}
               </span>
             )}
@@ -289,7 +291,7 @@ const Mentors = () => {
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery('')}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-[var(--c-text)]"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
@@ -317,7 +319,7 @@ const Mentors = () => {
                       setSearchQuery('');
                       setSelectedSpecialization('All Domains');
                     }}
-                    className="p-2 rounded-lg text-neutral-400 hover:text-white border text-xs"
+                    className="p-2 rounded-lg text-neutral-500 dark:text-neutral-400 hover:text-[var(--c-text)] border text-xs"
                     style={{ borderColor: 'var(--c-border, #2A2A2A)' }}
                     title="Reset Filters"
                   >
@@ -417,7 +419,7 @@ const Mentors = () => {
                           <div
                             className="w-11 h-11 rounded-xl flex items-center justify-center font-bold text-sm border flex-shrink-0"
                             style={{
-                              background: '#202020',
+                              background: 'var(--c-surface-muted)',
                               color: 'var(--c-accent, #FF6B35)',
                               borderColor: 'var(--c-border, #2A2A2A)',
                             }}
@@ -425,10 +427,10 @@ const Mentors = () => {
                             {mentor.name?.charAt(0) || 'M'}
                           </div>
                           <div>
-                            <h3 className="text-sm font-bold text-white leading-tight">
+                            <h3 className="text-sm font-bold leading-tight" style={{ color: 'var(--c-text)' }}>
                               {mentor.name}
                             </h3>
-                            <p className="text-xs text-neutral-400 truncate mt-0.5">
+                            <p className="text-xs truncate mt-0.5" style={{ color: 'var(--c-text-secondary)' }}>
                               {mentor.title} {mentor.company ? `• ${mentor.company}` : ''}
                             </p>
                           </div>
@@ -463,7 +465,7 @@ const Mentors = () => {
                               key={i}
                               className="text-[10px] px-2 py-0.5 rounded border font-mono"
                               style={{
-                                background: '#141414',
+                                background: 'var(--c-surface-muted)',
                                 borderColor: 'var(--c-border, #2A2A2A)',
                                 color: 'var(--c-accent, #FF6B35)',
                               }}
@@ -483,8 +485,8 @@ const Mentors = () => {
                       <button
                         type="button"
                         onClick={() => setSelectedMentorForProfile(mentor)}
-                        className="px-3 py-1.5 rounded-lg text-xs font-semibold text-neutral-300 hover:text-white border transition-colors"
-                        style={{ borderColor: 'var(--c-border, #2A2A2A)' }}
+                        className="px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors hover:border-[var(--c-border-strong)]"
+                        style={{ borderColor: 'var(--c-border, #2A2A2A)', color: 'var(--c-text-secondary)' }}
                       >
                         View Profile
                       </button>
@@ -521,7 +523,7 @@ const Mentors = () => {
                     className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize border transition-all ${
                       appointmentFilter === filterVal
                         ? 'border-[#FF6B35] bg-[#FF6B35]/15 text-[#FF6B35]'
-                        : 'border-neutral-800 bg-[#141414] text-neutral-400 hover:text-white'
+                        : 'border-[var(--c-border)] bg-[var(--c-surface-muted)] text-[var(--c-text-secondary)] hover:text-[var(--c-text)]'
                     }`}
                   >
                     {filterVal} Sessions
@@ -618,7 +620,7 @@ const Mentors = () => {
                         <div
                           className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm border flex-shrink-0"
                           style={{
-                            background: '#202020',
+                            background: 'var(--c-surface-muted)',
                             color: 'var(--c-accent, #FF6B35)',
                             borderColor: 'var(--c-border, #2A2A2A)',
                           }}
@@ -626,13 +628,13 @@ const Mentors = () => {
                           {apt.mentor_name?.charAt(0) || 'M'}
                         </div>
                         <div>
-                          <h4 className="text-sm font-bold text-white">{apt.mentor_name}</h4>
-                          <p className="text-xs text-neutral-400">{apt.mentor_title || 'Technical Mentor'}</p>
+                          <h4 className="text-sm font-bold" style={{ color: 'var(--c-text)' }}>{apt.mentor_name}</h4>
+                          <p className="text-xs" style={{ color: 'var(--c-text-secondary)' }}>{apt.mentor_title || 'Technical Mentor'}</p>
                           <div className="flex items-center gap-3 mt-1 text-xs font-mono">
                             <span className="flex items-center gap-1 text-[#FF9F1C]">
                               <Calendar className="w-3.5 h-3.5" /> {apt.date}
                             </span>
-                            <span className="flex items-center gap-1 text-neutral-300">
+                            <span className="flex items-center gap-1" style={{ color: 'var(--c-text-secondary)' }}>
                               <Clock className="w-3.5 h-3.5" /> {apt.start_time}
                             </span>
                           </div>
@@ -646,7 +648,7 @@ const Mentors = () => {
                             isCancelled
                               ? 'bg-rose-500/10 text-rose-400 border-rose-500/30'
                               : isCompleted
-                              ? 'bg-neutral-800 text-neutral-400 border-neutral-700'
+                              ? 'bg-slate-100 dark:bg-neutral-800 text-zinc-700 dark:text-neutral-400 border-slate-200 dark:border-neutral-700'
                               : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
                           }`}
                         >
@@ -709,8 +711,8 @@ const Mentors = () => {
             </div>
 
             <div className="text-center space-y-1.5">
-              <h3 className="text-base font-bold text-white">Cancel Appointment?</h3>
-              <p className="text-xs text-neutral-400">
+              <h3 className="text-base font-bold" style={{ color: 'var(--c-text)' }}>Cancel Appointment?</h3>
+              <p className="text-xs" style={{ color: 'var(--c-text-secondary)' }}>
                 Are you sure you want to cancel your session with {cancellingAppointment.mentor_name} on {cancellingAppointment.date} at {cancellingAppointment.start_time}?
               </p>
             </div>
@@ -724,7 +726,7 @@ const Mentors = () => {
                 type="button"
                 onClick={() => setCancellingAppointment(null)}
                 disabled={isCancelling}
-                className="px-4 py-2 rounded-lg text-xs font-semibold text-neutral-400 hover:text-white"
+                className="px-4 py-2 rounded-lg text-xs font-semibold text-neutral-500 dark:text-neutral-400 hover:text-[var(--c-text)]"
               >
                 Keep Session
               </button>

@@ -23,6 +23,7 @@ function createAssessmentCardTexture({ title, value, subtext, statusColor = '#FF
   ctx.stroke();
 
   // Top accent bar in Primary Orange
+  ctx.save();
   ctx.strokeStyle = statusColor;
   ctx.lineWidth = 8;
   ctx.beginPath();
@@ -209,8 +210,9 @@ const HeroScene3D = () => {
     const height = container.clientHeight || 450;
     const isMobile = width < 768;
 
-    const camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 100);
-    camera.position.set(0, 1.2, 8.8);
+    const initialZ = width < 480 ? 10.4 : (width < 768 ? 10.0 : 9.6);
+    const camera = new THREE.PerspectiveCamera(36, width / height, 0.1, 100);
+    camera.position.set(0, 1.15, initialZ);
 
     const renderer = new THREE.WebGLRenderer({
       antialias: !isMobile,
@@ -223,6 +225,11 @@ const HeroScene3D = () => {
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.15;
+    renderer.domElement.style.width = '100%';
+    renderer.domElement.style.height = '100%';
+    renderer.domElement.style.objectFit = 'contain';
+    renderer.domElement.style.display = 'block';
+    renderer.domElement.style.borderRadius = 'inherit';
     container.appendChild(renderer.domElement);
 
     // --- Lighting ---
@@ -305,45 +312,45 @@ const HeroScene3D = () => {
       metalness: 0.75,
       roughness: 0.3,
     });
-    const lowerBodyGeo = new THREE.CylinderGeometry(0.55, 0.52, 1.25, 32);
+    const lowerBodyGeo = new THREE.CylinderGeometry(0.48, 0.45, 1.15, 32);
     const lowerBody = new THREE.Mesh(lowerBodyGeo, bodyBrandMat);
     lowerBody.position.y = 0.2;
     lowerBody.castShadow = true;
     micGroup.add(lowerBody);
 
     // Body accent rings
-    const ringGeo = new THREE.TorusGeometry(0.56, 0.025, 16, 48);
+    const ringGeo = new THREE.TorusGeometry(0.49, 0.022, 16, 48);
     const ringTop = new THREE.Mesh(ringGeo, orangeAccentMat);
     ringTop.rotation.x = Math.PI / 2;
-    ringTop.position.y = 0.82;
+    ringTop.position.y = 0.77;
     micGroup.add(ringTop);
 
     const ringMid = new THREE.Mesh(ringGeo, goldAccentMat);
     ringMid.rotation.x = Math.PI / 2;
-    ringMid.position.y = -0.42;
+    ringMid.position.y = -0.37;
     micGroup.add(ringMid);
 
     // 2. Upper Mesh Capsule
-    const capsuleBodyGeo = new THREE.CylinderGeometry(0.53, 0.53, 1.1, 32);
+    const capsuleBodyGeo = new THREE.CylinderGeometry(0.46, 0.46, 1.0, 32);
     const capsuleBody = new THREE.Mesh(capsuleBodyGeo, grilleMat);
-    capsuleBody.position.y = 1.38;
+    capsuleBody.position.y = 1.28;
     capsuleBody.castShadow = true;
     micGroup.add(capsuleBody);
 
-    const capsuleDomeGeo = new THREE.SphereGeometry(0.53, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2);
+    const capsuleDomeGeo = new THREE.SphereGeometry(0.46, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2);
     const capsuleDome = new THREE.Mesh(capsuleDomeGeo, grilleMat);
-    capsuleDome.position.y = 1.93;
+    capsuleDome.position.y = 1.78;
     capsuleDome.castShadow = true;
     micGroup.add(capsuleDome);
 
     // Capsule rib bands (Studio frame)
-    const ribGeo = new THREE.CylinderGeometry(0.54, 0.54, 0.04, 32);
+    const ribGeo = new THREE.CylinderGeometry(0.47, 0.47, 0.035, 32);
     const rib1 = new THREE.Mesh(ribGeo, graphiteMetalMat);
-    rib1.position.y = 1.38;
+    rib1.position.y = 1.28;
     micGroup.add(rib1);
 
     // 3. Shockmount Cradle
-    const shockRingGeo = new THREE.TorusGeometry(0.85, 0.035, 16, 48);
+    const shockRingGeo = new THREE.TorusGeometry(0.74, 0.03, 16, 48);
     const shockRing1 = new THREE.Mesh(shockRingGeo, graphiteMetalMat);
     shockRing1.rotation.x = Math.PI / 2;
     shockRing1.position.y = 0.2;
@@ -351,15 +358,15 @@ const HeroScene3D = () => {
 
     const shockRing2 = new THREE.Mesh(shockRingGeo, graphiteMetalMat);
     shockRing2.rotation.x = Math.PI / 2;
-    shockRing2.position.y = -0.15;
+    shockRing2.position.y = -0.12;
     micGroup.add(shockRing2);
 
     // Vertical shock struts
     for (let i = 0; i < 4; i++) {
       const angle = (i * Math.PI) / 2;
-      const strutGeo = new THREE.CylinderGeometry(0.02, 0.02, 0.5, 12);
+      const strutGeo = new THREE.CylinderGeometry(0.018, 0.018, 0.42, 12);
       const strut = new THREE.Mesh(strutGeo, graphiteMetalMat);
-      strut.position.set(Math.cos(angle) * 0.85, 0.025, Math.sin(angle) * 0.85);
+      strut.position.set(Math.cos(angle) * 0.74, 0.04, Math.sin(angle) * 0.74);
       micGroup.add(strut);
     }
 
@@ -367,9 +374,9 @@ const HeroScene3D = () => {
     const bandMat = new THREE.MeshBasicMaterial({ color: '#FF6B35', wireframe: false });
     for (let i = 0; i < 4; i++) {
       const angle = (i * Math.PI) / 2 + Math.PI / 4;
-      const bandGeo = new THREE.CylinderGeometry(0.015, 0.015, 0.45, 8);
+      const bandGeo = new THREE.CylinderGeometry(0.012, 0.012, 0.40, 8);
       const band = new THREE.Mesh(bandGeo, bandMat);
-      band.position.set(Math.cos(angle) * 0.68, 0.025, Math.sin(angle) * 0.68);
+      band.position.set(Math.cos(angle) * 0.60, 0.04, Math.sin(angle) * 0.60);
       band.rotation.z = Math.PI / 6;
       micGroup.add(band);
     }
@@ -378,29 +385,29 @@ const HeroScene3D = () => {
     const pedestalGroup = new THREE.Group();
     micAssembly.add(pedestalGroup);
 
-    const stemGeo = new THREE.CylinderGeometry(0.12, 0.12, 1.4, 24);
+    const stemGeo = new THREE.CylinderGeometry(0.10, 0.10, 1.2, 24);
     const stem = new THREE.Mesh(stemGeo, graphiteMetalMat);
-    stem.position.y = -0.65;
+    stem.position.y = -0.60;
     stem.castShadow = true;
     pedestalGroup.add(stem);
 
     // Pedestal disk base
-    const baseGeo = new THREE.CylinderGeometry(1.6, 1.75, 0.22, 48);
+    const baseGeo = new THREE.CylinderGeometry(1.35, 1.48, 0.20, 48);
     const baseMat = new THREE.MeshStandardMaterial({
       color: '#161616',
       metalness: 0.85,
       roughness: 0.35,
     });
     const pedestalBase = new THREE.Mesh(baseGeo, baseMat);
-    pedestalBase.position.y = -1.45;
+    pedestalBase.position.y = -1.30;
     pedestalBase.receiveShadow = true;
     pedestalBase.castShadow = true;
     pedestalGroup.add(pedestalBase);
 
-    const baseRingGeo = new THREE.TorusGeometry(1.62, 0.025, 16, 64);
+    const baseRingGeo = new THREE.TorusGeometry(1.37, 0.022, 16, 64);
     const baseRing = new THREE.Mesh(baseRingGeo, orangeAccentMat);
     baseRing.rotation.x = Math.PI / 2;
-    baseRing.position.y = -1.34;
+    baseRing.position.y = -1.20;
     pedestalGroup.add(baseRing);
 
     // Dark reflection floor plane
@@ -412,13 +419,13 @@ const HeroScene3D = () => {
     });
     const floor = new THREE.Mesh(floorGeo, floorMat);
     floor.rotation.x = -Math.PI / 2;
-    floor.position.y = -1.56;
+    floor.position.y = -1.41;
     floor.receiveShadow = true;
     scene.add(floor);
 
     // --- Concentric Audio Waveform Rings (Parametric animated) ---
     const waveformRings = [];
-    const ringRadii = [1.8, 2.3, 2.85];
+    const ringRadii = [1.55, 1.95, 2.40];
 
     ringRadii.forEach((radius, idx) => {
       const segments = 128;
@@ -435,7 +442,7 @@ const HeroScene3D = () => {
         linewidth: 1.5,
       });
       const ringLine = new THREE.Line(lineGeo, lineMat);
-      ringLine.position.y = 0.55 + idx * 0.15;
+      ringLine.position.y = 0.50 + idx * 0.12;
       ringLine.rotation.x = 0.2 + idx * 0.1;
       ringLine.rotation.z = -0.15 * idx;
       worldGroup.add(ringLine);
@@ -443,7 +450,7 @@ const HeroScene3D = () => {
     });
 
     // Outer AI Neural Orbit Ring
-    const neuralOrbitGeo = new THREE.TorusGeometry(3.4, 0.015, 16, 100);
+    const neuralOrbitGeo = new THREE.TorusGeometry(2.85, 0.015, 16, 100);
     const neuralOrbitMat = new THREE.MeshBasicMaterial({
       color: '#FF6B35',
       transparent: true,
@@ -462,8 +469,8 @@ const HeroScene3D = () => {
 
     for (let i = 0; i < particleCount; i++) {
       const angle = Math.random() * Math.PI * 2;
-      const r = 1.2 + Math.random() * 3.2;
-      const y = -1.2 + Math.random() * 3.8;
+      const r = 0.9 + Math.random() * 2.2;
+      const y = -1.1 + Math.random() * 3.4;
       particlePositions[i * 3] = Math.cos(angle) * r;
       particlePositions[i * 3 + 1] = y;
       particlePositions[i * 3 + 2] = Math.sin(angle) * r;
@@ -495,30 +502,30 @@ const HeroScene3D = () => {
     const cards = [
       {
         data: { title: 'Speech Clarity', value: '94%', subtext: 'Clear articulation' },
-        pos: [-2.65, 1.35, 1.1],
-        rot: [0.02, 0.14, -0.01],
-        scale: [2.1, 1.05, 1],
+        pos: [-2.15, 1.25, 0.9],
+        rot: [0.02, 0.12, -0.01],
+        scale: [1.75, 0.88, 1],
         floatPhase: 0,
       },
       {
         data: { title: 'Pacing cadence', value: '135 wpm', subtext: 'Optimal tempo' },
-        pos: [-2.5, -0.35, 1.3],
-        rot: [-0.02, 0.12, 0.01],
-        scale: [2.1, 1.05, 1],
+        pos: [-2.05, -0.32, 1.1],
+        rot: [-0.02, 0.10, 0.01],
+        scale: [1.75, 0.88, 1],
         floatPhase: 1.8,
       },
       {
         data: { title: 'Evaluation', value: '91%', subtext: 'Composite Score', hasCircle: true, circleVal: 91 },
-        pos: [2.65, 1.35, 1.1],
-        rot: [0.02, -0.14, 0.01],
-        scale: [2.1, 1.05, 1],
+        pos: [2.15, 1.25, 0.9],
+        rot: [0.02, -0.12, 0.01],
+        scale: [1.75, 0.88, 1],
         floatPhase: 3.2,
       },
       {
         data: { title: 'Fluency Index', value: 'High', subtext: 'Low hesitation' },
-        pos: [2.5, -0.35, 1.3],
-        rot: [-0.02, -0.12, -0.01],
-        scale: [2.1, 1.05, 1],
+        pos: [2.05, -0.32, 1.1],
+        rot: [-0.02, -0.10, -0.01],
+        scale: [1.75, 0.88, 1],
         floatPhase: 4.6,
       },
     ];
@@ -549,10 +556,16 @@ const HeroScene3D = () => {
       const rect = container.getBoundingClientRect();
       const nx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
       const ny = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
-      mouse.targetX = nx * 0.45;
-      mouse.targetY = ny * 0.3;
+      mouse.targetX = nx * 0.28;
+      mouse.targetY = ny * 0.20;
     };
     container.addEventListener('mousemove', handleMouseMove);
+
+    const handleMouseLeave = () => {
+      mouse.targetX = 0;
+      mouse.targetY = 0;
+    };
+    container.addEventListener('mouseleave', handleMouseLeave);
 
     // --- Resize Handling ---
     const handleResize = () => {
@@ -560,8 +573,13 @@ const HeroScene3D = () => {
       const w = container.clientWidth || 600;
       const h = container.clientHeight || 450;
       camera.aspect = w / h;
+      camera.position.z = w < 480 ? 10.4 : (w < 768 ? 10.0 : 9.6);
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
+      renderer.domElement.style.width = '100%';
+      renderer.domElement.style.height = '100%';
+      renderer.domElement.style.objectFit = 'contain';
+      renderer.domElement.style.display = 'block';
     };
     window.addEventListener('resize', handleResize);
 
@@ -597,8 +615,8 @@ const HeroScene3D = () => {
       mouse.x += (mouse.targetX - mouse.x) * 0.05;
       mouse.y += (mouse.targetY - mouse.y) * 0.05;
 
-      camera.position.x = mouse.x * 0.9;
-      camera.position.y = 1.2 + mouse.y * 0.6;
+      camera.position.x = mouse.x * 0.6;
+      camera.position.y = 1.15 + mouse.y * 0.35;
       camera.lookAt(0, 0.45, 0);
 
       if (!reducedMotion) {
@@ -614,9 +632,9 @@ const HeroScene3D = () => {
           const count = posAttr.count;
           for (let i = 0; i < count; i++) {
             const angle = (i / count) * Math.PI * 2;
-            const wave = Math.sin(angle * 6 + elapsed * ring.speed * 2.5) * 0.06;
+            const wave = Math.sin(angle * 6 + elapsed * ring.speed * 2.5) * 0.045;
             const r = ring.radius + wave;
-            posAttr.setXYZ(i, Math.cos(angle) * r, Math.sin(angle * 4 + elapsed) * 0.04, Math.sin(angle) * r);
+            posAttr.setXYZ(i, Math.cos(angle) * r, Math.sin(angle * 4 + elapsed) * 0.035, Math.sin(angle) * r);
           }
           posAttr.needsUpdate = true;
           ring.mesh.rotation.y = elapsed * (0.08 + idx * 0.04);
@@ -631,8 +649,8 @@ const HeroScene3D = () => {
           const p = particleSpeeds[i];
           p.angle += p.angularSpeed * 0.015;
           p.y += p.yVel;
-          if (p.y > 3.0) p.y = -1.0;
-          if (p.y < -1.0) p.y = 3.0;
+          if (p.y > 2.6) p.y = -0.9;
+          if (p.y < -0.9) p.y = 2.6;
 
           positions[i * 3] = Math.cos(p.angle) * p.r;
           positions[i * 3 + 1] = p.y;
@@ -642,8 +660,8 @@ const HeroScene3D = () => {
 
         // Floating assessment panels subtle sway & bobbing
         cardMeshes.forEach((card) => {
-          const bob = Math.sin(elapsed * 1.4 + card.phase) * 0.065;
-          const tilt = Math.cos(elapsed * 1.1 + card.phase) * 0.02;
+          const bob = Math.sin(elapsed * 1.4 + card.phase) * 0.05;
+          const tilt = Math.cos(elapsed * 1.1 + card.phase) * 0.015;
           card.mesh.position.y = card.basePos[1] + bob;
           card.mesh.rotation.z = tilt;
         });
@@ -662,6 +680,7 @@ const HeroScene3D = () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('resize', handleResize);
       container.removeEventListener('mousemove', handleMouseMove);
+      container.removeEventListener('mouseleave', handleMouseLeave);
 
       scene.traverse((obj) => {
         if (obj.geometry) obj.geometry.dispose();
@@ -687,19 +706,29 @@ const HeroScene3D = () => {
 
   if (!hasWebGL) {
     return (
-      <img
-        src={CANDIDATE_IMAGES.dashboardHero}
-        alt="MockAI 3D Microphone & AI Analysis Core"
-        className="w-full h-full object-cover"
-      />
+      <div className="relative w-full h-full overflow-hidden rounded-[inherit]">
+        <img
+          src={CANDIDATE_IMAGES.dashboardHero}
+          alt="MockAI 3D Microphone & AI Analysis Core"
+          className="w-full h-full object-cover rounded-[inherit]"
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+        />
+      </div>
     );
   }
 
   return (
-    <div className="relative w-full h-full overflow-hidden select-none">
-      <div ref={containerRef} className="w-full h-full" />
+    <div
+      className="relative w-full h-full overflow-hidden rounded-[inherit] select-none"
+      style={{ isolation: 'isolate' }}
+    >
+      <div
+        ref={containerRef}
+        className="relative w-full h-full overflow-hidden rounded-[inherit]"
+        style={{ width: '100%', height: '100%' }}
+      />
       {!isLoaded && (
-        <div className="absolute inset-0 bg-[#111111] flex items-center justify-center">
+        <div className="absolute inset-0 bg-[#111111] flex items-center justify-center rounded-[inherit]">
           <span className="c-tech-annotation text-orange-400">[INITIALIZING 3D ENGINE...]</span>
         </div>
       )}

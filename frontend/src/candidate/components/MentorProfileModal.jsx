@@ -44,7 +44,7 @@ const MentorProfileModal = ({ mentor, isOpen, onClose, onBook }) => {
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800/60 transition-colors"
+            className="p-1.5 rounded-lg text-neutral-400 hover:text-[var(--c-text)] hover:bg-[var(--c-surface-muted)] transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -57,7 +57,7 @@ const MentorProfileModal = ({ mentor, isOpen, onClose, onBook }) => {
             <div
               className="w-16 h-16 rounded-2xl flex items-center justify-center font-bold text-xl border flex-shrink-0"
               style={{
-                background: '#202020',
+                background: 'var(--c-surface-muted)',
                 color: 'var(--c-accent, #FF6B35)',
                 borderColor: 'var(--c-border, #2A2A2A)',
               }}
@@ -75,7 +75,7 @@ const MentorProfileModal = ({ mentor, isOpen, onClose, onBook }) => {
 
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap mb-1">
-                <h3 className="text-lg font-bold text-white leading-tight">{mentor.name}</h3>
+                <h3 className="text-lg font-bold leading-tight" style={{ color: 'var(--c-text)' }}>{mentor.name}</h3>
                 <span
                   className="text-[10px] font-mono px-2 py-0.5 rounded-full border uppercase"
                   style={{
@@ -88,12 +88,12 @@ const MentorProfileModal = ({ mentor, isOpen, onClose, onBook }) => {
                 </span>
               </div>
 
-              <p className="text-xs text-neutral-300 font-medium">
+              <p className="text-xs font-medium" style={{ color: 'var(--c-text-secondary)' }}>
                 {mentor.title} {mentor.company ? `• ${mentor.company}` : ''}
               </p>
 
               {mentor.experience_years && (
-                <p className="text-xs text-neutral-400 mt-1">
+                <p className="text-xs mt-1" style={{ color: 'var(--c-text-muted)' }}>
                   {mentor.experience_years}+ years industry engineering experience
                 </p>
               )}
@@ -104,9 +104,9 @@ const MentorProfileModal = ({ mentor, isOpen, onClose, onBook }) => {
           <div className="grid grid-cols-3 gap-3">
             <div
               className="p-3 rounded-xl border text-center"
-              style={{ background: '#141414', borderColor: 'var(--c-border, #2A2A2A)' }}
+              style={{ background: 'var(--c-surface-muted)', borderColor: 'var(--c-border, #2A2A2A)' }}
             >
-              <div className="text-[10px] text-neutral-400 uppercase font-mono">Rating</div>
+              <div className="text-[10px] uppercase font-mono" style={{ color: 'var(--c-text-muted)' }}>Rating</div>
               <div className="text-sm font-bold text-[#FF9F1C] flex items-center justify-center gap-1 mt-0.5">
                 <Star className="w-3.5 h-3.5 fill-[#FF9F1C]" />
                 <span>{mentor.rating || '5.0'}</span>
@@ -115,31 +115,31 @@ const MentorProfileModal = ({ mentor, isOpen, onClose, onBook }) => {
 
             <div
               className="p-3 rounded-xl border text-center"
-              style={{ background: '#141414', borderColor: 'var(--c-border, #2A2A2A)' }}
+              style={{ background: 'var(--c-surface-muted)', borderColor: 'var(--c-border, #2A2A2A)' }}
             >
-              <div className="text-[10px] text-neutral-400 uppercase font-mono">Completed</div>
-              <div className="text-sm font-bold text-white mt-0.5">
+              <div className="text-[10px] uppercase font-mono" style={{ color: 'var(--c-text-muted)' }}>Completed</div>
+              <div className="text-sm font-bold mt-0.5" style={{ color: 'var(--c-text)' }}>
                 {mentor.sessions_completed || 0}+ Mocks
               </div>
             </div>
 
             <div
               className="p-3 rounded-xl border text-center"
-              style={{ background: '#141414', borderColor: 'var(--c-border, #2A2A2A)' }}
+              style={{ background: 'var(--c-surface-muted)', borderColor: 'var(--c-border, #2A2A2A)' }}
             >
-              <div className="text-[10px] text-neutral-400 uppercase font-mono">Format</div>
+              <div className="text-[10px] uppercase font-mono" style={{ color: 'var(--c-text-muted)' }}>Format</div>
               <div className="text-sm font-bold text-[#22C55E] mt-0.5">1-on-1 Live</div>
             </div>
           </div>
 
           {/* About & Bio */}
           <div className="space-y-2">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-300">
+            <h4 className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--c-text-secondary)' }}>
               About the Mentor
             </h4>
             <div
-              className="p-4 rounded-xl border text-xs leading-relaxed text-neutral-300 whitespace-pre-wrap"
-              style={{ background: '#141414', borderColor: 'var(--c-border, #2A2A2A)' }}
+              className="p-4 rounded-xl border text-xs leading-relaxed whitespace-pre-wrap"
+              style={{ background: 'var(--c-surface-muted)', borderColor: 'var(--c-border, #2A2A2A)', color: 'var(--c-text-secondary)' }}
             >
               {mentor.bio ||
                 'Experienced senior technical engineer providing comprehensive interview guidance, system design mock sessions, and algorithmic code reviews.'}
@@ -149,7 +149,7 @@ const MentorProfileModal = ({ mentor, isOpen, onClose, onBook }) => {
           {/* Specialization / Expertise Tags */}
           {mentor.specialization && mentor.specialization.length > 0 && (
             <div className="space-y-2">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-300">
+              <h4 className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--c-text-secondary)' }}>
                 Core Domains & Expertise
               </h4>
               <div className="flex items-center gap-1.5 flex-wrap">
@@ -173,7 +173,7 @@ const MentorProfileModal = ({ mentor, isOpen, onClose, onBook }) => {
           {/* Available Slots Preview */}
           {mentor.available_slots && mentor.available_slots.length > 0 && (
             <div className="space-y-2">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-300">
+              <h4 className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--c-text-secondary)' }}>
                 Upcoming Open Slots
               </h4>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -181,9 +181,9 @@ const MentorProfileModal = ({ mentor, isOpen, onClose, onBook }) => {
                   <div
                     key={slot.id}
                     className="p-2 rounded-lg border text-center font-mono text-xs flex items-center justify-between"
-                    style={{ background: '#141414', borderColor: 'var(--c-border, #2A2A2A)' }}
+                    style={{ background: 'var(--c-surface-muted)', borderColor: 'var(--c-border, #2A2A2A)' }}
                   >
-                    <span className="text-neutral-400">{slot.date}</span>
+                    <span style={{ color: 'var(--c-text-muted)' }}>{slot.date}</span>
                     <span className="text-[#FF9F1C] font-semibold">{slot.start_time}</span>
                   </div>
                 ))}
@@ -200,7 +200,7 @@ const MentorProfileModal = ({ mentor, isOpen, onClose, onBook }) => {
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-xs font-semibold text-neutral-400 hover:text-white transition-colors"
+            className="px-4 py-2 text-xs font-semibold text-neutral-500 dark:text-neutral-400 hover:text-[var(--c-text)] transition-colors"
           >
             Close
           </button>

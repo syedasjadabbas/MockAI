@@ -4,6 +4,7 @@ import mockaiNeural3D from './mockai_neural_3d.jpg';
 import mockaiMic3D from './mockai_mic_3d.jpg';
 import mockaiEval3D from './mockai_eval_3d.jpg';
 import mockaiComplete3D from './mockai_complete_3d.jpg';
+import mockaiCtaBg from './mockai_cta_bg.png';
 
 export const CANDIDATE_IMAGES = {
   // Flagship 3D AI Analysis Orb & Acoustic Frequency System for Dashboard
@@ -18,4 +19,6 @@ export const CANDIDATE_IMAGES = {
   evalChart: mockaiEval3D,
   // Glass shield checkmark — InterviewCompletion
   completionSeal: mockaiComplete3D,
+  // Cinematic acoustic neural banner — Landing Page CTA Section
+  ctaBanner: mockaiCtaBg,
 };

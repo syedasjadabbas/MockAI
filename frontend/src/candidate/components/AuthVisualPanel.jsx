@@ -50,17 +50,17 @@ const AuthVisualPanel = () => {
         <div className="p-6 rounded-lg border relative group"
           style={{
             background: 'rgba(10, 16, 32, 0.75)',
-            borderColor: 'var(--c-border)',
+            borderColor: 'rgba(255, 255, 255, 0.12)',
             backdropFilter: 'blur(8px)',
           }}
         >
           <CornerReticles size={10} color="var(--c-accent)" />
           
           <div className="flex items-center justify-between mb-2">
-            <p className="c-eyebrow">Practice Platform</p>
+            <p className="c-eyebrow" style={{ color: '#FF9F1C' }}>Practice Platform</p>
           </div>
           
-          <h1 className="c-heading text-2xl xl:text-3xl font-bold leading-tight mb-4 text-white">
+          <h1 className="c-heading text-2xl xl:text-3xl font-bold leading-tight mb-4" style={{ color: '#FFFFFF' }}>
             Practice before it matters.
           </h1>
           

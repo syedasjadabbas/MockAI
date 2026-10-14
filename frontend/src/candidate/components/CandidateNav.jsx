@@ -212,7 +212,7 @@ const CandidateNav = () => {
                 <Link
                   to="/"
                   onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-2 px-3 py-2 transition-colors hover:bg-white/[0.04]"
+                  className="flex items-center gap-2 px-3 py-2 transition-colors hover:bg-[var(--c-surface-muted)] hover:text-[var(--c-text)] rounded"
                   style={{ color: 'var(--c-text-secondary)' }}
                 >
                   <Home className="w-3.5 h-3.5 text-[#FF6B35]" />
@@ -222,7 +222,7 @@ const CandidateNav = () => {
                 <Link
                   to="/profile"
                   onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-2 px-3 py-2 transition-colors hover:bg-white/[0.04]"
+                  className="flex items-center gap-2 px-3 py-2 transition-colors hover:bg-[var(--c-surface-muted)] hover:text-[var(--c-text)] rounded"
                   style={{ color: 'var(--c-text-secondary)' }}
                 >
                   <User className="w-3.5 h-3.5" style={{ color: 'var(--c-accent)' }} />
@@ -232,7 +232,7 @@ const CandidateNav = () => {
                 <Link
                   to="/mentors"
                   onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-2 px-3 py-2 transition-colors hover:bg-white/[0.04]"
+                  className="flex items-center gap-2 px-3 py-2 transition-colors hover:bg-[var(--c-surface-muted)] hover:text-[var(--c-text)] rounded"
                   style={{ color: 'var(--c-text-secondary)' }}
                 >
                   <Users className="w-3.5 h-3.5 text-[#FF6B35]" />
@@ -242,7 +242,7 @@ const CandidateNav = () => {
                 <Link
                   to="/history"
                   onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-2 px-3 py-2 transition-colors hover:bg-white/[0.04]"
+                  className="flex items-center gap-2 px-3 py-2 transition-colors hover:bg-[var(--c-surface-muted)] hover:text-[var(--c-text)] rounded"
                   style={{ color: 'var(--c-text-secondary)' }}
                 >
                   <History className="w-3.5 h-3.5" style={{ color: 'var(--c-accent-highlight)' }} />
@@ -252,7 +252,7 @@ const CandidateNav = () => {
                 <Link
                   to="/progress"
                   onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-2 px-3 py-2 transition-colors hover:bg-white/[0.04]"
+                  className="flex items-center gap-2 px-3 py-2 transition-colors hover:bg-[var(--c-surface-muted)] hover:text-[var(--c-text)] rounded"
                   style={{ color: 'var(--c-text-secondary)' }}
                 >
                   <TrendingUp className="w-3.5 h-3.5 text-green-500" />

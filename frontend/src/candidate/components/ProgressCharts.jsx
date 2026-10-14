@@ -20,8 +20,8 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarEleme
 const ACCENT = '0, 102, 255';
 const SUCCESS = '16, 185, 129';
 
-const gridColor = () => '#243044';
-const tickColor = () => '#94A3B8';
+const getGridColor = (isDark) => (isDark ? '#243044' : '#E5E0D8');
+const getTickColor = (isDark) => (isDark ? '#94A3B8' : '#52525B');
 
 // Progress Awareness Support: score trend over completed interviews.
 export const ScoreTrendChart = ({ data }) => {
@@ -61,25 +61,25 @@ export const ScoreTrendChart = ({ data }) => {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      legend: { 
-        labels: { 
-          color: tickColor(), 
-          font: { size: 11, weight: '600', family: 'Inter' } 
-        } 
+      legend: {
+        labels: {
+          color: getTickColor(isDark),
+          font: { size: 11, weight: '600', family: 'Inter' }
+        }
       },
       tooltip: {
-        backgroundColor: '#111827',
-        titleColor: '#FFFFFF',
-        bodyColor: '#94A3B8',
-        borderColor: '#243044',
+        backgroundColor: isDark ? '#111827' : '#FFFFFF',
+        titleColor: isDark ? '#FFFFFF' : '#181818',
+        bodyColor: isDark ? '#94A3B8' : '#555555',
+        borderColor: isDark ? '#243044' : '#E5E0D8',
         borderWidth: 1,
         padding: 8,
         cornerRadius: 6,
       }
     },
     scales: {
-      x: { grid: { color: gridColor() }, ticks: { color: tickColor(), font: { size: 11, family: 'Inter' } } },
-      y: { min: 0, max: 100, grid: { color: gridColor() }, ticks: { color: tickColor(), font: { size: 11, family: 'Inter' } } },
+      x: { grid: { color: getGridColor(isDark) }, ticks: { color: getTickColor(isDark), font: { size: 11, family: 'Inter' } } },
+      y: { min: 0, max: 100, grid: { color: getGridColor(isDark) }, ticks: { color: getTickColor(isDark), font: { size: 11, family: 'Inter' } } },
     },
   };
 
@@ -110,18 +110,18 @@ export const CategoryBreakdownChart = ({ data }) => {
     plugins: { 
       legend: { display: false },
       tooltip: {
-        backgroundColor: '#111827',
-        titleColor: '#FFFFFF',
-        bodyColor: '#94A3B8',
-        borderColor: '#243044',
+        backgroundColor: isDark ? '#111827' : '#FFFFFF',
+        titleColor: isDark ? '#FFFFFF' : '#181818',
+        bodyColor: isDark ? '#94A3B8' : '#555555',
+        borderColor: isDark ? '#243044' : '#E5E0D8',
         borderWidth: 1,
         padding: 8,
         cornerRadius: 6,
       }
     },
     scales: {
-      x: { grid: { display: false }, ticks: { color: tickColor(), font: { size: 11, family: 'Inter' } } },
-      y: { min: 0, max: 100, grid: { color: gridColor() }, ticks: { color: tickColor(), font: { size: 11, family: 'Inter' } } },
+      x: { grid: { display: false }, ticks: { color: getTickColor(isDark), font: { size: 11, family: 'Inter' } } },
+      y: { min: 0, max: 100, grid: { color: getGridColor(isDark) }, ticks: { color: getTickColor(isDark), font: { size: 11, family: 'Inter' } } },
     },
   };
 

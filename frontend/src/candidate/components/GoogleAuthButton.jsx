@@ -170,11 +170,11 @@ export default function GoogleAuthButton({
           type="button"
           disabled={disabled || loading}
           onClick={handleCustomFallbackClick}
-          className="w-full flex items-center justify-center py-2.5 px-4 rounded-md text-xs font-semibold border transition-colors hover:bg-white/[0.04] disabled:opacity-60 disabled:cursor-not-allowed"
+          className="w-full flex items-center justify-center py-2.5 px-4 rounded-md text-xs font-semibold border transition-colors hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed shadow-sm"
           style={{
-            backgroundColor: '#121A2A',
+            backgroundColor: isDark ? '#121A2A' : '#FFFFFF',
             borderColor: 'var(--c-border)',
-            color: '#FFFFFF',
+            color: isDark ? '#FFFFFF' : '#181818',
           }}
         >
           {loading ? (

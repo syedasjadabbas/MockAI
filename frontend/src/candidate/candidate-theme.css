@@ -292,29 +292,24 @@ html.light .candidate-app,
   transform: translateY(1px) scale(0.985);
 }
 
-/* Secondary Button — Sleek Dark Glass Surface */
+/* Secondary Button — Sleek Solid/Glass Surface */
 .candidate-app .c-btn-secondary {
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--c-text);
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04),
-              0 1px 2px rgba(0, 0, 0, 0.25);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: var(--c-btn-secondary-bg);
+  color: var(--c-btn-secondary-text);
+  border: 1px solid var(--c-border);
+  box-shadow: var(--c-shadow-sm);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .candidate-app .c-btn-secondary:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.16);
-  color: #FFFFFF;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08),
-              0 2px 4px rgba(0, 0, 0, 0.3);
+  background: var(--c-btn-secondary-hover);
+  border-color: var(--c-border-strong);
+  color: var(--c-btn-secondary-text);
   transform: translateY(-0.5px);
 }
 
 .candidate-app .c-btn-secondary:active:not(:disabled) {
-  background: rgba(255, 255, 255, 0.03);
-  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.2);
+  background: var(--c-btn-secondary-bg);
   transform: translateY(1px) scale(0.985);
 }
 
@@ -385,37 +380,36 @@ html.light .candidate-app,
   font-weight: 500;
   font-size: 11px;
   padding: 2px 8px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--c-text-secondary);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--c-badge-muted-border, var(--c-border));
+  background: var(--c-badge-muted-bg, var(--c-surface-muted));
+  color: var(--c-badge-muted-text, var(--c-text-secondary));
   white-space: nowrap;
 }
 
 .candidate-app .c-badge-accent {
-  background: rgba(234, 88, 12, 0.10);
-  color: #FB923C;
-  border-color: rgba(234, 88, 12, 0.22);
+  background: var(--c-badge-accent-bg);
+  color: var(--c-badge-accent-text);
+  border-color: var(--c-badge-accent-border);
 }
 .candidate-app .c-badge-success {
-  background: rgba(34, 197, 94, 0.08);
-  color: #4ADE80;
-  border-color: rgba(34, 197, 94, 0.18);
+  background: var(--c-badge-success-bg);
+  color: var(--c-badge-success-text);
+  border-color: var(--c-badge-success-border);
 }
 .candidate-app .c-badge-warning {
-  background: rgba(245, 158, 11, 0.08);
-  color: #FBBF24;
-  border-color: rgba(245, 158, 11, 0.18);
+  background: var(--c-badge-warning-bg);
+  color: var(--c-badge-warning-text);
+  border-color: var(--c-badge-warning-border);
 }
 .candidate-app .c-badge-danger {
-  background: rgba(239, 68, 68, 0.08);
-  color: #F87171;
-  border-color: rgba(239, 68, 68, 0.18);
+  background: var(--c-badge-danger-bg);
+  color: var(--c-badge-danger-text);
+  border-color: var(--c-badge-danger-border);
 }
 .candidate-app .c-badge-muted {
-  background: rgba(255, 255, 255, 0.03);
-  color: #A3A3A3;
-  border-color: rgba(255, 255, 255, 0.07);
+  background: var(--c-badge-muted-bg);
+  color: var(--c-badge-muted-text);
+  border-color: var(--c-badge-muted-border);
 }
 
 /* ===================== Focus Ring ===================== */

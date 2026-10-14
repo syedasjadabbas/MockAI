@@ -61,7 +61,7 @@ const PublicNav = () => {
                 key={link.label}
                 href={link.href}
                 onClick={(e) => handleScrollTo(e, link.href)}
-                className="px-3.5 py-1.5 text-xs font-semibold rounded-md transition-colors hover:text-white"
+                className="px-3.5 py-1.5 text-xs font-semibold rounded-md transition-colors hover:text-[var(--c-text)] hover:bg-[var(--c-surface-muted)]"
                 style={{
                   color: 'var(--c-text-secondary)',
                 }}
@@ -76,7 +76,7 @@ const PublicNav = () => {
             2. RIGHT UTILITIES (Log In / Dashboard, Start Practicing, Theme)
            =================================================================== */}
         <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
-          <ThemeToggle className="!p-2 !rounded-lg !border-white/[0.08] !bg-white/[0.03] hover:!bg-white/[0.07] !text-zinc-400 hover:!text-amber-400 transition-all active:scale-95" />
+          <ThemeToggle className="!p-2 !rounded-lg" />
 
           {authed ? (
             /* Logged in candidate quick dashboard link */
@@ -93,7 +93,7 @@ const PublicNav = () => {
               to="/login"
               className="c-btn c-btn-secondary px-3 py-1.5 sm:px-3.5 sm:py-2 text-xs font-medium rounded-lg flex items-center gap-1.5 group"
             >
-              <LogIn className="w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-200 transition-colors" />
+              <LogIn className="w-3.5 h-3.5 text-[var(--c-text-muted)] group-hover:text-[var(--c-text)] transition-colors" />
               <span>Log In</span>
             </Link>
           )}
@@ -113,7 +113,7 @@ const PublicNav = () => {
             className="md:hidden c-btn c-btn-secondary !p-2 !rounded-lg transition-colors"
             aria-label="Toggle navigation menu"
           >
-            {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4 text-zinc-300" />}
+            {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4 text-[var(--c-text)]" />}
           </button>
         </div>
       </div>
@@ -135,7 +135,7 @@ const PublicNav = () => {
                 key={link.label}
                 href={link.href}
                 onClick={(e) => handleScrollTo(e, link.href)}
-                className="block px-3 py-2 text-xs font-semibold rounded-md text-[#A3A3A3] hover:text-white hover:bg-white/[0.04] transition-colors"
+                className="block px-3 py-2 text-xs font-semibold rounded-md text-[var(--c-text-secondary)] hover:text-[var(--c-text)] hover:bg-[var(--c-surface-muted)] transition-colors"
               >
                 {link.label}
               </a>

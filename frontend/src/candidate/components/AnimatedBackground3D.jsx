@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
+import { useTheme } from '../../context/ThemeContext';
 
 /**
  * Three.js Subtle 3D Animated Background across MockAI
@@ -14,6 +15,7 @@ import * as THREE from 'three';
 const AnimatedBackground3D = () => {
   const containerRef = useRef(null);
   const [hasWebGL, setHasWebGL] = useState(true);
+  const { isDark } = useTheme();
 
   useEffect(() => {
     const container = containerRef.current;
@@ -89,11 +91,11 @@ const AnimatedBackground3D = () => {
 
     // Warm orange & subtle amber node points
     const nodeMaterial = new THREE.PointsMaterial({
-      color: '#FF6B35',
+      color: isDark ? '#FF6B35' : '#EA580C',
       size: 0.18,
       transparent: true,
-      opacity: 0.45,
-      blending: THREE.AdditiveBlending,
+      opacity: isDark ? 0.45 : 0.55,
+      blending: isDark ? THREE.AdditiveBlending : THREE.NormalBlending,
     });
     const nodePoints = new THREE.Points(nodeGeometry, nodeMaterial);
     bgGroup.add(nodePoints);
@@ -110,13 +112,13 @@ const AnimatedBackground3D = () => {
     const lineMaterial = new THREE.LineBasicMaterial({
       vertexColors: true,
       transparent: true,
-      opacity: 0.35,
-      blending: THREE.AdditiveBlending,
+      opacity: isDark ? 0.35 : 0.45,
+      blending: isDark ? THREE.AdditiveBlending : THREE.NormalBlending,
     });
     const lineSegments = new THREE.LineSegments(lineGeometry, lineMaterial);
     bgGroup.add(lineSegments);
 
-    const baseColor = new THREE.Color('#FF6B35');
+    const baseColor = new THREE.Color(isDark ? '#FF6B35' : '#EA580C');
 
     // =========================================================================
     // 3. ABSTRACT ROTATING 3D RINGS / ORBITS
@@ -305,7 +307,7 @@ const AnimatedBackground3D = () => {
       }
       renderer.dispose();
     };
-  }, []);
+  }, [isDark]);
 
   if (!hasWebGL) {
     return (
@@ -323,10 +325,10 @@ const AnimatedBackground3D = () => {
   return (
     <div
       ref={containerRef}
-      className="fixed inset-0 pointer-events-none z-0 overflow-hidden select-none"
+      className="fixed inset-0 pointer-events-none z-0 overflow-hidden select-none transition-opacity duration-300"
       style={{
-        opacity: 0.38,
-        mixBlendMode: 'screen',
+        opacity: isDark ? 0.38 : 0.45,
+        mixBlendMode: isDark ? 'screen' : 'normal',
       }}
       aria-hidden="true"
     />

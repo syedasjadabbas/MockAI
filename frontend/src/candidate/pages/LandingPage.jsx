@@ -315,12 +315,12 @@ const AnimatedScoreMeter = ({ label, targetPercent, color = '#FF6B35' }) => {
   return (
     <div ref={containerRef}>
       <div className="flex justify-between text-[11px] font-mono mb-1.5">
-        <span className="text-zinc-300">{label}</span>
-        <span className="font-semibold tabular-nums text-zinc-200">
+        <span className="text-zinc-600 dark:text-zinc-300 font-medium">{label}</span>
+        <span className="font-semibold tabular-nums text-zinc-900 dark:text-zinc-200">
           {currentPercent}%
         </span>
       </div>
-      <div className="w-full h-1.5 rounded-full bg-white/[0.06] border border-white/[0.04] overflow-hidden">
+      <div className="w-full h-1.5 rounded-full bg-slate-200 dark:bg-white/[0.06] border border-slate-300 dark:border-white/[0.04] overflow-hidden">
         <div
           className="h-full rounded-full transition-all duration-75"
           style={{
@@ -369,7 +369,7 @@ const LandingPage = () => {
 
   return (
     <div
-      className="candidate-app min-h-screen flex flex-col font-sans relative selection:bg-[#FF6B35]/30 selection:text-[#FFFFFF]"
+      className="candidate-app min-h-screen flex flex-col font-sans relative selection:bg-[#FF6B35]/30 selection:text-[#FFFFFF] overflow-x-hidden"
       style={{ background: 'var(--c-bg)' }}
     >
       {/* 3D Ambient Background Layer */}
@@ -438,23 +438,25 @@ const LandingPage = () => {
               </div>
 
               {/* Right Flagship Interactive 3D Hero Visual */}
-              <div className="lg:col-span-5 relative flex items-center justify-center">
+              <div className="lg:col-span-5 relative flex items-center justify-center w-full max-w-lg lg:max-w-none mx-auto">
                 <div
                   className="relative w-full aspect-[4/3] rounded-xl overflow-hidden border shadow-2xl"
                   style={{
                     borderColor: 'var(--c-border)',
                     background: 'var(--c-surface)',
+                    isolation: 'isolate',
                   }}
                 >
                   <CornerReticles size={12} color="var(--c-accent)" />
                   
                   <Suspense
                     fallback={
-                      <div className="w-full h-full flex items-center justify-center bg-[#111111]">
+                      <div className="w-full h-full flex items-center justify-center bg-[#111111] rounded-xl overflow-hidden">
                         <img
                           src={CANDIDATE_IMAGES.dashboardHero}
                           alt="MockAI 3D Microphone & AI Analysis Core"
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover rounded-xl"
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                         />
                       </div>
                     }
@@ -489,7 +491,7 @@ const LandingPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               
               {/* Step 01 */}
-              <div className="flex flex-col justify-between p-5 rounded-xl border border-white/[0.07] bg-white/[0.02] hover:border-white/[0.14] transition-all duration-200 space-y-4 group">
+              <div className="flex flex-col justify-between p-5 rounded-xl border border-[var(--c-border)] bg-[var(--c-surface-card)] hover:border-[var(--c-border-strong)] transition-all duration-200 space-y-4 group shadow-sm">
                 <div>
                   {/* Step 1 Visual — Interactive Track Selection Matrix */}
                   <div
@@ -567,7 +569,7 @@ const LandingPage = () => {
               </div>
 
               {/* Step 02 */}
-              <div className="flex flex-col justify-between p-5 rounded-xl border border-white/[0.07] bg-white/[0.02] hover:border-white/[0.14] transition-all duration-200 space-y-4 group">
+              <div className="flex flex-col justify-between p-5 rounded-xl border border-[var(--c-border)] bg-[var(--c-surface-card)] hover:border-[var(--c-border-strong)] transition-all duration-200 space-y-4 group shadow-sm">
                 <div>
                   {/* Step Image */}
                   <div className="relative aspect-video rounded-lg overflow-hidden border border-white/[0.08] mb-4 group">
@@ -615,7 +617,7 @@ const LandingPage = () => {
               </div>
 
               {/* Step 03 */}
-              <div className="flex flex-col justify-between p-5 rounded-xl border border-white/[0.07] bg-white/[0.02] hover:border-white/[0.14] transition-all duration-200 space-y-4 group">
+              <div className="flex flex-col justify-between p-5 rounded-xl border border-[var(--c-border)] bg-[var(--c-surface-card)] hover:border-[var(--c-border-strong)] transition-all duration-200 space-y-4 group shadow-sm">
                 <div>
                   {/* Step Image */}
                   <div className="relative aspect-video rounded-lg overflow-hidden border border-white/[0.08] mb-4 group">
@@ -780,10 +782,10 @@ const LandingPage = () => {
               <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4">
                 
                 {/* 01 • CONTENT */}
-                <div className="p-4 rounded-xl border border-white/[0.07] bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/[0.14] transition-all duration-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] space-y-2.5 group">
+                <div className="p-4 rounded-xl border border-[var(--c-border)] bg-[var(--c-surface-card)] hover:bg-[var(--c-surface-muted)] hover:border-[var(--c-border-strong)] transition-all duration-200 space-y-2.5 group shadow-sm">
                   <div className="flex items-center justify-between">
-                    <span className="font-mono text-[11px] font-medium text-zinc-400 tracking-wider">01 • CONTENT</span>
-                    <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-medium px-2 py-0.5 rounded-md bg-white/[0.04] text-zinc-300 border border-white/[0.08] shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+                    <span className="font-mono text-[11px] font-medium text-zinc-500 dark:text-zinc-400 tracking-wider">01 • CONTENT</span>
+                    <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-medium px-2 py-0.5 rounded-md bg-slate-100 dark:bg-white/[0.04] text-zinc-700 dark:text-zinc-300 border border-slate-200 dark:border-white/[0.08]">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-400/80" />
                       Accuracy %
                     </span>
@@ -797,10 +799,10 @@ const LandingPage = () => {
                 </div>
 
                 {/* 02 • DELIVERY */}
-                <div className="p-4 rounded-xl border border-white/[0.07] bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/[0.14] transition-all duration-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] space-y-2.5 group">
+                <div className="p-4 rounded-xl border border-[var(--c-border)] bg-[var(--c-surface-card)] hover:bg-[var(--c-surface-muted)] hover:border-[var(--c-border-strong)] transition-all duration-200 space-y-2.5 group shadow-sm">
                   <div className="flex items-center justify-between">
-                    <span className="font-mono text-[11px] font-medium text-zinc-400 tracking-wider">02 • DELIVERY</span>
-                    <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-medium px-2 py-0.5 rounded-md bg-white/[0.04] text-zinc-300 border border-white/[0.08] shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+                    <span className="font-mono text-[11px] font-medium text-zinc-500 dark:text-zinc-400 tracking-wider">02 • DELIVERY</span>
+                    <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-medium px-2 py-0.5 rounded-md bg-slate-100 dark:bg-white/[0.04] text-zinc-700 dark:text-zinc-300 border border-slate-200 dark:border-white/[0.08]">
                       <span className="w-1.5 h-1.5 rounded-full bg-sky-400/80" />
                       Fluency & WPM
                     </span>
@@ -814,10 +816,10 @@ const LandingPage = () => {
                 </div>
 
                 {/* 03 • VISION */}
-                <div className="p-4 rounded-xl border border-white/[0.07] bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/[0.14] transition-all duration-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] space-y-2.5 group">
+                <div className="p-4 rounded-xl border border-[var(--c-border)] bg-[var(--c-surface-card)] hover:bg-[var(--c-surface-muted)] hover:border-[var(--c-border-strong)] transition-all duration-200 space-y-2.5 group shadow-sm">
                   <div className="flex items-center justify-between">
-                    <span className="font-mono text-[11px] font-medium text-zinc-400 tracking-wider">03 • VISION</span>
-                    <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-medium px-2 py-0.5 rounded-md bg-white/[0.04] text-zinc-300 border border-white/[0.08] shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+                    <span className="font-mono text-[11px] font-medium text-zinc-500 dark:text-zinc-400 tracking-wider">03 • VISION</span>
+                    <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-medium px-2 py-0.5 rounded-md bg-slate-100 dark:bg-white/[0.04] text-zinc-700 dark:text-zinc-300 border border-slate-200 dark:border-white/[0.08]">
                       <span className="w-1.5 h-1.5 rounded-full bg-indigo-400/80" />
                       Face Tracking
                     </span>
@@ -831,10 +833,10 @@ const LandingPage = () => {
                 </div>
 
                 {/* 04 • BEHAVIOR */}
-                <div className="p-4 rounded-xl border border-white/[0.07] bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/[0.14] transition-all duration-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] space-y-2.5 group">
+                <div className="p-4 rounded-xl border border-[var(--c-border)] bg-[var(--c-surface-card)] hover:bg-[var(--c-surface-muted)] hover:border-[var(--c-border-strong)] transition-all duration-200 space-y-2.5 group shadow-sm">
                   <div className="flex items-center justify-between">
-                    <span className="font-mono text-[11px] font-medium text-zinc-400 tracking-wider">04 • BEHAVIOR</span>
-                    <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-medium px-2 py-0.5 rounded-md bg-white/[0.04] text-zinc-300 border border-white/[0.08] shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+                    <span className="font-mono text-[11px] font-medium text-zinc-500 dark:text-zinc-400 tracking-wider">04 • BEHAVIOR</span>
+                    <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-medium px-2 py-0.5 rounded-md bg-slate-100 dark:bg-white/[0.04] text-zinc-700 dark:text-zinc-300 border border-slate-200 dark:border-white/[0.08]">
                       <span className="w-1.5 h-1.5 rounded-full bg-violet-400/80" />
                       Composure Index
                     </span>
@@ -848,10 +850,10 @@ const LandingPage = () => {
                 </div>
 
                 {/* 05 • STRUCTURE */}
-                <div className="p-4 rounded-xl border border-white/[0.07] bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/[0.14] transition-all duration-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] space-y-2.5 group">
+                <div className="p-4 rounded-xl border border-[var(--c-border)] bg-[var(--c-surface-card)] hover:bg-[var(--c-surface-muted)] hover:border-[var(--c-border-strong)] transition-all duration-200 space-y-2.5 group shadow-sm">
                   <div className="flex items-center justify-between">
-                    <span className="font-mono text-[11px] font-medium text-zinc-400 tracking-wider">05 • STRUCTURE</span>
-                    <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-medium px-2 py-0.5 rounded-md bg-white/[0.04] text-zinc-300 border border-white/[0.08] shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+                    <span className="font-mono text-[11px] font-medium text-zinc-500 dark:text-zinc-400 tracking-wider">05 • STRUCTURE</span>
+                    <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-medium px-2 py-0.5 rounded-md bg-slate-100 dark:bg-white/[0.04] text-zinc-700 dark:text-zinc-300 border border-slate-200 dark:border-white/[0.08]">
                       <span className="w-1.5 h-1.5 rounded-full bg-amber-400/80" />
                       Scope Coverage
                     </span>
@@ -865,10 +867,10 @@ const LandingPage = () => {
                 </div>
 
                 {/* 06 • SYNTHESIS */}
-                <div className="p-4 rounded-xl border border-white/[0.07] bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/[0.14] transition-all duration-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] space-y-2.5 group">
+                <div className="p-4 rounded-xl border border-[var(--c-border)] bg-[var(--c-surface-card)] hover:bg-[var(--c-surface-muted)] hover:border-[var(--c-border-strong)] transition-all duration-200 space-y-2.5 group shadow-sm">
                   <div className="flex items-center justify-between">
-                    <span className="font-mono text-[11px] font-medium text-zinc-400 tracking-wider">06 • SYNTHESIS</span>
-                    <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-medium px-2 py-0.5 rounded-md bg-white/[0.04] text-zinc-300 border border-white/[0.08] shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+                    <span className="font-mono text-[11px] font-medium text-zinc-500 dark:text-zinc-400 tracking-wider">06 • SYNTHESIS</span>
+                    <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-medium px-2 py-0.5 rounded-md bg-slate-100 dark:bg-white/[0.04] text-zinc-700 dark:text-zinc-300 border border-slate-200 dark:border-white/[0.08]">
                       <span className="w-1.5 h-1.5 rounded-full bg-orange-400/80" />
                       0–100 Score
                     </span>
@@ -945,7 +947,9 @@ const LandingPage = () => {
                     borderColor: 'var(--c-border)',
                   }}
                 >
-                  <div className="w-9 h-9 rounded-md bg-[#181818] border border-[#2E2E2E] flex items-center justify-center shrink-0 text-[#FF6B35]">
+                  <div className="w-9 h-9 rounded-md flex items-center justify-center shrink-0 border"
+                    style={{ background: 'var(--c-surface-muted)', borderColor: 'var(--c-border)', color: 'var(--c-accent)' }}
+                  >
                     <Clock className="w-4 h-4" />
                   </div>
                   <div className="space-y-1">
@@ -964,7 +968,9 @@ const LandingPage = () => {
                     borderColor: 'var(--c-border)',
                   }}
                 >
-                  <div className="w-9 h-9 rounded-md bg-[#181818] border border-[#2E2E2E] flex items-center justify-center shrink-0 text-[#FF6B35]">
+                  <div className="w-9 h-9 rounded-md flex items-center justify-center shrink-0 border"
+                    style={{ background: 'var(--c-surface-muted)', borderColor: 'var(--c-border)', color: 'var(--c-accent)' }}
+                  >
                     <Video className="w-4 h-4" />
                   </div>
                   <div className="space-y-1">
@@ -983,7 +989,9 @@ const LandingPage = () => {
                     borderColor: 'var(--c-border)',
                   }}
                 >
-                  <div className="w-9 h-9 rounded-md bg-[#181818] border border-[#2E2E2E] flex items-center justify-center shrink-0 text-[#FF6B35]">
+                  <div className="w-9 h-9 rounded-md flex items-center justify-center shrink-0 border"
+                    style={{ background: 'var(--c-surface-muted)', borderColor: 'var(--c-border)', color: 'var(--c-accent)' }}
+                  >
                     <FileCheck2 className="w-4 h-4" />
                   </div>
                   <div className="space-y-1">
@@ -1002,7 +1010,9 @@ const LandingPage = () => {
                     borderColor: 'var(--c-border)',
                   }}
                 >
-                  <div className="w-9 h-9 rounded-md bg-[#181818] border border-[#2E2E2E] flex items-center justify-center shrink-0 text-[#FF6B35]">
+                  <div className="w-9 h-9 rounded-md flex items-center justify-center shrink-0 border"
+                    style={{ background: 'var(--c-surface-muted)', borderColor: 'var(--c-border)', color: 'var(--c-accent)' }}
+                  >
                     <TrendingUp className="w-4 h-4" />
                   </div>
                   <div className="space-y-1">
@@ -1033,14 +1043,14 @@ const LandingPage = () => {
                   />
                   
                   {/* Floating Telemetry Badge */}
-                  <div className="p-4 border-t space-y-2" style={{ borderColor: 'var(--c-border)', background: '#141414' }}>
+                  <div className="p-4 border-t space-y-2" style={{ borderColor: 'var(--c-border)', background: 'var(--c-surface)' }}>
                     <div className="flex items-center justify-between text-xs font-mono">
-                      <span className="text-zinc-300 font-medium px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.08] text-[10.5px]">VERIFIED_SIMULATION</span>
+                      <span className="font-medium px-2 py-0.5 rounded-md text-[10.5px] bg-slate-100 dark:bg-white/[0.04] text-zinc-700 dark:text-zinc-300 border border-slate-200 dark:border-white/[0.08]">VERIFIED_SIMULATION</span>
                       <span className="text-emerald-400 font-medium text-[10.5px] flex items-center gap-1.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> PASS_RATE +48%
                       </span>
                     </div>
-                    <p className="text-[11px] text-[#A3A3A3] leading-relaxed">
+                    <p className="text-[11px] leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
                       Candidates using MockAI's structured rubric show measurable improvements in response conciseness and technical articulation within 3 practice sessions.
                     </p>
                   </div>
@@ -1055,24 +1065,62 @@ const LandingPage = () => {
         {/* ===================================================================
             SECTION 5 — FINAL CTA & FOOTER
            =================================================================== */}
-        <section className="py-20 sm:py-28" style={{ background: 'var(--c-bg-subtle)' }}>
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center space-y-6">
+        <section
+          className="relative py-24 sm:py-32 overflow-hidden border-t"
+          style={{ borderColor: 'var(--c-border)', background: 'var(--c-bg)' }}
+        >
+          {/* Relevant Cinematic Background Image & Lighting Overlays */}
+          <div className="absolute inset-0 select-none pointer-events-none overflow-hidden">
+            <img
+              src={CANDIDATE_IMAGES.ctaBanner}
+              alt=""
+              className="w-full h-full object-cover object-center opacity-75"
+            />
+            {/* Radial Vignette for High-Contrast Text Legibility */}
+            <div
+              className="absolute inset-0"
+              style={{
+                background: 'radial-gradient(circle at center, rgba(17, 17, 17, 0.50) 0%, rgba(17, 17, 17, 0.80) 70%, var(--c-bg) 100%)',
+              }}
+            />
+            {/* Top & Bottom Soft Feathering into Neighboring Sections */}
+            <div
+              className="absolute inset-x-0 top-0 h-24 pointer-events-none"
+              style={{
+                background: 'linear-gradient(to bottom, var(--c-bg), transparent)',
+              }}
+            />
+            <div
+              className="absolute inset-x-0 bottom-0 h-24 pointer-events-none"
+              style={{
+                background: 'linear-gradient(to top, var(--c-bg), transparent)',
+              }}
+            />
+          </div>
+
+          <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 text-center space-y-6">
             
             <p className="c-eyebrow text-orange-400 font-semibold tracking-wider">Get Ready Today</p>
             
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight" style={{ color: 'var(--c-text)' }}>
+            <h2
+              className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight"
+              style={{ color: '#FFFFFF' }}
+            >
               Your next interview <br />
               starts with practice.
             </h2>
             
-            <p className="text-sm sm:text-base max-w-lg mx-auto leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
+            <p
+              className="text-sm sm:text-base max-w-lg mx-auto leading-relaxed"
+              style={{ color: 'rgba(255, 255, 255, 0.90)' }}
+            >
               Build confidence, master technical articulation, and eliminate surprise before your real interview.
             </p>
 
             <div className="pt-2 flex justify-center">
               <Link
                 to={ctaDestination}
-                className="c-btn c-btn-primary px-8 py-3.5 text-sm font-semibold rounded-xl shadow-lg flex items-center gap-2.5 select-none group"
+                className="c-btn c-btn-primary px-8 py-3.5 text-sm font-semibold rounded-xl shadow-xl flex items-center gap-2.5 select-none group"
               >
                 <span>Start Practicing</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
@@ -1086,7 +1134,7 @@ const LandingPage = () => {
         <footer className="border-t py-8 mt-auto" style={{ borderColor: 'var(--c-border)', background: 'var(--c-bg)' }}>
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs" style={{ color: 'var(--c-text-muted)' }}>
             <div className="flex items-center gap-2">
-              <span className="font-bold text-[#F5F5F5]">MockAI</span>
+              <span className="font-bold" style={{ color: 'var(--c-text)' }}>MockAI</span>
               <span>•</span>
               <span>AI-Powered Interview Practice Platform</span>
             </div>

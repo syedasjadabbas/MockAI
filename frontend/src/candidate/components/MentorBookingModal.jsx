@@ -123,7 +123,7 @@ const MentorBookingModal = ({ mentor, isOpen, onClose, onSuccess }) => {
               <Calendar className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-white">
+              <h3 className="text-base font-bold" style={{ color: 'var(--c-text)' }}>
                 {bookingSuccess ? 'Session Confirmed' : 'Schedule Mentorship Session'}
               </h3>
               <p className="text-xs" style={{ color: 'var(--c-text-secondary, #A3A3A3)' }}>
@@ -134,7 +134,7 @@ const MentorBookingModal = ({ mentor, isOpen, onClose, onSuccess }) => {
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800/60 transition-colors"
+            className="p-1.5 rounded-lg text-neutral-400 hover:text-[var(--c-text)] hover:bg-[var(--c-surface-muted)] transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -157,7 +157,7 @@ const MentorBookingModal = ({ mentor, isOpen, onClose, onSuccess }) => {
               </div>
 
               <div className="space-y-1">
-                <h4 className="text-lg font-bold text-white">Interview Session Booked</h4>
+                <h4 className="text-lg font-bold" style={{ color: 'var(--c-text)' }}>Interview Session Booked</h4>
                 <p className="text-xs" style={{ color: 'var(--c-text-secondary, #A3A3A3)' }}>
                   Your appointment request has been scheduled with {mentor.name}.
                 </p>
@@ -166,24 +166,24 @@ const MentorBookingModal = ({ mentor, isOpen, onClose, onSuccess }) => {
               <div
                 className="p-4 rounded-xl border text-left space-y-2 text-xs font-mono"
                 style={{
-                  background: '#141414',
+                  background: 'var(--c-surface-muted)',
                   borderColor: 'var(--c-border, #2A2A2A)',
                 }}
               >
                 <div className="flex justify-between">
-                  <span className="text-neutral-400">Mentor:</span>
-                  <span className="text-white font-semibold">{mentor.name}</span>
+                  <span style={{ color: 'var(--c-text-muted)' }}>Mentor:</span>
+                  <span className="font-semibold" style={{ color: 'var(--c-text)' }}>{mentor.name}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-neutral-400">Date:</span>
-                  <span className="text-white font-semibold">{selectedDate}</span>
+                  <span style={{ color: 'var(--c-text-muted)' }}>Date:</span>
+                  <span className="font-semibold" style={{ color: 'var(--c-text)' }}>{selectedDate}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-neutral-400">Time Slot:</span>
+                  <span style={{ color: 'var(--c-text-muted)' }}>Time Slot:</span>
                   <span className="text-[#FF9F1C] font-semibold">{selectedSlot?.start_time}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-neutral-400">Status:</span>
+                  <span style={{ color: 'var(--c-text-muted)' }}>Status:</span>
                   <span className="text-[#22C55E] font-semibold uppercase">Confirmed</span>
                 </div>
               </div>
@@ -217,14 +217,14 @@ const MentorBookingModal = ({ mentor, isOpen, onClose, onSuccess }) => {
               <div
                 className="p-3.5 rounded-xl border flex items-center gap-3"
                 style={{
-                  background: '#141414',
+                  background: 'var(--c-surface-muted)',
                   borderColor: 'var(--c-border, #2A2A2A)',
                 }}
               >
                 <div
                   className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm border"
                   style={{
-                    background: '#202020',
+                    background: 'var(--c-surface)',
                     color: 'var(--c-accent, #FF6B35)',
                     borderColor: 'var(--c-border, #2A2A2A)',
                   }}
@@ -232,8 +232,8 @@ const MentorBookingModal = ({ mentor, isOpen, onClose, onSuccess }) => {
                   {mentor.name?.charAt(0) || 'M'}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h4 className="text-sm font-bold text-white truncate">{mentor.name}</h4>
-                  <p className="text-xs text-neutral-400 truncate">
+                  <h4 className="text-sm font-bold truncate" style={{ color: 'var(--c-text)' }}>{mentor.name}</h4>
+                  <p className="text-xs truncate" style={{ color: 'var(--c-text-secondary)' }}>
                     {mentor.title} {mentor.company ? `• ${mentor.company}` : ''}
                   </p>
                 </div>
@@ -251,7 +251,7 @@ const MentorBookingModal = ({ mentor, isOpen, onClose, onSuccess }) => {
 
               {/* Step 1: Select Date */}
               <div className="space-y-1.5">
-                <label className="block text-xs font-bold uppercase tracking-wider text-neutral-300">
+                <label className="block text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--c-text-secondary)' }}>
                   Select Date
                 </label>
                 <div className="relative">
@@ -272,10 +272,10 @@ const MentorBookingModal = ({ mentor, isOpen, onClose, onSuccess }) => {
               {/* Step 2: Select Time Slot */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-neutral-300">
+                  <label className="block text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--c-text-secondary)' }}>
                     Available Time Slots
                   </label>
-                  <span className="text-[10px] text-neutral-400">
+                  <span className="text-[10px]" style={{ color: 'var(--c-text-muted)' }}>
                     {availableSlots.length > 0
                       ? `${availableSlots.length} available`
                       : 'Slots generated on demand'}
@@ -299,7 +299,7 @@ const MentorBookingModal = ({ mentor, isOpen, onClose, onSuccess }) => {
                               ? 'opacity-40 cursor-not-allowed border-neutral-800 bg-neutral-900 text-neutral-500'
                               : isSelected
                               ? 'border-[#FF6B35] bg-[#FF6B35]/20 text-[#FF6B35] shadow-sm'
-                              : 'border-neutral-800 bg-[#141414] text-neutral-300 hover:border-neutral-700'
+                              : 'border-[var(--c-border)] bg-[var(--c-surface-muted)] text-[var(--c-text-secondary)] hover:border-[var(--c-border-strong)]'
                           }`}
                         >
                           <Clock className="w-3 h-3" />
@@ -322,7 +322,7 @@ const MentorBookingModal = ({ mentor, isOpen, onClose, onSuccess }) => {
                           className={`py-2 px-3 rounded-lg text-xs font-mono font-semibold border transition-all flex items-center justify-center gap-1 ${
                             isSelected
                               ? 'border-[#FF6B35] bg-[#FF6B35]/20 text-[#FF6B35] shadow-sm'
-                              : 'border-neutral-800 bg-[#141414] text-neutral-300 hover:border-neutral-700'
+                              : 'border-[var(--c-border)] bg-[var(--c-surface-muted)] text-[var(--c-text-secondary)] hover:border-[var(--c-border-strong)]'
                           }`}
                         >
                           <Clock className="w-3 h-3" />
@@ -336,7 +336,7 @@ const MentorBookingModal = ({ mentor, isOpen, onClose, onSuccess }) => {
 
               {/* Step 3: Session Notes / Preparation Topics */}
               <div className="space-y-1.5">
-                <label className="block text-xs font-bold uppercase tracking-wider text-neutral-300">
+                <label className="block text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--c-text-secondary)' }}>
                   Session Focus & Questions (Optional)
                 </label>
                 <textarea
@@ -363,7 +363,7 @@ const MentorBookingModal = ({ mentor, isOpen, onClose, onSuccess }) => {
                   type="button"
                   onClick={onClose}
                   disabled={isSubmitting}
-                  className="px-4 py-2 text-xs font-semibold text-neutral-400 hover:text-white transition-colors"
+                  className="px-4 py-2 text-xs font-semibold text-neutral-500 dark:text-neutral-400 hover:text-[var(--c-text)] transition-colors"
                 >
                   Cancel
                 </button>
