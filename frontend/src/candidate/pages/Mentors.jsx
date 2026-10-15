@@ -406,18 +406,18 @@ const Mentors = () => {
                 {filteredMentors.map((mentor) => (
                   <div
                     key={mentor.id || mentor._id}
-                    className="rounded-xl border p-5 flex flex-col justify-between space-y-4 transition-all hover:border-[#FF6B35]/40"
+                    className="rounded-xl border p-5 flex flex-col justify-between space-y-4 transition-all hover:border-[#FF6B35]/40 min-w-0 overflow-hidden"
                     style={{
                       background: 'var(--c-surface, #181818)',
                       borderColor: 'var(--c-border, #2A2A2A)',
                     }}
                   >
-                    <div className="space-y-3">
+                    <div className="space-y-3 min-w-0">
                       {/* Identity Card Header */}
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-center gap-3">
+                      <div className="flex items-start justify-between gap-3 min-w-0">
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
                           <div
-                            className="w-11 h-11 rounded-xl flex items-center justify-center font-bold text-sm border flex-shrink-0"
+                            className="w-11 h-11 rounded-xl flex items-center justify-center font-bold text-sm border shrink-0"
                             style={{
                               background: 'var(--c-surface-muted)',
                               color: 'var(--c-accent, #FF6B35)',
@@ -426,18 +426,22 @@ const Mentors = () => {
                           >
                             {mentor.name?.charAt(0) || 'M'}
                           </div>
-                          <div>
-                            <h3 className="text-sm font-bold leading-tight" style={{ color: 'var(--c-text)' }}>
+                          <div className="min-w-0 flex-1">
+                            <h3 className="text-sm font-bold leading-tight truncate" style={{ color: 'var(--c-text)' }} title={mentor.name}>
                               {mentor.name}
                             </h3>
-                            <p className="text-xs truncate mt-0.5" style={{ color: 'var(--c-text-secondary)' }}>
+                            <p
+                              className="text-xs truncate mt-0.5"
+                              style={{ color: 'var(--c-text-secondary)' }}
+                              title={`${mentor.title || ''}${mentor.company ? ` • ${mentor.company}` : ''}`}
+                            >
                               {mentor.title} {mentor.company ? `• ${mentor.company}` : ''}
                             </p>
                           </div>
                         </div>
 
                         <span
-                          className="text-[10px] font-mono px-2 py-0.5 rounded-full border uppercase"
+                          className="text-[10px] font-mono px-2 py-0.5 rounded-full border uppercase shrink-0 whitespace-nowrap mt-0.5"
                           style={{
                             background: 'rgba(34, 197, 94, 0.1)',
                             borderColor: 'rgba(34, 197, 94, 0.25)',
@@ -616,9 +620,9 @@ const Mentors = () => {
                       }}
                     >
                       {/* Left: Mentor Info & Time */}
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
                         <div
-                          className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm border flex-shrink-0"
+                          className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm border shrink-0"
                           style={{
                             background: 'var(--c-surface-muted)',
                             color: 'var(--c-accent, #FF6B35)',
@@ -627,14 +631,14 @@ const Mentors = () => {
                         >
                           {apt.mentor_name?.charAt(0) || 'M'}
                         </div>
-                        <div>
-                          <h4 className="text-sm font-bold" style={{ color: 'var(--c-text)' }}>{apt.mentor_name}</h4>
-                          <p className="text-xs" style={{ color: 'var(--c-text-secondary)' }}>{apt.mentor_title || 'Technical Mentor'}</p>
+                        <div className="min-w-0 flex-1">
+                          <h4 className="text-sm font-bold truncate" style={{ color: 'var(--c-text)' }}>{apt.mentor_name}</h4>
+                          <p className="text-xs truncate" style={{ color: 'var(--c-text-secondary)' }}>{apt.mentor_title || 'Technical Mentor'}</p>
                           <div className="flex items-center gap-3 mt-1 text-xs font-mono">
-                            <span className="flex items-center gap-1 text-[#FF9F1C]">
+                            <span className="flex items-center gap-1 text-[#FF9F1C] shrink-0">
                               <Calendar className="w-3.5 h-3.5" /> {apt.date}
                             </span>
-                            <span className="flex items-center gap-1" style={{ color: 'var(--c-text-secondary)' }}>
+                            <span className="flex items-center gap-1 shrink-0" style={{ color: 'var(--c-text-secondary)' }}>
                               <Clock className="w-3.5 h-3.5" /> {apt.start_time}
                             </span>
                           </div>
