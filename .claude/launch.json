@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "backend",
+      "runtimeExecutable": "E:\\WEBS & APPS\\MockAI\\.venv\\Scripts\\python.exe",
+      "runtimeArgs": ["-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"],
+      "cwd": "backend",
+      "port": 8000
+    },
+    {
+      "name": "frontend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "cwd": "frontend",
+      "env": {
+        "VITE_API_BASE": "http://localhost:8000",
+        "VITE_API_URL": "http://localhost:8000/admin"
+      },
+      "port": 5173
+    }
+  ]
+}

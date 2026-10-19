@@ -95,7 +95,7 @@ const InterviewCompletion = () => {
         <div className="max-w-5xl mx-auto py-16 flex flex-col items-center justify-center gap-3 text-center">
           <div className="w-6 h-6 border-2 rounded-full animate-spin" style={{ borderColor: 'var(--c-accent)', borderTopColor: 'transparent' }} />
           <p className="text-xs font-medium" style={{ color: 'var(--c-text-secondary)' }}>
-            Retrieving interview completion receiptâ€¦
+            Retrieving interview completion receipt…
           </p>
         </div>
       </InterviewFlowLayout>
@@ -193,7 +193,7 @@ const InterviewCompletion = () => {
         {/* Main Two-Column Summary & Evaluation Dossier */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
-          {/* Left Column: Summary & Prompts (7 cols) â€” Open editorial ledger */}
+          {/* Left Column: Summary & Prompts (7 cols) — Open editorial ledger */}
           <div className="lg:col-span-7 space-y-8">
             
             {/* Session Ledger */}

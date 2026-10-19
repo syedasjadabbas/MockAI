@@ -15,6 +15,7 @@ from services.nlp_analyzer import analyze_transcript
 from services.delivery_analyzer import analyze_delivery
 from services.multimodal_fusion import fuse_per_question
 from services.confidence_stress_analyzer import analyze_question_confidence_and_stress
+from services.language_analyzer import analyze_language
 
 DIFFICULTY_WEIGHTS: Dict[str, float] = {
     "Easy": 1.0,
@@ -41,12 +42,19 @@ def evaluate_question_response(
     asr_status: Optional[str] = None,
     asr_provider: Optional[str] = None,
     rubric: Optional[Dict] = None,
+    response_mode: str = "spoken",
 ) -> Dict:
     """
     Evaluates a candidate's response to an individual question.
 
+    response_mode: "spoken" (recorded take, transcript from ASR) or "text"
+    (typed answer). Typed answers have no audio or video, so speech delivery
+    and facial analysis are reported as not applicable and the fusion engine
+    applies its text-only weighting.
+
     Returns structured evaluation matching the per_question MongoDB schema.
     """
+    is_typed = response_mode == "text"
     diff_normalized = difficulty.capitalize() if difficulty else "Medium"
     diff_weight = get_difficulty_weight(diff_normalized)
 
@@ -66,12 +74,34 @@ def evaluate_question_response(
         rubric=rubric,
     )
 
-    # 2. Delivery Analysis (FR15 / FR22 / FR23)
-    delivery_result = analyze_delivery(
-        transcript=effective_transcript,
-        duration_seconds=duration_seconds,
-        media_url=media_url,
-    )
+    # 1b. Language quality, grammar & tone (FR16-01 / Objective 3)
+    language_result = analyze_language(effective_transcript, mode="text" if is_typed else "spoken")
+
+    # 2. Delivery Analysis (FR15 / FR22 / FR23) - spoken answers only
+    if is_typed:
+        delivery_result = {
+            "status": "not_applicable",
+            "word_count": len((effective_transcript or "").split()),
+            "duration_seconds": float(duration_seconds or 0.0),
+            "words_per_minute": None,
+            "pacing": "Not Applicable",
+            "filler_count": 0,
+            "filler_words": [],
+            "hesitation_rate": None,
+            "hesitation_level": "Not Applicable",
+            "fluency_score": None,
+            "fluency_indicator": "Typed Answer",
+            "pause_duration_seconds": 0.0,
+            "pause_count": 0,
+            "articulation_wpm": None,
+            "notes": "Typed answer: speech delivery was not assessed.",
+        }
+    else:
+        delivery_result = analyze_delivery(
+            transcript=effective_transcript,
+            duration_seconds=duration_seconds,
+            media_url=media_url,
+        )
 
     # 3. Facial & Behavioral Analysis (FR13 / FR17)
     resolved_video_path = None
@@ -143,8 +173,13 @@ def evaluate_question_response(
             if indicators.get("composure_index") == "Composed & Stable":
                 strengths.append("Maintained calm facial composure throughout response.")
 
+        if language_result.get("status") == "completed" and language_result["grammar_score"] >= 90 and language_result["word_count"] >= 20:
+            strengths.append("Grammatically clean, well-formed phrasing.")
+        if language_result.get("tone", {}).get("label") == "Confident":
+            strengths.append("Confident, direct tone.")
+
         missing_concepts = nlp_result.get("missing_concepts", [])
-        feedback = f"{nlp_result['notes']} {delivery_result['notes']}".strip()
+        feedback = f"{nlp_result['notes']} {delivery_result['notes']} {language_result.get('notes', '')}".strip()
 
     asr_data = {
         "status": asr_status or ("completed" if transcript else "empty"),
@@ -152,6 +187,8 @@ def evaluate_question_response(
         "provider": asr_provider or ("google_speech" if transcript else None),
         "error": None,
     }
+    if is_typed:
+        asr_data["provider"] = "typed_input"
 
     text_analysis_data = {
         "status": nlp_result["status"],
@@ -165,10 +202,17 @@ def evaluate_question_response(
         "notes": nlp_result["notes"],
         "model": nlp_result.get("model", "bert-distilbert-minilm-v2"),
         "error": nlp_result.get("error"),
+        # FR16-01: language quality / grammar / tone (services/language_analyzer.py)
+        "language_quality_score": language_result.get("language_quality_score"),
+        "grammar_score": language_result.get("grammar_score"),
+        "clarity_score": language_result.get("clarity_score"),
+        "tone": (language_result.get("tone") or {}).get("label"),
+        "language_analysis": language_result,
     }
 
     return {
         "question_id": question_id,
+        "response_mode": "text" if is_typed else "spoken",
         "difficulty": diff_normalized,
         "difficulty_weight": diff_weight,
         "score": question_score,

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Users, Briefcase, Award, TrendingUp, Clock, CheckCircle2, AlertCircle, Activity, ArrowRight, Info } from 'lucide-react';
 import StatsCard from '../components/StatsCard';
-import { ScoreDistributionChart, StatusDistributionChart } from '../components/Charts';
+import { ScoreDistributionChart, StatusDistributionChart, ParticipationTrendChart, SurveySummaryPanel } from '../components/Charts';
 import { CardSkeleton, TableSkeleton } from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
 import { fetchWithAuth, getCachedData } from '../api';
@@ -37,10 +37,12 @@ const Dashboard = () => {
   const [chartsData, setChartsData] = useState(() => ({
     scoreBuckets: cachedStats?.score_buckets || { high: 0, medium: 0, low: 0, none: 0 },
     statusBuckets: cachedStats?.status_buckets || { completed: 0, progress: 0, pending: 0 },
-    insights: cachedStats?.insights || ["Overall candidate evaluation metrics are stable."]
+    insights: cachedStats?.insights || ["Overall candidate evaluation metrics are stable."],
+    participation: cachedStats?.participation || null
   }));
 
   const [loading, setLoading] = useState(!hasCached);
+  const [surveySummary, setSurveySummary] = useState(() => getCachedData('/surveys/summary') || null);
 
   useEffect(() => {
     let isMounted = true;
@@ -50,12 +52,15 @@ const Dashboard = () => {
 
     const loadDashboardData = async () => {
       try {
-        const [statsData, interviewsData] = await Promise.all([
+        const [statsData, interviewsData, surveyData] = await Promise.all([
           fetchWithAuth('/').catch(() => ({})),
-          fetchWithAuth('/interviews?limit=5').catch(() => [])
+          fetchWithAuth('/interviews?limit=5').catch(() => []),
+          fetchWithAuth('/surveys/summary').catch(() => null)
         ]);
 
         if (!isMounted) return;
+
+        if (surveyData) setSurveySummary(surveyData);
 
         if (statsData && statsData.total_users !== undefined) {
           setStats({
@@ -68,7 +73,8 @@ const Dashboard = () => {
           setChartsData({
             scoreBuckets: statsData.score_buckets || { high: 0, medium: 0, low: 0, none: 0 },
             statusBuckets: statsData.status_buckets || { completed: 0, progress: 0, pending: 0 },
-            insights: statsData.insights || ["Overall candidate evaluation metrics are stable."]
+            insights: statsData.insights || ["Overall candidate evaluation metrics are stable."],
+            participation: statsData.participation || null
           });
         }
 
@@ -180,6 +186,12 @@ const Dashboard = () => {
           </ul>
         </div>
       </div>
+
+      {/* Participation Trends (FR 35) */}
+      {chartsData.participation && <ParticipationTrendChart participation={chartsData.participation} />}
+
+      {/* Candidate Survey & Accuracy (Objective 7) */}
+      <SurveySummaryPanel summary={surveySummary} />
 
       {/* Recent Activity Table */}
       <div className="glass-card p-6 rounded-2xl hover:border-orange-500/30 transition-all duration-300">

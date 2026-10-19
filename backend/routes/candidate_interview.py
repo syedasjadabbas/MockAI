@@ -153,6 +153,7 @@ def _public_interview(doc: dict, include_questions: bool = True) -> dict:
         "stress": doc.get("stress"),
         "created_at": doc.get("created_at"),
         "completed_at": doc.get("completed_at"),
+        "recording_consent": doc.get("recording_consent"),
     }
     if include_questions:
         result["questions"] = doc.get("questions", [])
@@ -315,6 +316,118 @@ def save_response(interview_id: str, data: SaveResponseRequest, token_payload: d
 
 
 # ---------------------------------------------------------------------------
+# Recording consent - NFR 10 (Consent-Based Recording) / NFR 11
+#
+# The Preparation screen asks for explicit, informed consent before it ever
+# calls getUserMedia(). This endpoint stores that decision on the interview
+# as an auditable record (what was consented to, when, which policy text
+# version), so consent is provable after the fact, not just a UI checkbox.
+# Declining is also recorded: the candidate can then continue in typed-
+# answer mode with no camera or microphone (see save_text_response below).
+# ---------------------------------------------------------------------------
+
+CONSENT_POLICY_VERSION = "2026-10-v1"
+
+
+class RecordingConsentRequest(BaseModel):
+    microphone: bool
+    camera: bool
+
+
+@router.post("/interviews/{interview_id}/consent")
+def record_consent(interview_id: str, data: RecordingConsentRequest, token_payload: dict = Depends(verify_candidate)):
+    interview = _get_owned_interview_or_404(interview_id, token_payload.get("user_id"))
+
+    if interview.get("status") == "Completed":
+        raise HTTPException(status_code=400, detail="This interview has already been completed")
+
+    consent = {
+        "microphone": data.microphone,
+        "camera": data.camera,
+        "policy_version": CONSENT_POLICY_VERSION,
+        "purpose": "Interview performance assessment only (NFR 11)",
+        "recorded_at": datetime.utcnow(),
+    }
+    interviews_collection.update_one({"_id": interview["_id"]}, {"$set": {"recording_consent": consent}})
+
+    updated = interviews_collection.find_one({"_id": interview["_id"]})
+    return _public_interview(updated)
+
+
+# ---------------------------------------------------------------------------
+# Typed (text) response - Objective 1 / Section 1.1: candidates can answer
+# "via text, voice or video". A typed answer is evaluated on content and
+# language only: there is no audio, so speech delivery is not assessed, and
+# no video, so facial analysis is not assessed. The fusion engine's existing
+# text-only weighting (services/multimodal_fusion.py, 100% NLP) applies -
+# nothing about delivery or composure is inferred from typing.
+# ---------------------------------------------------------------------------
+
+MIN_TEXT_RESPONSE_CHARS = 2
+MAX_TEXT_RESPONSE_CHARS = 5000
+
+
+class TextResponseRequest(BaseModel):
+    text: str
+    duration_seconds: Optional[float] = None
+
+
+@router.post("/interviews/{interview_id}/responses/{question_id}/text")
+def save_text_response(
+    interview_id: str,
+    question_id: str,
+    data: TextResponseRequest,
+    token_payload: dict = Depends(verify_candidate),
+):
+    interview = _get_owned_interview_or_404(interview_id, token_payload.get("user_id"))
+
+    if interview.get("status") == "Completed":
+        raise HTTPException(status_code=400, detail="This interview has already been completed")
+
+    question_ids = {q["question_id"] for q in interview.get("questions", [])}
+    if question_id not in question_ids:
+        raise HTTPException(status_code=400, detail="This question does not belong to this interview")
+
+    text = (data.text or "").strip()
+    if len(text) < MIN_TEXT_RESPONSE_CHARS:
+        raise HTTPException(status_code=400, detail="Please type an answer before saving.")
+    if len(text) > MAX_TEXT_RESPONSE_CHARS:
+        raise HTTPException(status_code=400, detail=f"Typed answers are limited to {MAX_TEXT_RESPONSE_CHARS} characters.")
+
+    existing_responses = interview.get("responses", [])
+    sequence = next(
+        (r["sequence"] for r in existing_responses if r["question_id"] == question_id),
+        len(existing_responses),
+    )
+    new_response = {
+        "question_id": question_id,
+        "sequence": sequence,
+        "status": "recorded",
+        "response_mode": "text",
+        "text_response": text,
+        "duration_seconds": data.duration_seconds,
+        "size_bytes": len(text.encode("utf-8")),
+        "recorded_at": datetime.utcnow(),
+        "media_url": None,
+    }
+    updated_responses = [r for r in existing_responses if r["question_id"] != question_id] + [new_response]
+    set_doc = {"responses": updated_responses}
+
+    # A typed answer replaces any earlier spoken take for this question, so
+    # drop that take's stale ASR transcript - the worker must score the text.
+    evaluation = interview.get("evaluation")
+    if isinstance(evaluation, dict) and evaluation.get("per_question"):
+        set_doc["evaluation.per_question"] = [
+            q for q in evaluation["per_question"] if q.get("question_id") != question_id
+        ]
+
+    interviews_collection.update_one({"_id": interview["_id"]}, {"$set": set_doc})
+
+    updated = interviews_collection.find_one({"_id": interview["_id"]})
+    return _public_interview(updated)
+
+
+# ---------------------------------------------------------------------------
 # Upload response media - FR12 (record & store audio), FR13 (capture &
 # store visual data), FR14 (controlled capture), FR15 (speech to text).
 #
@@ -416,6 +529,7 @@ async def upload_response_media(
         "size_bytes": len(data),  # server-measured, never trusted from the client
         "recorded_at": datetime.utcnow(),
         "media_url": media_ref,
+        "response_mode": "spoken",
     }
     updated_responses = [r for r in existing_responses if r["question_id"] != question_id] + [new_response]
     interviews_collection.update_one({"_id": interview["_id"]}, {"$set": {"responses": updated_responses}})

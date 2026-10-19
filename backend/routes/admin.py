@@ -10,12 +10,14 @@ from database import (
     otps_collection,
     categories_collection,
     questions_collection,
+    surveys_collection,
     get_cached,
     set_cached,
     invalidate_cache
 )
 from utils.auth import verify_password, create_access_token, hash_password
 from middleware.admin_auth import verify_admin
+from utils.account_lockout import ensure_not_locked, register_failed_attempt, clear_failed_attempts
 from datetime import datetime
 
 from collections import defaultdict
@@ -75,12 +77,18 @@ def admin_login(login_data: LoginRequest, request: Request):
         )
         
     # 4. Verify password
+    # FR 2-03 / FR 33-03: per-account lockout after repeated failures
+    ensure_not_locked(user)
     stored_password = user.get("password") or user.get("password_hash", "")
     if not verify_password(login_data.password, stored_password):
+        if register_failed_attempt(admins_collection, user):
+            log_action("ACCOUNT_LOCKED", normalized_email, normalized_email, severity="warning")
+            ensure_not_locked(admins_collection.find_one({"_id": user["_id"]}))
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, 
             detail="Invalid email or password"
         )
+    clear_failed_attempts(admins_collection, user)
         
     # 5. Create JWT
     token_payload = {
@@ -202,7 +210,7 @@ def forgot_password(data: ForgotPasswordRequest):
     
     admins_collection.update_one(
         {"_id": user["_id"]},
-        {"$set": {"password": hashed_pw}}
+        {"$set": {"password": hashed_pw, "failed_login_attempts": 0, "locked_until": None}}
     )
     
     html_body = f"""
@@ -390,8 +398,11 @@ def get_admin_dashboard(token_payload: dict = Depends(verify_admin)):
         insights.append("Overall candidate evaluation metrics are stable.")
         
     insights = insights[:3]
+
+    participation = _participation_trends(days=30)
     
     result = {
+        "participation": participation,
         "total_users": total_users,
         "total_interviews": total_interviews,
         "total_responses": total_responses,
@@ -404,6 +415,73 @@ def get_admin_dashboard(token_payload: dict = Depends(verify_admin)):
     }
     set_cached("dashboard_stats", result, ttl_seconds=15)
     return result
+
+def _participation_trends(days: int = 30) -> dict:
+    """
+    FR 35-01..03 - usage tracking, interview participation trends over time
+    and engagement insights for the Admin dashboard.
+
+    Returns one point per calendar day (UTC) for the last `days` days, with
+    zero-filled gaps so the chart has a continuous x-axis.
+    """
+    from datetime import timedelta
+
+    today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    start = today - timedelta(days=days - 1)
+    day_fmt = {"$dateToString": {"format": "%Y-%m-%d", "date": "$created_at"}}
+
+    interview_rows = list(interviews_collection.aggregate([
+        {"$match": {"created_at": {"$gte": start}}},
+        {"$group": {
+            "_id": day_fmt,
+            "started": {"$sum": 1},
+            "completed": {"$sum": {"$cond": [{"$eq": ["$status", "Completed"]}, 1, 0]}},
+            "users": {"$addToSet": "$user_id"},
+        }},
+    ]))
+    user_rows = list(users_collection.aggregate([
+        {"$match": {"role": {"$ne": "admin"}, "created_at": {"$gte": start}}},
+        {"$group": {"_id": day_fmt, "count": {"$sum": 1}}},
+    ]))
+    by_day = {r["_id"]: r for r in interview_rows}
+    signups = {r["_id"]: r["count"] for r in user_rows}
+
+    series = []
+    for i in range(days):
+        key = (start + timedelta(days=i)).strftime("%Y-%m-%d")
+        row = by_day.get(key, {})
+        series.append({
+            "date": key,
+            "interviews_started": row.get("started", 0),
+            "interviews_completed": row.get("completed", 0),
+            "active_candidates": len(row.get("users", [])),
+            "new_candidates": signups.get(key, 0),
+        })
+
+    week_ago = today - timedelta(days=6)
+    active_7d = len(interviews_collection.distinct("user_id", {"created_at": {"$gte": week_ago}}))
+    active_30d = len(interviews_collection.distinct("user_id", {"created_at": {"$gte": start}}))
+    per_user = list(interviews_collection.aggregate([
+        {"$group": {"_id": "$user_id", "n": {"$sum": 1}}},
+        {"$group": {"_id": None, "users": {"$sum": 1}, "repeat": {"$sum": {"$cond": [{"$gte": ["$n", 2]}, 1, 0]}}, "total": {"$sum": "$n"}}},
+    ]))
+    pu = per_user[0] if per_user else {"users": 0, "repeat": 0, "total": 0}
+    started_30d = sum(p["interviews_started"] for p in series)
+    completed_30d = sum(p["interviews_completed"] for p in series)
+    first_half = sum(p["interviews_started"] for p in series[: days // 2])
+    second_half = sum(p["interviews_started"] for p in series[days // 2:])
+
+    engagement = {
+        "active_candidates_7d": active_7d,
+        "active_candidates_30d": active_30d,
+        "interviews_30d": started_30d,
+        "completion_rate_30d": round(completed_30d / started_30d * 100, 1) if started_30d else 0.0,
+        "avg_interviews_per_candidate": round(pu["total"] / pu["users"], 2) if pu["users"] else 0.0,
+        "repeat_candidate_rate": round(pu["repeat"] / pu["users"] * 100, 1) if pu["users"] else 0.0,
+        "trend_direction": "up" if second_half > first_half else ("down" if second_half < first_half else "flat"),
+    }
+    return {"days": days, "series": series, "engagement": engagement}
+
 
 @router.get("/users")
 def get_users(token_payload: dict = Depends(verify_admin)):
@@ -1275,3 +1353,48 @@ def trigger_seed_question_bank(token_payload: dict = Depends(verify_admin)):
     log_action("SEED_QUESTION_BANK", admin_email, "Question Bank Data", severity="info")
     
     return res
+
+
+# ---------------------------------------------------------------------------
+# Candidate survey summary - Objective 7 (user survey + accuracy testing)
+# ---------------------------------------------------------------------------
+
+@router.get("/surveys/summary")
+def get_survey_summary(token_payload: dict = Depends(verify_admin)):
+    from services.accuracy_metrics import agreement_report
+
+    surveys = list(surveys_collection.find({}).sort("created_at", -1))
+    completed_interviews = interviews_collection.count_documents({"evaluation_status": "completed"})
+    n = len(surveys)
+
+    def avg(field):
+        vals = [s[field] for s in surveys if isinstance(s.get(field), (int, float))]
+        return round(sum(vals) / len(vals), 2) if vals else None
+
+    rating_fields = ["usefulness", "accuracy", "ease_of_use", "confidence_gain"]
+    distribution = {
+        f: {str(k): sum(1 for s in surveys if s.get(f) == k) for k in range(1, 6)}
+        for f in rating_fields
+    }
+    paired = [(s.get("system_score"), s.get("self_rated_score")) for s in surveys]
+    paired = [(a, b) for a, b in paired if isinstance(a, (int, float)) and isinstance(b, (int, float))]
+
+    return {
+        "total_responses": n,
+        "completed_interviews": completed_interviews,
+        "response_rate": round(n / completed_interviews * 100, 1) if completed_interviews else 0.0,
+        "averages": {f: avg(f) for f in rating_fields},
+        "distribution": distribution,
+        "recommend_rate": round(sum(1 for s in surveys if s.get("would_recommend")) / n * 100, 1) if n else None,
+        # Accuracy testing: system score vs the candidate's own estimate
+        "score_agreement": agreement_report([a for a, _ in paired], [b for _, b in paired]),
+        "recent_comments": [
+            {
+                "comment": s.get("comments"),
+                "role": s.get("interview_role"),
+                "accuracy": s.get("accuracy"),
+                "created_at": s.get("created_at"),
+            }
+            for s in surveys if s.get("comments")
+        ][:8],
+    }

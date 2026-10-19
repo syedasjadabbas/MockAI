@@ -49,8 +49,11 @@ const AdminLogin = () => {
       localStorage.setItem('mockai_admin_token', data.access_token);
       navigate('/admin/dashboard');
     })
-    .catch(() => {
-      setError('Invalid email or password');
+    .catch((err) => {
+      // Surface lockout / rate-limit messages (FR 2-03); keep the generic
+      // message for everything else so account existence isn't revealed.
+      const msg = err?.message || '';
+      setError(/locked|too many/i.test(msg) ? msg : 'Invalid email or password');
       setLoading(false);
     });
   };

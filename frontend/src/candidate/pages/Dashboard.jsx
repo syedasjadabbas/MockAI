@@ -265,7 +265,7 @@ const Dashboard = () => {
       {/* Main Content Area */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 space-y-14">
         
-        {/* LEVEL 1 â€” Practice Metrics */}
+        {/* LEVEL 1 — Practice Metrics */}
         <section aria-label="Candidate Practice Statistics" className="border-b pb-10" style={{ borderColor: 'var(--c-border)' }}>
           <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2 mb-6">
             <div className="flex items-center gap-3">
@@ -292,7 +292,7 @@ const Dashboard = () => {
                 <span className="c-tech-annotation opacity-40">SESSION.LOG</span>
               </div>
               <p className="c-serif-num text-3xl sm:text-4xl font-bold" style={{ color: 'var(--c-text)' }}>
-                {loading ? 'â€”' : summary?.totalInterviews ?? 0}
+                {loading ? '—' : summary?.totalInterviews ?? 0}
               </p>
               <div className="w-full bg-slate-500/10 h-1 rounded-full overflow-hidden">
                 <div
@@ -311,7 +311,7 @@ const Dashboard = () => {
                 <span className="c-tech-annotation opacity-40">EVAL.DONE</span>
               </div>
               <p className="c-serif-num text-3xl sm:text-4xl font-bold text-emerald-500">
-                {loading ? 'â€”' : summary?.completedInterviews ?? 0}
+                {loading ? '—' : summary?.completedInterviews ?? 0}
               </p>
               <div className="w-full bg-slate-500/10 h-1 rounded-full overflow-hidden">
                 <div
@@ -336,7 +336,7 @@ const Dashboard = () => {
                 <span className="c-tech-annotation opacity-40">ACCURACY</span>
               </div>
               <p className="c-serif-num text-3xl sm:text-4xl font-bold" style={{ color: 'var(--c-text)' }}>
-                {loading ? 'â€”' : hasScore ? `${Math.round(summary.averageScore)}%` : 'â€”'}
+                {loading ? '—' : hasScore ? `${Math.round(summary.averageScore)}%` : '—'}
               </p>
               <div className="w-full bg-slate-500/10 h-1 rounded-full overflow-hidden">
                 <div
@@ -348,7 +348,7 @@ const Dashboard = () => {
           </div>
         </section>
 
-        {/* LEVEL 3 â€” Practice Tracks */}
+        {/* LEVEL 3 — Practice Tracks */}
         {categories.length > 0 && (
           <section aria-label="Available Practice Tracks" className="border-b pb-12" style={{ borderColor: 'var(--c-border)' }}>
             <div className="flex items-center justify-between mb-6">
@@ -422,7 +422,7 @@ const Dashboard = () => {
           </section>
         )}
 
-        {/* LEVEL 2 â€” Recent Sessions */}
+        {/* LEVEL 2 — Recent Sessions */}
         <section aria-label="Recent Practice Sessions">
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -497,7 +497,7 @@ const Dashboard = () => {
                             <span className="capitalize">{interview.type || 'Technical'}</span>
                             {interview.questions?.length > 0 && (
                               <>
-                                <span>â€¢</span>
+                                <span>•</span>
                                 <span>{interview.questions.length} Prompts</span>
                               </>
                             )}
@@ -517,7 +517,7 @@ const Dashboard = () => {
                             {Math.round(interview.score)}%
                           </span>
                         ) : (
-                          <span className="text-xs font-mono" style={{ color: 'var(--c-text-muted)' }}>â€”</span>
+                          <span className="text-xs font-mono" style={{ color: 'var(--c-text-muted)' }}>—</span>
                         )}
                       </div>
 
@@ -554,7 +554,7 @@ const Dashboard = () => {
       <footer className="border-t py-8 text-center text-xs"
         style={{ borderColor: 'var(--c-border)', color: 'var(--c-text-muted)', background: 'var(--c-bg-subtle)' }}
       >
-        <p>Â© 2026 MockAI â€¢ Real Question Banks & Explainable AI Evaluation</p>
+        <p>© 2026 MockAI • Real Question Banks & Explainable AI Evaluation</p>
       </footer>
     </div>
   );

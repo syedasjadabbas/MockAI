@@ -101,6 +101,7 @@ def _evaluate_interview_job_unlocked(interview_id: str) -> Dict:
             resp = responses.get(q_id)
             duration_seconds = resp.get("duration_seconds") if resp else None
             media_url = resp.get("media_url") if resp else None
+            response_mode = (resp.get("response_mode") if resp else None) or "spoken"
 
             # Retrieve transcript: from per_question ASR or run ASR on media_url if available
             transcript = None
@@ -108,7 +109,14 @@ def _evaluate_interview_job_unlocked(interview_id: str) -> Dict:
             asr_provider = None
 
             per_q_saved = existing_per_q.get(q_id)
-            if per_q_saved and per_q_saved.get("asr"):
+            if response_mode == "text":
+                # Typed answer (Objective 1): the candidate's own text is the
+                # transcript; no ASR is involved.
+                transcript = resp.get("text_response") or ""
+                asr_status = "typed" if transcript.strip() else "empty"
+                asr_provider = "typed_input"
+                media_url = None
+            elif per_q_saved and per_q_saved.get("asr"):
                 asr_info = per_q_saved["asr"]
                 transcript = asr_info.get("transcript")
                 asr_status = asr_info.get("status", "completed" if transcript else "empty")
@@ -136,6 +144,7 @@ def _evaluate_interview_job_unlocked(interview_id: str) -> Dict:
                 asr_status=asr_status,
                 asr_provider=asr_provider,
                 rubric=q.get("rubric"),
+                response_mode=response_mode,
             )
             per_question_results.append(q_eval)
 
@@ -163,6 +172,7 @@ def _evaluate_interview_job_unlocked(interview_id: str) -> Dict:
             "dimension_scores": aggregate_res.get("dimension_scores"),
             "insights": aggregate_res.get("insights"),
             "summary_report": aggregate_res.get("summary_report"),
+            "language_summary": aggregate_res.get("language_summary"),
             "failed_reason": None,
         }
 

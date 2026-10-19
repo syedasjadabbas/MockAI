@@ -17,6 +17,7 @@ Integrity guarantees:
 from typing import Any, Dict, List, Optional
 from services.confidence_stress_analyzer import aggregate_confidence_and_stress
 from services.insights_service import generate_interview_insights
+from services.language_analyzer import summarize_language, language_feedback
 
 DIFFICULTY_WEIGHTS: Dict[str, float] = {
     "Easy": 1.0,
@@ -478,6 +479,16 @@ def aggregate_interview_evaluation(per_question_results: List[Dict]) -> Dict:
         facial_summary=facial_summary,
     )
 
+    # FR16-01 / Objective 3: language quality, grammar & tone across answers.
+    # Reported as its own section and folded into strengths/weaknesses/
+    # suggestions; it does not alter the fused score formula above.
+    language_summary = summarize_language(per_question_results)
+    lang_fb = language_feedback(language_summary)
+    insights["language_analysis"] = language_summary
+    insights["strengths"] = (insights["strengths"] + lang_fb["strengths"])[:5]
+    insights["weaknesses"] = (insights["weaknesses"] + lang_fb["weaknesses"])[:5]
+    insights["suggestions"] = (insights["suggestions"] + lang_fb["suggestions"])[:5]
+
     interpretation = insights["score_explanation"]["overall_summary"]
     strengths = insights["strengths"]
     weaknesses = insights["weaknesses"]
@@ -513,5 +524,6 @@ def aggregate_interview_evaluation(per_question_results: List[Dict]) -> Dict:
         "dimension_scores": dimension_scores,
         "insights": insights,
         "summary_report": summary_report,
+        "language_summary": language_summary,
     }
 

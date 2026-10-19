@@ -738,18 +738,12 @@ class RealNLPService(NLPService):
                 model="bert-distilbert-minilm-v2",
             )
         
-        words = _tokenize(transcript)
-        word_count = len(words)
-        
-        # Evaluate fluency & syntactic depth
-        fluency = min(100.0, (word_count / 35.0) * 100.0)
-        clarity = round(fluency, 1)
-        
+        from services.language_analyzer import analyze_language
+        lang = analyze_language(transcript, mode="spoken")
         return TextAnalysisResult(
             status="completed",
-            language_quality=clarity,
-            clarity=clarity,
-            notes=f"Analyzed {word_count} spoken words using BERT semantic representation.",
+            language_quality=lang["language_quality_score"],
+            clarity=lang["clarity_score"],
+            notes=lang["notes"],
             model="bert-distilbert-minilm-v2",
         )
-

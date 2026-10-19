@@ -47,6 +47,7 @@ from utils.validators import (
     validate_required,
 )
 from utils.google_auth import verify_google_id_token
+from utils.account_lockout import ensure_not_locked, register_failed_attempt, clear_failed_attempts
 
 router = APIRouter()
 
@@ -336,8 +337,13 @@ def login_candidate(data: LoginRequest, request: Request):
     if not user or user.get("role") != "user":
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
 
+    # FR 2-03: per-account lockout after repeated failures (see utils/account_lockout.py)
+    ensure_not_locked(user)
     if not verify_password(data.password, user.get("password", "")):
+        if register_failed_attempt(users_collection, user):
+            ensure_not_locked(users_collection.find_one({"_id": user["_id"]}))
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
+    clear_failed_attempts(users_collection, user)
 
     token_payload = {"user_id": str(user["_id"]), "role": "user"}
     access_token = create_access_token(token_payload)
@@ -720,7 +726,7 @@ def reset_candidate_password(data: ResetPasswordRequest):
     # Update password and invalidate the OTP record completely
     users_collection.update_one(
         {"_id": ObjectId(user_id)},
-        {"$set": {"password": hash_password(data.new_password)}},
+        {"$set": {"password": hash_password(data.new_password), "failed_login_attempts": 0, "locked_until": None}},
     )
     otps_collection.delete_one({"email": normalized_email, "type": "candidate_password_reset"})
 

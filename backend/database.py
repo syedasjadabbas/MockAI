@@ -89,6 +89,7 @@ categories_collection = db["categories"]
 questions_collection = db["questions"]
 mentors_collection = db["mentors"]
 appointments_collection = db["appointments"]
+surveys_collection = db["surveys"]  # Objective 7 - user satisfaction / accuracy survey
 
 def init_db_indexes():
     """
@@ -132,6 +133,10 @@ def init_db_indexes():
 
         # Admins indexes
         admins_collection.create_index([("email", 1)], unique=True, background=True)
+
+        # Survey indexes (one survey per candidate per interview)
+        surveys_collection.create_index([("interview_id", 1), ("user_id", 1)], unique=True, background=True)
+        surveys_collection.create_index([("created_at", -1)], background=True)
 
         # Mentors indexes
         mentors_collection.create_index([("specialization", 1)], background=True)

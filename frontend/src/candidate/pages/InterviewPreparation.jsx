@@ -8,10 +8,11 @@ import {
   Check,
   AlertCircle,
   RefreshCw,
+  Keyboard,
 } from 'lucide-react';
 import InterviewFlowLayout from '../layouts/InterviewFlowLayout';
 import CandidateEmptyState from '../components/CandidateEmptyState';
-import { getActiveInterview } from '../services/candidateApi';
+import { getActiveInterview, recordConsent } from '../services/candidateApi';
 import { CANDIDATE_IMAGES } from '../assets/images';
 import {
   CornerReticles,
@@ -31,6 +32,9 @@ const InterviewPreparation = () => {
   const [cameraStatus, setCameraStatus] = useState('idle');
   const [micStatus, setMicStatus] = useState('idle');
   const [permissionError, setPermissionError] = useState('');
+  // NFR 10 - explicit consent is required before the mic/webcam are activated
+  const [consentGiven, setConsentGiven] = useState(false);
+  const [continuingTextOnly, setContinuingTextOnly] = useState(false);
 
   const videoRef = useRef(null);
   const streamRef = useRef(null);
@@ -61,6 +65,10 @@ const InterviewPreparation = () => {
 
   // Request real Camera & Microphone access via Web APIs
   const requestPermissions = async () => {
+    if (!consentGiven) {
+      setPermissionError('Please confirm your recording consent before enabling the camera and microphone.');
+      return;
+    }
     setPermissionError('');
     setCameraStatus('prompting');
     setMicStatus('prompting');
@@ -87,6 +95,12 @@ const InterviewPreparation = () => {
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
       }
+
+      // Persist the consent decision as an auditable record (best-effort:
+      // the browser permission and the checkbox already gate capture).
+      recordConsent(id, { microphone: true, camera: true }).catch((e) =>
+        console.warn('Consent record notice:', e)
+      );
     } catch (err) {
       console.error('Media permission error:', err);
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
@@ -123,12 +137,27 @@ const InterviewPreparation = () => {
     navigate(`/interview/${id}/session`);
   };
 
+  // Objective 1 - answer by typing instead of speaking. No camera or
+  // microphone is activated in this mode; declining is recorded too.
+  const handleTextOnly = async () => {
+    setContinuingTextOnly(true);
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+    }
+    try {
+      await recordConsent(id, { microphone: false, camera: false });
+    } catch (e) {
+      console.warn('Consent record notice:', e);
+    }
+    navigate(`/interview/${id}/session`, { state: { textOnly: true } });
+  };
+
   if (loading) {
     return (
       <InterviewFlowLayout step="prepare">
         <div className="flex flex-col items-center justify-center py-20 gap-3">
           <div className="w-6 h-6 border-2 rounded-full animate-spin" style={{ borderColor: 'var(--c-accent)', borderTopColor: 'transparent' }} />
-          <p className="text-xs font-medium" style={{ color: 'var(--c-text-muted)' }}>Preparing studioâ€¦</p>
+          <p className="text-xs font-medium" style={{ color: 'var(--c-text-muted)' }}>Preparing studio…</p>
         </div>
       </InterviewFlowLayout>
     );
@@ -166,7 +195,7 @@ const InterviewPreparation = () => {
           {/* Left Column: Live Video Monitor & Sensor Auth (7 cols) */}
           <div className="lg:col-span-7 space-y-6">
             
-            {/* LEVEL 3 â€” Camera Viewfinder (Standalone interactive video monitor) */}
+            {/* LEVEL 3 — Camera Viewfinder (Standalone interactive video monitor) */}
             <div 
               className="overflow-hidden relative flex flex-col justify-between rounded-lg border shadow-sm group"
               style={{ 
@@ -220,7 +249,7 @@ const InterviewPreparation = () => {
                     borderColor: 'var(--c-border)'
                   }}
                 >
-                  {cameraStatus === 'granted' ? 'â— SENSOR ACTIVE' : 'OFFLINE'}
+                  {cameraStatus === 'granted' ? '● SENSOR ACTIVE' : 'OFFLINE'}
                 </span>
 
                 <div className="flex items-center gap-2">
@@ -261,7 +290,7 @@ const InterviewPreparation = () => {
               )}
             </div>
 
-            {/* LEVEL 2 â€” Equipment Verification Rows (No nested box container) */}
+            {/* LEVEL 2 — Equipment Verification Rows (No nested box container) */}
             <div className="space-y-3">
               <h3 className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--c-text-muted)' }}>
                 Equipment Status
@@ -348,15 +377,53 @@ const InterviewPreparation = () => {
                 </div>
               )}
 
-              <div className="pt-2">
+              {/* NFR 10 - Consent-Based Recording */}
+              {!readyToBegin && (
+                <label
+                  className="flex items-start gap-3 rounded-md border p-3 text-xs cursor-pointer"
+                  style={{
+                    borderColor: consentGiven ? 'var(--c-accent)' : 'var(--c-border)',
+                    background: 'var(--c-surface-muted)',
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={consentGiven}
+                    onChange={(e) => {
+                      setConsentGiven(e.target.checked);
+                      if (e.target.checked) setPermissionError('');
+                    }}
+                    className="mt-0.5 h-4 w-4 shrink-0 accent-orange-500"
+                  />
+                  <span className="leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
+                    <strong style={{ color: 'var(--c-text)' }}>Recording consent.</strong>{' '}
+                    I agree that MockAI may record my microphone audio and webcam video while I am answering each
+                    question. Recordings are used only to assess this practice interview and are never used for
+                    hiring decisions. A red REC indicator is shown whenever recording is active.
+                  </span>
+                </label>
+              )}
+
+              <div className="pt-2 space-y-2">
                 {!readyToBegin ? (
-                  <button 
-                    onClick={requestPermissions}
-                    className="c-btn c-btn-primary w-full py-3 text-xs font-bold rounded-md flex items-center justify-center gap-2"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    <span>Authorize Camera & Microphone</span>
-                  </button>
+                  <>
+                    <button 
+                      onClick={requestPermissions}
+                      disabled={!consentGiven}
+                      className="c-btn c-btn-primary w-full py-3 text-xs font-bold rounded-md flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      <span>Authorize Camera & Microphone</span>
+                    </button>
+                    <button
+                      onClick={handleTextOnly}
+                      disabled={continuingTextOnly}
+                      className="c-btn c-btn-secondary w-full py-2.5 text-xs font-semibold rounded-md flex items-center justify-center gap-2"
+                    >
+                      <Keyboard className="w-3.5 h-3.5" />
+                      <span>Continue with typed answers only (no camera or mic)</span>
+                    </button>
+                  </>
                 ) : (
                   <button 
                     onClick={handleBegin}
@@ -370,7 +437,7 @@ const InterviewPreparation = () => {
             </div>
           </div>
 
-          {/* Right Column: Session Ledger & Protocol (5 cols) â€” Open editorial layout */}
+          {/* Right Column: Session Ledger & Protocol (5 cols) — Open editorial layout */}
           <div className="lg:col-span-5 space-y-6">
             
             {/* Session Specifications Ledger */}
@@ -398,7 +465,7 @@ const InterviewPreparation = () => {
 
                 <div className="py-2.5 flex items-center justify-between">
                   <dt style={{ color: 'var(--c-text-secondary)' }}>Estimated Runtime</dt>
-                  <dd className="font-bold text-right font-mono" style={{ color: 'var(--c-text)' }}>~{minDuration}â€“{maxDuration} Min</dd>
+                  <dd className="font-bold text-right font-mono" style={{ color: 'var(--c-text)' }}>~{minDuration}–{maxDuration} Min</dd>
                 </div>
               </dl>
             </div>

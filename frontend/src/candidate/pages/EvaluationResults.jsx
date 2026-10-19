@@ -37,6 +37,8 @@ import InterviewFlowLayout from '../layouts/InterviewFlowLayout';
 import { getActiveInterview, getRealEvaluation, startEvaluation, endInterview } from '../services/candidateApi';
 import { formatDate } from '../../utils/dateFormat';
 import { CANDIDATE_IMAGES } from '../assets/images';
+import { LanguageSummarySection, QuestionLanguageNotes } from '../components/LanguageAnalysis';
+import InterviewSurvey from '../components/InterviewSurvey';
 import {
   AssessmentDossierSeal,
   CornerReticles,
@@ -152,6 +154,7 @@ const EvaluationResults = () => {
     behavioral_composure: 0,
   };
   const perQuestionEval = evaluation?.per_question ?? [];
+  const languageSummary = evaluation?.language_summary ?? insights?.language_analysis ?? interview?.languageSummary ?? null;
   const facialSummary = evaluation?.facial_summary;
   const hasVisionSummary = facialSummary?.status === 'completed';
 
@@ -844,6 +847,9 @@ const EvaluationResults = () => {
           </section>
         )}
 
+        {/* 4b. LANGUAGE QUALITY, GRAMMAR & TONE (FR16-01 / Objective 3) */}
+        {isCompleted && <LanguageSummarySection summary={languageSummary} />}
+
         {/* ===================================================================
             5. QUESTION-BY-QUESTION REVIEW (Editorial Multi-Signal Stream)
            =================================================================== */}
@@ -1118,11 +1124,13 @@ const EvaluationResults = () => {
                       style={{ background: 'var(--c-surface-muted)', borderColor: 'var(--c-border)', color: 'var(--c-text)' }}
                     >
                       <span className="font-bold text-[10px] uppercase tracking-wider block mb-1" style={{ color: 'var(--c-text-muted)' }}>
-                        Transcript
+                        {resp?.response_mode === 'text' ? 'Typed Answer' : 'Transcript'}
                       </span>
                       "{transcript}"
                     </div>
                   )}
+
+                  <QuestionLanguageNotes textAnalysis={qEval?.text_analysis} />
 
                   {/* Specific Feedback if provided */}
                   {feedback && (
@@ -1208,6 +1216,9 @@ const EvaluationResults = () => {
             )}
           </section>
         )}
+
+        {/* 5b. POST-INTERVIEW SURVEY (Objective 7) */}
+        {evaluationStatus === 'completed' && <InterviewSurvey interviewId={id} />}
 
         {/* ===================================================================
             6. ACTIONS BAR

@@ -151,7 +151,7 @@ const InterviewHistory = () => {
           </Link>
         </div>
 
-        {/* LEVEL 1 â€” Telemetry Metrics (Directly on page with clean typography and dividers) */}
+        {/* LEVEL 1 — Telemetry Metrics (Directly on page with clean typography and dividers) */}
         <section aria-label="History Telemetry" className="border-b pb-8" style={{ borderColor: 'var(--c-border)' }}>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-10">
             <div>
@@ -186,13 +186,13 @@ const InterviewHistory = () => {
                 Average Score
               </p>
               <p className="c-serif-num text-3xl font-bold" style={{ color: 'var(--c-text)' }}>
-                {stats.avgScore != null ? `${stats.avgScore}%` : 'â€”'}
+                {stats.avgScore != null ? `${stats.avgScore}%` : '—'}
               </p>
             </div>
           </div>
         </section>
 
-        {/* LEVEL 2 â€” Filter Controls & Search Bar */}
+        {/* LEVEL 2 — Filter Controls & Search Bar */}
         <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 pt-1">
           {/* Segmented Filter Tabs */}
           <div className="flex items-center gap-1 overflow-x-auto pb-1 md:pb-0">
@@ -265,7 +265,7 @@ const InterviewHistory = () => {
           </div>
         </div>
 
-        {/* LEVEL 2 â€” Main Data Ledger Table (Open, structured table with dividers) */}
+        {/* LEVEL 2 — Main Data Ledger Table (Open, structured table with dividers) */}
         {loading ? (
           <div className="space-y-2">
             <div className="c-skeleton h-14 rounded-lg" />

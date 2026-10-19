@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   Mic,
   Square,
@@ -14,6 +14,8 @@ import {
   Sparkles,
   PhoneOff,
   CheckCircle2,
+  Keyboard,
+  Save,
 } from 'lucide-react';
 import InterviewFlowLayout from '../layouts/InterviewFlowLayout';
 import {
@@ -25,6 +27,7 @@ import {
   getActiveInterview,
   submitResponse,
   submitResponseMetadataOnly,
+  submitTextResponse,
   endInterview,
 } from '../services/candidateApi';
 
@@ -32,6 +35,13 @@ import {
 const InterviewSimulator = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  // Objective 1 - "text, voice or video". textOnly is set when the candidate
+  // declined camera/mic on the Preparation screen; no media is ever opened.
+  const textOnly = !!location.state?.textOnly;
+  const [answerMode, setAnswerMode] = useState(textOnly ? 'text' : 'spoken');
+  const [typedDrafts, setTypedDrafts] = useState({});
+  const typingStartRef = useRef({});
 
   const [interview, setInterview] = useState(null);
   const [index, setIndex] = useState(0);
@@ -75,16 +85,22 @@ const InterviewSimulator = () => {
 
         // Pre-populate already recorded question response cache
         const map = {};
+        const drafts = {};
         (data.responses || []).forEach((r) => {
           const qId = r.question_id || r.questionId;
           if (qId) {
             map[qId] = {
               durationSeconds: r.duration_seconds || r.durationSeconds || 0,
               timestamp: r.created_at || r.createdAt,
+              mode: r.response_mode || 'spoken',
             };
+            if (r.response_mode === 'text' && r.text_response) {
+              drafts[qId] = r.text_response;
+            }
           }
         });
         setResponses(map);
+        setTypedDrafts(drafts);
       })
       .catch(() => {
         if (mounted) navigate('/interview/goal');
@@ -101,6 +117,7 @@ const InterviewSimulator = () => {
   // 2. Initialize live media stream
   useEffect(() => {
     let active = true;
+    if (textOnly) return undefined;
 
     async function initStream() {
       try {
@@ -146,7 +163,7 @@ const InterviewSimulator = () => {
         streamRef.current.getTracks().forEach((t) => t.stop());
       }
     };
-  }, []);
+  }, [textOnly]);
 
   // 3. Start Recording
   const startRecording = () => {
@@ -219,7 +236,7 @@ const InterviewSimulator = () => {
 
         setResponses((prev) => ({
           ...prev,
-          [currentQuestion.id]: { durationSeconds: duration, timestamp: new Date().toISOString() },
+          [currentQuestion.id]: { durationSeconds: duration, timestamp: new Date().toISOString(), mode: 'spoken' },
         }));
         setPendingRecording(null);
       } catch (uploadErr) {
@@ -265,6 +282,38 @@ const InterviewSimulator = () => {
 
   const handleStopAndSave = () => {
     stopRecordingAndUpload();
+  };
+
+  // Typed answer save (Objective 1)
+  const handleTypedChange = (questionId, value) => {
+    if (!typingStartRef.current[questionId]) {
+      typingStartRef.current[questionId] = Date.now();
+    }
+    setTypedDrafts((prev) => ({ ...prev, [questionId]: value }));
+  };
+
+  const saveTypedAnswer = async () => {
+    const currentQuestion = interview.questions[index];
+    const text = (typedDrafts[currentQuestion.id] || '').trim();
+    if (text.length < 2) {
+      setSaveError('Please type your answer before saving.');
+      return;
+    }
+    const startedAt = typingStartRef.current[currentQuestion.id];
+    const durationSeconds = startedAt ? Math.round((Date.now() - startedAt) / 1000) : null;
+    setSaving(true);
+    setSaveError('');
+    try {
+      await submitTextResponse(id, currentQuestion.id, { text, durationSeconds });
+      setResponses((prev) => ({
+        ...prev,
+        [currentQuestion.id]: { durationSeconds: durationSeconds || 0, timestamp: new Date().toISOString(), mode: 'text' },
+      }));
+    } catch (err) {
+      setSaveError(err.message || 'Could not save your typed answer. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const jumpToQuestion = (targetIdx) => {
@@ -322,6 +371,10 @@ const InterviewSimulator = () => {
   const answeredCurrent = !!responses[question?.id];
   const isFinalQuestion = index === total - 1;
   const questionNumStr = (index + 1).toString().padStart(2, '0');
+  const isTextMode = answerMode === 'text';
+  const currentDraft = typedDrafts[question?.id] || '';
+  const draftWordCount = currentDraft.trim() ? currentDraft.trim().split(/\s+/).length : 0;
+  const savedMode = responses[question?.id]?.mode;
 
   return (
     <InterviewFlowLayout step="session">
@@ -398,14 +451,63 @@ const InterviewSimulator = () => {
               {/* Status & Guidance Bar */}
               <div className="border-t pt-3 flex items-center justify-between gap-4 text-xs" style={{ borderColor: 'var(--c-border)', color: 'var(--c-text-secondary)' }}>
                 <p className="text-[11px]">
-                  Formulate your response, then click <strong className="font-semibold" style={{ color: 'var(--c-text)' }}>Start Answering</strong>.
+                  {isTextMode ? (
+                    <>Type your answer below, then click <strong className="font-semibold" style={{ color: 'var(--c-text)' }}>Save Typed Answer</strong>.</>
+                  ) : (
+                    <>Formulate your response, then click <strong className="font-semibold" style={{ color: 'var(--c-text)' }}>Start Answering</strong>.</>
+                  )}
                 </p>
                 {answeredCurrent && (
                   <span className="shrink-0 c-badge c-badge-success flex items-center gap-1 font-semibold text-[10px]">
-                    <CheckCircle2 className="w-3 h-3" /> Saved ({responses[question.id]?.durationSeconds || 0}s)
+                    <CheckCircle2 className="w-3 h-3" />
+                    {savedMode === 'text' ? 'Saved (typed)' : `Saved (${responses[question.id]?.durationSeconds || 0}s)`}
                   </span>
                 )}
               </div>
+
+              {/* Answer mode: speak (audio + video) or type (Objective 1) */}
+              {!textOnly && (
+                <div className="flex items-center gap-1 p-1 rounded-md border w-fit" style={{ borderColor: 'var(--c-border)', background: 'var(--c-surface-muted)' }}>
+                  {[
+                    { id: 'spoken', label: 'Speak', Icon: Mic },
+                    { id: 'text', label: 'Type', Icon: Keyboard },
+                  ].map(({ id: modeId, label, Icon }) => (
+                    <button
+                      key={modeId}
+                      onClick={() => { setAnswerMode(modeId); setSaveError(''); }}
+                      disabled={isRecording || saving}
+                      className="px-3 py-1.5 rounded text-[11px] font-semibold flex items-center gap-1.5 transition-colors"
+                      style={{
+                        background: answerMode === modeId ? 'var(--c-surface)' : 'transparent',
+                        color: answerMode === modeId ? 'var(--c-text)' : 'var(--c-text-muted)',
+                        boxShadow: answerMode === modeId ? '0 1px 2px rgba(0,0,0,0.25)' : 'none',
+                      }}
+                    >
+                      <Icon className="w-3.5 h-3.5" />
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {isTextMode && (
+                <div className="space-y-1.5">
+                  <textarea
+                    value={currentDraft}
+                    onChange={(e) => handleTypedChange(question.id, e.target.value)}
+                    disabled={saving}
+                    rows={7}
+                    maxLength={5000}
+                    placeholder="Type your answer here. Write it as you would say it in the interview."
+                    className="w-full rounded-md border p-3 text-sm leading-relaxed resize-y focus:outline-none"
+                    style={{ background: 'var(--c-surface-muted)', borderColor: 'var(--c-border)', color: 'var(--c-text)' }}
+                  />
+                  <div className="flex items-center justify-between text-[10px]" style={{ color: 'var(--c-text-muted)' }}>
+                    <span>Typed answers are scored on content, grammar and tone. Speech and facial analysis are not applied.</span>
+                    <span className="font-mono shrink-0 pl-2">{draftWordCount} words</span>
+                  </div>
+                </div>
+              )}
 
               {/* Active Recording State Bar */}
               {isRecording && (
@@ -474,7 +576,7 @@ const InterviewSimulator = () => {
                 </div>
               )}
 
-              {streamError && (
+              {streamError && !isTextMode && (
                 <div className="c-badge-danger rounded-md p-3 flex items-start gap-2 text-xs">
                   <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                   <p>Hardware media stream disconnected. Please check camera/mic permissions and refresh.</p>
@@ -490,7 +592,20 @@ const InterviewSimulator = () => {
 
               {/* Primary Action Controls */}
               <div className="space-y-3 pt-2">
-                {isRecording ? (
+                {isTextMode && !isRecording ? (
+                  <button
+                    onClick={saveTypedAnswer}
+                    disabled={saving || draftWordCount === 0}
+                    className="c-btn c-btn-primary w-full py-3.5 text-xs font-bold flex items-center justify-center gap-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {saving ? (
+                      <div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      <Save className="w-4 h-4" />
+                    )}
+                    <span>{saving ? 'Saving Answer…' : savedMode === 'text' ? 'Update Typed Answer' : 'Save Typed Answer'}</span>
+                  </button>
+                ) : isRecording ? (
                   <button
                     onClick={handleStopAndSave}
                     className="c-btn c-btn-danger w-full py-3.5 text-xs font-bold flex items-center justify-center gap-2 rounded-md"
@@ -579,13 +694,23 @@ const InterviewSimulator = () => {
             >
               <CornerReticles size={10} color={isRecording ? 'var(--c-danger)' : 'var(--c-border)'} />
 
-              <video 
-                ref={videoRef} 
-                autoPlay 
-                muted 
-                playsInline 
-                className="w-full h-full object-cover" 
-              />
+              {textOnly ? (
+                <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-center p-6">
+                  <Keyboard className="w-8 h-8" style={{ color: 'var(--c-text-muted)' }} />
+                  <p className="text-xs font-bold" style={{ color: 'var(--c-text)' }}>Typed answer mode</p>
+                  <p className="text-[11px] max-w-xs" style={{ color: 'var(--c-text-muted)' }}>
+                    Camera and microphone are off. Nothing is being recorded.
+                  </p>
+                </div>
+              ) : (
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  muted
+                  playsInline
+                  className="w-full h-full object-cover"
+                />
+              )}
 
               {/* Viewfinder Top Bar Overlay */}
               <div className="absolute top-2.5 inset-x-2.5 flex items-center justify-between pointer-events-none">
@@ -601,7 +726,7 @@ const InterviewSimulator = () => {
                     borderColor: 'var(--c-border)'
                   }}
                 >
-                  {isRecording ? `● REC ${formatTime(elapsed)}` : streamReady ? '● LIVE' : 'OFFLINE'}
+                  {isRecording ? `● REC ${formatTime(elapsed)}` : textOnly ? 'CAMERA OFF' : streamReady ? '● LIVE' : 'OFFLINE'}
                 </span>
 
                 <div className="flex items-center gap-1.5">
@@ -619,7 +744,7 @@ const InterviewSimulator = () => {
               </div>
 
               {/* Viewfinder Bottom Audio Overlay */}
-              <div className="absolute bottom-2.5 inset-x-2.5 pointer-events-none">
+              <div className={`absolute bottom-2.5 inset-x-2.5 pointer-events-none ${textOnly ? 'hidden' : ''}`}>
                 <div 
                   className="px-2.5 py-1 rounded-md border flex items-center justify-between gap-2 backdrop-blur-sm"
                   style={{

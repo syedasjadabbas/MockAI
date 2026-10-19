@@ -51,6 +51,7 @@ function toFrontendInterview(doc) {
     completedAt: doc.completed_at,
     questions: (doc.questions || []).map(toFrontendQuestion),
     responses: doc.responses || [],
+    recordingConsent: doc.recording_consent || null,
   };
 }
 
@@ -107,6 +108,25 @@ export async function submitResponse(interviewId, questionId, response) {
   const doc = await fetchCandidateApi(`/interviews/${interviewId}/responses/${questionId}/media`, {
     method: 'POST',
     body: formData,
+  });
+  return toFrontendInterview(doc);
+}
+
+// Objective 1 - typed (text) answer. Scored on content and language only;
+// speech delivery and facial analysis are not assessed for typed answers.
+export async function submitTextResponse(interviewId, questionId, { text, durationSeconds }) {
+  const doc = await fetchCandidateApi(`/interviews/${interviewId}/responses/${questionId}/text`, {
+    method: 'POST',
+    body: JSON.stringify({ text, duration_seconds: durationSeconds ?? null }),
+  });
+  return toFrontendInterview(doc);
+}
+
+// NFR 10 - stores the candidate's explicit recording consent decision.
+export async function recordConsent(interviewId, { microphone, camera }) {
+  const doc = await fetchCandidateApi(`/interviews/${interviewId}/consent`, {
+    method: 'POST',
+    body: JSON.stringify({ microphone, camera }),
   });
   return toFrontendInterview(doc);
 }
@@ -201,6 +221,7 @@ export async function getInterviewById(id) {
         insights: evaluation.insights,
         summaryReport: evaluation.summary_report,
         dimensionScores: evaluation.dimension_scores,
+        languageSummary: evaluation.language_summary || evaluation.insights?.language_analysis || null,
         perQuestion: evaluation.per_question || [],
       };
     }
@@ -223,6 +244,7 @@ export async function getInterviewById(id) {
       insights: null,
       summaryReport: null,
       dimensionScores: null,
+      languageSummary: null,
       perQuestion: [],
     };
   } catch {
@@ -316,4 +338,21 @@ export async function getProgress() {
       ),
     };
   }
+}
+
+// ---------------------------------------------------------------------------
+// Objective 7 - post-interview user survey (usability + accuracy testing)
+// ---------------------------------------------------------------------------
+
+export async function getSurvey(interviewId) {
+  const data = await fetchCandidateApi(`/interviews/${interviewId}/survey`);
+  return data.survey;
+}
+
+export async function submitSurvey(interviewId, survey) {
+  const data = await fetchCandidateApi(`/interviews/${interviewId}/survey`, {
+    method: 'POST',
+    body: JSON.stringify(survey),
+  });
+  return data.survey;
 }
