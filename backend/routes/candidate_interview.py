@@ -472,6 +472,23 @@ def save_text_response(
 ALLOWED_MEDIA_CONTENT_TYPES = ("video/webm", "audio/webm")
 
 
+def _require_recording_consent(interview: dict, needs_camera: bool) -> None:
+    consent = interview.get("recording_consent") or {}
+    missing = []
+    if not consent.get("microphone"):
+        missing.append("microphone")
+    if needs_camera and not consent.get("camera"):
+        missing.append("camera")
+    if missing:
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                f"Recording consent for the {' and '.join(missing)} has not been given for this interview. "
+                "Please confirm consent on the preparation screen, or answer by typing instead."
+            ),
+        )
+
+
 def _upsert_evaluation_per_question_asr(interview: dict, question_id: str, asr_result: dict) -> None:
     evaluation = interview.get("evaluation") or {
         "started_at": None, "completed_at": None, "per_question": [],
@@ -506,6 +523,11 @@ async def upload_response_media(
     content_type = (file.content_type or "").split(";")[0].strip().lower()
     if content_type not in ALLOWED_MEDIA_CONTENT_TYPES:
         raise HTTPException(status_code=400, detail=f"Unsupported media type: {file.content_type!r}. Expected webm audio/video.")
+
+    # NFR 10 - server-side consent enforcement: no recording is stored unless
+    # this interview carries an explicit consent record covering the devices
+    # the recording came from (microphone always; camera for video).
+    _require_recording_consent(interview, needs_camera=content_type.startswith("video/"))
 
     data = await file.read()
     max_bytes = int(os.getenv("MAX_RESPONSE_MEDIA_MB", "25")) * 1024 * 1024

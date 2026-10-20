@@ -37,9 +37,15 @@ const InterviewSimulator = () => {
   const navigate = useNavigate();
   const location = useLocation();
   // Objective 1 - "text, voice or video". textOnly is set when the candidate
-  // declined camera/mic on the Preparation screen; no media is ever opened.
-  const textOnly = !!location.state?.textOnly;
-  const [answerMode, setAnswerMode] = useState(textOnly ? 'text' : 'spoken');
+  // declined camera/mic on the Preparation screen (navigation state, or the
+  // stored consent record after a page refresh); no media is ever opened.
+  // NFR 10 - the camera/mic are only opened once the interview's stored
+  // consent covers both (consentChecked); otherwise the candidate is sent
+  // back to Preparation to give it.
+  const [consentDeclined, setConsentDeclined] = useState(false);
+  const [consentChecked, setConsentChecked] = useState(false);
+  const textOnly = !!location.state?.textOnly || consentDeclined;
+  const [answerMode, setAnswerMode] = useState(location.state?.textOnly ? 'text' : 'spoken');
   const [typedDrafts, setTypedDrafts] = useState({});
   const typingStartRef = useRef({});
 
@@ -81,6 +87,17 @@ const InterviewSimulator = () => {
           navigate('/interview/goal');
           return;
         }
+        const consent = data.recordingConsent;
+        if (!location.state?.textOnly) {
+          if (consent && consent.microphone === false) {
+            setConsentDeclined(true);
+            setAnswerMode('text');
+          } else if (!(consent?.microphone && consent?.camera)) {
+            navigate(`/interview/${id}/prepare`, { replace: true });
+            return;
+          }
+        }
+        setConsentChecked(true);
         setInterview(data);
 
         // Pre-populate already recorded question response cache
@@ -117,7 +134,7 @@ const InterviewSimulator = () => {
   // 2. Initialize live media stream
   useEffect(() => {
     let active = true;
-    if (textOnly) return undefined;
+    if (textOnly || !consentChecked) return undefined;
 
     async function initStream() {
       try {
@@ -163,7 +180,7 @@ const InterviewSimulator = () => {
         streamRef.current.getTracks().forEach((t) => t.stop());
       }
     };
-  }, [textOnly]);
+  }, [textOnly, consentChecked]);
 
   // 3. Start Recording
   const startRecording = () => {

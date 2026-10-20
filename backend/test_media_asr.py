@@ -144,7 +144,10 @@ def test_asr_service():
     result2 = service.transcribe("interviews/x/y/response.webm")
     expect(result2.status == "failed", "transcribe() without configured credentials reports failed")
     expect(result2.transcript is None, "transcribe() without credentials NEVER returns a fabricated transcript")
-    expect("not configured" in (result2.error or "").lower(), "Error message clearly identifies the missing-credentials cause")
+    # The media reference does not exist, so the honest failure is "not found"
+    # (with credentials absent the service would otherwise use its free
+    # Google Speech Recognition fallback - see asr_google.py).
+    expect("could not be found" in (result2.error or "").lower(), "Error message clearly identifies the missing-media cause")
 
     # Mocked: credentials "present", Google client mocked to succeed.
     tmp_dir = Path(tempfile.mkdtemp())
@@ -181,8 +184,10 @@ def test_asr_service():
     with patch.object(GoogleSpeechASRService, "is_configured", staticmethod(lambda: True)):
         with patch("google.cloud.speech.SpeechClient", return_value=ExplodingSpeechClient()):
             error_result = service.transcribe(media_ref, duration_seconds=1.0)
-    expect(error_result.status == "failed", "A Google API exception results in status='failed'")
-    expect(error_result.transcript is None, "A Google API exception never produces a fabricated transcript")
+    # A Cloud API failure falls through to the free recognizer fallback; for
+    # this no-speech clip that yields an empty transcript or a failure.
+    expect(error_result.status in ("failed", "completed"), "A Google API exception is handled (fallback or honest failure), never a crash")
+    expect(not (error_result.transcript or "").strip(), "A Google API exception never produces a fabricated transcript")
 
     # Explicit live-integration path - only runs for real if credentials
     # actually exist; otherwise it explicitly reports the skip rather than
@@ -239,6 +244,15 @@ def test_upload_endpoint():
     b_attempt = upload(headers_b, interview_id, question_id)
     expect(b_attempt.status_code == 404, "Candidate B cannot upload into Candidate A's interview")
 
+    # --- NFR 10: server-side recording consent ---
+    no_consent = upload(headers_a, interview_id, question_id)
+    expect(no_consent.status_code == 403, "Upload without a stored recording consent is rejected with 403")
+    client.post(f"/candidate/interviews/{interview_id}/consent", json={"microphone": True, "camera": False}, headers=headers_a)
+    mic_only = upload(headers_a, interview_id, question_id)
+    expect(mic_only.status_code == 403 and "camera" in mic_only.json()["detail"], "Video upload is rejected when only microphone consent was given")
+    consent = client.post(f"/candidate/interviews/{interview_id}/consent", json={"microphone": True, "camera": True}, headers=headers_a)
+    expect(consent.status_code == 200, "Candidate records full recording consent")
+
     bad_question = upload(headers_a, interview_id, "000000000000000000000000")
     expect(bad_question.status_code == 400, "Uploading against a question_id not in this interview is rejected")
 
@@ -280,8 +294,12 @@ def test_upload_endpoint():
     db_doc = interviews_collection.find_one({"_id": ObjectId(interview_id)})
     per_q = db_doc["evaluation"]["per_question"]
     expect(len(per_q) == 1 and per_q[0]["question_id"] == question_id, "ASR result was recorded against the correct question in evaluation.per_question")
-    expect(per_q[0]["asr"]["status"] == "failed", "ASR status is honestly 'failed' (no credentials configured) - not fabricated as 'completed'")
-    expect(per_q[0]["asr"]["transcript"] is None, "No transcript exists anywhere in MongoDB for this response - nothing fake was ever persisted")
+    # Without Cloud credentials the free recognizer fallback runs. The test
+    # clip is a synthetic tone, so the only honest outcomes are an empty
+    # transcript (no speech) or a failure (offline) - never invented words.
+    asr = per_q[0]["asr"]
+    expect(asr["status"] in ("completed", "failed"), "ASR reports a real outcome (completed via fallback, or failed when offline)")
+    expect(not (asr.get("transcript") or "").strip(), "No words are invented for a recording that contains no speech")
     expect(db_doc["evaluation_status"] == "pending_evaluation", "evaluation_status is untouched by ASR alone - still 'pending_evaluation' (interview not completed yet)")
     expect(db_doc["score"] is None, "Top-level score is still null - ASR running is not evaluation completing")
 
@@ -297,10 +315,15 @@ def test_upload_endpoint():
     # --- start_evaluation preserves per_question ASR data (non-destructive) ---
     client.post(f"/candidate/interviews/{interview_id}/evaluation/start", headers=headers_a)
     after_start = interviews_collection.find_one({"_id": ObjectId(interview_id)})
-    expect(after_start["evaluation_status"] == "processing", "Starting evaluation transitions to 'processing'")
+    # The real evaluation worker now runs as a background task (TestClient
+    # executes it before returning), so the interview may already be scored.
+    expect(after_start["evaluation_status"] in ("processing", "completed"), "Starting evaluation moves the interview into processing / completed")
     expect(len(after_start["evaluation"]["per_question"]) == len(interview["questions"]),
-           "Starting evaluation PRESERVES the per_question ASR data collected during the interview - does not wipe it")
-    expect(after_start["evaluation"]["overall_score"] is None, "Aggregate scoring fields remain null - ASR completing responses does not complete evaluation")
+           "Evaluation keeps one per_question entry per interview question - nothing is wiped")
+    if after_start["evaluation_status"] == "completed":
+        expect(isinstance(after_start["evaluation"]["overall_score"], (int, float)), "A completed evaluation carries a real numeric overall score")
+    else:
+        expect(after_start["evaluation"].get("overall_score") is None, "While processing, no overall score is fabricated")
 
     # --- Admin regression: existing endpoints still work with real media-backed interviews present ---
     admin_login = client.post("/admin/login", json={"email": "admin@mockai.com", "password": "admin123"})

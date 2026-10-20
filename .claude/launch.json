@@ -4,17 +4,37 @@
     {
       "name": "backend",
       "runtimeExecutable": "E:\\WEBS & APPS\\MockAI\\.venv311\\Scripts\\python.exe",
-      "runtimeArgs": ["-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"],
+      "runtimeArgs": [
+        "-m",
+        "uvicorn",
+        "main:app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8000",
+        "--reload"
+      ],
       "cwd": "backend",
       "env": {
-        "AI_PROFILE": "report"
+        "AI_PROFILE": "report",
+        "PYTHONUTF8": "1",
+        "TF_CPP_MIN_LOG_LEVEL": "2"
       },
       "port": 8000
     },
     {
       "name": "backend-lite",
       "runtimeExecutable": "E:\\WEBS & APPS\\MockAI\\.venv\\Scripts\\python.exe",
-      "runtimeArgs": ["-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"],
+      "runtimeArgs": [
+        "-m",
+        "uvicorn",
+        "main:app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8000",
+        "--reload"
+      ],
       "cwd": "backend",
       "env": {
         "AI_PROFILE": "lite"
@@ -24,7 +44,10 @@
     {
       "name": "frontend",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
       "cwd": "frontend",
       "env": {
         "VITE_API_BASE": "http://localhost:8000",

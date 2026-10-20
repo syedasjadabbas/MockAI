@@ -113,6 +113,9 @@ def run_live_production_check():
     interview_id = interview["id"]
     questions = interview["questions"]
     print(f"  PASS: Interview started: {interview_id} with {len(questions)} questions.")
+    # NFR 10: recordings are only accepted after consent is stored
+    requests.post(f"{PROD_URL}/candidate/interviews/{interview_id}/consent",
+                  json={"microphone": True, "camera": True}, headers=headers, timeout=15)
 
     # 7. Upload real WebM video for Question 1
     q1 = questions[0]

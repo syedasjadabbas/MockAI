@@ -248,6 +248,9 @@ def run_acceptance_gate():
     interview_id = interview["id"]
     questions = interview["questions"]
     expect(interview.get("status") == "In Progress", "3.5 Interview status == 'In Progress'")
+    # NFR 10: recordings are only accepted after consent is stored
+    requests.post(f"{PROD_URL}/candidate/interviews/{interview_id}/consent",
+                  json={"microphone": True, "camera": True}, headers=headers, timeout=15)
     expect(interview.get("evaluation_status") == "pending_evaluation", "3.6 Evaluation status == 'pending_evaluation'")
     print(f"      Initialized Interview ID: {interview_id} with {len(questions)} questions.")
 

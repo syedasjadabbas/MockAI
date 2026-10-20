@@ -239,8 +239,10 @@ const GoalSelection = () => {
       const byId = (id) => categories.find((c) => c.id === id);
       const best = result.best && byId(result.best.id);
       if (result.status === 'matched' && best) {
-        // FR07-03: confirm the interpreted goal before continuing
-        chooseCategory(best, text, result.interview_type, false);
+        // FR07-03: confirm the interpreted goal before continuing. A short
+        // goal ("ICU nurse") becomes the role name; a full sentence does not.
+        const roleName = text.split(/\s+/).length <= 4 ? text : null;
+        chooseCategory(best, roleName, result.interview_type, false);
         return;
       }
       const suggestions = (result.suggestions || []).map((m) => m.id).filter(byId);

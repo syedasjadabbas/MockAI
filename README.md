@@ -156,7 +156,7 @@ MockAI includes a full-stack mentor scheduling platform integrated into the cand
 | **NLP Semantics** | DistilBERT (`multi-qa-distilbert-cos-v1`) · lite: MiniLM (`all-MiniLM-L6-v2`) | Dense transformer embeddings & rubric cosine similarity |
 | **Grammar** | BERT (`bert-base-uncased-CoLA`) + rule checks · lite: rule checks | Grammatical acceptability score plus explainable corrections |
 | **Face Detection** | OpenCV YuNet ONNX | Real-time bounding box and 5-landmark face localization |
-| **Emotion Classifier**| DeepFace emotion CNN · lite: Emotion-FERPlus ONNX | Facial expression probability distribution |
+| **Emotion Classifier**| DeepFace CNN + Emotion-FERPlus CNN (weighted ensemble) · lite: Emotion-FERPlus ONNX | Facial expression probability distribution |
 
 ### AI Model Profiles
 
@@ -164,10 +164,10 @@ The FYP-I report specifies DistilBERT, BERT and DeepFace. These need about 2–3
 
 | Profile | NLP | Grammar | Facial emotion | Use |
 | :--- | :--- | :--- | :--- | :--- |
-| `report` | DistilBERT | BERT-CoLA + rules | DeepFace CNN | Local runs, FYP demo (Python 3.11, `pip install -r backend/requirements-report.txt`) |
+| `report` | DistilBERT | BERT-CoLA + rules | DeepFace + FERPlus CNN ensemble | Local runs, FYP demo (Python 3.11, `pip install -r backend/requirements-report.txt`) |
 | `lite` (default) | MiniLM | Rules | FERPlus CNN | Render Starter (512 MB) cloud deployment |
 
-Every result records the model that actually ran. If a report-profile model cannot load, that component falls back to its lite equivalent rather than failing.
+In the report profile the DeepFace CNN is combined with FERPlus (40/60 weighted average per frame): on real webcam recordings DeepFace alone misread neutral faces as angry or happy under poor lighting, while FERPlus, trained on the same faces with cleaner 10-rater labels, tracked the visible expression. Every result records the model that actually ran. If a report-profile model cannot load, that component falls back to its lite equivalent rather than failing.
 
 ---
 

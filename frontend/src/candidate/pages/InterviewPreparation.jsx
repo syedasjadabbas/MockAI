@@ -35,6 +35,7 @@ const InterviewPreparation = () => {
   // NFR 10 - explicit consent is required before the mic/webcam are activated
   const [consentGiven, setConsentGiven] = useState(false);
   const [continuingTextOnly, setContinuingTextOnly] = useState(false);
+  const [savingConsent, setSavingConsent] = useState(false);
 
   const videoRef = useRef(null);
   const streamRef = useRef(null);
@@ -96,11 +97,6 @@ const InterviewPreparation = () => {
         videoRef.current.srcObject = stream;
       }
 
-      // Persist the consent decision as an auditable record (best-effort:
-      // the browser permission and the checkbox already gate capture).
-      recordConsent(id, { microphone: true, camera: true }).catch((e) =>
-        console.warn('Consent record notice:', e)
-      );
     } catch (err) {
       console.error('Media permission error:', err);
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
@@ -130,7 +126,18 @@ const InterviewPreparation = () => {
     };
   }, []);
 
-  const handleBegin = () => {
+  // NFR 10 - the backend refuses recordings without a stored consent
+  // record, so save it before entering the session.
+  const handleBegin = async () => {
+    setSavingConsent(true);
+    setPermissionError('');
+    try {
+      await recordConsent(id, { microphone: true, camera: true });
+    } catch (e) {
+      setPermissionError(e.message || 'Could not save your recording consent. Please try again.');
+      setSavingConsent(false);
+      return;
+    }
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
     }
@@ -427,9 +434,10 @@ const InterviewPreparation = () => {
                 ) : (
                   <button 
                     onClick={handleBegin}
-                    className="c-btn c-btn-primary w-full py-3 text-xs font-bold rounded-md flex items-center justify-center gap-2"
+                    disabled={savingConsent}
+                    className="c-btn c-btn-primary w-full py-3 text-xs font-bold rounded-md flex items-center justify-center gap-2 disabled:opacity-60"
                   >
-                    <span>Begin Interview Session</span>
+                    <span>{savingConsent ? 'Saving consent…' : 'Begin Interview Session'}</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </button>
                 )}

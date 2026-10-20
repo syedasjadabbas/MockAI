@@ -167,6 +167,28 @@ async def startup_event():
     except Exception as nlp_warm_err:
         print(f"NLP model pre-warm notice: {nlp_warm_err}")
 
+    # 4. Pre-build the goal chatbot's category profiles (FR07) so the first
+    #    candidate message isn't slowed down.
+    try:
+        from routes.candidate_goal import _category_profiles, _profile_similarities
+        from services.nlp_analyzer import BertSemanticAnalyzer
+        profiles = _category_profiles()
+        if BertSemanticAnalyzer().get_model() is not None:
+            _profile_similarities("warm-up", profiles, BertSemanticAnalyzer())
+        print(f"Startup check: goal chatbot ready ({len(profiles)} categories).")
+    except Exception as goal_warm_err:
+        print(f"Goal chatbot warm-up notice: {goal_warm_err}")
+
+    # 5. Report AI profile: load DeepFace now rather than on the first evaluation.
+    try:
+        from services.ai_profile import get_profile, is_report_profile
+        print(f"Startup check: AI profile = {get_profile()}")
+        if is_report_profile():
+            from services.facial_analyzer import FacialAnalyzer
+            print(f"Startup check: facial pipeline = {FacialAnalyzer().pipeline_label}")
+    except Exception as face_warm_err:
+        print(f"Facial model warm-up notice: {face_warm_err}")
+
 @app.get("/")
 async def root():
     return {"message": "Admin Panel Backend is running"}

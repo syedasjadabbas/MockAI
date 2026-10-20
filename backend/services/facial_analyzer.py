@@ -22,7 +22,7 @@ Scientific Integrity:
 """
 import os
 import logging
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 from pathlib import Path
 from datetime import datetime
 
@@ -33,6 +33,13 @@ import onnxruntime as ort
 from services.ai_profile import is_report_profile
 
 logger = logging.getLogger("mockai.facial_analyzer")
+
+# Share of the DeepFace CNN in the report-profile emotion ensemble (the rest
+# is Emotion-FERPlus). See _classify_face_expression for the rationale.
+DEEPFACE_ENSEMBLE_WEIGHT = 0.4
+
+# DeepFace emotion model output order (deepface.models.demography Emotion).
+DEEPFACE_LABELS = ["angry", "disgust", "fear", "happy", "sad", "surprise", "neutral"]
 
 # DeepFace (report AI profile) emotion classes -> this module's label set.
 # DeepFace's CNN predicts 7 classes; FERPlus's 8th class, contempt, stays 0.
@@ -95,14 +102,25 @@ class FacialAnalyzer:
     # ------------------------------------------------------------------
     def _init_deepface(self):
         try:
-            from deepface import DeepFace
-            # Warm-up builds the emotion model and downloads its weights on
-            # first use, so the first interview isn't slowed down.
-            DeepFace.analyze(
-                img_path=np.zeros((48, 48, 3), dtype=np.uint8), actions=["emotion"],
-                detector_backend="skip", enforce_detection=False, silent=True,
-            )
-            self._deepface = DeepFace
+            # DeepFace prints download progress with non-ASCII characters; on
+            # a Windows cp1252 console that raises UnicodeEncodeError, so make
+            # the console streams tolerant before importing it.
+            import sys
+            for stream in (sys.stdout, sys.stderr):
+                try:
+                    if stream and (getattr(stream, "encoding", "") or "").lower() not in ("utf-8", "utf8"):
+                        stream.reconfigure(errors="replace")
+                except Exception:
+                    pass
+            from deepface.modules import modeling
+            # Use DeepFace's emotion CNN directly rather than DeepFace.analyze():
+            # with current OpenCV/Keras versions analyze()'s own preprocessing
+            # skews neutral faces to "angry" (verified on real interview
+            # frames), while the model fed a 0-1 scaled face crop matches the
+            # visible expression. Building it also downloads its weights once.
+            model = modeling.build_model(task="facial_attribute", model_name="Emotion")
+            model.predict(np.zeros((48, 48, 3), dtype=np.float32))  # warm-up
+            self._deepface = model
             logger.info("DeepFace emotion CNN loaded (report AI profile).")
         except Exception as e:
             self._deepface_failed = True
@@ -114,24 +132,18 @@ class FacialAnalyzer:
 
     @property
     def classifier_label(self) -> str:
-        return "deepface-emotion-cnn" if self.using_deepface else "fer-cnn-onnx-v1"
+        return "deepface+ferplus-cnn-ensemble" if self.using_deepface else "fer-cnn-onnx-v1"
 
     @property
     def pipeline_label(self) -> str:
-        return "opencv-yunet + deepface-emotion-cnn" if self.using_deepface else "yunet-onnx + emotion-ferplus-8"
+        return "opencv-yunet + deepface/ferplus cnn ensemble" if self.using_deepface else "yunet-onnx + emotion-ferplus-8"
 
     def _classify_with_deepface(self, face_crop: np.ndarray) -> Optional[np.ndarray]:
         try:
-            result = self._deepface.analyze(
-                img_path=face_crop, actions=["emotion"], detector_backend="skip",
-                enforce_detection=False, silent=True,
-            )
-            emotions = (result[0] if isinstance(result, list) else result).get("emotion", {})
+            probs = np.asarray(self._deepface.predict(face_crop.astype(np.float32) / 255.0), dtype=np.float32).reshape(-1)
             vec = np.zeros(len(EMOTION_LABELS), dtype=np.float32)
-            for df_label, pct in emotions.items():
-                ours = DEEPFACE_LABEL_MAP.get(df_label)
-                if ours:
-                    vec[EMOTION_LABELS.index(ours)] = float(pct) / 100.0
+            for df_label, p in zip(DEEPFACE_LABELS, probs):
+                vec[EMOTION_LABELS.index(DEEPFACE_LABEL_MAP[df_label])] = float(p)
             total = float(vec.sum())
             return vec / total if total > 0 else None
         except Exception as e:
@@ -925,12 +937,30 @@ class FacialAnalyzer:
         return (None, (0, 0, 0, 0), 0) if return_count else (None, (0, 0, 0, 0))
 
     def _classify_face_expression(self, face_crop: np.ndarray) -> Optional[np.ndarray]:
-        """Classifies probabilities across 8 emotions: DeepFace CNN in the report
-        profile, Emotion-FERPlus ONNX CNN otherwise."""
+        """Classifies probabilities across 8 emotions.
+
+        Report profile: weighted per-frame ensemble of the DeepFace CNN and the
+        Emotion-FERPlus CNN (DEEPFACE_ENSEMBLE_WEIGHT). Both are trained on the
+        FER-2013 faces, but FERPlus uses labels re-annotated by 10 raters per
+        image, which are known to be cleaner than the original single labels
+        DeepFace learned from. On real interview webcam footage DeepFace alone
+        over-read neutral faces as angry (bright, glasses, low camera angle)
+        or happy (dark, blue-lit room) when the visible expression was
+        neutral; the weighted ensemble tracked the visible expression while
+        still using DeepFace as the report specifies ("DeepFace / CNN Models").
+        Lite profile: Emotion-FERPlus only.
+        """
         if self.using_deepface:
-            probs = self._classify_with_deepface(face_crop)
-            if probs is not None:
-                return probs
+            df_probs = self._classify_with_deepface(face_crop)
+            fer_probs = self._classify_with_ferplus(face_crop)
+            if df_probs is not None and fer_probs is not None:
+                w = DEEPFACE_ENSEMBLE_WEIGHT
+                avg = w * df_probs + (1.0 - w) * fer_probs
+                return (avg / avg.sum()).astype(np.float32)
+            return df_probs if df_probs is not None else fer_probs
+        return self._classify_with_ferplus(face_crop)
+
+    def _classify_with_ferplus(self, face_crop: np.ndarray) -> Optional[np.ndarray]:
         if self.ort_session is None:
             logger.warning("Emotion-FERPlus model session is uninitialized; facial expression analysis unavailable.")
             return None

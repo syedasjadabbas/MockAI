@@ -25,7 +25,7 @@ from pydantic import BaseModel, Field
 
 from database import categories_collection, questions_collection
 from middleware.candidate_auth import verify_candidate
-from services.nlp_analyzer import BertSemanticAnalyzer, nlp_model_label
+from services.nlp_analyzer import BertSemanticAnalyzer, _calibrate, nlp_model_label
 
 router = APIRouter()
 
@@ -44,7 +44,7 @@ TYPE_KEYWORDS = {
     "technical": r"\b(technical|coding|domain|skills? test)\b",
 }
 
-_profile_cache: Dict[str, object] = {"key": None, "at": 0.0, "profiles": []}
+_profile_cache: Dict[str, object] = {"key": None, "at": 0.0, "profiles": [], "embeddings": None}
 
 
 class GoalRequest(BaseModel):
@@ -57,20 +57,43 @@ def _category_profiles() -> List[Dict]:
     if _profile_cache["key"] == key and time.time() - float(_profile_cache["at"]) < 300:
         return _profile_cache["profiles"]  # type: ignore[return-value]
 
+    # One query for all active questions, grouped here (one round trip
+    # instead of one per category).
+    by_category: Dict[str, List[str]] = {}
+    for q in questions_collection.find({"status": "active"}, {"category_id": 1, "question_text": 1}):
+        bucket = by_category.setdefault(str(q.get("category_id")), [])
+        if len(bucket) < 4:
+            bucket.append(q.get("question_text", ""))
+
     profiles = []
     for c in cats:
-        sample_qs = [
-            q.get("question_text", "")
-            for q in questions_collection.find({"category_id": str(c["_id"]), "status": "active"}, {"question_text": 1}).limit(4)
-        ]
+        sample_qs = by_category.get(str(c["_id"]), [])
         profiles.append({
             "id": str(c["_id"]),
             "name": c.get("name", ""),
             "description": c.get("description", ""),
             "profile_text": f"{c.get('name', '')}. {c.get('description', '')} " + " ".join(sample_qs),
         })
-    _profile_cache.update({"key": key, "at": time.time(), "profiles": profiles})
+    _profile_cache.update({"key": key, "at": time.time(), "profiles": profiles, "embeddings": None})
     return profiles
+
+
+def _profile_similarities(text: str, profiles: List[Dict], analyzer: BertSemanticAnalyzer) -> List[float]:
+    """Cosine similarity of the goal to each category profile. Profile
+    embeddings are computed once per cache refresh, so each request only
+    encodes the candidate's own sentence."""
+    import torch
+    from sentence_transformers import util
+
+    model = analyzer.get_model()
+    with torch.inference_mode():
+        if _profile_cache.get("embeddings") is None or _profile_cache.get("profiles") is not profiles:
+            _profile_cache["embeddings"] = model.encode(
+                [p["profile_text"] for p in profiles], convert_to_tensor=True, show_progress_bar=False
+            )
+        query = model.encode([text], convert_to_tensor=True, show_progress_bar=False)
+        sims = util.cos_sim(query, _profile_cache["embeddings"])[0]
+    return [_calibrate(float(v), analyzer._model_name) for v in sims]
 
 
 def _infer_type(text: str, best_category: Optional[Dict], analyzer: BertSemanticAnalyzer) -> str:
@@ -102,7 +125,7 @@ def interpret_goal(data: GoalRequest, token_payload: dict = Depends(verify_candi
     if analyzer.get_model() is None:
         raise HTTPException(status_code=503, detail="Goal interpretation model is unavailable.")
 
-    sims = analyzer.compute_similarities_batch(text, [p["profile_text"] for p in profiles])
+    sims = _profile_similarities(text, profiles, analyzer)
     ranked = sorted(
         ({"id": p["id"], "name": p["name"], "description": p["description"], "score": round(s, 3)} for p, s in zip(profiles, sims)),
         key=lambda m: m["score"],
