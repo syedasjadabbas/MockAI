@@ -18,6 +18,38 @@ import threading
 from typing import Dict, List, Optional, Set, Tuple
 
 from services.ai_interfaces import NLPService, TextAnalysisResult
+from services.ai_profile import sentence_model_name, REPORT_SENTENCE_MODEL
+
+# ---------------------------------------------------------------------------
+# Per-model similarity calibration.
+#
+# The score thresholds below (concept match >= 0.48, semantic floor 0.12 /
+# span 0.65, relevance floor 0.06 / span 0.58) were tuned on MiniLM. Another
+# encoder produces cosine similarities on a different scale, so its raw
+# similarity is mapped onto the MiniLM scale with a linear fit
+#     calibrated = slope * raw + intercept
+# fitted by least squares on real (transcript, reference) pairs from the
+# question bank - see backend/calibrate_nlp_models.py. Identity for MiniLM.
+# ---------------------------------------------------------------------------
+SIMILARITY_CALIBRATION = {
+    # Fitted 2026-10-20 on 266 real answer/reference pairs, R^2 = 0.967.
+    REPORT_SENTENCE_MODEL: (0.9795, 0.0510),
+}
+
+LITE_MODEL_LABEL = "bert-distilbert-minilm-v2"
+REPORT_MODEL_LABEL = "distilbert-multi-qa-cos-v1"
+
+
+def nlp_model_label() -> str:
+    """Name of the encoder that actually runs, for result records."""
+    loaded = getattr(BertSemanticAnalyzer._instance, "_model_name", None) if BertSemanticAnalyzer._instance else None
+    name = loaded or sentence_model_name()
+    return REPORT_MODEL_LABEL if name == REPORT_SENTENCE_MODEL else LITE_MODEL_LABEL
+
+
+def _calibrate(sim: float, model_name: Optional[str]) -> float:
+    slope, intercept = SIMILARITY_CALIBRATION.get(model_name or "", (1.0, 0.0))
+    return max(-1.0, min(1.0, slope * sim + intercept))
 
 logger = logging.getLogger("mockai.nlp")
 
@@ -192,7 +224,9 @@ def _extract_concept_pools(
 class BertSemanticAnalyzer:
     """
     Singleton BERT/DistilBERT semantic encoder using sentence-transformers.
-    Model: all-MiniLM-L6-v2 (6-layer Distilled BERT architecture, 384-dim dense embeddings).
+    Model is chosen by the AI profile (services/ai_profile.py):
+      report: sentence-transformers/multi-qa-distilbert-cos-v1 (DistilBERT, 768-dim)
+      lite:   all-MiniLM-L6-v2 (6-layer distilled MiniLM, 384-dim)
     """
     _instance: Optional["BertSemanticAnalyzer"] = None
     _lock: threading.Lock = threading.Lock()
@@ -203,6 +237,7 @@ class BertSemanticAnalyzer:
                 if cls._instance is None:
                     cls._instance = super(BertSemanticAnalyzer, cls).__new__(cls)
                     cls._instance._model = None
+                    cls._instance._model_name = None
                     cls._instance._init_attempted = False
                     cls._instance._load_error = None
         return cls._instance
@@ -231,7 +266,7 @@ class BertSemanticAnalyzer:
                     except Exception:
                         pass
                     from sentence_transformers import SentenceTransformer
-                    model_name = os.getenv("SENTENCE_TRANSFORMER_MODEL", "all-MiniLM-L6-v2")
+                    model_name = sentence_model_name()
                     try:
                         # 1. Prefer local cached files to eliminate external Hugging Face network checks/timeouts
                         self._model = SentenceTransformer(model_name, local_files_only=True)
@@ -241,10 +276,22 @@ class BertSemanticAnalyzer:
                         # 2. Safe and explicit fallback if local cache is missing
                         self._model = SentenceTransformer(model_name)
                         logger.info("SentenceTransformer %s (DistilBERT family) loaded successfully via fallback.", model_name)
+                    self._model_name = model_name
                 except Exception as e:
                     logger.warning("Could not initialize BERT/DistilBERT model: %s", e)
                     self._load_error = str(e)
                     self._model = None
+                    # Report profile: fall back to the lite encoder rather than
+                    # dropping to the keyword heuristic.
+                    lite = "all-MiniLM-L6-v2"
+                    if model_name != lite:
+                        try:
+                            from sentence_transformers import SentenceTransformer
+                            self._model = SentenceTransformer(lite)
+                            self._model_name = lite
+                            logger.warning("Fell back to %s after %s failed to load.", lite, model_name)
+                        except Exception as fb_err:
+                            logger.warning("Lite encoder fallback also failed: %s", fb_err)
 
         return self._model
 
@@ -267,7 +314,7 @@ class BertSemanticAnalyzer:
             query_emb = embeddings[0:1]
             target_embs = embeddings[1:]
             sim_matrix = util.cos_sim(query_emb, target_embs)[0]
-            return [float(sim.item()) for sim in sim_matrix]
+            return [_calibrate(float(sim.item()), self._model_name) for sim in sim_matrix]
 
     def compute_similarity(self, text_a: str, text_b: str) -> float:
         """
@@ -322,7 +369,7 @@ class BertSemanticAnalyzer:
                     max_sims = sim_matrix.max(dim=1).values
 
                 for i, c in enumerate(unmatched_concepts):
-                    if max_sims[i].item() >= 0.48:
+                    if _calibrate(max_sims[i].item(), self._model_name) >= 0.48:
                         covered.append(c)
                     else:
                         missing.append(c)
@@ -529,7 +576,7 @@ def analyze_transcript(
             "covered_concepts": [],
             "missing_concepts": target_concepts[:8] if target_concepts else full_pool[:5],
             "notes": "No spoken response recorded or transcript was empty.",
-            "model": "bert-distilbert-minilm-v2",
+            "model": nlp_model_label(),
             "error": None,
             "is_echo": False,
             "is_fragment": False,
@@ -709,7 +756,7 @@ def analyze_transcript(
             "covered_concepts": sorted_covered[:15],
             "missing_concepts": sorted_missing[:8],
             "notes": notes,
-            "model": "bert-distilbert-minilm-v2",
+            "model": nlp_model_label(),
             "error": None,
             "is_echo": is_echo,
             "is_fragment": is_fragment,
@@ -735,7 +782,7 @@ class RealNLPService(NLPService):
                 language_quality=0.0,
                 clarity=0.0,
                 notes="Empty transcript",
-                model="bert-distilbert-minilm-v2",
+                model=nlp_model_label(),
             )
         
         from services.language_analyzer import analyze_language
@@ -745,5 +792,5 @@ class RealNLPService(NLPService):
             language_quality=lang["language_quality_score"],
             clarity=lang["clarity_score"],
             notes=lang["notes"],
-            model="bert-distilbert-minilm-v2",
+            model=nlp_model_label(),
         )

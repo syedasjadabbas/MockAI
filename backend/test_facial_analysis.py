@@ -75,7 +75,8 @@ def run_tests():
     assert "dominant_expression" in res1 and res1["dominant_expression"], "Missing dominant_expression"
     assert "composure_index" in res1["behavioral_indicators"], "Missing composure_index"
     assert "engagement_level" in res1["behavioral_indicators"], "Missing engagement_level"
-    assert res1["model"] == "fer-cnn-onnx-v1", "Unexpected model name"
+    expected_model = analyzer.classifier_label  # "deepface-emotion-cnn" (report) or "fer-cnn-onnx-v1" (lite)
+    assert res1["model"] == expected_model, f"Unexpected model name {res1['model']}"
     print(f"  PASS: Face tracked ({res1['frames_with_face']}/{res1['total_frames_sampled']} frames). Dominant: {res1['dominant_expression']}.")
 
     # -------------------------------------------------------------------------

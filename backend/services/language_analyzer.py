@@ -27,10 +27,97 @@ weaknesses and suggestions (FR 16-03, FR 25-27). It does not change the
 fused question score, so the scoring formula documented in the README stays
 unchanged.
 """
+import logging
 import re
+import threading
 from typing import Dict, List, Optional, Tuple
 
+from services.ai_profile import REPORT_GRAMMAR_MODEL, is_report_profile
+
+logger = logging.getLogger("mockai.language")
+
 METHOD = "rule_based_language_v1"
+BERT_METHOD = "bert_cola+rules_v1"
+
+
+# ---------------------------------------------------------------------------
+# BERT grammatical-acceptability scorer (report AI profile).
+#
+# Model: textattack/bert-base-uncased-CoLA - BERT-base fine-tuned on the
+# Corpus of Linguistic Acceptability, so it outputs P(sentence is
+# grammatical). It gives a reliable overall grammar signal but cannot say
+# which word is wrong, so the rule checks below still provide the concrete,
+# explainable corrections; the two are blended into grammar_score.
+# ---------------------------------------------------------------------------
+
+class _BertGrammarScorer:
+    _instance = None
+    _lock = threading.Lock()
+
+    def __new__(cls):
+        if cls._instance is None:
+            with cls._lock:
+                if cls._instance is None:
+                    inst = super().__new__(cls)
+                    inst._model = None
+                    inst._tokenizer = None
+                    inst._attempted = False
+                    inst._acceptable_idx = 1
+                    cls._instance = inst
+        return cls._instance
+
+    def _load(self) -> bool:
+        if self._model is not None:
+            return True
+        if self._attempted:
+            return False
+        with self._lock:
+            if self._model is not None:
+                return True
+            self._attempted = True
+            try:
+                from transformers import AutoModelForSequenceClassification, AutoTokenizer
+                try:
+                    self._tokenizer = AutoTokenizer.from_pretrained(REPORT_GRAMMAR_MODEL, local_files_only=True)
+                    self._model = AutoModelForSequenceClassification.from_pretrained(REPORT_GRAMMAR_MODEL, local_files_only=True)
+                except Exception:
+                    self._tokenizer = AutoTokenizer.from_pretrained(REPORT_GRAMMAR_MODEL)
+                    self._model = AutoModelForSequenceClassification.from_pretrained(REPORT_GRAMMAR_MODEL)
+                self._model.eval()
+                # CoLA convention: label 1 = acceptable.
+                labels = {v.lower(): k for k, v in (self._model.config.id2label or {}).items()}
+                self._acceptable_idx = labels.get("acceptable", 1)
+                logger.info("BERT CoLA grammar model loaded (%s).", REPORT_GRAMMAR_MODEL)
+                return True
+            except Exception as e:
+                logger.warning("BERT grammar model unavailable, using rules only: %s", e)
+                self._model = None
+                return False
+
+    def acceptability(self, chunks: List[str]) -> Optional[float]:
+        """Length-weighted mean P(acceptable) over text chunks, 0-1."""
+        if not chunks or not self._load():
+            return None
+        try:
+            import torch
+            with torch.inference_mode():
+                enc = self._tokenizer(chunks, padding=True, truncation=True, max_length=96, return_tensors="pt")
+                probs = torch.softmax(self._model(**enc).logits, dim=-1)[:, self._acceptable_idx].tolist()
+            weights = [max(1, len(c.split())) for c in chunks]
+            return sum(p * w for p, w in zip(probs, weights)) / sum(weights)
+        except Exception as e:
+            logger.warning("BERT grammar inference failed: %s", e)
+            return None
+
+
+def _grammar_chunks(raw: str, mode: str) -> List[str]:
+    if mode == "text":
+        parts = [p.strip() for p in re.split(r"(?<=[.!?])\s+", raw) if len(p.split()) >= 3]
+        if parts:
+            return parts[:12]
+    # Spoken transcripts have no punctuation: score ~18-word windows.
+    words = raw.split()
+    return [" ".join(words[i:i + 18]) for i in range(0, len(words), 18) if len(words[i:i + 18]) >= 3][:12]
 
 # ---------------------------------------------------------------------------
 # Grammar rules: (issue type, compiled regex, suggestion builder)
@@ -226,7 +313,15 @@ def analyze_language(transcript: Optional[str], mode: str = "spoken") -> Dict:
     # grammar errors.
     weighted = sum(0.5 if i["type"] in ("Capitalisation", "Punctuation") else 1.0 for i in issues)
     density = weighted / max(word_count, 30) * 100.0  # weighted issues per 100 words
-    grammar_score = round(max(0.0, 100.0 - density * 6.0), 1)
+    rule_grammar_score = round(max(0.0, 100.0 - density * 6.0), 1)
+    grammar_score = rule_grammar_score
+    bert_acceptability = None
+    method = METHOD
+    if is_report_profile():
+        bert_acceptability = _BertGrammarScorer().acceptability(_grammar_chunks(raw, mode))
+        if bert_acceptability is not None:
+            grammar_score = round(0.6 * bert_acceptability * 100.0 + 0.4 * rule_grammar_score, 1)
+            method = BERT_METHOD
 
     # ---------------- Clarity ----------------
     if mode == "text" and sentences:
@@ -289,9 +384,11 @@ def analyze_language(transcript: Optional[str], mode: str = "spoken") -> Dict:
     return {
         "status": "completed",
         "mode": mode,
-        "method": METHOD,
+        "method": method,
         "language_quality_score": language_quality_score,
         "grammar_score": grammar_score,
+        "rule_grammar_score": rule_grammar_score,
+        "bert_acceptability": round(bert_acceptability * 100.0, 1) if bert_acceptability is not None else None,
         "clarity_score": clarity_score,
         "vocabulary_score": vocabulary_score,
         "tone": {

@@ -356,3 +356,13 @@ export async function submitSurvey(interviewId, survey) {
   });
   return data.survey;
 }
+
+// FR07 / Use Case 4 - interpret the candidate's free-text goal by meaning
+// (BERT-family sentence encoder on the backend), returning the closest real
+// Question Bank categories and the inferred interview type.
+export async function interpretGoal(text) {
+  return fetchCandidateApi('/goal/interpret', {
+    method: 'POST',
+    body: JSON.stringify({ text }),
+  });
+}

@@ -3,9 +3,22 @@
   "configurations": [
     {
       "name": "backend",
+      "runtimeExecutable": "E:\\WEBS & APPS\\MockAI\\.venv311\\Scripts\\python.exe",
+      "runtimeArgs": ["-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"],
+      "cwd": "backend",
+      "env": {
+        "AI_PROFILE": "report"
+      },
+      "port": 8000
+    },
+    {
+      "name": "backend-lite",
       "runtimeExecutable": "E:\\WEBS & APPS\\MockAI\\.venv\\Scripts\\python.exe",
       "runtimeArgs": ["-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"],
       "cwd": "backend",
+      "env": {
+        "AI_PROFILE": "lite"
+      },
       "port": 8000
     },
     {

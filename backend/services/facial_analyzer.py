@@ -30,7 +30,21 @@ import cv2
 import numpy as np
 import onnxruntime as ort
 
+from services.ai_profile import is_report_profile
+
 logger = logging.getLogger("mockai.facial_analyzer")
+
+# DeepFace (report AI profile) emotion classes -> this module's label set.
+# DeepFace's CNN predicts 7 classes; FERPlus's 8th class, contempt, stays 0.
+DEEPFACE_LABEL_MAP = {
+    "neutral": "neutral",
+    "happy": "happiness",
+    "surprise": "surprise",
+    "sad": "sadness",
+    "angry": "anger",
+    "disgust": "disgust",
+    "fear": "fear",
+}
 
 # Model Paths
 MODELS_DIR = Path(__file__).resolve().parent.parent / "models"
@@ -66,8 +80,63 @@ class FacialAnalyzer:
             return
 
         self.ort_session: Optional[ort.InferenceSession] = None
+        self._deepface = None
+        self._deepface_failed = False
         self._init_models()
+        if is_report_profile():
+            self._init_deepface()
         self._initialized = True
+
+    # ------------------------------------------------------------------
+    # Report profile: DeepFace CNN emotion classifier (FYP-I report 5.3,
+    # "DeepFace / CNN Models"). Faces are still located with OpenCV YuNet;
+    # DeepFace classifies the cropped face (detector_backend="skip"), so
+    # detection is not run twice.
+    # ------------------------------------------------------------------
+    def _init_deepface(self):
+        try:
+            from deepface import DeepFace
+            # Warm-up builds the emotion model and downloads its weights on
+            # first use, so the first interview isn't slowed down.
+            DeepFace.analyze(
+                img_path=np.zeros((48, 48, 3), dtype=np.uint8), actions=["emotion"],
+                detector_backend="skip", enforce_detection=False, silent=True,
+            )
+            self._deepface = DeepFace
+            logger.info("DeepFace emotion CNN loaded (report AI profile).")
+        except Exception as e:
+            self._deepface_failed = True
+            logger.warning("DeepFace unavailable, using Emotion-FERPlus instead: %s", e)
+
+    @property
+    def using_deepface(self) -> bool:
+        return self._deepface is not None
+
+    @property
+    def classifier_label(self) -> str:
+        return "deepface-emotion-cnn" if self.using_deepface else "fer-cnn-onnx-v1"
+
+    @property
+    def pipeline_label(self) -> str:
+        return "opencv-yunet + deepface-emotion-cnn" if self.using_deepface else "yunet-onnx + emotion-ferplus-8"
+
+    def _classify_with_deepface(self, face_crop: np.ndarray) -> Optional[np.ndarray]:
+        try:
+            result = self._deepface.analyze(
+                img_path=face_crop, actions=["emotion"], detector_backend="skip",
+                enforce_detection=False, silent=True,
+            )
+            emotions = (result[0] if isinstance(result, list) else result).get("emotion", {})
+            vec = np.zeros(len(EMOTION_LABELS), dtype=np.float32)
+            for df_label, pct in emotions.items():
+                ours = DEEPFACE_LABEL_MAP.get(df_label)
+                if ours:
+                    vec[EMOTION_LABELS.index(ours)] = float(pct) / 100.0
+            total = float(vec.sum())
+            return vec / total if total > 0 else None
+        except Exception as e:
+            logger.debug(f"DeepFace inference notice: {e}")
+            return None
 
     def _init_models(self):
         """Initializes ONNX inference session and ensures model files are available."""
@@ -138,10 +207,10 @@ class FacialAnalyzer:
                     "fps": 0.0,
                     "duration_seconds": 0.0,
                     "inference_errors": 0,
-                    "model": "yunet-onnx + emotion-ferplus-8",
+                    "model": self.pipeline_label,
                     "model_notes": "Predictions reflect observable facial movements and expression classifications, not candidate internal emotional state, competence, or psychological truth.",
                 },
-                "model": "fer-cnn-onnx-v1",
+                "model": self.classifier_label,
                 "error": "Media recording not found on disk",
             }
 
@@ -175,10 +244,10 @@ class FacialAnalyzer:
                     "fps": 0.0,
                     "duration_seconds": 0.0,
                     "inference_errors": 1,
-                    "model": "yunet-onnx + emotion-ferplus-8",
+                    "model": self.pipeline_label,
                     "model_notes": "Predictions reflect observable facial movements and expression classifications, not candidate internal emotional state, competence, or psychological truth.",
                 },
-                "model": "fer-cnn-onnx-v1",
+                "model": self.classifier_label,
                 "error": "Media recording is empty (0 bytes)",
             }
 
@@ -217,10 +286,10 @@ class FacialAnalyzer:
                     "fps": 0.0,
                     "duration_seconds": 0.0,
                     "inference_errors": 0,
-                    "model": "yunet-onnx + emotion-ferplus-8",
+                    "model": self.pipeline_label,
                     "model_notes": "Predictions reflect observable facial movements and expression classifications, not candidate internal emotional state, competence, or psychological truth.",
                 },
-                "model": "fer-cnn-onnx-v1",
+                "model": self.classifier_label,
                 "error": "Media recording contains no video stream (audio-only)",
             }
 
@@ -306,10 +375,10 @@ class FacialAnalyzer:
                     "fps": 0.0,
                     "duration_seconds": 0.0,
                     "inference_errors": 1,
-                    "model": "yunet-onnx + emotion-ferplus-8",
+                    "model": self.pipeline_label,
                     "model_notes": "Predictions reflect observable facial movements and expression classifications, not candidate internal emotional state, competence, or psychological truth.",
                 },
-                "model": "fer-cnn-onnx-v1",
+                "model": self.classifier_label,
                 "error": "Unable to decode video streams",
             }
 
@@ -353,10 +422,10 @@ class FacialAnalyzer:
                             "fps": 0.0,
                             "duration_seconds": 0.0,
                             "inference_errors": 1,
-                            "model": "yunet-onnx + emotion-ferplus-8",
+                            "model": self.pipeline_label,
                             "model_notes": "Predictions reflect observable facial movements and expression classifications, not candidate internal emotional state, competence, or psychological truth.",
                         },
-                        "model": "fer-cnn-onnx-v1",
+                        "model": self.classifier_label,
                         "error": "Video contains no readable frames",
                     }
                 else:
@@ -474,10 +543,10 @@ class FacialAnalyzer:
                         "fps": round(video_fps, 2),
                         "duration_seconds": round(inferred_duration, 2),
                         "inference_errors": inference_errors,
-                        "model": "yunet-onnx + emotion-ferplus-8",
+                        "model": self.pipeline_label,
                         "model_notes": "Predictions reflect observable facial movements and expression classifications, not candidate internal emotional state, competence, or psychological truth.",
                     },
-                    "model": "fer-cnn-onnx-v1",
+                    "model": self.classifier_label,
                     "error": "No frames could be extracted from recording",
                 }
 
@@ -513,10 +582,10 @@ class FacialAnalyzer:
                         "fps": round(video_fps, 2),
                         "duration_seconds": round(inferred_duration, 2),
                         "inference_errors": inference_errors,
-                        "model": "yunet-onnx + emotion-ferplus-8",
+                        "model": self.pipeline_label,
                         "model_notes": "Predictions reflect observable facial movements and expression classifications, not candidate internal emotional state, competence, or psychological truth.",
                     },
-                    "model": "fer-cnn-onnx-v1",
+                    "model": self.classifier_label,
                     "error": None,
                 }
 
@@ -560,10 +629,10 @@ class FacialAnalyzer:
                         "fps": round(video_fps, 2),
                         "duration_seconds": round(inferred_duration, 2),
                         "inference_errors": inference_errors,
-                        "model": "yunet-onnx + emotion-ferplus-8",
+                        "model": self.pipeline_label,
                         "model_notes": "Predictions reflect observable facial movements and expression classifications, not candidate internal emotional state, competence, or psychological truth.",
                     },
-                    "model": "fer-cnn-onnx-v1",
+                    "model": self.classifier_label,
                     "error": "Facial expression confidence below classification threshold",
                 }
 
@@ -607,10 +676,10 @@ class FacialAnalyzer:
                     "fps": round(video_fps, 2),
                     "duration_seconds": round(inferred_duration, 2),
                     "inference_errors": inference_errors,
-                    "model": "yunet-onnx + emotion-ferplus-8",
+                    "model": self.pipeline_label,
                     "model_notes": "Predictions reflect observable facial movements and expression classifications, not candidate internal emotional state, competence, or psychological truth.",
                 },
-                "model": "fer-cnn-onnx-v1",
+                "model": self.classifier_label,
                 "analyzed_at": datetime.utcnow().isoformat(),
                 "error": None,
             }
@@ -645,10 +714,10 @@ class FacialAnalyzer:
                     "fps": 0.0,
                     "duration_seconds": 0.0,
                     "inference_errors": 1,
-                    "model": "yunet-onnx + emotion-ferplus-8",
+                    "model": self.pipeline_label,
                     "model_notes": "Predictions reflect observable facial movements and expression classifications, not candidate internal emotional state, competence, or psychological truth.",
                 },
-                "model": "fer-cnn-onnx-v1",
+                "model": self.classifier_label,
                 "error": str(e),
             }
         finally:
@@ -856,7 +925,12 @@ class FacialAnalyzer:
         return (None, (0, 0, 0, 0), 0) if return_count else (None, (0, 0, 0, 0))
 
     def _classify_face_expression(self, face_crop: np.ndarray) -> Optional[np.ndarray]:
-        """Runs the Emotion-FERPlus CNN model to classify probabilities across 8 emotions."""
+        """Classifies probabilities across 8 emotions: DeepFace CNN in the report
+        profile, Emotion-FERPlus ONNX CNN otherwise."""
+        if self.using_deepface:
+            probs = self._classify_with_deepface(face_crop)
+            if probs is not None:
+                return probs
         if self.ort_session is None:
             logger.warning("Emotion-FERPlus model session is uninitialized; facial expression analysis unavailable.")
             return None

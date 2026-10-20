@@ -9,6 +9,7 @@ from routes.candidate_mentors import router as candidate_mentors_router
 from routes.candidate_evaluation import router as candidate_evaluation_router
 from routes.internal_evaluation import router as internal_evaluation_router
 from routes.candidate_survey import router as candidate_survey_router
+from routes.candidate_goal import router as candidate_goal_router
 from database import admins_collection, admin_collection, client, init_db_indexes
 from utils.auth import hash_password
 
@@ -60,6 +61,9 @@ app.include_router(candidate_evaluation_router, prefix="/api/v1/candidate")  # v
 
 app.include_router(candidate_mentors_router, prefix="/candidate")
 app.include_router(candidate_mentors_router, prefix="/api/v1/candidate")  # versioned alias
+
+app.include_router(candidate_goal_router, prefix="/candidate")
+app.include_router(candidate_goal_router, prefix="/api/v1/candidate")  # versioned alias
 
 app.include_router(candidate_survey_router, prefix="/candidate")
 app.include_router(candidate_survey_router, prefix="/api/v1/candidate")  # versioned alias

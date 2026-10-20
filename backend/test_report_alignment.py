@@ -163,6 +163,28 @@ def test_admin_views():
     expect(r.status_code in (401, 403), "Survey summary requires an admin token")
 
 
+def test_goal_interpreter():
+    print("\n--- FR 07 / Use Case 4: semantic goal chatbot ---")
+    headers, _, _ = register_and_login("Goal")
+
+    def ask(text):
+        r = client.post("/candidate/goal/interpret", json={"text": text}, headers=headers)
+        assert r.status_code == 200, r.text
+        return r.json()
+
+    r = ask("I want to practise for a nursing job")
+    expect(r["status"] == "matched" and "Nursing" in r["best"]["name"], "Free-text nursing goal maps to the Nursing category")
+    r = ask("teaching maths at school")
+    expect(r["status"] == "matched" and "Education" in r["best"]["name"], "Teaching goal maps to Education by meaning")
+    r = ask("xyzzy qwerty blorp")
+    expect(r["status"] != "matched", "Gibberish is not forced onto a category")
+    r = ask("HR round, behavioural questions")
+    expect(r["interview_type"] == "behavioral", "HR / behavioural wording selects the behavioral interview type")
+    expect(r["method"].startswith("semantic-match:"), "Response records the encoder used")
+    r = client.post("/candidate/goal/interpret", json={"text": "nurse"})
+    expect(r.status_code == 401, "Goal interpretation requires a candidate token")
+
+
 def test_language_unit():
     print("\n--- Language analyzer unit checks ---")
     expect(analyze_language("", "text")["status"] == "empty", "Empty input is reported as empty, not scored")
@@ -184,6 +206,7 @@ if __name__ == "__main__":
     try:
         test_language_unit()
         test_lockout()
+        test_goal_interpreter()
         test_consent_typed_answers_and_survey()
         test_admin_views()
         print("\nALL REPORT ALIGNMENT TESTS PASSED SUCCESSFULLY!")

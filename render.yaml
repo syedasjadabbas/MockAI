@@ -17,6 +17,11 @@ services:
         sync: false
       - key: DATABASE_NAME
         value: mockai
+      # Lightweight model stack for the 512 MB Starter instance. The full
+      # report stack (DistilBERT, BERT-CoLA, DeepFace) runs locally with
+      # AI_PROFILE=report - see backend/requirements-report.txt.
+      - key: AI_PROFILE
+        value: lite
       - key: SECRET_KEY
         sync: false
       - key: INTERNAL_SERVICE_KEY

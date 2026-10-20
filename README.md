@@ -31,7 +31,8 @@ Detailed architectural, algorithmic, and verification specifications are maintai
 - **Custom Interview Setup**: Technical domains (Frontend, Backend, AI/ML, Cloud), custom roles, and difficulty selection.
 - **Hardware Sensor Diagnostics**: Camera and microphone authorization checks with real-time video preview.
 - **Interactive Interview Simulator**: Timed teleprompter question delivery, sequential progression, live video recording, and audio extraction.
-- **Trimodal AI Evaluation**: Automated per-question analysis combining DistilBERT semantics, speech delivery metrics, and FERPlus facial composure.
+- **Trimodal AI Evaluation**: Automated per-question analysis combining DistilBERT semantics, BERT grammar scoring, speech delivery metrics, and DeepFace (CNN) facial composure.
+- **Answer by Voice, Video or Text**: Record a spoken take on camera, or type the answer (scored on content and language only).
 - **Explainable Results & Feedback**: Multi-tab performance dossier featuring radar charts, dimension breakdowns (Technical, Fluency, Composure), detailed mathematical rationales, strengths, rubric omissions, and **STAR method** coaching suggestions.
 - **Longitudinal Progress Tracking**: Historical session tracking, score trends, and confidence/stress distributions.
 - **Industry Mentorship Subsystem**: Browse industry mentors, inspect specializations and hourly rates, book real-time appointment slots with collision protection, and manage bookings.
@@ -152,9 +153,21 @@ MockAI includes a full-stack mentor scheduling platform integrated into the cand
 | **Auth & Cryptography** | JWT (PyJWT), Bcrypt, Passlib | Role-based token verification and salted password hashing |
 | **Media Processing** | FFmpeg, Soundfile, PyDub | LocalFilesystemMediaStorage, WebM stream chunking, WAV extraction, MP4 normalization |
 | **Speech ASR** | Google Cloud Speech-to-Text | Real-time speech transcription |
-| **NLP Semantics** | DistilBERT (`all-MiniLM-L6-v2`) | Dense transformer embeddings & rubric cosine similarity |
+| **NLP Semantics** | DistilBERT (`multi-qa-distilbert-cos-v1`) · lite: MiniLM (`all-MiniLM-L6-v2`) | Dense transformer embeddings & rubric cosine similarity |
+| **Grammar** | BERT (`bert-base-uncased-CoLA`) + rule checks · lite: rule checks | Grammatical acceptability score plus explainable corrections |
 | **Face Detection** | OpenCV YuNet ONNX | Real-time bounding box and 5-landmark face localization |
-| **Emotion Classifier**| Emotion-FERPlus ONNX | 8-class facial expression probability distribution |
+| **Emotion Classifier**| DeepFace emotion CNN · lite: Emotion-FERPlus ONNX | Facial expression probability distribution |
+
+### AI Model Profiles
+
+The FYP-I report specifies DistilBERT, BERT and DeepFace. These need about 2–3 GB of RAM, so the backend has two profiles selected by the `AI_PROFILE` environment variable (`backend/services/ai_profile.py`):
+
+| Profile | NLP | Grammar | Facial emotion | Use |
+| :--- | :--- | :--- | :--- | :--- |
+| `report` | DistilBERT | BERT-CoLA + rules | DeepFace CNN | Local runs, FYP demo (Python 3.11, `pip install -r backend/requirements-report.txt`) |
+| `lite` (default) | MiniLM | Rules | FERPlus CNN | Render Starter (512 MB) cloud deployment |
+
+Every result records the model that actually ran. If a report-profile model cannot load, that component falls back to its lite equivalent rather than failing.
 
 ---
 

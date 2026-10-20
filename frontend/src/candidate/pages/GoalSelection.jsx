@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import InterviewFlowLayout from '../layouts/InterviewFlowLayout';
 import { INTERVIEW_TYPES } from '../data/categories';
-import { getCategories, startInterview } from '../services/candidateApi';
+import { getCategories, startInterview, interpretGoal } from '../services/candidateApi';
 import { CANDIDATE_IMAGES } from '../assets/images';
 import {
   CornerReticles,
@@ -171,6 +171,9 @@ const GoalSelection = () => {
   const [categories, setCategories] = useState([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [categoriesError, setCategoriesError] = useState('');
+  // Categories suggested by the semantic goal interpreter (ambiguous goals)
+  const [suggestionIds, setSuggestionIds] = useState([]);
+  const [interpreting, setInterpreting] = useState(false);
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -187,11 +190,12 @@ const GoalSelection = () => {
   const pushBot = (text) => setMessages((m) => [...m, { from: 'bot', text }]);
   const pushUser = (text) => setMessages((m) => [...m, { from: 'user', text }]);
 
-  const chooseCategory = (category, customRoleName = null) => {
+  const chooseCategory = (category, customRoleName = null, typeOverride = null, echoUser = true) => {
     const roleLabel = customRoleName || category.name;
-    pushUser(roleLabel);
+    if (echoUser) pushUser(roleLabel);
+    setSuggestionIds([]);
     setSelectedCategory(category);
-    setSelectedType(inferInterviewType(category));
+    setSelectedType(typeOverride || inferInterviewType(category));
     if (customRoleName) {
       setCustomRole(customRoleName);
     } else {
@@ -214,17 +218,48 @@ const GoalSelection = () => {
     }
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
     const text = input.trim();
-    if (!text) return;
+    if (!text || interpreting) return;
     pushUser(text);
     setInput('');
 
+    // 1. Semantic interpretation on the backend (FR07-02)
+    setInterpreting(true);
+    let result = null;
+    try {
+      result = await interpretGoal(text);
+    } catch {
+      result = null; // fall back to local keyword matching below
+    } finally {
+      setInterpreting(false);
+    }
+
+    if (result) {
+      const byId = (id) => categories.find((c) => c.id === id);
+      const best = result.best && byId(result.best.id);
+      if (result.status === 'matched' && best) {
+        // FR07-03: confirm the interpreted goal before continuing
+        chooseCategory(best, text, result.interview_type, false);
+        return;
+      }
+      const suggestions = (result.suggestions || []).map((m) => m.id).filter(byId);
+      if (result.status === 'ambiguous' && suggestions.length) {
+        pushBot('That could fit a few tracks. Which one is closest?');
+        setSuggestionIds(suggestions);
+        setSelectedType(null);
+        setStage('ask-type');
+        return;
+      }
+    }
+
+    // 2. Offline fallback: keyword matching
     const matched = matchCategoryFromText(text, categories);
     if (matched) {
-      chooseCategory(matched, text);
+      chooseCategory(matched, text, null, false);
     } else {
       pushBot("I didn't catch an exact track — pick one of the options below to get started.");
+      setSuggestionIds([]);
       setSelectedType(null);
       setStage('ask-type');
     }
@@ -352,7 +387,10 @@ const GoalSelection = () => {
 
               {stage === 'ask-type' && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {(selectedType ? getCategoriesByType(categories, selectedType) : categories).map((cat) => {
+                  {(suggestionIds.length
+                    ? suggestionIds.map((sid) => categories.find((c) => c.id === sid)).filter(Boolean)
+                    : selectedType ? getCategoriesByType(categories, selectedType) : categories
+                  ).map((cat) => {
                     const Icon = getCategoryDisplayIcon(cat);
                     const Schematic = getDomainSchematic(cat.name);
                     return (
@@ -441,8 +479,8 @@ const GoalSelection = () => {
               placeholder="Or enter any role or domain — e.g., Doctor, Nurse, Teacher, Accountant, Lawyer, React..."
               className="c-input flex-1 px-3.5 py-2.5 rounded-md text-xs"
             />
-            <button onClick={handleSend} className="c-btn c-btn-secondary px-4 py-2.5 rounded-md text-xs font-semibold">
-              Go
+            <button onClick={handleSend} disabled={interpreting} className="c-btn c-btn-secondary px-4 py-2.5 rounded-md text-xs font-semibold">
+              {interpreting ? 'Thinking…' : 'Go'}
             </button>
           </div>
         )}

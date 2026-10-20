@@ -50,3 +50,6 @@ google-credentials*.json
 
 # Scratch workspace scripts and temporary files
 scratch/
+
+# Python 3.11 env for the report AI profile
+.venv311/

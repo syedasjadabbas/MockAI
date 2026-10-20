@@ -18,6 +18,7 @@ from services.nlp_analyzer import (
 )
 from services.question_evaluator import evaluate_question_response
 from services.evaluation_worker import evaluate_interview_job
+from services.nlp_analyzer import nlp_model_label
 
 
 def run_tests():
@@ -68,7 +69,7 @@ def run_tests():
     assert res_good["status"] == "completed"
     assert res_good["content_score"] >= 75.0, f"Expected high score for relevant answer, got {res_good['content_score']}"
     assert res_good["semantic_similarity_score"] >= 75.0
-    assert res_good["model"] == "bert-distilbert-minilm-v2"
+    assert res_good["model"] == nlp_model_label()
 
     assert res_irrel["status"] == "completed"
     assert res_irrel["content_score"] < 25.0, f"Expected very low score for irrelevant answer, got {res_irrel['content_score']}"
@@ -140,7 +141,7 @@ def run_tests():
         rubric=rubric,
     )
     assert "text_analysis" in q_eval
-    assert q_eval["text_analysis"]["model"] == "bert-distilbert-minilm-v2"
+    assert q_eval["text_analysis"]["model"] == nlp_model_label()
     assert q_eval["text_analysis"]["semantic_similarity_score"] >= 75.0
     assert q_eval["text_analysis"]["content_score"] >= 75.0
     assert q_eval["score"] >= 70.0
@@ -176,7 +177,7 @@ def run_tests():
     assert len(per_q) > 0
     assert "text_analysis" in per_q[0]
     assert "model" in per_q[0]["text_analysis"]
-    assert per_q[0]["text_analysis"]["model"] in ("bert-distilbert-minilm-v2", "heuristic-fallback")
+    assert per_q[0]["text_analysis"]["model"] in (nlp_model_label(), "heuristic-fallback")
     print(f"  PASS: Worker persisted evaluation with NLP model: {per_q[0]['text_analysis']['model']}.")
 
     # -------------------------------------------------------------------------
@@ -202,7 +203,7 @@ def run_tests():
     svc_res = nlp_service.analyze_text(good_answer)
     assert svc_res.status == "completed"
     assert svc_res.language_quality is not None and svc_res.language_quality > 0
-    assert svc_res.model == "bert-distilbert-minilm-v2"
+    assert svc_res.model == nlp_model_label()
     print(f"  PASS: RealNLPService conforms to interface with quality = {svc_res.language_quality}.")
 
     print("\n" + "=" * 70)

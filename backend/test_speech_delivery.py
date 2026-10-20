@@ -34,6 +34,7 @@ from services.delivery_analyzer import (
 )
 from services.question_evaluator import evaluate_question_response
 from services.evaluation_worker import evaluate_interview_job
+from services.nlp_analyzer import nlp_model_label
 
 
 def run_tests():
@@ -260,7 +261,7 @@ oFile.Close
     assert per_q[0]["facial_analysis"]["status"] == "completed"
     # Check NLP from Task 2
     assert "text_analysis" in per_q[0]
-    assert per_q[0]["text_analysis"]["model"] in ("bert-distilbert-minilm-v2", "heuristic-fallback")
+    assert per_q[0]["text_analysis"]["model"] in (nlp_model_label(), "heuristic-fallback")
     print("  PASS: Real Vision (CNN) and Real NLP (BERT) remain 100% active and unregressed.")
 
     print("\n" + "=" * 70)
