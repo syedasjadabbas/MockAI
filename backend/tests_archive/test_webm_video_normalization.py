@@ -9,6 +9,9 @@ Verifies:
 5. Graceful degradation on missing or corrupted media.
 6. Trimodal fusion integration in question evaluation with real WebM media.
 """
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))  # archived: import from backend/
+
 import os
 import sys
 import glob

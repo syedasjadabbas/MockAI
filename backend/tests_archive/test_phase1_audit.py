@@ -8,6 +8,9 @@ Verifies:
 4. Sibling WAV reuse and proper cleanup behavior (no redundant FFmpeg calls).
 5. Unchanged scoring formulas, metrics, and behavioral contracts.
 """
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))  # archived: import from backend/
+
 import os
 import sys
 import tempfile

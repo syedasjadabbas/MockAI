@@ -16,6 +16,9 @@ Validates:
 5. No-face vs. offline/failed facial analysis:
    - State distinction preserved with honest 'Not Observed' and 'Not Assessed' semantics.
 """
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))  # archived: import from backend/
+
 import sys
 from pathlib import Path
 from datetime import datetime, timedelta

@@ -17,6 +17,9 @@ Validates all 14 Phase 3 requirements:
 13. Honest 'Not Observed' and 'Not Assessed' result semantics (no fabricated penalty).
 14. Deterministic repeatable inference for identical inputs.
 """
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))  # archived: import from backend/
+
 import os
 import sys
 import tempfile

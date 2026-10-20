@@ -3,6 +3,9 @@ Task 12: Production Deployment + Final Testing E2E Gate.
 Validates the complete production candidate lifecycle, admin oversight,
 security isolation, media storage, AI pipeline, and degradation states.
 """
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))  # archived: import from backend/
+
 import os
 import sys
 import time

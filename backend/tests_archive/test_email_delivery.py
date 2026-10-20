@@ -1,6 +1,9 @@
 """
 Test suite for Gmail SMTP Delivery Layer and Error Handling.
 """
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))  # archived: import from backend/
+
 import os
 import unittest
 from unittest.mock import patch, MagicMock

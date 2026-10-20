@@ -9,6 +9,9 @@ expected answer, tags, and rubric to rigorously verify:
 4. Correct identification of missing vs covered target concepts.
 5. Strict adherence to the FYP formula: 40% semantic, 35% coverage, 15% relevance, 10% depth.
 """
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))  # archived: import from backend/
+
 import sys
 import os
 

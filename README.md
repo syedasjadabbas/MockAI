@@ -186,7 +186,7 @@ In the report profile the DeepFace CNN is combined with FERPlus (30/70 weighted 
 
 ## 🧪 Testing & Verification Evidence
 
-The backend has 28 automated test modules in `backend/`. The 18 suites below were last re-run on **20 October 2026** in both AI profiles — `report` (DistilBERT, BERT-CoLA, DeepFace on Python 3.11) and `lite` (MiniLM, rules, FERPlus) — against MongoDB Atlas, and all passed. The production frontend build compiles 1,645 modules with no errors.
+`backend/` holds 20 maintained test scripts (older one-off audit scripts are kept in `backend/tests_archive/`). The 18 suites below were last re-run on **20 October 2026** in both AI profiles — `report` (DistilBERT, BERT-CoLA, DeepFace on Python 3.11) and `lite` (MiniLM, rules, FERPlus) — against MongoDB Atlas, and all passed. The production frontend build compiles 1,645 modules with no errors.
 
 | # | Suite | What it verifies |
 | :-: | :--- | :--- |

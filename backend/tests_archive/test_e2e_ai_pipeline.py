@@ -14,6 +14,9 @@ Validates the full MockAI AI evaluation flow against the FYP Master Specificatio
 - Security: Candidate ownership scoping & role isolation
 - Persistence: End-to-end MongoDB document verification
 """
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))  # archived: import from backend/
+
 import os
 import sys
 from pathlib import Path
