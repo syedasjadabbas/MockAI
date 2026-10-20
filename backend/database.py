@@ -9,7 +9,16 @@ env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
 load_dotenv(dotenv_path=env_path)
 
 MONGO_URI = os.getenv("MONGO_URI") or os.getenv("MONGODB_URI") or "mongodb://localhost:27017"
-DATABASE_NAME = os.getenv("DATABASE_NAME", "mockai")
+
+# Automated test scripts (backend/test_*.py, or TESTING=1) use a separate
+# database so test users, interviews and surveys never appear in the real
+# Admin dashboard. Override its name with TEST_DATABASE_NAME. Seed it once
+# with `python setup_test_db.py`.
+IS_TEST_RUN = os.getenv("TESTING") == "1" or os.path.basename(sys.argv[0] or "").startswith("test_")
+_REAL_DATABASE_NAME = os.getenv("DATABASE_NAME", "mockai")
+DATABASE_NAME = (
+    os.getenv("TEST_DATABASE_NAME", f"{_REAL_DATABASE_NAME}_test") if IS_TEST_RUN else _REAL_DATABASE_NAME
+)
 
 import time
 from typing import Any, Optional, Callable

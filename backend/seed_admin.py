@@ -1,28 +1,6 @@
-from database import admins_collection
-from utils.auth import hash_password
-from datetime import datetime
-
-def seed_admin():
-    email = "admin@mockai.com"
-    raw_password = "admin123"
-    role = "admin"
-
-    existing_user = admins_collection.find_one({"email": email})
-    
-    if not existing_user:
-        hashed_pw = hash_password(raw_password)
-        admin_document = {
-            "email": email,
-            "password": hashed_pw,
-            "role": role,
-            "name": "System Admin",
-            "created_at": datetime.utcnow()
-        }
-        admins_collection.insert_one(admin_document)
-        print(f"Successfully inserted default admin user: {email}")
-    else:
-        print(f"Admin user already exists: {email}")
+"""Creates the standard admin accounts if missing. Needs ADMIN_BOOTSTRAP_PASSWORD
+in the environment; see utils/admin_bootstrap.py. Never resets existing passwords."""
+from utils.admin_bootstrap import ensure_default_admins
 
 if __name__ == "__main__":
-    seed_admin()
-
+    ensure_default_admins()

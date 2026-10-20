@@ -36,7 +36,10 @@ logger = logging.getLogger("mockai.facial_analyzer")
 
 # Share of the DeepFace CNN in the report-profile emotion ensemble (the rest
 # is Emotion-FERPlus). See _classify_face_expression for the rationale.
-DEEPFACE_ENSEMBLE_WEIGHT = 0.4
+# Chosen 2026-10-20 on 8 real interview recordings (7 with a judgeable face),
+# comparing each weighting's dominant expression with the visible expression:
+# DeepFace alone 3/7, 0.5 -> 5/7, 0.4 -> 6/7, 0.3 -> 7/7, FERPlus alone 7/7.
+DEEPFACE_ENSEMBLE_WEIGHT = 0.3
 
 # DeepFace emotion model output order (deepface.models.demography Emotion).
 DEEPFACE_LABELS = ["angry", "disgust", "fear", "happy", "sad", "surprise", "neutral"]

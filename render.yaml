@@ -26,6 +26,10 @@ services:
         sync: false
       - key: INTERNAL_SERVICE_KEY
         sync: false
+      # Only used to create a missing standard admin account; set it in the
+      # Render dashboard, never in this file.
+      - key: ADMIN_BOOTSTRAP_PASSWORD
+        sync: false
       - key: SMTP_SERVER
         value: smtp.gmail.com
       - key: SMTP_PORT

@@ -167,7 +167,7 @@ The FYP-I report specifies DistilBERT, BERT and DeepFace. These need about 2–3
 | `report` | DistilBERT | BERT-CoLA + rules | DeepFace + FERPlus CNN ensemble | Local runs, FYP demo (Python 3.11, `pip install -r backend/requirements-report.txt`) |
 | `lite` (default) | MiniLM | Rules | FERPlus CNN | Render Starter (512 MB) cloud deployment |
 
-In the report profile the DeepFace CNN is combined with FERPlus (40/60 weighted average per frame): on real webcam recordings DeepFace alone misread neutral faces as angry or happy under poor lighting, while FERPlus, trained on the same faces with cleaner 10-rater labels, tracked the visible expression. Every result records the model that actually ran. If a report-profile model cannot load, that component falls back to its lite equivalent rather than failing.
+In the report profile the DeepFace CNN is combined with FERPlus (30/70 weighted average per frame). On 8 real interview recordings, DeepFace alone matched the visible expression in 3 of 7 judgeable cases (misreading neutral faces as happy, fearful or sad, especially in poor lighting), while FERPlus, trained on the same faces with cleaner 10-rater labels, matched 7 of 7; the 30/70 blend also matched 7 of 7 (40/60: 6/7, 50/50: 5/7). Every result records the model that actually ran. If a report-profile model cannot load, that component falls back to its lite equivalent rather than failing.
 
 ---
 
@@ -186,34 +186,34 @@ In the report profile the DeepFace CNN is combined with FERPlus (40/60 weighted 
 
 ## 🧪 Testing & Verification Evidence
 
-The MockAI platform has been exhaustively tested and verified across 12 primary regression and compliance suites (out of 23 automated test modules in `backend/`):
+The backend has 28 automated test modules in `backend/`. The 18 suites below were last re-run on **20 October 2026** in both AI profiles — `report` (DistilBERT, BERT-CoLA, DeepFace on Python 3.11) and `lite` (MiniLM, rules, FERPlus) — against MongoDB Atlas, and all passed. The production frontend build compiles 1,645 modules with no errors.
 
-```text
-======================================================================
-MOCKAI COMPREHENSIVE VERIFICATION AUDIT
-======================================================================
-Functional Requirements (FR01–FR36)    36 / 36 PASSED (100%)
-Sub-Requirements (108 Points)        108 / 108 PASSED (100%)
-Multimodal Scenarios A through H        8 / 8  PASSED (100%)
-Automated Test Suites (12 Suites)      12 / 12 PASSED (100%)
-Frontend Production Build             1643 Modules Clean (0 Errors)
-Production Acceptance Gate             35 / 35 PASSED (100%)
-======================================================================
-```
+| # | Suite | What it verifies |
+| :-: | :--- | :--- |
+| 1 | `test_final_compliance_gate.py` | Full lifecycle across FR01–FR36 plus edge cases |
+| 2 | `test_system_integration_fr30_fr36.py` | Persistence, history, progress and admin oversight (FR30–FR36) |
+| 3 | `test_report_alignment.py` | Login lockout, recording consent, typed answers, grammar & tone, goal chatbot, participation trends, survey & accuracy summary |
+| 4 | `test_real_evaluation_engine.py` | 15 end-to-end evaluation scenarios |
+| 5 | `test_phase2_comprehensive.py` | Verbal primacy, temporal facial aggregation, mentor backend, statistics |
+| 6 | `test_multimodal_fusion.py` | 50/30/20 late fusion and graceful degradation |
+| 7 | `test_aggregate_evaluation.py` | Difficulty weighting (1.0×/1.25×/1.5×) and interview aggregation |
+| 8 | `test_nlp_semantic.py` | Semantic scoring and rubric concept coverage (DistilBERT / MiniLM) |
+| 9 | `test_facial_analysis.py` | Face localisation and emotion inference (DeepFace + FERPlus / FERPlus) |
+| 10 | `test_speech_delivery.py` | WPM, acoustic pauses, filler detection |
+| 11 | `test_confidence_stress.py` | Acoustic + visual confidence and stress levels |
+| 12 | `test_insights_service.py` | Score rationales, strengths, weaknesses, STAR coaching |
+| 13 | `test_summary_visuals.py` | Summary report and radar-chart data contracts |
+| 14 | `test_media_asr.py` | Media upload, consent enforcement, storage safety, speech-to-text |
+| 15 | `test_candidate_auth_api.py` | Registration, OTP, password recovery, Google sign-in |
+| 16 | `test_candidate_interview_api.py` | Interview sessions, ownership, role separation |
+| 17 | `test_qb_api.py` | Question Bank CRUD, search, stats, audit log |
+| 18 | `test_evaluation_foundation.py` | Evaluation state machine, no fabricated scores |
 
-### Verified Test Suites:
-1. `test_final_compliance_gate.py` — Complete lifecycle validation across FR01–FR36 & 18 edge cases.
-2. `test_system_integration_fr30_fr36.py` — Database persistence, history, progress, and admin governance.
-3. `test_phase2_comprehensive.py` — Verbal primacy, temporal facial aggregation, mentor backend, and statistics.
-4. `test_multimodal_fusion.py` — Trimodal late fusion weights and graceful degradation matrices.
-5. `test_facial_analysis.py` — YuNet face localization and Emotion-FERPlus ONNX inference.
-6. `test_speech_delivery.py` — WPM calculation, acoustic pauses, and filler detection.
-7. `test_nlp_semantic.py` — DistilBERT embeddings and rubric concept coverage.
-8. `test_confidence_stress.py` — Acoustic + visual confidence and stress categorization.
-9. `test_insights_service.py` — Mathematical rationales, strengths, weaknesses, and STAR coaching.
-10. `test_aggregate_evaluation.py` — Difficulty weighting (1.0x, 1.25x, 1.5x) and whole-interview aggregation.
-11. `test_summary_visuals.py` — Radar chart contracts and dimension breakdown serialization.
-12. `test_final_production_acceptance.py` — Production gating on Render Cloud and MongoDB Atlas.
+`test_final_production_acceptance.py` and `test_production_facial_live.py` run the same checks against the live Render deployment.
+
+**Not yet done:** a pilot study with real users. The in-app survey and `backend/evaluate_accuracy.py` (agreement between MockAI scores and human ratings — see `docs/accuracy_ratings_template.csv`) are in place to collect that evidence.
+
+Test scripts automatically use a separate database (`mockai_test`), so they never add users or interviews to the real one. Prepare it once with `python setup_test_db.py` (copies the question bank, mentors and one fixture interview from the real database, read-only), then run any suite from `backend/`, e.g. `../.venv311/Scripts/python.exe test_report_alignment.py` (set `AI_PROFILE=report` or `lite`).
 
 ---
 

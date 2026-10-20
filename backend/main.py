@@ -41,7 +41,10 @@ if frontend_url and frontend_url not in cors_origins:
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
-    allow_origin_regex=r"^(https?://(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+)(:[0-9]+)?|https?://[a-zA-Z0-9_-]+\.onrender\.com)$",
+    # Local / LAN development hosts only. Deployed frontends must be listed
+    # explicitly via ALLOWED_ORIGINS / FRONTEND_URL - a wildcard such as
+    # *.onrender.com would let any site hosted there make credentialed calls.
+    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+)(:[0-9]+)?$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -70,56 +73,9 @@ app.include_router(candidate_survey_router, prefix="/api/v1/candidate")  # versi
 
 app.include_router(internal_evaluation_router, prefix="/internal")
 
-DEFAULT_ADMINS = [
-    {
-        "name": "System Admin",
-        "email": "admin@mockai.com",
-        "default_password": "admin123",
-        "role": "admin",
-    },
-    {
-        "name": "Asjad Abbas",
-        "email": "asjadabbaszaidi@gmail.com",
-        "default_password": "admin123",
-        "role": "admin",
-    },
-    {
-        "name": "Hassan Kazmi",
-        "email": "hassankazmi2004@gmail.com",
-        "default_password": "admin",
-        "role": "admin",
-    },
-]
-
-def ensure_default_admins():
-    """
-    Idempotently ensure standard admin accounts exist in admins_collection.
-    - Creates missing admin accounts.
-    - Leaves existing admin accounts and passwords completely unchanged.
-    - Never downgrades an admin.
-    - Never touches users_collection or deletes data.
-    """
-    from datetime import datetime
-    for adm in DEFAULT_ADMINS:
-        normalized_email = adm["email"].strip().lower()
-        existing = admins_collection.find_one({"email": normalized_email})
-        if not existing:
-            new_doc = {
-                "name": adm["name"],
-                "email": normalized_email,
-                "password": hash_password(adm["default_password"]),
-                "role": adm["role"],
-                "created_at": datetime.utcnow(),
-            }
-            admins_collection.insert_one(new_doc)
-            print(f"Startup check: Created admin account '{normalized_email}'")
-        else:
-            if existing.get("role") != "admin":
-                admins_collection.update_one(
-                    {"_id": existing["_id"]},
-                    {"$set": {"role": "admin"}}
-                )
-            print(f"Startup check: Standard admin '{normalized_email}' verified.")
+# Standard admin accounts are bootstrapped from utils/admin_bootstrap.py -
+# no passwords live in source code (see ADMIN_BOOTSTRAP_PASSWORD).
+from utils.admin_bootstrap import ensure_default_admins
 
 @app.on_event("startup")
 async def startup_event():
