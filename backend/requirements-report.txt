@@ -7,7 +7,7 @@
 #   uv venv --python 3.11 .venv311
 #   uv pip install --python .venv311 -r backend/requirements-report.txt
 -r requirements.txt
-transformers>=4.40.0
-tensorflow>=2.16,<2.21
-tf-keras>=2.16,<2.21
-deepface>=0.0.93
+transformers==5.20.2
+tensorflow==2.20.0
+tf-keras==2.20.1
+deepface==0.0.102

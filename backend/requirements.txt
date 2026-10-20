@@ -1,20 +1,25 @@
-fastapi>=0.110.0
-uvicorn[standard]>=0.28.0
-pymongo>=4.6.0
-dnspython>=2.6.0
-python-jose[cryptography]>=3.3.0
-passlib[bcrypt]>=1.7.4
+# Backend dependencies - exact versions tested on Python 3.11 (all 18 test
+# suites passing in both AI profiles, 2026-10-20). Pinned so a fresh install
+# months from now gets the same, known-good versions (an unpinned install
+# once pulled OpenCV 5.0, which changed DeepFace behaviour).
+# Full transitive lock for exact rebuilds: requirements-lock.txt
+fastapi==0.152.0
+uvicorn[standard]==0.54.0
+pymongo==4.19.0
+dnspython==2.9.0
+python-jose[cryptography]==3.5.0
+passlib[bcrypt]==1.7.4
 bcrypt==3.2.2
-python-multipart>=0.0.9
-pydantic>=2.6.0
-google-cloud-speech>=2.24.0
-google-auth>=2.28.0
-sentence-transformers>=2.5.0
-onnxruntime>=1.17.0
-opencv-python-headless>=4.9.0
-numpy>=1.26.0
-scikit-learn>=1.4.0
-SpeechRecognition>=3.10.0
-requests>=2.31.0
-pillow>=10.2.0
-python-dotenv>=1.0.0
+python-multipart==0.0.32
+pydantic==2.14.1
+google-cloud-speech==2.41.0
+google-auth==2.62.0
+sentence-transformers==6.1.0
+onnxruntime==1.31.0
+opencv-python-headless==5.0.0.93
+numpy==2.4.6
+scikit-learn==1.9.1
+SpeechRecognition==3.17.0
+requests==2.34.2
+pillow==13.0.0
+python-dotenv==1.2.4

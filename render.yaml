@@ -55,7 +55,7 @@ services:
   - type: static
     name: mockai-frontend
     rootDir: frontend
-    buildCommand: npm install && npm run build
+    buildCommand: npm ci && npm run build
     staticPublishPath: dist
     branch: main
     autoDeploy: true
