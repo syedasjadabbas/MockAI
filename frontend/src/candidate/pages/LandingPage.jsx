@@ -738,15 +738,15 @@ const LandingPage = () => {
             <div className="absolute inset-x-0 top-0 h-24" style={{ background: 'linear-gradient(to bottom, var(--c-bg), transparent)' }} />
             <div className="absolute inset-x-0 bottom-0 h-24" style={{ background: 'linear-gradient(to top, var(--c-bg), transparent)' }} />
           </div>
-          <div className="relative z-10 c-page space-y-6">
+          <div className="relative z-10 c-page space-y-6 text-center">
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight" style={{ color: '#FFFFFF' }}>
               Your next interview <br />
               starts with practice.
             </h2>
-            <p className="text-sm sm:text-base max-w-lg leading-relaxed" style={{ color: 'rgba(255, 255, 255, 0.90)' }}>
+            <p className="text-sm sm:text-base max-w-lg mx-auto leading-relaxed" style={{ color: 'rgba(255, 255, 255, 0.90)' }}>
               Find out what you would say before someone asks.
             </p>
-            <div className="pt-2 flex">
+            <div className="pt-2 flex justify-center">
               <Link
                 to={ctaDestination}
                 className="c-btn c-btn-primary px-8 py-3.5 text-sm font-semibold rounded-xl flex items-center gap-2.5 select-none group"

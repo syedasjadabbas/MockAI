@@ -30,24 +30,19 @@ const ScoreIndicator = ({ scoreStr }) => {
   if (!scoreStr || scoreStr === '-') return <span className="text-[var(--text-muted)] font-medium text-xs">-</span>;
   
   const score = parseInt(scoreStr.replace('%', ''));
-  if (score < 60) {
-    return (
-      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border bg-rose-500/15 text-rose-400 border-rose-500/30">
-        <AlertCircle className="w-3.5 h-3.5" />
-        Needs Improvement ({score}%)
-      </span>
-    );
-  }
+  const band = score >= 80
+    ? { label: 'Strong', dot: 'bg-emerald-400' }
+    : score >= 60
+    ? { label: 'Fair', dot: 'bg-amber-400' }
+    : { label: 'Low', dot: 'bg-rose-400' };
 
-  const isHigh = score >= 80;
   return (
-    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${
-      isHigh
-        ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-        : 'bg-amber-500/15 text-amber-400 border-amber-500/30'
-    }`}>
-      {isHigh && <CheckCircle2 className="w-3.5 h-3.5" />}
-      {score}%
+    <span className="inline-flex items-baseline gap-2.5">
+      <span className="text-sm font-semibold tabular-nums text-[var(--text-primary)]">{score}%</span>
+      <span className="inline-flex items-center gap-1.5 text-xs text-[var(--text-secondary)]">
+        <span className={`w-1.5 h-1.5 rounded-full ${band.dot}`} aria-hidden="true" />
+        {band.label}
+      </span>
     </span>
   );
 };

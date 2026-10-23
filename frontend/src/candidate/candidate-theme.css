@@ -550,7 +550,7 @@ html.dark .candidate-app,
  */
 .c-page {
   width: 100%;
-  max-width: 80rem;              /* 1280px */
+  max-width: 120rem;             /* 1920px: uses wide screens instead of a narrow centred column */
   margin-left: auto;
   margin-right: auto;
   padding-left: 1rem;
@@ -561,6 +561,12 @@ html.dark .candidate-app,
 }
 @media (min-width: 1024px) {
   .c-page { padding-left: 2rem; padding-right: 2rem; }
+}
+@media (min-width: 1280px) {
+  .c-page { padding-left: 3rem; padding-right: 3rem; }
+}
+@media (min-width: 1536px) {
+  .c-page { padding-left: 4.5rem; padding-right: 4.5rem; }
 }
 
 /* Comfortable reading measure for prose blocks inside the wide container */
