@@ -219,6 +219,13 @@ Test scripts automatically use a separate database (`mockai_test`), so they neve
 
 ## 🚀 Getting Started
 
+### One-click start (Windows)
+Once the environments below are set up, double-click **`start-mockai.bat`** in the project folder. It checks the setup, opens the backend (port 8000) and frontend (port 5173) in their own windows, waits until the AI models are loaded (about a minute), then opens the app in your browser. Double-click **`stop-mockai.bat`** to shut everything down.
+
+- `start-mockai.bat` uses the **report** AI profile (DistilBERT, BERT-CoLA, DeepFace + FERPlus; needs `.venv311`).
+- `start-mockai.bat lite` uses the **lite** profile (needs `.venv`).
+
+
 ### Prerequisites
 - Python 3.11+
 - Node.js 18+ LTS
