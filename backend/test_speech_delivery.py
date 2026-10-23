@@ -264,8 +264,27 @@ oFile.Close
     assert per_q[0]["text_analysis"]["model"] in (nlp_model_label(), "heuristic-fallback")
     print("  PASS: Real Vision (CNN) and Real NLP (BERT) remain 100% active and unregressed.")
 
+    # -------------------------------------------------------------------------
+    # TEST 12: "like" counted as a filler only when it is one
+    # -------------------------------------------------------------------------
+    print("\n[TEST 12] Filler 'like' vs verb/comparison 'like':")
+    like_cases = {
+        "I would like to join your team": 0,
+        "I'd like to explain": 0,
+        "I like working with people": 0,
+        "it looks like a good plan": 0,
+        "tools like React and Vue": 0,
+        "it was, like, really hard": 1,
+        "very polite and very like friendly": 1,
+        "um I would like to uh say": 2,
+    }
+    for sentence, expected in like_cases.items():
+        got = _count_fillers(sentence)[0]
+        assert got == expected, f"{sentence!r}: expected {expected} fillers, got {got}"
+    print(f"  PASS: {len(like_cases)} sentences counted correctly (verb/comparison 'like' is not a filler).")
+
     print("\n" + "=" * 70)
-    print("ALL 11 SPEECH & FLUENCY ANALYSIS TEST CASES PASSED SUCCESSFULLY!")
+    print("ALL 12 SPEECH & FLUENCY ANALYSIS TEST CASES PASSED SUCCESSFULLY!")
     print("=" * 70)
 
 

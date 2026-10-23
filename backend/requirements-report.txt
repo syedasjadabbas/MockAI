@@ -6,8 +6,14 @@
 #
 #   uv venv --python 3.11 .venv311
 #   uv pip install --python .venv311 -r backend/requirements-report.txt
+#   uv pip install --python .venv311 --no-deps mediapipe==1.1.1
+#
+# MediaPipe (face-movement analysis) is installed with --no-deps: its own
+# dependency list would add a second OpenCV build (opencv-contrib-python)
+# next to the one already used. Everything else it needs is listed here.
 -r requirements.txt
 transformers==5.20.2
 tensorflow==2.20.0
 tf-keras==2.20.1
 deepface==0.0.102
+matplotlib==3.11.2

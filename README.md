@@ -211,6 +211,7 @@ In the report profile the DeepFace CNN is combined with FERPlus (30/70 weighted 
 | 19 | `test_evaluation_honesty.py` | Evidence gating for confidence/stress and facial indicators; missing signals never default to Neutral/Stable/High/Low; worker result = database = API |
 | 20 | `test_camera_conduct.py` | Live "face not in frame" check, measured camera presence, off-camera scoring, expression flags, feedback naming the answers (incl. a real clip with the candidate out of frame) |
 | 21 | `test_evaluation_recovery.py` | Evaluations stuck in "processing" are resumed on startup or after 15 min, never duplicated, and marked failed with a reason after 2 retries |
+| 22 | `test_face_movement.py` | MediaPipe face movements: mouth open while not speaking, exaggerated movements, looking away; score cap, feedback wording, and no flags on a real normal answer |
 
 `test_final_production_acceptance.py` and `test_production_facial_live.py` run the same checks against the live Render deployment.
 

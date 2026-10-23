@@ -265,6 +265,44 @@ def _resolve_wav(media_url: Optional[str], audio_wav_path: Optional[str]):
         return None, False
 
 
+def sound_activity_timeline(media_url: Optional[str] = None, audio_wav_path: Optional[str] = None):
+    """Per-50 ms sound activity for the recording, using the same noise-floor
+    threshold as analyze_acoustic_profile. Returns (frame_seconds, list[bool])
+    or None if the audio is unavailable. Used to tell whether the candidate was
+    speaking at a given moment (face-movement analysis)."""
+    wav, is_temp = _resolve_wav(media_url, audio_wav_path)
+    if wav is None:
+        return None
+    try:
+        import numpy as np
+        import scipy.io.wavfile as wavfile
+        rate, data = wavfile.read(str(wav))
+        if data is None or len(data) == 0:
+            return None
+        if data.ndim > 1:
+            data = data.mean(axis=1)
+        x = data.astype(np.float32) / float(np.iinfo(data.dtype).max) if np.issubdtype(data.dtype, np.integer) else data.astype(np.float32)
+        frame = int(rate * 0.05)
+        if frame <= 0 or len(x) < frame:
+            return None
+        n = len(x) // frame
+        rms = np.sqrt((x[: n * frame].reshape(n, frame) ** 2).mean(axis=1)) + 1e-9
+        peak = float(rms.max())
+        if peak < 1e-4:
+            return 0.05, [False] * n
+        noise_floor = float(np.percentile(rms, 10))
+        active = rms >= max(peak * 0.06, noise_floor * (10 ** (9 / 20)), 10 ** (-50 / 20))
+        return 0.05, [bool(a) for a in active]
+    except Exception:
+        return None
+    finally:
+        if is_temp:
+            try:
+                os.unlink(str(wav))
+            except OSError:
+                pass
+
+
 def analyze_acoustic_profile(media_url: Optional[str] = None, audio_wav_path: Optional[str] = None) -> Dict:
     """
     MEASURED acoustic properties of the recording, independent of the transcript:

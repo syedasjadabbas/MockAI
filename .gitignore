@@ -42,6 +42,7 @@ backend/media/
 
 # Machine Learning Model weights (auto-downloaded by services on-demand)
 backend/models/*.onnx
+backend/models/*.task
 
 # Google Cloud / other service-account credential keys
 *service-account*.json

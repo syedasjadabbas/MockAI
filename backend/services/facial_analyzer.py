@@ -544,6 +544,7 @@ class FacialAnalyzer:
             inference_errors = 0
             face_centers_x: List[float] = []
             presence_track: List[Tuple[float, bool]] = []
+            movement_frames: List[Tuple[float, np.ndarray]] = []  # downscaled, for face-movement analysis
 
             frame_idx = 0
             while total_sampled_count < max_samples:
@@ -573,6 +574,8 @@ class FacialAnalyzer:
                         if self._last_face_dominance < FACE_DOMINANCE_RATIO:
                             ambiguous_face_count += 1
                     presence_track.append((sample_sec, face_crop is not None))
+                    scale_m = min(1.0, 480.0 / max(1, frame.shape[1]))
+                    movement_frames.append((sample_sec, cv2.resize(frame, None, fx=scale_m, fy=scale_m) if scale_m < 1.0 else frame.copy()))
 
                     if face_crop is not None:
                         face_detected_count += 1
@@ -767,6 +770,7 @@ class FacialAnalyzer:
                 "camera_presence_ratio": presence_ratio,
                 "camera_presence": camera_presence,
                 "expression_conduct": self._expression_conduct(dynamics, ambiguous_face_ratio),
+                "face_movement": self._face_movement(movement_frames, video_path, inferred_duration, ambiguous_face_ratio),
                 "multi_face_ratio": multi_face_ratio,
                 "ambiguous_face_ratio": ambiguous_face_ratio,
                 "evidence_quality": evidence_quality,
@@ -1226,6 +1230,26 @@ class FacialAnalyzer:
             "method": "share of confident anger/disgust/contempt frames + expression switching (thresholds not calibrated on labelled data)",
             "limitation": "The model cannot recognise teasing, tongue-out or mocking faces directly; flags describe the expression classes it observed.",
         }
+
+    @staticmethod
+    def _face_movement(movement_frames, video_path, duration_seconds, ambiguous_face_ratio) -> Dict:
+        """Mouth open while silent, exaggerated movements, looking away
+        (services/face_movement.py). Optional: "unavailable" without MediaPipe."""
+        try:
+            from services.face_movement import FaceMovementAnalyzer, summarize_face_movement
+            fm = FaceMovementAnalyzer()
+            if not fm.available:
+                return {"status": "unavailable", "flags": [], "reason": "MediaPipe face landmarker not installed."}
+            if ambiguous_face_ratio > MAX_AMBIGUOUS_FACE_RATIO:
+                return {"status": "not_assessed", "flags": [],
+                        "reason": "Several similar-sized faces in view; movements cannot be attributed to the candidate."}
+            from services.delivery_analyzer import sound_activity_timeline
+            activity = sound_activity_timeline(media_url=str(video_path))
+            samples = [(t, fm.measure_frame(f)) for t, f in movement_frames]
+            return summarize_face_movement(samples, activity, duration_seconds)
+        except Exception as e:
+            logger.warning(f"Face-movement analysis notice: {e}")
+            return {"status": "failed", "flags": [], "reason": str(e)[:200]}
 
     def check_presence(self, image_bytes: bytes) -> Dict:
         """Live single-frame check used during the interview: is exactly one

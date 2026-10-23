@@ -59,6 +59,7 @@ _COMPOSURE_SCORE = {
 # cap the composure score at the same level.
 OFF_CAMERA_MAX_SCORE = 30.0
 CONDUCT_FLAG_MAX_SCORE = 30.0
+PENALTY_VISION_BASES = ("camera_presence", "face_movement")
 
 
 def _vision_assessment(facial_result: Optional[Dict]) -> Tuple[Optional[float], Optional[str]]:
@@ -73,13 +74,19 @@ def _vision_assessment(facial_result: Optional[Dict]) -> Tuple[Optional[float], 
         return round(min(1.0, ratio / OFF_CAMERA_PRESENCE_THRESHOLD) * OFF_CAMERA_MAX_SCORE, 1), "camera_presence"
     if facial_result.get("status") != "completed":
         return None, None
+    movement_flagged = bool((facial_result.get("face_movement") or {}).get("flags"))
     composure = (facial_result.get("behavioral_indicators") or {}).get("composure_index", "")
     score = _COMPOSURE_SCORE.get(composure)
     if score is None:
-        return None, None
+        # Expressions could not be interpreted, but measured face movements
+        # (mouth open while silent, exaggerated movements, looking away) can
+        # still be scored: pulling faces often makes the emotion model unsure.
+        return (CONDUCT_FLAG_MAX_SCORE, "face_movement") if movement_flagged else (None, None)
     conduct = facial_result.get("expression_conduct") or {}
     if any(f.get("type") == "negative_expressions" for f in conduct.get("flags") or []):
         return min(score, CONDUCT_FLAG_MAX_SCORE), "composure_capped_by_expressions"
+    if movement_flagged:
+        return min(score, CONDUCT_FLAG_MAX_SCORE), "composure_capped_by_face_movement"
     return score, "composure"
 
 
@@ -272,8 +279,27 @@ def fuse_per_question(
             )
         elif vision_basis == "composure_capped_by_expressions":
             contributions.append(f"Vision/Facial {round(vision_score, 1)}% × {w:.2f} = {round(contrib, 1)} (capped: flagged expressions)")
+        elif vision_basis in ("composure_capped_by_face_movement", "face_movement"):
+            contributions.append(f"Vision/Facial {round(vision_score, 1)}% × {w:.2f} = {round(contrib, 1)} (capped: flagged face movements)")
         else:
             contributions.append(f"Vision/Facial {round(vision_score, 1)}% × {w:.2f} = {round(contrib, 1)}")
+
+    # A camera score that only exists as a penalty (off camera, or flagged face
+    # movements with no interpretable expressions) replaces a modality that
+    # would otherwise be dropped. It must never RAISE the answer above its
+    # verbal-only score (e.g. a silent answer given off camera stays at 0).
+    if vision_available and vision_basis in PENALTY_VISION_BASES:
+        if nlp_available and speech_available:
+            verbal_only = (nlp_score * BASE_WEIGHTS["nlp"] + speech_score * BASE_WEIGHTS["speech"]) / (BASE_WEIGHTS["nlp"] + BASE_WEIGHTS["speech"])
+        elif nlp_available:
+            verbal_only = nlp_score
+        elif speech_available:
+            verbal_only = speech_score
+        else:
+            verbal_only = 0.0
+        if verbal_only < fused_score:
+            contributions.append(f"Penalty cap: score held at verbal-only {round(verbal_only, 1)}")
+            fused_score = verbal_only
 
     fused_score = round(min(100.0, max(0.0, fused_score)), 1)
 

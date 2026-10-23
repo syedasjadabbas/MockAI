@@ -887,8 +887,8 @@ const EvaluationResults = () => {
                 )}
                 {flaggedAnswers.length > 0 && (
                   <p>
-                    Your expressions were flagged in answer{flaggedAnswers.length > 1 ? 's' : ''} {flaggedAnswers.join(', ')}{' '}
-                    (read as anger, disgust or contempt, or changing rapidly). The model cannot tell teasing from other faces, so review the recording.
+                    Your face conduct was flagged in answer{flaggedAnswers.length > 1 ? 's' : ''} {flaggedAnswers.join(', ')}{' '}
+                    (pulled or hostile-looking faces, mouth open while not speaking, or looking away). The analysis measures what your face did, not why, so review the notes under each answer.
                   </p>
                 )}
               </div>

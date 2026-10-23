@@ -8,6 +8,14 @@ from dotenv import load_dotenv
 env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
 load_dotenv(dotenv_path=env_path)
 
+# Every entry point (server, worker scripts, tests) imports this module early:
+# keep Hugging Face offline when the profile's models are already cached.
+try:
+    from services.hf_cache import prefer_offline_hub
+    prefer_offline_hub()
+except Exception:
+    pass
+
 # Database target switch:
 #   MONGO_TARGET=atlas  (default) - MongoDB Atlas cloud cluster from MONGO_URI
 #   MONGO_TARGET=local            - a local mongod (LOCAL_MONGO_URI), for

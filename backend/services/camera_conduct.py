@@ -34,7 +34,8 @@ def assess_answer_camera_conduct(facial_result: Dict) -> Dict:
         seg = max(presence.get("off_camera_segments") or [{}], key=lambda s: (s.get("end", 0) - s.get("start", 0)))
         if seg:
             notes.append(f"You left the frame from {_fmt_seconds(seg.get('start'))} to {_fmt_seconds(seg.get('end'))}.")
-    flags = conduct.get("flags") or []
+    movement = facial_result.get("face_movement") or {}
+    flags = (conduct.get("flags") or []) + (movement.get("flags") or [])
     notes.extend(f["message"] for f in flags if f.get("message"))
     return {
         "status": "measured",
@@ -64,8 +65,17 @@ def summarize_camera_conduct(per_question_results: List[Dict]) -> Dict:
         "average_presence_ratio": round(sum(ratios) / len(ratios), 3),
         "off_camera_answers": [a["answer"] for a in answers if a["mostly_off_camera"]],
         "flagged_answers": [a["answer"] for a in answers if a["expression_flags"]],
-        "limitation": "Camera presence is measured by face detection. Expression flags use the model's emotion classes; it cannot recognise teasing or mocking faces directly.",
+        "limitation": "Camera presence is measured by face detection. Expression flags use the model's emotion classes and face-movement flags use face geometry; neither can tell why the face moved (teasing, a yawn, reading notes).",
     }
+
+
+_FLAG_LABELS = {
+    "negative_expressions": "expressions read as anger, disgust or contempt",
+    "rapid_expression_changes": "expression switching rapidly",
+    "mouth_open_silent": "mouth wide open while not speaking",
+    "exaggerated_movements": "exaggerated face movements",
+    "looking_away": "head turned away from the camera",
+}
 
 
 def _answer_list(nums: List[int]) -> str:
@@ -97,19 +107,26 @@ def camera_conduct_feedback(summary: Dict) -> Dict:
             "Stay On Camera: sit centred at arm's length with your face lit from the front, and stay in frame for the whole answer."
         )
     if flagged:
+        kinds: List[str] = []
+        for a in summary["answers"]:
+            for t in a["expression_flags"]:
+                label = _FLAG_LABELS.get(t, t)
+                if label not in kinds:
+                    kinds.append(label)
         out["weaknesses"].append(
-            f"Unprofessional Expressions: the face model flagged your expressions in answer{'s' if len(flagged) > 1 else ''} {_answer_list(flagged)} "
-            "(read as anger, disgust or contempt, or switching rapidly)."
+            f"Unprofessional Face Conduct: flagged in answer{'s' if len(flagged) > 1 else ''} {_answer_list(flagged)} "
+            f"({'; '.join(kinds)})."
         )
         out["weaknesses_detail"].append({
             "category": "Behavioral",
-            "title": "Unprofessional Expressions",
-            "description": "The expression model observed hostile-looking or rapidly changing expressions. It cannot tell teasing from other faces, so review the recording.",
+            "title": "Unprofessional Face Conduct",
+            "description": ("The face analysis observed " + "; ".join(kinds) + ". It measures what the face did, not why "
+                            "(it cannot tell teasing from a yawn or reading notes), so review the recording."),
             "evidence": ", ".join(f"Answer {a['answer']}" for a in summary["answers"] if a["expression_flags"]),
             "severity": "Medium",
         })
         out["suggestions"].append(
-            "Keep a Neutral Expression: treat the practice like a real interview; avoid pulling faces and keep a calm, attentive look."
+            "Keep a Professional Expression: treat the practice like a real interview; face the camera, avoid pulling faces and keep a calm, attentive look."
         )
     if not off and not flagged and summary.get("average_presence_ratio", 0) >= 0.9 and len(summary["answers"]) >= 2:
         out["strengths"].append("Stayed On Camera: your face was clearly in frame throughout your answers.")
