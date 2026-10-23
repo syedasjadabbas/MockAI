@@ -1,4 +1,12 @@
 import os
+from dotenv import load_dotenv
+
+# Read backend/.env (AI_PROFILE etc.) and switch Hugging Face to offline mode
+# when the profile's models are cached - both before any model library loads.
+load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
+from services.hf_cache import prefer_offline_hub  # noqa: E402
+prefer_offline_hub()
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -144,6 +152,16 @@ async def startup_event():
             print(f"Startup check: facial pipeline = {FacialAnalyzer().pipeline_label}")
     except Exception as face_warm_err:
         print(f"Facial model warm-up notice: {face_warm_err}")
+
+    # 6. Resume evaluations left in "processing" by a restart or crash
+    #    (their background job died with the old process).
+    try:
+        from services.evaluation_worker import recover_stuck_evaluations
+        recovered = recover_stuck_evaluations(stale_minutes=0)
+        if recovered:
+            print(f"Startup check: resumed {len(recovered)} interrupted evaluation(s): {', '.join(recovered)}")
+    except Exception as recover_err:
+        print(f"Evaluation recovery notice: {recover_err}")
 
 @app.get("/")
 async def root():

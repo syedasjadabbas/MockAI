@@ -51,7 +51,8 @@ _COMPOSURE_SCORE = {
 
 # Camera presence. Staying in frame is part of a video interview, and whether
 # the face is in frame is measured directly by the detector. An answer given
-# mostly off camera (face in < 60% of sampled frames, with the video recorded)
+# mostly off camera (face in < 55% of sampled frames - calibrated, see
+# facial_analyzer.OFF_CAMERA_PRESENCE_THRESHOLD - with the video recorded)
 # scores the vision share on presence instead of being silently dropped:
 # 0 when never in frame, rising linearly to the Fluctuating level (30) at the
 # threshold. Expression flags (hostile-looking classes held across the answer)

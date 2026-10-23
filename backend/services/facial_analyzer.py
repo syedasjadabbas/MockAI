@@ -56,10 +56,15 @@ MAX_SAMPLE_FPS = 3.0
 
 # Camera presence (is the candidate's face in frame at all). This is measured
 # directly by the face detector, so it is reported even when expressions
-# cannot be interpreted. An answer is "mostly off camera" below the same
-# presence floor the expression indicators use.
+# cannot be interpreted.
+# Calibrated 2026-10-23 (calibrate_camera_presence.py, docs/camera_presence_
+# calibration.json): 12 real recordings with known stretches blacked out,
+# 72 trials. Measured in-frame ratio: mean error 1.2%, max 8.7%, no face ever
+# missed. A measured cutoff of 0.60 wrongly penalised 2 answers that were truly
+# 60% in frame (measured 51%, 57%); 0.55 got 71/72 right with no missed
+# off-camera answer, so it sits one worst-case error below the 60% policy line.
 MIN_FRAMES_FOR_PRESENCE = 5
-OFF_CAMERA_PRESENCE_THRESHOLD = MIN_FACE_PRESENCE_FOR_INDICATORS
+OFF_CAMERA_PRESENCE_THRESHOLD = 0.55
 
 # Expression conduct flags. The model has no class for teasing, tongue-out or
 # mocking faces; what it CAN report is how often the visible face was read as

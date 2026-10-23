@@ -210,6 +210,7 @@ In the report profile the DeepFace CNN is combined with FERPlus (30/70 weighted 
 | 18 | `test_evaluation_foundation.py` | Evaluation state machine, no fabricated scores |
 | 19 | `test_evaluation_honesty.py` | Evidence gating for confidence/stress and facial indicators; missing signals never default to Neutral/Stable/High/Low; worker result = database = API |
 | 20 | `test_camera_conduct.py` | Live "face not in frame" check, measured camera presence, off-camera scoring, expression flags, feedback naming the answers (incl. a real clip with the candidate out of frame) |
+| 21 | `test_evaluation_recovery.py` | Evaluations stuck in "processing" are resumed on startup or after 15 min, never duplicated, and marked failed with a reason after 2 retries |
 
 `test_final_production_acceptance.py` and `test_production_facial_live.py` run the same checks against the live Render deployment.
 
@@ -223,12 +224,26 @@ Test scripts automatically use a separate database (`mockai_test`), so they neve
 
 ## 🚀 Getting Started
 
-### One-click start (Windows)
-Once the environments below are set up, double-click **`start-mockai.bat`** in the project folder. It checks the setup, opens the backend (port 8000) and frontend (port 5173) in their own windows, waits until the AI models are loaded (about a minute), then opens the app in your browser. Double-click **`stop-mockai.bat`** to shut everything down.
+### Run locally (two terminals)
+Once the environments below are set up:
 
-- `start-mockai.bat` uses the **report** AI profile (DistilBERT, BERT-CoLA, DeepFace + FERPlus; needs `.venv311`).
-- `start-mockai.bat lite` uses the **lite** profile (needs `.venv`).
-- `start-mockai.bat local` uses a **local MongoDB** instead of Atlas, for offline demos or networks that block Atlas's port 27017 (combine freely, e.g. `start-mockai.bat lite local`). It uses a MongoDB service already running on port 27017, or starts the installed MongoDB Community Server with its data in `local-db/`.
+```bash
+# Terminal 1 - backend (http://localhost:8000); the AI models take about a minute to load
+cd backend
+../.venv311/Scripts/python.exe -m uvicorn main:app --port 8000
+```
+
+```bash
+# Terminal 2 - frontend (http://localhost:5173)
+cd frontend
+npm run dev
+```
+
+Stop either one with **Ctrl+C** in its terminal.
+
+Settings live in `backend/.env`:
+- `AI_PROFILE=report` uses the exact FYP-report stack (DistilBERT, BERT-CoLA, DeepFace + FERPlus; needs `.venv311`). `AI_PROFILE=lite` uses the lighter models (run with `.venv` instead).
+- `MONGO_TARGET=local` uses a local MongoDB on port 27017 instead of Atlas, for offline demos or networks that block Atlas's port 27017.
 
 ### Local database copy
 Fill or refresh the local database from Atlas while on a network that allows port 27017 (a phone hotspot works):

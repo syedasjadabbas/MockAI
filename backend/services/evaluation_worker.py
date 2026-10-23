@@ -26,6 +26,17 @@ logger = logging.getLogger("mockai.evaluation_worker")
 # Serialization lock to prevent concurrent evaluation overlap within the process
 _evaluation_lock = threading.Lock()
 
+# Interviews queued or running in THIS process, so recovery never re-dispatches
+# a job that is only waiting for the lock.
+_active_jobs: set = set()
+_active_guard = threading.Lock()
+
+# Recovery of evaluations left in "processing" (the job died with a restart or
+# crash, so nothing would ever finish them). After MAX_RECOVERY_ATTEMPTS the
+# interview is marked failed with a reason instead of retrying forever.
+STALE_PROCESSING_MINUTES = 15
+MAX_RECOVERY_ATTEMPTS = 2
+
 
 def evaluate_interview_job(interview_id: str) -> Dict:
     """
@@ -33,11 +44,77 @@ def evaluate_interview_job(interview_id: str) -> Dict:
     Can be run as a background task or synchronously in tests.
     Serialized via _evaluation_lock to prevent concurrent evaluation memory surges.
     """
-    with _evaluation_lock:
+    with _active_guard:
+        _active_jobs.add(str(interview_id))
+    try:
+        with _evaluation_lock:
+            try:
+                return _evaluate_interview_job_unlocked(interview_id)
+            finally:
+                gc.collect()
+    finally:
+        with _active_guard:
+            _active_jobs.discard(str(interview_id))
+
+
+def _run_in_background(interview_id: str) -> None:
+    def _target():
         try:
-            return _evaluate_interview_job_unlocked(interview_id)
-        finally:
-            gc.collect()
+            evaluate_interview_job(interview_id)
+        except Exception as err:  # the job records its own failure state
+            logger.warning(f"Recovered evaluation {interview_id} ended with: {err}")
+    threading.Thread(target=_target, name=f"eval-recovery-{interview_id}", daemon=True).start()
+
+
+def recover_stuck_evaluation(interview: Dict, stale_minutes: float = STALE_PROCESSING_MINUTES) -> Optional[str]:
+    """Re-dispatches one interview whose evaluation is stuck in "processing".
+    Returns "redispatched", "failed" (attempts exhausted) or None (not stuck)."""
+    if not interview or interview.get("evaluation_status") != "processing":
+        return None
+    iid = str(interview["_id"])
+    with _active_guard:
+        if iid in _active_jobs:
+            return None
+    evaluation = interview.get("evaluation") or {}
+    started = evaluation.get("started_at")
+    now = datetime.utcnow()
+    if stale_minutes and isinstance(started, datetime) and (now - started).total_seconds() < stale_minutes * 60:
+        return None
+
+    attempts = int(evaluation.get("recovery_attempts") or 0)
+    if attempts >= MAX_RECOVERY_ATTEMPTS:
+        interviews_collection.update_one(
+            {"_id": interview["_id"], "evaluation_status": "processing"},
+            {"$set": {
+                "evaluation_status": "failed",
+                "evaluation.failed_reason": f"Evaluation did not finish after {attempts + 1} attempts. Please contact support.",
+                "evaluation.completed_at": now,
+            }},
+        )
+        logger.error(f"Evaluation {iid} marked failed after {attempts} recovery attempts")
+        return "failed"
+
+    # Claim atomically (same started_at we read) so two recoveries cannot both dispatch.
+    claimed = interviews_collection.update_one(
+        {"_id": interview["_id"], "evaluation_status": "processing", "evaluation.started_at": started},
+        {"$set": {"evaluation.started_at": now, "evaluation.recovered_at": now},
+         "$inc": {"evaluation.recovery_attempts": 1}},
+    )
+    if claimed.modified_count != 1:
+        return None
+    logger.warning(f"Re-dispatching evaluation {iid} stuck in processing (attempt {attempts + 1})")
+    _run_in_background(iid)
+    return "redispatched"
+
+
+def recover_stuck_evaluations(stale_minutes: float = 0) -> List[str]:
+    """Startup sweep: every "processing" evaluation is orphaned when the server
+    starts (background jobs do not survive a restart), so stale_minutes=0."""
+    recovered = []
+    for interview in interviews_collection.find({"evaluation_status": "processing"}):
+        if recover_stuck_evaluation(interview, stale_minutes=stale_minutes) == "redispatched":
+            recovered.append(str(interview["_id"]))
+    return recovered
 
 
 def _evaluate_interview_job_unlocked(interview_id: str) -> Dict:

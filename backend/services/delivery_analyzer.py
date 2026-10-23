@@ -44,13 +44,48 @@ def _count_fillers(text: Optional[str]) -> Tuple[int, List[str]]:
         if matches > 0:
             detected.extend([phrase] * matches)
             
-    # 2. Single-word fillers
-    single_fillers = {"um", "uh", "er", "ah", "like", "actually", "basically", "literally"}
+    # 2. Single-word fillers ("like" is handled separately below)
+    single_fillers = {"um", "uh", "er", "ah", "actually", "basically", "literally"}
     for w in tokens:
         if w in single_fillers:
             detected.append(w)
-            
+
+    # 3. "like" only when used as a filler, not as a verb ("I would like to")
+    #    or for a comparison ("looks like", "tools like React").
+    detected.extend("like" for _ in range(_count_filler_like(text_lower)))
+
     return len(detected), detected
+
+
+# Words before "like" that make it a verb or a comparison, not a filler.
+_LIKE_VERB_CONTEXT = {
+    "i", "you", "we", "they", "he", "she", "people", "who", "d", "would", "do", "did", "does",
+    "t", "not", "never", "really", "also", "to", "will", "might", "may", "can", "could", "should",
+    "always", "usually", "personally", "students", "users", "customers",
+}
+_LIKE_COMPARISON_CONTEXT = {
+    "look", "looks", "looked", "looking", "seem", "seems", "seemed", "sound", "sounds", "sounded",
+    "feel", "feels", "felt", "something", "anything", "nothing", "things", "stuff", "more", "just",
+    "exactly", "much", "tools", "languages", "frameworks", "companies", "examples", "areas", "skills",
+}
+
+
+def _count_filler_like(text_lower: str) -> int:
+    count = 0
+    for m in re.finditer(r"\blike\b", text_lower):
+        before = text_lower[:m.start()]
+        prev = re.search(r"([a-z0-9']+)([^a-z0-9']*)$", before)
+        if not prev:
+            count += 1  # sentence-initial "Like, ..."
+            continue
+        word, gap = prev.group(1).split("'")[-1], prev.group(2)
+        if any(ch in gap for ch in ",.;:!?-"):
+            count += 1  # set off by punctuation: "it was, like, hard"
+        elif word in _LIKE_VERB_CONTEXT or word in _LIKE_COMPARISON_CONTEXT:
+            continue
+        else:
+            count += 1  # "very like friendly", "and like the"
+    return count
 
 
 def _analyze_acoustic_pauses(

@@ -30,7 +30,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 
 from database import interviews_collection
 from middleware.candidate_auth import verify_candidate
-from services.evaluation_worker import evaluate_interview_job
+from services.evaluation_worker import evaluate_interview_job, recover_stuck_evaluation
 
 router = APIRouter()
 
@@ -112,6 +112,10 @@ def start_evaluation(
 @router.get("/interviews/{interview_id}/evaluation")
 def get_evaluation(interview_id: str, token_payload: dict = Depends(verify_candidate)):
     interview = _get_owned_interview_or_404(interview_id, token_payload.get("user_id"))
+    # The results page polls this while processing: a job stuck for longer
+    # than STALE_PROCESSING_MINUTES is re-dispatched (or failed after retries).
+    if recover_stuck_evaluation(interview):
+        interview = interviews_collection.find_one({"_id": interview["_id"]}) or interview
     return {
         "evaluation_status": interview.get("evaluation_status", "pending_evaluation"),
         "evaluation": interview.get("evaluation"),

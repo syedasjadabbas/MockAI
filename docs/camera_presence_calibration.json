@@ -1,0 +1,591 @@
+{
+ "summary": {
+  "clips": 12,
+  "trials": 72,
+  "mean_absolute_error": 0.012,
+  "max_absolute_error": 0.087,
+  "mean_signed_error": 0.001,
+  "cutoff": 0.6,
+  "cutoff_decisions_correct": "70/72",
+  "unblocked_clips_with_missed_face": 0,
+  "note": "Ground truth = share of the clip blacked out. Measures detector accuracy, not human judgement."
+ },
+ "trials": [
+  {
+   "clip": "6a96b2733971edf95d599631/6a884ae95deeec968f07461a",
+   "true_in_frame": 1.0,
+   "measured_in_frame": 1.0,
+   "error": 0.0,
+   "true_off_camera": false,
+   "flagged_off_camera": false
+  },
+  {
+   "clip": "6a96b2733971edf95d599631/6a884ae95deeec968f07461a",
+   "true_in_frame": 0.8,
+   "measured_in_frame": 0.872,
+   "error": 0.072,
+   "true_off_camera": false,
+   "flagged_off_camera": false
+  },
+  {
+   "clip": "6a96b2733971edf95d599631/6a884ae95deeec968f07461a",
+   "true_in_frame": 0.6,
+   "measured_in_frame": 0.513,
+   "error": -0.087,
+   "true_off_camera": false,
+   "flagged_off_camera": true
+  },
+  {
+   "clip": "6a96b2733971edf95d599631/6a884ae95deeec968f07461a",
+   "true_in_frame": 0.5,
+   "measured_in_frame": 0.436,
+   "error": -0.064,
+   "true_off_camera": true,
+   "flagged_off_camera": true
+  },
+  {
+   "clip": "6a96b2733971edf95d599631/6a884ae95deeec968f07461a",
+   "true_in_frame": 0.3,
+   "measured_in_frame": 0.333,
+   "error": 0.033,
+   "true_off_camera": true,
+   "flagged_off_camera": true
+  },
+  {
+   "clip": "6a96b2733971edf95d599631/6a884ae95deeec968f07461a",
+   "true_in_frame": 0.1,
+   "measured_in_frame": 0.103,
+   "error": 0.003,
+   "true_off_camera": true,
+   "flagged_off_camera": true
+  },
+  {
+   "clip": "6a96c6df4fe22d4bad7fc5a7/6a884ae95deeec968f07461a",
+   "true_in_frame": 1.0,
+   "measured_in_frame": 1.0,
+   "error": 0.0,
+   "true_off_camera": false,
+   "flagged_off_camera": false
+  },
+  {
+   "clip": "6a96c6df4fe22d4bad7fc5a7/6a884ae95deeec968f07461a",
+   "true_in_frame": 0.8,
+   "measured_in_frame": 0.8,
+   "error": 0.0,
+   "true_off_camera": false,
+   "flagged_off_camera": false
+  },
+  {
+   "clip": "6a96c6df4fe22d4bad7fc5a7/6a884ae95deeec968f07461a",
+   "true_in_frame": 0.6,
+   "measured_in_frame": 0.575,
+   "error": -0.025,
+   "true_off_camera": false,
+   "flagged_off_camera": true
+  },
+  {
+   "clip": "6a96c6df4fe22d4bad7fc5a7/6a884ae95deeec968f07461a",
+   "true_in_frame": 0.5,
+   "measured_in_frame": 0.475,
+   "error": -0.025,
+   "true_off_camera": true,
+   "flagged_off_camera": true
+  },
+  {
+   "clip": "6a96c6df4fe22d4bad7fc5a7/6a884ae95deeec968f07461a",
+   "true_in_frame": 0.3,
+   "measured_in_frame": 0.275,
+   "error": -0.025,
+   "true_off_camera": true,
+   "flagged_off_camera": true
+  },
+  {
+   "clip": "6a96c6df4fe22d4bad7fc5a7/6a884ae95deeec968f07461a",
+   "true_in_frame": 0.1,
+   "measured_in_frame": 0.075,
+   "error": -0.025,
+   "true_off_camera": true,
+   "flagged_off_camera": true
+  },
+  {
+   "clip": "6a9ff4f2afe02972a3d58d56/6a9fbbe0ec900ee0cd1c3794",
+   "true_in_frame": 1.0,
+   "measured_in_frame": 1.0,
+   "error": 0.0,
+   "true_off_camera": false,
+   "flagged_off_camera": false
+  },
+  {
+   "clip": "6a9ff4f2afe02972a3d58d56/6a9fbbe0ec900ee0cd1c3794",
+   "true_in_frame": 0.8,
+   "measured_in_frame": 0.8,
+   "error": 0.0,
+   "true_off_camera": false,
+   "flagged_off_camera": false
+  },
+  {
+   "clip": "6a9ff4f2afe02972a3d58d56/6a9fbbe0ec900ee0cd1c3794",
+   "true_in_frame": 0.6,
+   "measured_in_frame": 0.6,
+   "error": 0.0,
+   "true_off_camera": false,
+   "flagged_off_camera": false
+  },
+  {
+   "clip": "6a9ff4f2afe02972a3d58d56/6a9fbbe0ec900ee0cd1c3794",
+   "true_in_frame": 0.5,
+   "measured_in_frame": 0.475,
+   "error": -0.025,
+   "true_off_camera": true,
+   "flagged_off_camera": true
+  },
+  {
+   "clip": "6a9ff4f2afe02972a3d58d56/6a9fbbe0ec900ee0cd1c3794",
+   "true_in_frame": 0.3,
+   "measured_in_frame": 0.275,
+   "error": -0.025,
+   "true_off_camera": true,
+   "flagged_off_camera": true
+  },
+  {
+   "clip": "6a9ff4f2afe02972a3d58d56/6a9fbbe0ec900ee0cd1c3794",
+   "true_in_frame": 0.1,
+   "measured_in_frame": 0.1,
+   "error": 0.0,
+   "true_off_camera": true,
+   "flagged_off_camera": true
+  },
+  {
+   "clip": "6a9ff4f2afe02972a3d58d56/6a9fbbe0ec900ee0cd1c3795",
+   "true_in_frame": 1.0,
+   "measured_in_frame": 1.0,
+   "error": 0.0,
+   "true_off_camera": false,
+   "flagged_off_camera": false
+  },
+  {
+   "clip": "6a9ff4f2afe02972a3d58d56/6a9fbbe0ec900ee0cd1c3795",
+   "true_in_frame": 0.8,
+   "measured_in_frame": 0.8,
+   "error": 0.0,
+   "true_off_camera": false,
+   "flagged_off_camera": false
+  },
+  {
+   "clip": "6a9ff4f2afe02972a3d58d56/6a9fbbe0ec900ee0cd1c3795",
+   "true_in_frame": 0.6,
+   "measured_in_frame": 0.6,
+   "error": 0.0,
+   "true_off_camera": false,
+   "flagged_off_camera": false
+  },
+  {
+   "clip": "6a9ff4f2afe02972a3d58d56/6a9fbbe0ec900ee0cd1c3795",
+   "true_in_frame": 0.5,
+   "measured_in_frame": 0.5,
+   "error": 0.0,
+   "true_off_camera": true,
+   "flagged_off_camera": true
+  },
+  {
+   "clip": "6a9ff4f2afe02972a3d58d56/6a9fbbe0ec900ee0cd1c3795",
+   "true_in_frame": 0.3,
+   "measured_in_frame": 0.325,
+   "error": 0.025,
+   "true_off_camera": true,
+   "flagged_off_camera": true
+  },
+  {
+   "clip": "6a9ff4f2afe02972a3d58d56/6a9fbbe0ec900ee0cd1c3795",
+   "true_in_frame": 0.1,
+   "measured_in_frame": 0.125,
+   "error": 0.025,
+   "true_off_camera": true,
+   "flagged_off_camera": true
+  },
+  {
+   "clip": "6a9ff4f2afe02972a3d58d56/6a9fbbe0ec900ee0cd1c3796",
+   "true_in_frame": 1.0,
+   "measured_in_frame": 1.0,
+   "error": 0.0,
+   "true_off_camera": false,
+   "flagged_off_camera": false
+  },
+  {
+   "clip": "6a9ff4f2afe02972a3d58d56/6a9fbbe0ec900ee0cd1c3796",
+   "true_in_frame": 0.8,
+   "measured_in_frame": 0.8,
+   "error": 0.0,
+   "true_off_camera": false,
+   "flagged_off_camera": false
+  },
+  {
+   "clip": "6a9ff4f2afe02972a3d58d56/6a9fbbe0ec900ee0cd1c3796",
+   "true_in_frame": 0.6,
+   "measured_in_frame": 0.6,
+   "error": 0.0,
+   "true_off_camera": false,
+   "flagged_off_camera": false
+  },
+  {
+   "clip": "6a9ff4f2afe02972a3d58d56/6a9fbbe0ec900ee0cd1c3796",
+   "true_in_frame": 0.5,
+   "measured_in_frame": 0.5,
+   "error": 0.0,
+   "true_off_camera": true,
+   "flagged_off_camera": true
+  },
+  {
+   "clip": "6a9ff4f2afe02972a3d58d56/6a9fbbe0ec900ee0cd1c3796",
+   "true_in_frame": 0.3,
+   "measured_in_frame": 0.3,
+   "error": -0.0,
+   "true_off_camera": true,
+   "flagged_off_camera": true
+  },
+  {
+   "clip": "6a9ff4f2afe02972a3d58d56/6a9fbbe0ec900ee0cd1c3796",
+   "true_in_frame": 0.1,
+   "measured_in_frame": 0.1,
+   "error": 0.0,
+   "true_off_camera": true,
+   "flagged_off_camera": true
+  },
+  {
+   "clip": "6a9ff4f2afe02972a3d58d56/6a9fbbe0ec900ee0cd1c3798",
+   "true_in_frame": 1.0,
+   "measured_in_frame": 1.0,
+   "error": 0.0,
+   "true_off_camera": false,
+   "flagged_off_camera": false
+  },
+  {
+   "clip": "6a9ff4f2afe02972a3d58d56/6a9fbbe0ec900ee0cd1c3798",
+   "true_in_frame": 0.8,
+   "measured_in_frame": 0.8,
+   "error": 0.0,
+   "true_off_camera": false,
+   "flagged_off_camera": false
+  },
+  {
+   "clip": "6a9ff4f2afe02972a3d58d56/6a9fbbe0ec900ee0cd1c3798",
+   "true_in_frame": 0.6,
+   "measured_in_frame": 0.6,
+   "error": 0.0,
+   "true_off_camera": false,
+   "flagged_off_camera": false
+  },
+  {
+   "clip": "6a9ff4f2afe02972a3d58d56/6a9fbbe0ec900ee0cd1c3798",
+   "true_in_frame": 0.5,
+   "measured_in_frame": 0.5,
+   "error": 0.0,
+   "true_off_camera": true,
+   "flagged_off_camera": true
+  },
+  {
+   "clip": "6a9ff4f2afe02972a3d58d56/6a9fbbe0ec900ee0cd1c3798",
+   "true_in_frame": 0.3,
+   "measured_in_frame": 0.275,
+   "error": -0.025,
+   "true_off_camera": true,
+   "flagged_off_camera": true
+  },
+  {
+   "clip": "6a9ff4f2afe02972a3d58d56/6a9fbbe0ec900ee0cd1c3798",
+   "true_in_frame": 0.1,
+   "measured_in_frame": 0.075,
+   "error": -0.025,
+   "true_off_camera": true,
+   "flagged_off_camera": true
+  },
+  {
+   "clip": "6ab2e6ed0ca8096d7b0391b8/6a884ae95deeec968f07461a",
+   "true_in_frame": 1.0,
+   "measured_in_frame": 1.0,
+   "error": 0.0,
+   "true_off_camera": false,
+   "flagged_off_camera": false
+  },
+  {
+   "clip": "6ab2e6ed0ca8096d7b0391b8/6a884ae95deeec968f07461a",
+   "true_in_frame": 0.8,
+   "measured_in_frame": 0.793,
+   "error": -0.007,
+   "true_off_camera": false,
+   "flagged_off_camera": false
+  },
+  {
+   "clip": "6ab2e6ed0ca8096d7b0391b8/6a884ae95deeec968f07461a",
+   "true_in_frame": 0.6,
+   "measured_in_frame": 0.621,
+   "error": 0.021,
+   "true_off_camera": false,
+   "flagged_off_camera": false
+  },
+  {
+   "clip": "6ab2e6ed0ca8096d7b0391b8/6a884ae95deeec968f07461a",
+   "true_in_frame": 0.5,
+   "measured_in_frame": 0.517,
+   "error": 0.017,
+   "true_off_camera": true,
+   "flagged_off_camera": true
+  },
+  {
+   "clip": "6ab2e6ed0ca8096d7b0391b8/6a884ae95deeec968f07461a",
+   "true_in_frame": 0.3,
+   "measured_in_frame": 0.31,
+   "error": 0.01,
+   "true_off_camera": true,
+   "flagged_off_camera": true
+  },
+  {
+   "clip": "6ab2e6ed0ca8096d7b0391b8/6a884ae95deeec968f07461a",
+   "true_in_frame": 0.1,
+   "measured_in_frame": 0.103,
+   "error": 0.003,
+   "true_off_camera": true,
+   "flagged_off_camera": true
+  },
+  {
+   "clip": "6acd4b80cb674f7ef70f5e4a/6a884ae95deeec968f07461b",
+   "true_in_frame": 1.0,
+   "measured_in_frame": 1.0,
+   "error": 0.0,
+   "true_off_camera": false,
+   "flagged_off_camera": false
+  },
+  {
+   "clip": "6acd4b80cb674f7ef70f5e4a/6a884ae95deeec968f07461b",
+   "true_in_frame": 0.8,
+   "measured_in_frame": 0.8,
+   "error": 0.0,
+   "true_off_camera": false,
+   "flagged_off_camera": false
+  },
+  {
+   "clip": "6acd4b80cb674f7ef70f5e4a/6a884ae95deeec968f07461b",
+   "true_in_frame": 0.6,
+   "measured_in_frame": 0.6,
+   "error": 0.0,
+   "true_off_camera": false,
+   "flagged_off_camera": false
+  },
+  {
+   "clip": "6acd4b80cb674f7ef70f5e4a/6a884ae95deeec968f07461b",
+   "true_in_frame": 0.5,
+   "measured_in_frame": 0.475,
+   "error": -0.025,
+   "true_off_camera": true,
+   "flagged_off_camera": true
+  },
+  {
+   "clip": "6acd4b80cb674f7ef70f5e4a/6a884ae95deeec968f07461b",
+   "true_in_frame": 0.3,
+   "measured_in_frame": 0.275,
+   "error": -0.025,
+   "true_off_camera": true,
+   "flagged_off_camera": true
+  },
+  {
+   "clip": "6acd4b80cb674f7ef70f5e4a/6a884ae95deeec968f07461b",
+   "true_in_frame": 0.1,
+   "measured_in_frame": 0.1,
+   "error": 0.0,
+   "true_off_camera": true,
+   "flagged_off_camera": true
+  },
+  {
+   "clip": "6adb27c7efbd84f13f7d0bee/6adb25f1efbd84f13f7d0b8f",
+   "true_in_frame": 1.0,
+   "measured_in_frame": 1.0,
+   "error": 0.0,
+   "true_off_camera": false,
+   "flagged_off_camera": false
+  },
+  {
+   "clip": "6adb27c7efbd84f13f7d0bee/6adb25f1efbd84f13f7d0b8f",
+   "true_in_frame": 0.8,
+   "measured_in_frame": 0.8,
+   "error": 0.0,
+   "true_off_camera": false,
+   "flagged_off_camera": false
+  },
+  {
+   "clip": "6adb27c7efbd84f13f7d0bee/6adb25f1efbd84f13f7d0b8f",
+   "true_in_frame": 0.6,
+   "measured_in_frame": 0.625,
+   "error": 0.025,
+   "true_off_camera": false,
+   "flagged_off_camera": false
+  },
+  {
+   "clip": "6adb27c7efbd84f13f7d0bee/6adb25f1efbd84f13f7d0b8f",
+   "true_in_frame": 0.5,
+   "measured_in_frame": 0.525,
+   "error": 0.025,
+   "true_off_camera": true,
+   "flagged_off_camera": true
+  },
+  {
+   "clip": "6adb27c7efbd84f13f7d0bee/6adb25f1efbd84f13f7d0b8f",
+   "true_in_frame": 0.3,
+   "measured_in_frame": 0.3,
+   "error": -0.0,
+   "true_off_camera": true,
+   "flagged_off_camera": true
+  },
+  {
+   "clip": "6adb27c7efbd84f13f7d0bee/6adb25f1efbd84f13f7d0b8f",
+   "true_in_frame": 0.1,
+   "measured_in_frame": 0.1,
+   "error": 0.0,
+   "true_off_camera": true,
+   "flagged_off_camera": true
+  },
+  {
+   "clip": "6adb27c7efbd84f13f7d0bee/6adb25f1efbd84f13f7d0b90",
+   "true_in_frame": 1.0,
+   "measured_in_frame": 1.0,
+   "error": 0.0,
+   "true_off_camera": false,
+   "flagged_off_camera": false
+  },
+  {
+   "clip": "6adb27c7efbd84f13f7d0bee/6adb25f1efbd84f13f7d0b90",
+   "true_in_frame": 0.8,
+   "measured_in_frame": 0.816,
+   "error": 0.016,
+   "true_off_camera": false,
+   "flagged_off_camera": false
+  },
+  {
+   "clip": "6adb27c7efbd84f13f7d0bee/6adb25f1efbd84f13f7d0b90",
+   "true_in_frame": 0.6,
+   "measured_in_frame": 0.605,
+   "error": 0.005,
+   "true_off_camera": false,
+   "flagged_off_camera": false
+  },
+  {
+   "clip": "6adb27c7efbd84f13f7d0bee/6adb25f1efbd84f13f7d0b90",
+   "true_in_frame": 0.5,
+   "measured_in_frame": 0.526,
+   "error": 0.026,
+   "true_off_camera": true,
+   "flagged_off_camera": true
+  },
+  {
+   "clip": "6adb27c7efbd84f13f7d0bee/6adb25f1efbd84f13f7d0b90",
+   "true_in_frame": 0.3,
+   "measured_in_frame": 0.316,
+   "error": 0.016,
+   "true_off_camera": true,
+   "flagged_off_camera": true
+  },
+  {
+   "clip": "6adb27c7efbd84f13f7d0bee/6adb25f1efbd84f13f7d0b90",
+   "true_in_frame": 0.1,
+   "measured_in_frame": 0.132,
+   "error": 0.032,
+   "true_off_camera": true,
+   "flagged_off_camera": true
+  },
+  {
+   "clip": "6adb27c7efbd84f13f7d0bee/6adb25f1efbd84f13f7d0b91",
+   "true_in_frame": 1.0,
+   "measured_in_frame": 1.0,
+   "error": 0.0,
+   "true_off_camera": false,
+   "flagged_off_camera": false
+  },
+  {
+   "clip": "6adb27c7efbd84f13f7d0bee/6adb25f1efbd84f13f7d0b91",
+   "true_in_frame": 0.8,
+   "measured_in_frame": 0.818,
+   "error": 0.018,
+   "true_off_camera": false,
+   "flagged_off_camera": false
+  },
+  {
+   "clip": "6adb27c7efbd84f13f7d0bee/6adb25f1efbd84f13f7d0b91",
+   "true_in_frame": 0.6,
+   "measured_in_frame": 0.606,
+   "error": 0.006,
+   "true_off_camera": false,
+   "flagged_off_camera": false
+  },
+  {
+   "clip": "6adb27c7efbd84f13f7d0bee/6adb25f1efbd84f13f7d0b91",
+   "true_in_frame": 0.5,
+   "measured_in_frame": 0.515,
+   "error": 0.015,
+   "true_off_camera": true,
+   "flagged_off_camera": true
+  },
+  {
+   "clip": "6adb27c7efbd84f13f7d0bee/6adb25f1efbd84f13f7d0b91",
+   "true_in_frame": 0.3,
+   "measured_in_frame": 0.303,
+   "error": 0.003,
+   "true_off_camera": true,
+   "flagged_off_camera": true
+  },
+  {
+   "clip": "6adb27c7efbd84f13f7d0bee/6adb25f1efbd84f13f7d0b91",
+   "true_in_frame": 0.1,
+   "measured_in_frame": 0.121,
+   "error": 0.021,
+   "true_off_camera": true,
+   "flagged_off_camera": true
+  },
+  {
+   "clip": "6adb27c7efbd84f13f7d0bee/6adb25f1efbd84f13f7d0b92",
+   "true_in_frame": 1.0,
+   "measured_in_frame": 1.0,
+   "error": 0.0,
+   "true_off_camera": false,
+   "flagged_off_camera": false
+  },
+  {
+   "clip": "6adb27c7efbd84f13f7d0bee/6adb25f1efbd84f13f7d0b92",
+   "true_in_frame": 0.8,
+   "measured_in_frame": 0.811,
+   "error": 0.011,
+   "true_off_camera": false,
+   "flagged_off_camera": false
+  },
+  {
+   "clip": "6adb27c7efbd84f13f7d0bee/6adb25f1efbd84f13f7d0b92",
+   "true_in_frame": 0.6,
+   "measured_in_frame": 0.622,
+   "error": 0.022,
+   "true_off_camera": false,
+   "flagged_off_camera": false
+  },
+  {
+   "clip": "6adb27c7efbd84f13f7d0bee/6adb25f1efbd84f13f7d0b92",
+   "true_in_frame": 0.5,
+   "measured_in_frame": 0.514,
+   "error": 0.014,
+   "true_off_camera": true,
+   "flagged_off_camera": true
+  },
+  {
+   "clip": "6adb27c7efbd84f13f7d0bee/6adb25f1efbd84f13f7d0b92",
+   "true_in_frame": 0.3,
+   "measured_in_frame": 0.297,
+   "error": -0.003,
+   "true_off_camera": true,
+   "flagged_off_camera": true
+  },
+  {
+   "clip": "6adb27c7efbd84f13f7d0bee/6adb25f1efbd84f13f7d0b92",
+   "true_in_frame": 0.1,
+   "measured_in_frame": 0.108,
+   "error": 0.008,
+   "true_off_camera": true,
+   "flagged_off_camera": true
+  }
+ ]
+}
