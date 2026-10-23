@@ -4,12 +4,14 @@ title MockAI Launcher
 rem ==========================================================================
 rem  MockAI one-click launcher (FYP demo)
 rem
-rem    start-mockai.bat          report AI profile: DistilBERT, BERT-CoLA,
-rem                              DeepFace + FERPlus  (needs .venv311)
-rem    start-mockai.bat lite     lite AI profile: MiniLM, rules, FERPlus
+rem    start-mockai.bat            report AI profile + MongoDB Atlas
+rem    start-mockai.bat local      report AI profile + local MongoDB
+rem                                (offline / networks that block Atlas)
+rem    start-mockai.bat lite       lite AI profile (add "local" to combine)
+rem    ... nobrowser               do not open the browser
 rem
-rem  Opens two windows (backend on :8000, frontend on :5173), waits until the
-rem  backend is healthy, then opens the app in your browser.
+rem  Opens one window per server (database in local mode, backend :8000,
+rem  frontend :5173), waits until they are ready, then opens the app.
 rem  Close everything with stop-mockai.bat.
 rem ==========================================================================
 
@@ -18,12 +20,18 @@ rem may contain "&" (e.g. "WEBS & APPS"), which cmd mis-parses in commands.
 cd /d "%~dp0"
 
 set "PROFILE=report"
-if /I "%~1"=="lite" set "PROFILE=lite"
+set "DBMODE=atlas"
+set "OPENBROWSER=1"
+for %%A in (%*) do (
+    if /I "%%~A"=="lite" set "PROFILE=lite"
+    if /I "%%~A"=="local" set "DBMODE=local"
+    if /I "%%~A"=="nobrowser" set "OPENBROWSER=0"
+)
 if /I "%PROFILE%"=="report" (set "VENV=.venv311") else (set "VENV=.venv")
 set "PY=%VENV%\Scripts\python.exe"
 
 echo.
-echo  MockAI - starting in "%PROFILE%" AI profile
+echo  MockAI - "%PROFILE%" AI profile, "%DBMODE%" database
 echo  ------------------------------------------------
 
 rem ---- Pre-flight checks -----------------------------------------------------
@@ -66,8 +74,41 @@ if not errorlevel 1 (
     goto fail
 )
 
-rem ---- Environment shared by both windows ----------------------------------
+rem ---- Local MongoDB (local mode only) ---------------------------------------
+if /I not "%DBMODE%"=="local" goto db_ready
+netstat -ano | findstr /R /C:":27017 .*LISTENING" >nul
+if not errorlevel 1 (
+    echo  Local MongoDB is already running on port 27017.
+    goto db_ready
+)
+set "MONGOD="
+for /f "delims=" %%M in ('where mongod 2^>nul') do if not defined MONGOD set "MONGOD=%%M"
+if not defined MONGOD (
+    for /d %%D in ("%ProgramFiles%\MongoDB\Server\*") do if exist "%%D\bin\mongod.exe" set "MONGOD=%%D\bin\mongod.exe"
+)
+if not defined MONGOD (
+    echo  [ERROR] MongoDB Server is not installed. Install MongoDB Community Server, or run without "local".
+    goto fail
+)
+if not exist "local-db\data" mkdir "local-db\data"
+echo  Starting local MongoDB  (mongodb://127.0.0.1:27017) ...
+start "MockAI Database" cmd /k ""%MONGOD%" --dbpath local-db\data --bind_ip 127.0.0.1 --port 27017"
+set /a TRIES=0
+:wait_db
+netstat -ano | findstr /R /C:":27017 .*LISTENING" >nul
+if not errorlevel 1 goto db_ready
+set /a TRIES+=1
+if %TRIES% GEQ 20 (
+    echo  [ERROR] Local MongoDB did not start. Check the "MockAI Database" window.
+    goto fail
+)
+ping -n 2 127.0.0.1 >nul
+goto wait_db
+:db_ready
+
+rem ---- Environment shared by the server windows ------------------------------
 set "AI_PROFILE=%PROFILE%"
+set "MONGO_TARGET=%DBMODE%"
 set "PYTHONUTF8=1"
 set "TF_CPP_MIN_LOG_LEVEL=2"
 set "VITE_API_BASE=http://localhost:8000"
@@ -89,6 +130,10 @@ if not errorlevel 1 goto backend_up
 set /a TRIES+=1
 if %TRIES% GEQ 80 (
     echo  [ERROR] Backend did not start within 4 minutes. Check the "MockAI Backend" window.
+    if /I "%DBMODE%"=="atlas" (
+        echo          If it is stuck connecting to the database, this network may block
+        echo          MongoDB Atlas ^(port 27017^). Try:  start-mockai.bat local
+    )
     goto fail
 )
 ping -n 4 127.0.0.1 >nul
@@ -111,13 +156,13 @@ goto wait_frontend
 :frontend_up
 echo  Frontend is ready.
 echo.
-echo  MockAI is running.
+echo  MockAI is running ("%DBMODE%" database).
 echo    Candidate app : http://localhost:5173
 echo    Admin panel   : http://localhost:5173/admin/login
 echo    Backend API   : http://localhost:8000
 echo.
-if /I not "%~2"=="nobrowser" start "" "http://localhost:5173"
-echo  Keep the two server windows open. Run stop-mockai.bat to shut down.
+if "%OPENBROWSER%"=="1" start "" "http://localhost:5173"
+echo  Keep the server windows open. Run stop-mockai.bat to shut down.
 ping -n 9 127.0.0.1 >nul
 exit /b 0
 

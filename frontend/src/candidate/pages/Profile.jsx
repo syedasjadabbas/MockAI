@@ -178,7 +178,7 @@ const Profile = () => {
             <div className="lg:col-span-2 c-skeleton h-60 rounded-lg" />
           </div>
         ) : profileError ? (
-          <div className="py-12 flex flex-col items-center text-center gap-3 border-t border-b"
+          <div className="py-10 flex flex-col items-start gap-3 border-t border-b"
             style={{ borderColor: 'var(--c-border)' }}
           >
             <AlertCircle className="w-6 h-6 text-red-500" />

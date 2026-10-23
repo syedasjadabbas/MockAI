@@ -10,7 +10,7 @@ from routes.candidate_evaluation import router as candidate_evaluation_router
 from routes.internal_evaluation import router as internal_evaluation_router
 from routes.candidate_survey import router as candidate_survey_router
 from routes.candidate_goal import router as candidate_goal_router
-from database import admins_collection, admin_collection, client, init_db_indexes
+from database import admins_collection, admin_collection, client, init_db_indexes, MONGO_TARGET
 from utils.auth import hash_password
 
 app = FastAPI(title="Admin Panel API")
@@ -138,7 +138,7 @@ async def startup_event():
     # 5. Report AI profile: load DeepFace now rather than on the first evaluation.
     try:
         from services.ai_profile import get_profile, is_report_profile
-        print(f"Startup check: AI profile = {get_profile()}")
+        print(f"Startup check: AI profile = {get_profile()} | database = {MONGO_TARGET}")
         if is_report_profile():
             from services.facial_analyzer import FacialAnalyzer
             print(f"Startup check: facial pipeline = {FacialAnalyzer().pipeline_label}")
@@ -159,5 +159,6 @@ async def health_check():
     return {
         "status": "ok" if db_status == "ok" else "degraded",
         "database": db_status,
+        "database_target": MONGO_TARGET,
         "version": "1.0.0"
     }

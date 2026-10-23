@@ -38,7 +38,7 @@ const ProgressTracking = () => {
             <div className="c-skeleton h-64 rounded-lg" />
           </div>
         ) : !progress || progress.scoreTrend.length === 0 ? (
-          <div className="py-16 text-center border-t border-b" style={{ borderColor: 'var(--c-border)' }}>
+          <div className="border-t border-b" style={{ borderColor: 'var(--c-border)' }}>
             <CandidateEmptyState
               icon={TrendingUp}
               title="No progress data yet"

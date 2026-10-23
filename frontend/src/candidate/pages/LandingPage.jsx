@@ -383,7 +383,7 @@ const LandingPage = () => {
             SECTION 1 — HERO (Flagship Interactive 3D Section)
            =================================================================== */}
         <section className="relative border-b overflow-hidden" style={{ borderColor: 'var(--c-border)' }}>
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20 lg:py-24">
+          <div className="c-page py-12 sm:py-20 lg:py-24">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
               
               {/* Left Copy & Actions */}
@@ -474,7 +474,7 @@ const LandingPage = () => {
             SECTION 2 — HOW MOCKAI WORKS (Visuals + Micro Code Snippets)
            =================================================================== */}
         <section id="how-it-works" className="border-b py-16 sm:py-24" style={{ borderColor: 'var(--c-border)' }}>
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="c-page">
             
             {/* Section Header */}
             <div className="max-w-2xl mb-14 space-y-2">
@@ -675,7 +675,7 @@ const LandingPage = () => {
             SECTION — INTERVIEW TRACKS / DOMAINS (Multi-Industry Balanced Mix)
            =================================================================== */}
         <section id="tracks" aria-label="Available Practice Tracks" className="border-b py-16 sm:py-24" style={{ borderColor: 'var(--c-border)' }}>
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="c-page">
             
             {/* Section Header */}
             <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-12 gap-4">
@@ -764,7 +764,7 @@ const LandingPage = () => {
             SECTION 3 — WHAT MOCKAI EVALUATES (Rubric Grid + Telemetry Inspector)
            =================================================================== */}
         <section id="evaluation" className="border-b py-16 sm:py-24" style={{ borderColor: 'var(--c-border)' }}>
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="c-page">
             
             <div className="max-w-2xl mb-14 space-y-2">
               <p className="c-eyebrow" style={{ color: 'var(--c-accent)' }}>Assessment Dimensions</p>
@@ -924,7 +924,7 @@ const LandingPage = () => {
             SECTION 4 — WHY MOCKAI (Visual Composition + Product Value)
            =================================================================== */}
         <section id="why-mockai" className="border-b py-16 sm:py-24" style={{ borderColor: 'var(--c-border)' }}>
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="c-page">
             
             <div className="max-w-2xl mb-14 space-y-2">
               <p className="c-eyebrow" style={{ color: 'var(--c-accent)' }}>Product Value</p>
@@ -1098,7 +1098,7 @@ const LandingPage = () => {
             />
           </div>
 
-          <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 text-center space-y-6">
+          <div className="relative z-10 c-page space-y-6">
             
             <p className="c-eyebrow text-orange-400 font-semibold tracking-wider">Get Ready Today</p>
             
@@ -1111,13 +1111,13 @@ const LandingPage = () => {
             </h2>
             
             <p
-              className="text-sm sm:text-base max-w-lg mx-auto leading-relaxed"
+              className="text-sm sm:text-base max-w-lg leading-relaxed"
               style={{ color: 'rgba(255, 255, 255, 0.90)' }}
             >
               Build confidence, master technical articulation, and eliminate surprise before your real interview.
             </p>
 
-            <div className="pt-2 flex justify-center">
+            <div className="pt-2 flex">
               <Link
                 to={ctaDestination}
                 className="c-btn c-btn-primary px-8 py-3.5 text-sm font-semibold rounded-xl shadow-xl flex items-center gap-2.5 select-none group"
@@ -1132,7 +1132,7 @@ const LandingPage = () => {
 
         {/* Minimalist Public Footer */}
         <footer className="border-t py-8 mt-auto" style={{ borderColor: 'var(--c-border)', background: 'var(--c-bg)' }}>
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs" style={{ color: 'var(--c-text-muted)' }}>
+          <div className="c-page flex flex-col sm:flex-row items-center justify-between gap-4 text-xs" style={{ color: 'var(--c-text-muted)' }}>
             <div className="flex items-center gap-2">
               <span className="font-bold" style={{ color: 'var(--c-text)' }}>MockAI</span>
               <span>•</span>

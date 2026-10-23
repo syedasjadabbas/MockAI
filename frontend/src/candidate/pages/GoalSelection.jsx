@@ -290,7 +290,7 @@ const GoalSelection = () => {
 
   return (
     <InterviewFlowLayout step="goal">
-      <div className="max-w-4xl mx-auto py-6 sm:py-10 space-y-8">
+      <div className="py-6 sm:py-10 space-y-8">
         
         {/* Header with 3D Visual */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
@@ -334,7 +334,7 @@ const GoalSelection = () => {
               <p className="text-xs font-medium" style={{ color: 'var(--c-text-muted)' }}>Loading tracks...</p>
             </div>
           ) : categoriesError ? (
-            <div className="flex flex-col items-center gap-3 py-10 text-center">
+            <div className="flex flex-col items-start gap-3 py-10">
               <AlertCircle className="w-6 h-6 text-red-500" />
               <p className="text-sm font-medium" style={{ color: 'var(--c-text-secondary)' }}>{categoriesError}</p>
             </div>

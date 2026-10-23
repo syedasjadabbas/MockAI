@@ -23,7 +23,7 @@ const Feedback = () => {
 
   return (
     <InterviewFlowLayout step="feedback">
-      <div className="max-w-3xl mx-auto space-y-10 py-4 sm:py-6">
+      <div className="space-y-10 py-4 sm:py-6">
         
         {/* Header directly on page */}
         <div className="border-b pb-6" style={{ borderColor: 'var(--c-border)' }}>

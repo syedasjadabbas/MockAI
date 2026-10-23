@@ -18,7 +18,7 @@ const InterviewTopBar = ({ activeStep, onExit }) => {
 
   return (
     <header className="sticky top-0 z-30 border-b" style={{ background: 'var(--c-bg-subtle)', borderColor: 'var(--c-border)' }}>
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 h-15 flex items-center justify-between gap-4">
+      <div className="c-page h-15 flex items-center justify-between gap-4">
         <Link 
           to="/dashboard" 
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} 

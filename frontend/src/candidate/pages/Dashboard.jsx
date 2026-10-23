@@ -176,7 +176,7 @@ const Dashboard = () => {
           background: 'var(--c-bg-subtle)',
         }}
       >
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16">
+        <div className="c-page py-10 sm:py-16">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
             
             {/* Left Content Area */}
@@ -263,7 +263,7 @@ const Dashboard = () => {
       </section>
 
       {/* Main Content Area */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 space-y-14">
+      <main className="c-page py-10 sm:py-14 space-y-14">
         
         {/* LEVEL 1 — Practice Metrics */}
         <section aria-label="Candidate Practice Statistics" className="border-b pb-10" style={{ borderColor: 'var(--c-border)' }}>
@@ -282,14 +282,14 @@ const Dashboard = () => {
             )}
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-8 sm:gap-12">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-8 sm:gap-12">
             {/* Total Sessions */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <p className="text-[11px] uppercase tracking-wider font-bold" style={{ color: 'var(--c-text-muted)' }}>
                   Total Sessions
                 </p>
-                <span className="c-tech-annotation opacity-40">SESSION.LOG</span>
+                <span className="c-tech-annotation opacity-40 hidden sm:inline" aria-hidden="true">SESSION.LOG</span>
               </div>
               <p className="c-serif-num text-3xl sm:text-4xl font-bold" style={{ color: 'var(--c-text)' }}>
                 {loading ? '—' : summary?.totalInterviews ?? 0}
@@ -308,7 +308,7 @@ const Dashboard = () => {
                 <p className="text-[11px] uppercase tracking-wider font-bold" style={{ color: 'var(--c-text-muted)' }}>
                   Completed
                 </p>
-                <span className="c-tech-annotation opacity-40">EVAL.DONE</span>
+                <span className="c-tech-annotation opacity-40 hidden sm:inline" aria-hidden="true">EVAL.DONE</span>
               </div>
               <p className="c-serif-num text-3xl sm:text-4xl font-bold text-emerald-500">
                 {loading ? '—' : summary?.completedInterviews ?? 0}
@@ -333,7 +333,7 @@ const Dashboard = () => {
                 <p className="text-[11px] uppercase tracking-wider font-bold" style={{ color: 'var(--c-text-muted)' }}>
                   Average Score
                 </p>
-                <span className="c-tech-annotation opacity-40">ACCURACY</span>
+                <span className="c-tech-annotation opacity-40 hidden sm:inline" aria-hidden="true">ACCURACY</span>
               </div>
               <p className="c-serif-num text-3xl sm:text-4xl font-bold" style={{ color: 'var(--c-text)' }}>
                 {loading ? '—' : hasScore ? `${Math.round(summary.averageScore)}%` : '—'}
@@ -437,10 +437,16 @@ const Dashboard = () => {
             )}
           </div>
 
-          {!hasInterviews ? (
-            <div className="py-12 text-center border-t border-b" style={{ borderColor: 'var(--c-border)' }}>
+          {loading ? (
+            <div className="border-t border-b py-4 space-y-3" style={{ borderColor: 'var(--c-border)' }} aria-busy="true" aria-label="Loading recent sessions">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="c-skeleton h-10 rounded-md" />
+              ))}
+            </div>
+          ) : !hasInterviews ? (
+            <div className="py-10 border-t border-b" style={{ borderColor: 'var(--c-border)' }}>
               <h3 className="text-base font-bold mb-1.5" style={{ color: 'var(--c-text)' }}>No interviews recorded yet</h3>
-              <p className="text-xs max-w-sm mx-auto mb-5" style={{ color: 'var(--c-text-secondary)' }}>
+              <p className="text-xs max-w-sm mb-5" style={{ color: 'var(--c-text-secondary)' }}>
                 Begin your first mock session to unlock speech fluency analysis and structured evaluation scoring.
               </p>
               <Link to="/interview/goal" className="c-btn c-btn-primary px-5 py-2.5 text-xs font-semibold rounded-md">
@@ -551,10 +557,12 @@ const Dashboard = () => {
       </main>
 
       {/* Footer */}
-      <footer className="border-t py-8 text-center text-xs"
+      <footer className="border-t py-8 text-xs"
         style={{ borderColor: 'var(--c-border)', color: 'var(--c-text-muted)', background: 'var(--c-bg-subtle)' }}
       >
-        <p>© 2026 MockAI • Real Question Banks & Explainable AI Evaluation</p>
+        <div className="c-page">
+          <p>© 2026 MockAI • Real Question Banks & Explainable AI Evaluation</p>
+        </div>
       </footer>
     </div>
   );

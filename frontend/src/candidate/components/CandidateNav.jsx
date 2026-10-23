@@ -69,7 +69,7 @@ const CandidateNav = () => {
         borderColor: 'var(--c-border)',
       }}
     >
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      <div className="c-page h-16 flex items-center justify-between gap-4">
         
         {/* ===================================================================
             1. BRAND LOGO (Navigates to Public Landing Page /)

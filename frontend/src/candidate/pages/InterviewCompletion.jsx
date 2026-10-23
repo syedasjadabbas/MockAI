@@ -92,7 +92,7 @@ const InterviewCompletion = () => {
   if (loading) {
     return (
       <InterviewFlowLayout step="complete">
-        <div className="max-w-5xl mx-auto py-16 flex flex-col items-center justify-center gap-3 text-center">
+        <div className="py-16 flex flex-col items-center justify-center gap-3 text-center">
           <div className="w-6 h-6 border-2 rounded-full animate-spin" style={{ borderColor: 'var(--c-accent)', borderTopColor: 'transparent' }} />
           <p className="text-xs font-medium" style={{ color: 'var(--c-text-secondary)' }}>
             Retrieving interview completion receipt…
@@ -105,8 +105,8 @@ const InterviewCompletion = () => {
   if (error || !interview) {
     return (
       <InterviewFlowLayout step="complete">
-        <div className="max-w-md mx-auto py-14 text-center space-y-4">
-          <div className="w-10 h-10 rounded-md mx-auto flex items-center justify-center border"
+        <div className="max-w-md py-14 space-y-4">
+          <div className="w-10 h-10 rounded-md flex items-center justify-center border"
             style={{ background: 'var(--c-badge-danger-bg)', borderColor: 'var(--c-badge-danger-border)', color: 'var(--c-danger)' }}
           >
             <AlertCircle className="w-5 h-5" />
@@ -146,7 +146,7 @@ const InterviewCompletion = () => {
 
   return (
     <InterviewFlowLayout step="complete">
-      <div className="max-w-5xl mx-auto space-y-8 py-4 sm:py-6">
+      <div className="space-y-8 py-4 sm:py-6">
         
         {/* Top Context & Reference */}
         <div className="flex flex-wrap items-center justify-between gap-4 border-b pb-4" style={{ borderColor: 'var(--c-border)' }}>

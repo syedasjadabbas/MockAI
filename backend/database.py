@@ -8,7 +8,16 @@ from dotenv import load_dotenv
 env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
 load_dotenv(dotenv_path=env_path)
 
-MONGO_URI = os.getenv("MONGO_URI") or os.getenv("MONGODB_URI") or "mongodb://localhost:27017"
+# Database target switch:
+#   MONGO_TARGET=atlas  (default) - MongoDB Atlas cloud cluster from MONGO_URI
+#   MONGO_TARGET=local            - a local mongod (LOCAL_MONGO_URI), for
+#                                   offline demos or networks that block
+#                                   Atlas's port 27017. Fill it from Atlas with
+#                                   `python sync_local_db.py`.
+ATLAS_MONGO_URI = os.getenv("MONGO_URI") or os.getenv("MONGODB_URI") or "mongodb://localhost:27017"
+LOCAL_MONGO_URI = os.getenv("LOCAL_MONGO_URI", "mongodb://127.0.0.1:27017")
+MONGO_TARGET = "local" if (os.getenv("MONGO_TARGET") or "").strip().lower() == "local" else "atlas"
+MONGO_URI = LOCAL_MONGO_URI if MONGO_TARGET == "local" else ATLAS_MONGO_URI
 
 # Automated test scripts (backend/test_*.py, or TESTING=1) use a separate
 # database so test users, interviews and surveys never appear in the real

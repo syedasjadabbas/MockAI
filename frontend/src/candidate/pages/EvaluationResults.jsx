@@ -316,7 +316,7 @@ const EvaluationResults = () => {
   if (loading) {
     return (
       <InterviewFlowLayout step="results">
-        <div className="max-w-4xl mx-auto py-20 flex flex-col items-center justify-center gap-3 text-center">
+        <div className="py-20 flex flex-col items-center justify-center gap-3 text-center">
           <div className="w-6 h-6 border-2 rounded-full animate-spin" style={{ borderColor: 'var(--c-accent)', borderTopColor: 'transparent' }} />
           <p className="text-xs font-medium" style={{ color: 'var(--c-text-secondary)' }}>
             Generating executive assessment dossier…
@@ -329,8 +329,8 @@ const EvaluationResults = () => {
   if (error || !interview) {
     return (
       <InterviewFlowLayout step="results">
-        <div className="max-w-md mx-auto py-16 text-center space-y-4">
-          <div className="w-10 h-10 rounded-md mx-auto flex items-center justify-center border"
+        <div className="max-w-md py-16 space-y-4">
+          <div className="w-10 h-10 rounded-md flex items-center justify-center border"
             style={{ background: 'var(--c-badge-danger-bg)', borderColor: 'var(--c-badge-danger-border)', color: 'var(--c-danger)' }}
           >
             <AlertCircle className="w-5 h-5" />
@@ -351,7 +351,7 @@ const EvaluationResults = () => {
 
   return (
     <InterviewFlowLayout step="results">
-      <div className="max-w-4xl mx-auto space-y-12 py-6 sm:py-10">
+      <div className="space-y-12 py-6 sm:py-10">
         
         {/* ===================================================================
             1. ASSESSMENT HEADER (Candidate / Role / Date / REF)

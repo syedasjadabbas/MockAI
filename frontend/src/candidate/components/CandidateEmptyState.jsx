@@ -2,7 +2,7 @@ import React from 'react';
 import { Inbox } from 'lucide-react';
 
 const CandidateEmptyState = ({ icon: Icon = Inbox, title = 'Nothing here yet', description, actionLabel, onAction }) => (
-  <div className="flex flex-col items-center justify-center text-center py-12 px-4">
+  <div className="flex flex-col items-start text-left py-10">
     <div
       className="w-10 h-10 rounded-md flex items-center justify-center mb-3 border"
       style={{ 

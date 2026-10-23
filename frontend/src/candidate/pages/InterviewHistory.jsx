@@ -128,7 +128,7 @@ const InterviewHistory = () => {
     <div className="candidate-app min-h-screen" style={{ background: 'var(--c-bg)' }}>
       <CandidateNav />
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-10">
+      <main className="c-page py-8 sm:py-12 space-y-10">
         
         {/* Page Header (Directly on page) */}
         <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4 border-b pb-6" style={{ borderColor: 'var(--c-border)' }}>
@@ -274,7 +274,7 @@ const InterviewHistory = () => {
           </div>
         ) : filtered.length === 0 ? (
           <div
-            className="py-14 border-t border-b text-center"
+            className="py-4 border-t border-b"
             style={{ borderColor: 'var(--c-border)' }}
           >
             {interviews.length === 0 ? (
@@ -286,9 +286,9 @@ const InterviewHistory = () => {
                 onAction={() => navigate('/interview/goal')}
               />
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-3 py-6">
                 <div
-                  className="w-10 h-10 rounded-md mx-auto flex items-center justify-center border"
+                  className="w-10 h-10 rounded-md flex items-center justify-center border"
                   style={{
                     background: 'var(--c-surface-muted)',
                     borderColor: 'var(--c-border)',
@@ -300,7 +300,7 @@ const InterviewHistory = () => {
                 <h3 className="c-heading text-sm font-bold" style={{ color: 'var(--c-text)' }}>
                   No matching sessions found
                 </h3>
-                <p className="text-xs max-w-sm mx-auto" style={{ color: 'var(--c-text-secondary)' }}>
+                <p className="text-xs max-w-sm" style={{ color: 'var(--c-text-secondary)' }}>
                   No records matched your search query or filter criteria.
                 </p>
                 <button

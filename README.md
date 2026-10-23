@@ -224,6 +224,17 @@ Once the environments below are set up, double-click **`start-mockai.bat`** in t
 
 - `start-mockai.bat` uses the **report** AI profile (DistilBERT, BERT-CoLA, DeepFace + FERPlus; needs `.venv311`).
 - `start-mockai.bat lite` uses the **lite** profile (needs `.venv`).
+- `start-mockai.bat local` uses a **local MongoDB** instead of Atlas, for offline demos or networks that block Atlas's port 27017 (combine freely, e.g. `start-mockai.bat lite local`). It uses a MongoDB service already running on port 27017, or starts the installed MongoDB Community Server with its data in `local-db/`.
+
+### Local database copy
+Fill or refresh the local database from Atlas while on a network that allows port 27017 (a phone hotspot works):
+
+```bash
+cd backend
+../.venv311/Scripts/python.exe sync_local_db.py --yes
+```
+
+The existing local data is backed up to a `mockai_backup_<date>` database before it is replaced. Without Atlas access, `sync_local_db.py --seed-only` creates just the question bank, mentors and admin accounts. Changes made while running locally stay local; they are not copied back to Atlas.
 
 
 ### Prerequisites

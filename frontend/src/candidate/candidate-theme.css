@@ -563,3 +563,31 @@ html.dark .candidate-app,
 }
 
 
+
+/* ─── Page container ───
+ * One shared width for every candidate page, the nav bars and the interview
+ * flow, so all content starts on the same left edge. Content inside fills
+ * this width and stays left-aligned; pages never nest a narrower centred box.
+ */
+.c-page {
+  width: 100%;
+  max-width: 80rem;              /* 1280px */
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+@media (min-width: 640px) {
+  .c-page { padding-left: 1.5rem; padding-right: 1.5rem; }
+}
+@media (min-width: 1024px) {
+  .c-page { padding-left: 2rem; padding-right: 2rem; }
+}
+
+/* Comfortable reading measure for prose blocks inside the wide container */
+.c-measure { max-width: 70ch; }
+
+/* Default reading measure for paragraphs now that pages use the full container
+ * width. :where() keeps specificity at zero, so any Tailwind max-w-* set on a
+ * paragraph still wins. */
+:where(.candidate-app) p { max-width: 75ch; }
