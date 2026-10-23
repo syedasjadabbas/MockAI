@@ -198,6 +198,126 @@ def _analyze_acoustic_pauses(
         return 0.0, 0, 0.0
 
 
+def _resolve_wav(media_url: Optional[str], audio_wav_path: Optional[str]):
+    """Returns (path, is_temp) of a WAV for the recording, extracting it with
+    FFmpeg when needed. (None, False) if unavailable."""
+    from pathlib import Path
+    import tempfile
+    import uuid
+    if audio_wav_path and Path(audio_wav_path).is_file() and Path(audio_wav_path).stat().st_size > 0:
+        return Path(audio_wav_path), False
+    if not media_url:
+        return None, False
+    try:
+        from services.media_storage import get_media_storage
+        from services.media_conversion import extract_audio_to_wav, is_ffmpeg_available
+        media_path = get_media_storage().resolve_path(media_url)
+        if not media_path and os.path.isfile(str(media_url)):
+            media_path = Path(media_url)
+        if not media_path or not media_path.is_file():
+            return None, False
+        if media_path.suffix.lower() == ".wav":
+            return media_path, False
+        sibling = media_path.with_suffix(".wav")
+        if sibling.is_file() and sibling.stat().st_size > 0:
+            return sibling, False
+        if not is_ffmpeg_available():
+            return None, False
+        tmp = Path(tempfile.gettempdir()) / f"mockai_acoustic_{uuid.uuid4().hex}.wav"
+        extract_audio_to_wav(media_path, tmp)
+        return (tmp, True) if tmp.is_file() and tmp.stat().st_size > 0 else (None, False)
+    except Exception:
+        return None, False
+
+
+def analyze_acoustic_profile(media_url: Optional[str] = None, audio_wav_path: Optional[str] = None) -> Dict:
+    """
+    MEASURED acoustic properties of the recording, independent of the transcript:
+    - duration_seconds, sound_activity_ratio (share of 50 ms frames above the
+      recording's own silence threshold)
+    - intensity_dbfs_mean / intensity_dbfs_std over active frames
+    - voiced_ratio, pitch_hz_median, pitch_variability_semitones (std of pitch
+      in semitones over voiced frames; autocorrelation estimator, 75-400 Hz)
+
+    These are observations only. They are NOT converted into confidence or
+    stress: low pitch variation is not evidence of calm and high variation is
+    not evidence of nervousness, and no labelled data exists yet to calibrate
+    such a mapping.
+    """
+    empty = {"status": "unavailable", "duration_seconds": None, "sound_activity_ratio": None,
+             "intensity_dbfs_mean": None, "intensity_dbfs_std": None, "voiced_ratio": None,
+             "pitch_hz_median": None, "pitch_variability_semitones": None,
+             "method": "rms + autocorrelation pitch (observational, not used for scoring)"}
+    wav, is_temp = _resolve_wav(media_url, audio_wav_path)
+    if wav is None:
+        return empty
+    try:
+        import numpy as np
+        import scipy.io.wavfile as wavfile
+        rate, data = wavfile.read(str(wav))
+        if data is None or len(data) == 0:
+            return {**empty, "status": "empty"}
+        if data.ndim > 1:
+            data = data.mean(axis=1)
+        if np.issubdtype(data.dtype, np.integer):
+            x = data.astype(np.float32) / float(np.iinfo(data.dtype).max)
+        else:
+            x = data.astype(np.float32)
+        duration = len(x) / float(rate)
+        frame = int(rate * 0.05)
+        if frame <= 0 or len(x) < frame:
+            return {**empty, "status": "empty", "duration_seconds": round(duration, 2)}
+        n = len(x) // frame
+        frames = x[: n * frame].reshape(n, frame)
+        rms = np.sqrt((frames ** 2).mean(axis=1)) + 1e-9
+        peak = float(rms.max())
+        if peak < 1e-4:
+            return {**empty, "status": "silent", "duration_seconds": round(duration, 2), "sound_activity_ratio": 0.0}
+        # Activity threshold relative to the recording's own noise floor
+        # (10th-percentile frame energy + 9 dB), so steady background noise is
+        # not counted as speech/sound.
+        noise_floor = float(np.percentile(rms, 10))
+        active = rms >= max(peak * 0.06, noise_floor * (10 ** (9 / 20)), 10 ** (-50 / 20))
+        db = 20 * np.log10(rms[active]) if active.any() else np.array([])
+
+        pitches = []
+        lo, hi = int(rate / 400), int(rate / 75)
+        for f in frames[active]:
+            f = f - f.mean()
+            ac = np.correlate(f, f, mode="full")[len(f) - 1:]
+            if ac[0] <= 0 or hi >= len(ac):
+                continue
+            seg = ac[lo:hi]
+            k = int(np.argmax(seg)) + lo
+            if ac[k] / ac[0] >= 0.45:
+                pitches.append(rate / k)
+        voiced_ratio = round(len(pitches) / max(1, int(active.sum())), 3)
+        if len(pitches) >= 5:
+            pitches = np.array(pitches)
+            median = float(np.median(pitches))
+            semis = 12 * np.log2(pitches / median)
+            pitch_var = round(float(np.std(semis)), 2)
+            median = round(median, 1)
+        else:
+            median, pitch_var = None, None
+        return {
+            "status": "completed",
+            "duration_seconds": round(duration, 2),
+            "sound_activity_ratio": round(float(active.mean()), 3),
+            "intensity_dbfs_mean": round(float(db.mean()), 1) if db.size else None,
+            "intensity_dbfs_std": round(float(db.std()), 1) if db.size else None,
+            "voiced_ratio": voiced_ratio,
+            "pitch_hz_median": median,
+            "pitch_variability_semitones": pitch_var,
+            "method": empty["method"],
+        }
+    except Exception as e:
+        return {**empty, "status": "failed", "error": str(e)[:200]}
+    finally:
+        if is_temp and wav is not None and wav.exists():
+            wav.unlink(missing_ok=True)
+
+
 def analyze_delivery(
     transcript: Optional[str],
     duration_seconds: Optional[float] = None,
@@ -209,7 +329,14 @@ def analyze_delivery(
     Supports reusing pre-extracted audio_wav_path or discovering cached WAV next to media_url.
     """
     dur = max(0.0, float(duration_seconds or 0.0))
+    acoustic_profile = analyze_acoustic_profile(media_url, audio_wav_path) if (media_url or audio_wav_path) else None
     if not transcript or not transcript.strip():
+        sound = (acoustic_profile or {}).get("sound_activity_ratio")
+        if sound:
+            note = (f"No words were recognised, although sound was present in {sound:.0%} of the recording; "
+                    "speech delivery could not be assessed.")
+        else:
+            note = "No spoken words were recorded for this prompt."
         return {
             "status": "empty" if transcript == "" else "missing",
             "word_count": 0,
@@ -219,13 +346,14 @@ def analyze_delivery(
             "filler_count": 0,
             "filler_words": [],
             "hesitation_rate": 0.0,
-            "hesitation_level": "None",
+            "hesitation_level": "Not Assessed",
             "fluency_score": 0.0,
             "fluency_indicator": "No Spoken Data",
             "pause_duration_seconds": 0.0,
             "pause_count": 0,
             "articulation_wpm": 0.0,
-            "notes": "No spoken words were recorded for this prompt.",
+            "acoustic_profile": acoustic_profile,
+            "notes": note,
         }
 
     words = _tokenize_words(transcript)
@@ -339,5 +467,6 @@ def analyze_delivery(
         "pause_duration_seconds": pause_duration,
         "pause_count": pause_count,
         "articulation_wpm": articulation_wpm,
+        "acoustic_profile": acoustic_profile,
         "notes": notes,
     }

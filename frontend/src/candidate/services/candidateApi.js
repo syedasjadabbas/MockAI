@@ -122,6 +122,18 @@ export async function submitTextResponse(interviewId, questionId, { text, durati
   return toFrontendInterview(doc);
 }
 
+// Live camera presence check during the interview: one small still frame,
+// analysed in memory on the server and never stored.
+export async function checkCameraPresence(interviewId, frameBlob) {
+  const formData = new FormData();
+  formData.append('frame', frameBlob, 'frame.jpg');
+  return fetchCandidateApi(`/interviews/${interviewId}/presence-check`, {
+    method: 'POST',
+    body: formData,
+    timeout: 5000,
+  });
+}
+
 // NFR 10 - stores the candidate's explicit recording consent decision.
 export async function recordConsent(interviewId, { microphone, camera }) {
   const doc = await fetchCandidateApi(`/interviews/${interviewId}/consent`, {

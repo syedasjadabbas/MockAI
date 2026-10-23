@@ -11,10 +11,21 @@ Produces:
 - FR22: Bounded 0–100 Confidence Score and categorical level ("High" | "Moderate" | "Developing" | "Low").
 - FR23: Bounded 0–100 Stress Score and categorical indicator ("Low" | "Moderate" | "Elevated").
 
-Integrity guarantees:
-- Pure deterministic mathematical assessment on active AI outputs; zero random or hardcoded values.
-- Graceful degraded-modality fallback: if speech or vision is missing, the available modality
-  is dynamically and proportionally utilized without failing or inventing data.
+Integrity rules (v2):
+- Confidence and stress are INFERENCES and require adequate spoken evidence
+  (the report's verbal-primacy principle, FR22-02 / FR23-02). With no or too
+  little recognised speech they are "Not Assessed"; facial observations are
+  still reported but never stand in for the missing speech.
+- Missing or unsupported signals can never raise confidence or lower stress:
+  * camera presence is not engagement and adds nothing to confidence;
+  * a neutral/happy face is not evidence of confidence;
+  * the absence of negative facial expressions is not evidence of low stress,
+    so facial stress only contributes when tension is actually observed.
+- Speech confidence combines delivery fluency with explicit verbal-uncertainty
+  markers in the transcript ("I don't know", "I can't answer", hedges).
+- All mappings below are uncalibrated heuristics (no labelled validation data
+  yet); outputs carry evidence_quality and assessment_basis so the UI and the
+  report can present them honestly.
 """
 from typing import Dict, List, Optional, Tuple
 
@@ -29,18 +40,26 @@ STRESS_WEIGHTS = {
     "vision": 0.50,
 }
 
-# Facial composure + engagement base confidence mapping
-_FACIAL_CONFIDENCE_MAP = {
-    ("Composed & Stable", "High"): 88.0,
-    ("Composed & Stable", "Moderate"): 78.0,
-    ("Composed & Stable", "Low (Gaze Disengaged)"): 65.0,
-    ("Moderate Composure", "High"): 72.0,
-    ("Moderate Composure", "Moderate"): 60.0,
-    ("Moderate Composure", "Low (Gaze Disengaged)"): 45.0,
-    ("Fluctuating Composure", "High"): 50.0,
-    ("Fluctuating Composure", "Moderate"): 40.0,
-    ("Fluctuating Composure", "Low (Gaze Disengaged)"): 30.0,
+METHOD = "behavioural heuristic v2 (uncalibrated)"
+
+# Minimum spoken evidence before confidence / stress are inferred at all.
+# Filler / hesitation RATES over a dozen words are dominated by noise (one
+# filler in 12 words is an "8% filler rate"), so short answers are reported as
+# Not Assessed instead of producing extreme scores.
+MIN_WORDS_FOR_ASSESSMENT = 20
+MIN_SECONDS_FOR_ASSESSMENT = 6.0
+
+# Facial expression-consistency -> confidence component. Engagement and
+# expression valence are deliberately NOT used (see module docstring).
+_FACIAL_CONFIDENCE_BY_COMPOSURE = {
+    "Composed & Stable": 75.0,
+    "Moderate Composure": 60.0,
+    "Fluctuating Composure": 40.0,
 }
+
+# Speech confidence = DELIVERY_SHARE * fluency-based delivery + rest * verbal certainty
+DELIVERY_SHARE = 0.70
+UNCERTAINTY_PENALTY_PER_100_WORDS = 12.5
 
 
 def derive_confidence_level(score: float) -> str:
@@ -86,34 +105,41 @@ def _calculate_speech_confidence(delivery_result: Dict) -> float:
     return min(100.0, max(0.0, score))
 
 
-def _calculate_facial_confidence(facial_result: Dict) -> float:
+def _facial_indicators_assessed(facial_result: Optional[Dict]) -> bool:
+    if not facial_result or facial_result.get("status") != "completed" or not facial_result.get("face_detected"):
+        return False
+    composure = (facial_result.get("behavioral_indicators") or {}).get("composure_index")
+    return composure in _FACIAL_CONFIDENCE_BY_COMPOSURE
+
+
+def _calculate_facial_confidence(facial_result: Dict) -> Optional[float]:
     """
-    Evaluates non-verbal confidence from emotional composure, engagement, and expression valence.
+    Facial confidence component from MEASURED expression consistency only.
+    Returns None when the facial indicators were not assessed (insufficient
+    evidence), so the face cannot contribute.
     """
+    if not _facial_indicators_assessed(facial_result):
+        return None
     indicators = facial_result.get("behavioral_indicators", {})
-    composure = indicators.get("composure_index", "Moderate Composure")
-    engagement = indicators.get("engagement_level", "Moderate")
-
-    base = _FACIAL_CONFIDENCE_MAP.get((composure, engagement))
-    if base is None:
-        if "Composed" in composure:
-            base = 75.0
-        elif "Moderate" in composure:
-            base = 60.0
-        else:
-            base = 40.0
-
-    # Expression valence adjustment
-    dist = facial_result.get("expression_distribution", {})
-    pos = dist.get("neutral", 0.0) + dist.get("happiness", 0.0)
-    neg = dist.get("fear", 0.0) + dist.get("sadness", 0.0) + dist.get("anger", 0.0) + dist.get("disgust", 0.0)
-
-    if pos >= 75.0:
-        base += 5.0
-    if neg >= 15.0:
+    base = _FACIAL_CONFIDENCE_BY_COMPOSURE[indicators["composure_index"]]
+    if indicators.get("observable_tension") == "Elevated":
         base -= 10.0
-
     return min(100.0, max(0.0, base))
+
+
+def _verbal_certainty(language_result: Optional[Dict]) -> Optional[Dict]:
+    """Explicit uncertainty markers in the transcript (from language_analyzer):
+    self-reported inability ("I don't know", "I can't answer", "sorry") and
+    hedges ("maybe", "I think"). Returns None if no language analysis exists."""
+    if not language_result or language_result.get("status") != "completed":
+        return None
+    tone = language_result.get("tone") or {}
+    words = max(1, int(language_result.get("word_count") or 0))
+    negative = list(tone.get("negative_phrases") or [])
+    hedges = list(tone.get("hedges") or [])
+    density = (len(negative) + len(hedges)) / max(words, 30) * 100.0
+    certainty = round(max(0.0, 100.0 - density * UNCERTAINTY_PENALTY_PER_100_WORDS), 1)
+    return {"verbal_certainty": certainty, "uncertainty_statements": negative, "hedges": hedges}
 
 
 def _calculate_speech_stress(delivery_result: Dict) -> float:
@@ -142,68 +168,86 @@ def _calculate_speech_stress(delivery_result: Dict) -> float:
     return min(100.0, max(0.0, total_stress))
 
 
-def _calculate_facial_stress(facial_result: Dict) -> float:
+def _calculate_facial_stress(facial_result: Dict) -> Optional[float]:
     """
-    Evaluates observable visual tension from CNN facial expressions and composure stability.
+    Facial stress component. Contributes ONLY when tension is actually observed
+    (negative expression classes); a calm-looking or neutral face is not
+    evidence of low stress, and changing expressions alone are not stress.
+    Returns None when there is no positive evidence of tension.
     """
-    indicators = facial_result.get("behavioral_indicators", {})
-    tension = indicators.get("observable_tension", "Low")
-    composure = indicators.get("composure_index", "Moderate Composure")
+    if not _facial_indicators_assessed(facial_result):
+        return None
+    tension = (facial_result.get("behavioral_indicators") or {}).get("observable_tension")
+    if tension == "Elevated":
+        return 80.0
+    if tension == "Moderate":
+        return 50.0
+    return None
 
-    dist = facial_result.get("expression_distribution", {})
-    neg = dist.get("fear", 0.0) + dist.get("anger", 0.0) + dist.get("disgust", 0.0) + dist.get("sadness", 0.0)
 
-    if tension == "Elevated" or neg >= 25.0:
-        base = 80.0
-    elif tension == "Moderate" or neg >= 12.0:
-        base = 50.0
-    else:
-        base = 20.0
+def _speech_evidence_state(delivery_result: Optional[Dict]) -> str:
+    """'adequate' | 'insufficient' (some words, too few) | 'none'."""
+    if not delivery_result or delivery_result.get("status") != "completed":
+        return "none"
+    words = int(delivery_result.get("word_count") or 0)
+    if words == 0:
+        return "none"
+    seconds = float(delivery_result.get("duration_seconds") or 0.0)
+    if words < MIN_WORDS_FOR_ASSESSMENT or (seconds and seconds < MIN_SECONDS_FOR_ASSESSMENT):
+        return "insufficient"
+    return "adequate"
 
-    if composure == "Fluctuating Composure":
-        base += 15.0
-    elif composure == "Composed & Stable":
-        base -= 10.0
 
-    return min(100.0, max(0.0, base))
+def _facial_evidence_dict(facial_result: Optional[Dict], facial_conf, facial_stress) -> Optional[Dict]:
+    if not facial_result or facial_result.get("status") != "completed" or not facial_result.get("face_detected"):
+        return None
+    ind = facial_result.get("behavioral_indicators") or {}
+    return {
+        "dominant_expression": facial_result.get("dominant_expression", "Not Observed"),
+        "composure_index": ind.get("composure_index", "Not Assessed"),
+        "engagement_level": ind.get("engagement_level", "Not Assessed"),
+        "observable_tension": ind.get("observable_tension", "Not Assessed"),
+        "evidence_quality": facial_result.get("evidence_quality"),
+        "facial_confidence": facial_conf,
+        "facial_stress": facial_stress,
+        "used_for_confidence": facial_conf is not None,
+        "used_for_stress": facial_stress is not None,
+    }
 
 
 def analyze_question_confidence_and_stress(
     delivery_result: Optional[Dict],
     facial_result: Optional[Dict],
+    language_result: Optional[Dict] = None,
 ) -> Dict:
     """
-    Computes per-question confidence score/level and stress score/level from real speech & vision outputs.
+    Per-question confidence (FR22) and stress (FR23) from measured evidence.
 
-    Returns structured dict matching schema:
-      - confidence_score: float (0.0 - 100.0)
-      - confidence_level: "High" | "Moderate" | "Developing" | "Low" | "Not Assessed"
-      - stress_score: float (0.0 - 100.0)
-      - stress_level: "Low" | "Moderate" | "Elevated" | "Not Assessed"
-      - modality_status: Dict
-      - speech_evidence: Dict | None
-      - facial_evidence: Dict | None
-      - rationale: str
+    Returns (schema unchanged, fields added):
+      confidence_score, confidence_level ("High" | "Moderate" | "Developing" | "Low" | "Not Assessed"),
+      stress_score, stress_level ("Low" | "Moderate" | "Elevated" | "Not Assessed"),
+      modality_status, speech_evidence, facial_evidence, rationale,
+      evidence_quality ("sufficient" | "insufficient"), assessment_basis, method.
     """
-    speech_available = bool(
-        delivery_result
-        and delivery_result.get("status") == "completed"
-        and delivery_result.get("word_count", 0) > 0
-    )
-
-    facial_available = bool(
-        facial_result
-        and facial_result.get("status") == "completed"
-        and facial_result.get("face_detected", False)
-    )
+    speech_state = _speech_evidence_state(delivery_result)
+    facial_conf = _calculate_facial_confidence(facial_result) if facial_result else None
+    facial_stress = _calculate_facial_stress(facial_result) if facial_result else None
+    facial_evidence = _facial_evidence_dict(facial_result, facial_conf, facial_stress)
 
     modality_status = {
-        "speech": "available" if speech_available else "unavailable",
-        "vision": "available" if facial_available else "unavailable",
+        "speech": "available" if speech_state == "adequate" else ("insufficient" if speech_state == "insufficient" else "unavailable"),
+        "vision": "available" if facial_conf is not None or facial_stress is not None
+                  else ("observed" if facial_evidence else "unavailable"),
     }
 
-    # Case 0: Neither modality available
-    if not speech_available and not facial_available:
+    if speech_state != "adequate":
+        if speech_state == "insufficient":
+            reason = (f"Too little speech to assess (fewer than {MIN_WORDS_FOR_ASSESSMENT} words or "
+                      f"under {MIN_SECONDS_FOR_ASSESSMENT:.0f} s).")
+        else:
+            reason = "No recognisable speech in this answer."
+        if facial_evidence:
+            reason += " Facial observations are reported separately but are not enough on their own to infer confidence or stress."
         return {
             "confidence_score": 0.0,
             "confidence_level": "Not Assessed",
@@ -211,72 +255,61 @@ def analyze_question_confidence_and_stress(
             "stress_level": "Not Assessed",
             "modality_status": modality_status,
             "speech_evidence": None,
-            "facial_evidence": None,
-            "rationale": "No speech or facial behavioral recording was available for evaluation.",
+            "facial_evidence": facial_evidence,
+            "rationale": reason,
+            "evidence_quality": "insufficient",
+            "assessment_basis": reason,
+            "method": METHOD,
         }
 
-    # Extract single-modality scores
-    speech_conf = _calculate_speech_confidence(delivery_result) if speech_available else None
-    facial_conf = _calculate_facial_confidence(facial_result) if facial_available else None
-
-    speech_stress = _calculate_speech_stress(delivery_result) if speech_available else None
-    facial_stress = _calculate_facial_stress(facial_result) if facial_available else None
-
-    # Fuse with graceful degradation
-    if speech_available and facial_available:
-        conf_score = round(
-            CONFIDENCE_WEIGHTS["speech"] * speech_conf + CONFIDENCE_WEIGHTS["vision"] * facial_conf,
-            1,
-        )
-        str_score = round(
-            STRESS_WEIGHTS["speech"] * speech_stress + STRESS_WEIGHTS["vision"] * facial_stress,
-            1,
-        )
-        rationale = (
-            f"Dual-modality assessment: Speech delivery (conf {speech_conf:.1f}%, stress {speech_stress:.1f}%) "
-            f"fused with facial composure (conf {facial_conf:.1f}%, stress {facial_stress:.1f}%)."
-        )
-    elif speech_available:
-        conf_score = round(speech_conf, 1)
-        str_score = round(speech_stress, 1)
-        rationale = f"Speech-only assessment: Derived from acoustic pacing ({delivery_result.get('words_per_minute', 0)} WPM) and vocal fluency."
+    # Speech confidence: delivery fluency + explicit verbal certainty
+    delivery_conf = _calculate_speech_confidence(delivery_result)
+    verbal = _verbal_certainty(language_result)
+    if verbal is not None:
+        speech_conf = round(DELIVERY_SHARE * delivery_conf + (1 - DELIVERY_SHARE) * verbal["verbal_certainty"], 1)
     else:
-        conf_score = round(facial_conf, 1)
-        str_score = round(facial_stress, 1)
-        indicators = facial_result.get("behavioral_indicators", {})
-        rationale = f"Vision-only assessment: Derived from facial composure ({indicators.get('composure_index')}) and observable tension."
+        speech_conf = delivery_conf
+    speech_stress = _calculate_speech_stress(delivery_result)
 
-    conf_score = min(100.0, max(0.0, conf_score))
-    str_score = min(100.0, max(0.0, str_score))
+    basis = ["speech delivery (pace, fillers, pauses)"]
+    if verbal is not None:
+        basis.append(f"verbal certainty ({len(verbal['uncertainty_statements'])} uncertainty statements, {len(verbal['hedges'])} hedges)")
 
-    speech_evidence = (
-        {
-            "fluency_score": delivery_result.get("fluency_score", 0.0),
-            "words_per_minute": delivery_result.get("words_per_minute", 0.0),
-            "pacing": delivery_result.get("pacing", "Unknown"),
-            "hesitation_rate": delivery_result.get("hesitation_rate", 0.0),
-            "hesitation_level": delivery_result.get("hesitation_level", "Unknown"),
-            "filler_count": delivery_result.get("filler_count", 0),
-            "pause_duration_seconds": delivery_result.get("pause_duration_seconds", 0.0),
-            "speech_confidence": speech_conf,
-            "speech_stress": speech_stress,
-        }
-        if speech_available
-        else None
-    )
+    if facial_conf is not None:
+        conf_score = CONFIDENCE_WEIGHTS["speech"] * speech_conf + CONFIDENCE_WEIGHTS["vision"] * facial_conf
+        basis.append("facial expression consistency")
+    else:
+        conf_score = speech_conf
+    if facial_stress is not None:
+        str_score = STRESS_WEIGHTS["speech"] * speech_stress + STRESS_WEIGHTS["vision"] * facial_stress
+        basis.append("observed facial tension")
+    else:
+        str_score = speech_stress
 
-    facial_evidence = (
-        {
-            "dominant_expression": facial_result.get("dominant_expression", "Unknown"),
-            "composure_index": facial_result.get("behavioral_indicators", {}).get("composure_index", "Unknown"),
-            "engagement_level": facial_result.get("behavioral_indicators", {}).get("engagement_level", "Unknown"),
-            "observable_tension": facial_result.get("behavioral_indicators", {}).get("observable_tension", "Unknown"),
-            "facial_confidence": facial_conf,
-            "facial_stress": facial_stress,
-        }
-        if facial_available
-        else None
-    )
+    conf_score = round(min(100.0, max(0.0, conf_score)), 1)
+    str_score = round(min(100.0, max(0.0, str_score)), 1)
+
+    not_used = []
+    if facial_evidence and facial_conf is None:
+        not_used.append("facial indicators (insufficient facial evidence)")
+    elif facial_evidence and facial_stress is None:
+        not_used.append("facial stress (no tension observed; a calm face is not evidence of low stress)")
+    assessment_basis = "Based on " + ", ".join(basis) + "." + (" Not used: " + "; ".join(not_used) + "." if not_used else "")
+
+    speech_evidence = {
+        "fluency_score": delivery_result.get("fluency_score", 0.0),
+        "words_per_minute": delivery_result.get("words_per_minute", 0.0),
+        "pacing": delivery_result.get("pacing", "Unknown"),
+        "hesitation_rate": delivery_result.get("hesitation_rate", 0.0),
+        "hesitation_level": delivery_result.get("hesitation_level", "Unknown"),
+        "filler_count": delivery_result.get("filler_count", 0),
+        "pause_duration_seconds": delivery_result.get("pause_duration_seconds", 0.0),
+        "delivery_confidence": delivery_conf,
+        "verbal_certainty": verbal["verbal_certainty"] if verbal else None,
+        "uncertainty_statements": verbal["uncertainty_statements"] if verbal else [],
+        "speech_confidence": speech_conf,
+        "speech_stress": speech_stress,
+    }
 
     return {
         "confidence_score": conf_score,
@@ -286,7 +319,10 @@ def analyze_question_confidence_and_stress(
         "modality_status": modality_status,
         "speech_evidence": speech_evidence,
         "facial_evidence": facial_evidence,
-        "rationale": rationale,
+        "rationale": assessment_basis,
+        "evidence_quality": "sufficient",
+        "assessment_basis": assessment_basis,
+        "method": METHOD,
     }
 
 
@@ -322,7 +358,10 @@ def aggregate_confidence_and_stress(per_question_results: List[Dict]) -> Dict:
         cs = q.get("confidence_and_stress")
         # If not already attached, compute on the fly
         if not cs or not isinstance(cs, dict):
-            cs = analyze_question_confidence_and_stress(q.get("delivery"), q.get("facial_analysis"))
+            cs = analyze_question_confidence_and_stress(
+                q.get("delivery"), q.get("facial_analysis"),
+                (q.get("text_analysis") or {}).get("language_analysis"),
+            )
 
         if cs.get("confidence_level") != "Not Assessed":
             q_confidences.append(float(cs["confidence_score"]))
@@ -336,11 +375,16 @@ def aggregate_confidence_and_stress(per_question_results: List[Dict]) -> Dict:
             fa_ev = cs.get("facial_evidence")
             if fa_ev and fa_ev.get("facial_confidence") is not None:
                 facial_conf_list.append(float(fa_ev["facial_confidence"]))
+            if fa_ev and fa_ev.get("facial_stress") is not None:
                 facial_stress_list.append(float(fa_ev["facial_stress"]))
 
     evaluated_takes = len(q_confidences)
     if evaluated_takes == 0:
         return {
+            "evidence_quality": "insufficient",
+            "coverage": {"assessed_answers": 0, "total_questions": len(per_question_results), "ratio": 0.0},
+            "method": METHOD,
+            "reason": "No answer had enough recognisable speech to assess confidence or stress.",
             "confidence_score": 0.0,
             "confidence_level": "Not Assessed",
             "stress_score": 0.0,
@@ -366,10 +410,16 @@ def aggregate_confidence_and_stress(per_question_results: List[Dict]) -> Dict:
 
     modality_status = {
         "speech": "available" if speech_conf_list else "unavailable",
-        "vision": "available" if facial_conf_list else "unavailable",
+        "vision": "available" if (facial_conf_list or facial_stress_list) else "unavailable",
     }
+    total_q = len(per_question_results)
+    coverage = round(evaluated_takes / total_q, 2) if total_q else 0.0
+    evidence_quality = "sufficient" if (evaluated_takes >= 2 and coverage >= 0.4) else "limited"
 
     return {
+        "evidence_quality": evidence_quality,
+        "coverage": {"assessed_answers": evaluated_takes, "total_questions": total_q, "ratio": coverage},
+        "method": METHOD,
         "confidence_score": avg_confidence,
         "confidence_level": derive_confidence_level(avg_confidence),
         "stress_score": avg_stress,

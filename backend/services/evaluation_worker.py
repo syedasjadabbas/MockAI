@@ -173,6 +173,7 @@ def _evaluate_interview_job_unlocked(interview_id: str) -> Dict:
             "insights": aggregate_res.get("insights"),
             "summary_report": aggregate_res.get("summary_report"),
             "language_summary": aggregate_res.get("language_summary"),
+            "camera_conduct": aggregate_res.get("camera_conduct"),
             "failed_reason": None,
         }
 

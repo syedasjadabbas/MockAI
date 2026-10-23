@@ -22,7 +22,7 @@ Integrity Guarantees:
       contributions, and a human-readable rationale.
     - Zero fabrication: unavailable modalities produce no score contribution.
 """
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
 
 
 # ---------------------------------------------------------------------------
@@ -38,43 +38,56 @@ BASE_WEIGHTS = {
 # ---------------------------------------------------------------------------
 # Facial composure → numeric score mapping
 # ---------------------------------------------------------------------------
-_COMPOSURE_SCORE_MAP = {
-    ("Composed & Stable", "High"):                     85.0,
-    ("Composed & Stable", "Moderate"):                 75.0,
-    ("Composed & Stable", "Low (Gaze Disengaged)"):    65.0,
-    ("Moderate Composure", "High"):                    70.0,
-    ("Moderate Composure", "Moderate"):                55.0,
-    ("Moderate Composure", "Low (Gaze Disengaged)"):   45.0,
-    ("Fluctuating Composure", "High"):                 40.0,
-    ("Fluctuating Composure", "Moderate"):             35.0,
-    ("Fluctuating Composure", "Low (Gaze Disengaged)"):25.0,
+# Vision score from MEASURED expression consistency only. Engagement is not
+# used: the pipeline measures camera presence, not attention. Indicators that
+# were not assessed (insufficient facial evidence) give no vision score, so the
+# report's weight redistribution applies instead of an invented value.
+_COMPOSURE_SCORE = {
+    "Composed & Stable": 70.0,
+    "Moderate Composure": 50.0,
+    "Fluctuating Composure": 30.0,
 }
+
+
+# Camera presence. Staying in frame is part of a video interview, and whether
+# the face is in frame is measured directly by the detector. An answer given
+# mostly off camera (face in < 60% of sampled frames, with the video recorded)
+# scores the vision share on presence instead of being silently dropped:
+# 0 when never in frame, rising linearly to the Fluctuating level (30) at the
+# threshold. Expression flags (hostile-looking classes held across the answer)
+# cap the composure score at the same level.
+OFF_CAMERA_MAX_SCORE = 30.0
+CONDUCT_FLAG_MAX_SCORE = 30.0
+
+
+def _vision_assessment(facial_result: Optional[Dict]) -> Tuple[Optional[float], Optional[str]]:
+    """Returns (0-100 vision score or None, basis). Basis is "camera_presence",
+    "composure", "composure_capped_by_expressions" or None."""
+    if not facial_result:
+        return None, None
+    presence = facial_result.get("camera_presence") or {}
+    if presence.get("status") == "measured" and presence.get("mostly_off_camera"):
+        from services.facial_analyzer import OFF_CAMERA_PRESENCE_THRESHOLD
+        ratio = float(presence.get("ratio") or 0.0)
+        return round(min(1.0, ratio / OFF_CAMERA_PRESENCE_THRESHOLD) * OFF_CAMERA_MAX_SCORE, 1), "camera_presence"
+    if facial_result.get("status") != "completed":
+        return None, None
+    composure = (facial_result.get("behavioral_indicators") or {}).get("composure_index", "")
+    score = _COMPOSURE_SCORE.get(composure)
+    if score is None:
+        return None, None
+    conduct = facial_result.get("expression_conduct") or {}
+    if any(f.get("type") == "negative_expressions" for f in conduct.get("flags") or []):
+        return min(score, CONDUCT_FLAG_MAX_SCORE), "composure_capped_by_expressions"
+    return score, "composure"
 
 
 def _facial_to_score(facial_result: Dict) -> Optional[float]:
     """
-    Converts the categorical facial analysis result into a 0–100 numeric score.
-    Returns None if the facial result is not usable.
+    Converts the facial analysis result into a 0-100 vision score, or None if
+    neither the facial indicators nor camera presence are usable.
     """
-    if not facial_result or facial_result.get("status") != "completed":
-        return None
-
-    indicators = facial_result.get("behavioral_indicators", {})
-    composure = indicators.get("composure_index", "")
-    engagement = indicators.get("engagement_level", "")
-
-    score = _COMPOSURE_SCORE_MAP.get((composure, engagement))
-    if score is not None:
-        return score
-
-    # Fallback: if the exact pair isn't mapped, derive from composure alone
-    if "Composed" in composure:
-        return 70.0
-    elif "Moderate" in composure:
-        return 50.0
-    elif "Fluctuating" in composure:
-        return 30.0
-    return None
+    return _vision_assessment(facial_result)[0]
 
 
 def fuse_per_question(
@@ -124,9 +137,8 @@ def fuse_per_question(
     )
     speech_score = float(delivery_result.get("fluency_score", 0.0)) if speech_available else None
 
-    vision_score = _facial_to_score(facial_result) if facial_result else None
-    vision_status = facial_result.get("status") if facial_result else "missing"
-    vision_available = vision_score is not None and vision_status == "completed"
+    vision_score, vision_basis = _vision_assessment(facial_result)
+    vision_available = vision_score is not None
 
     modality_status = {
         "nlp":    "available" if nlp_available else "unavailable",
@@ -241,15 +253,26 @@ def fuse_per_question(
         contrib = vision_score * w
         fused_score += contrib
         indicators = facial_result.get("behavioral_indicators", {})
+        presence = facial_result.get("camera_presence") or {}
         vision_contribution = {
             "raw_score": round(vision_score, 1),
             "weight": w,
             "weighted_contribution": round(contrib, 2),
+            "basis": vision_basis,
+            "camera_presence_ratio": presence.get("ratio"),
             "composure": indicators.get("composure_index", "Unknown"),
             "engagement": indicators.get("engagement_level", "Unknown"),
             "dominant_expression": facial_result.get("dominant_expression", "Unknown"),
         }
-        contributions.append(f"Vision/Facial {round(vision_score, 1)}% × {w:.2f} = {round(contrib, 1)}")
+        if vision_basis == "camera_presence":
+            contributions.append(
+                f"Vision/Camera presence {round(vision_score, 1)}% × {w:.2f} = {round(contrib, 1)} "
+                f"(face in frame {float(presence.get('ratio') or 0):.0%} of the answer)"
+            )
+        elif vision_basis == "composure_capped_by_expressions":
+            contributions.append(f"Vision/Facial {round(vision_score, 1)}% × {w:.2f} = {round(contrib, 1)} (capped: flagged expressions)")
+        else:
+            contributions.append(f"Vision/Facial {round(vision_score, 1)}% × {w:.2f} = {round(contrib, 1)}")
 
     fused_score = round(min(100.0, max(0.0, fused_score)), 1)
 

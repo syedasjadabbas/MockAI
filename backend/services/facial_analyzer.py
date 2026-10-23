@@ -34,6 +34,51 @@ from services.ai_profile import is_report_profile
 
 logger = logging.getLogger("mockai.facial_analyzer")
 
+# ---------------------------------------------------------------------------
+# Evidence requirements for INTERPRETED facial indicators (composure, tension).
+#
+# Measured outputs (expression probabilities per frame, how much they change
+# over time, model certainty, camera presence) are always reported. Turning
+# them into an interpretation is only allowed when the evidence is adequate;
+# otherwise the indicator is "Not Assessed" rather than a positive default.
+# These thresholds are engineering limits on evidence quantity/quality, NOT
+# calibrated against labelled emotion data (none is available yet).
+# ---------------------------------------------------------------------------
+MIN_FRAMES_FOR_INDICATORS = 8        # frames with a face and a valid prediction
+MIN_MEAN_TOP_PROBABILITY = 0.45      # mean confidence of the per-frame top class
+LOW_CONFIDENCE_FRAME_PROB = 0.50     # a frame whose top class is below this is "uncertain"
+MAX_LOW_CONFIDENCE_FRAME_RATIO = 0.5 # too many uncertain frames -> inconclusive
+MIN_FACE_PRESENCE_FOR_INDICATORS = 0.6
+MAX_AMBIGUOUS_FACE_RATIO = 0.3       # frames where the candidate's face is not clearly the largest
+FACE_DOMINANCE_RATIO = 1.5           # largest face must be >= 1.5x the next to be attributable
+TARGET_SAMPLED_FRAMES = 40           # frames spread across the WHOLE answer
+MAX_SAMPLE_FPS = 3.0
+
+# Camera presence (is the candidate's face in frame at all). This is measured
+# directly by the face detector, so it is reported even when expressions
+# cannot be interpreted. An answer is "mostly off camera" below the same
+# presence floor the expression indicators use.
+MIN_FRAMES_FOR_PRESENCE = 5
+OFF_CAMERA_PRESENCE_THRESHOLD = MIN_FACE_PRESENCE_FOR_INDICATORS
+
+# Expression conduct flags. The model has no class for teasing, tongue-out or
+# mocking faces; what it CAN report is how often the visible face was read as
+# a hostile-looking class, and whether the expression kept switching. Both are
+# phrased as what the model observed, never as the candidate's intent.
+CONDUCT_LABELS = ("anger", "disgust", "contempt")
+MIN_FRAMES_FOR_CONDUCT = 8
+CONDUCT_FRAME_PROB = 0.50            # a frame counts only if the model is fairly sure
+CONDUCT_SHARE_THRESHOLD = 0.25       # of the frames where the face was visible
+CONDUCT_MIN_FRAMES = 3
+
+# Expression-consistency bands (total-variation distance between consecutive
+# frame distributions, 0 = identical, 1 = completely different).
+VARIABILITY_FLUCTUATING = 0.25
+VARIABILITY_MODERATE = 0.12
+CHANGE_RATE_FLUCTUATING = 0.35
+CHANGE_RATE_MODERATE = 0.15
+NEGATIVE_LABELS = ("anger", "fear", "disgust", "sadness", "contempt")
+
 # Share of the DeepFace CNN in the report-profile emotion ensemble (the rest
 # is Emotion-FERPlus). See _classify_face_expression for the rationale.
 # Chosen 2026-10-20 on 8 real interview recordings (7 with a judgeable face),
@@ -90,6 +135,7 @@ class FacialAnalyzer:
             return
 
         self.ort_session: Optional[ort.InferenceSession] = None
+        self._last_face_dominance = float("inf")
         self._deepface = None
         self._deepface_failed = False
         self._init_models()
@@ -184,8 +230,8 @@ class FacialAnalyzer:
         self,
         video_path: Optional[str],
         duration_seconds: Optional[float] = None,
-        max_samples: int = 30,
-        fps_sample_rate: float = 1.0,
+        max_samples: int = TARGET_SAMPLED_FRAMES,
+        fps_sample_rate: Optional[float] = None,
     ) -> Dict:
         """
         Analyzes facial expressions and non-verbal behavioral composure from recorded video.
@@ -477,6 +523,11 @@ class FacialAnalyzer:
                 except Exception as e:
                     logger.warning(f"YuNet creation failed: {e}")
 
+            # Sampling rate: spread max_samples frames across the WHOLE answer
+            # (previously a fixed 1 fps / 30 frames, which judged a 137 s answer
+            # on its first 30 s and a 3.6 s answer on only 4 frames).
+            if fps_sample_rate is None:
+                fps_sample_rate = min(MAX_SAMPLE_FPS, max(0.05, max_samples / max(inferred_duration, 0.1)))
             # Efficient frame stepping using cap.grab() for intermediate frames
             frame_step = max(1, round(video_fps / fps_sample_rate)) if (video_fps > 0 and fps_sample_rate > 0) else 30
             sampled_emotions: List[np.ndarray] = []
@@ -484,8 +535,10 @@ class FacialAnalyzer:
             face_detected_count = 0
             total_sampled_count = 0
             multi_face_count = 0
+            ambiguous_face_count = 0
             inference_errors = 0
             face_centers_x: List[float] = []
+            presence_track: List[Tuple[float, bool]] = []
 
             frame_idx = 0
             while total_sampled_count < max_samples:
@@ -508,9 +561,13 @@ class FacialAnalyzer:
                     pos_ms = cap.get(cv2.CAP_PROP_POS_MSEC)
                     sample_sec = max(0.0, float(pos_ms / 1000.0)) if pos_ms >= 0 else float(frame_idx / (video_fps or 25.0))
 
+                    self._last_face_dominance = float("inf")
                     face_crop, face_bbox, f_count = self._extract_face(frame, yunet_detector, width, height, return_count=True)
                     if f_count > 1:
                         multi_face_count += 1
+                        if self._last_face_dominance < FACE_DOMINANCE_RATIO:
+                            ambiguous_face_count += 1
+                    presence_track.append((sample_sec, face_crop is not None))
 
                     if face_crop is not None:
                         face_detected_count += 1
@@ -566,6 +623,7 @@ class FacialAnalyzer:
                 }
 
             presence_ratio = round(face_detected_count / total_sampled_count, 3)
+            camera_presence = self._camera_presence(presence_track, inferred_duration)
 
             # If no face was ever detected
             if face_detected_count == 0 or len(sampled_emotions) == 0:
@@ -573,6 +631,8 @@ class FacialAnalyzer:
                     "status": "no_face_detected",
                     "face_detected": False,
                     "face_presence_ratio": 0.0,
+                    "camera_presence": camera_presence,
+                    "expression_conduct": {"status": "not_assessed", "flags": [], "reason": "Face not visible."},
                     "total_frames_sampled": total_sampled_count,
                     "frames_with_face": 0,
                     "frames_with_multiple_faces": multi_face_count,
@@ -620,6 +680,8 @@ class FacialAnalyzer:
                     "status": "insufficient_data",
                     "face_detected": True,
                     "face_presence_ratio": presence_ratio,
+                    "camera_presence": camera_presence,
+                    "expression_conduct": {"status": "not_assessed", "flags": [], "reason": "Model certainty too low."},
                     "total_frames_sampled": total_sampled_count,
                     "frames_with_face": face_detected_count,
                     "frames_with_multiple_faces": multi_face_count,
@@ -631,7 +693,7 @@ class FacialAnalyzer:
                     "peak_moment": None,
                     "expression_distribution": {},
                     "behavioral_indicators": {
-                        "engagement_level": "Moderate",
+                        "engagement_level": "Not Assessed",
                         "composure_index": "Not Assessed",
                         "observable_tension": "Not Assessed",
                     },
@@ -656,11 +718,24 @@ class FacialAnalyzer:
                 sampled_timestamps=sampled_timestamps,
             )
 
-            # Derive report-aligned behavioral indicators
+            # Measured temporal dynamics (how expressions change across the answer)
+            dynamics = self._temporal_dynamics(sampled_emotions, sampled_timestamps)
+            multi_face_ratio = round(multi_face_count / total_sampled_count, 3) if total_sampled_count else 0.0
+            ambiguous_face_ratio = round(ambiguous_face_count / total_sampled_count, 3) if total_sampled_count else 0.0
+            evidence_quality, evidence_notes = self._assess_evidence(
+                dynamics=dynamics,
+                presence_ratio=presence_ratio,
+                multi_face_ratio=multi_face_ratio,
+                ambiguous_face_ratio=ambiguous_face_ratio,
+            )
+
+            # Interpreted indicators - only from adequate evidence
             engagement_level, composure_index, observable_tension = self._derive_indicators(
                 presence_ratio=presence_ratio,
                 distribution=agg["expression_distribution"],
                 face_centers_x=face_centers_x,
+                dynamics=dynamics,
+                evidence_sufficient=(evidence_quality == "sufficient"),
             )
 
             return {
@@ -682,7 +757,19 @@ class FacialAnalyzer:
                     "composure_index": composure_index,
                     "observable_tension": observable_tension,
                 },
+                # Measured observations (not interpretations)
+                "temporal_dynamics": dynamics,
+                "camera_presence_ratio": presence_ratio,
+                "camera_presence": camera_presence,
+                "expression_conduct": self._expression_conduct(dynamics, ambiguous_face_ratio),
+                "multi_face_ratio": multi_face_ratio,
+                "ambiguous_face_ratio": ambiguous_face_ratio,
+                "evidence_quality": evidence_quality,
+                "evidence_notes": evidence_notes,
+                "indicator_method": "expression-consistency heuristic v2 (thresholds not calibrated on labelled data)",
+                "supported_expression_classes": list(EMOTION_LABELS),
                 "quality_metadata": {
+                    "sampling_fps": round(float(fps_sample_rate), 3),
                     "valid_frames_processed": total_sampled_count,
                     "frames_with_detected_faces": face_detected_count,
                     "frames_with_multiple_faces": multi_face_count,
@@ -867,6 +954,15 @@ class FacialAnalyzer:
             "expression_distribution": distribution,
         }
 
+    @staticmethod
+    def _dominance(faces) -> float:
+        """Area ratio of the largest detected face to the second largest
+        (inf when there is at most one face)."""
+        if faces is None or len(faces) < 2:
+            return float("inf")
+        areas = sorted((float(f[2]) * float(f[3]) for f in faces), reverse=True)
+        return areas[0] / areas[1] if areas[1] > 0 else float("inf")
+
     def _extract_face(
         self,
         frame: np.ndarray,
@@ -889,6 +985,7 @@ class FacialAnalyzer:
                     detector.setInputSize((det_w, det_h))
                     _, faces = detector.detect(det_frame)
                     face_count = len(faces) if faces is not None else 0
+                    self._last_face_dominance = self._dominance(faces)
                     if faces is not None and len(faces) > 0:
                         largest = max(faces, key=lambda f: f[2] * f[3])
                         x = int(largest[0] / scale)
@@ -906,6 +1003,7 @@ class FacialAnalyzer:
                 else:
                     _, faces = detector.detect(frame)
                     face_count = len(faces) if faces is not None else 0
+                    self._last_face_dominance = self._dominance(faces)
                     if faces is not None and len(faces) > 0:
                         largest_face = max(faces, key=lambda f: f[2] * f[3])
                         x, y, w, h = [int(v) for v in largest_face[:4]]
@@ -989,42 +1087,236 @@ class FacialAnalyzer:
             logger.debug(f"Emotion classification inference notice: {e}")
             return None
 
+    def _temporal_dynamics(self, sampled_emotions: List[Any], sampled_timestamps: Optional[List[float]] = None) -> Dict:
+        """
+        MEASURED temporal behaviour of the model's expression predictions:
+        - mean_top_probability: how certain the model was per frame (0-1)
+        - low_confidence_frame_ratio: share of frames whose top class < LOW_CONFIDENCE_FRAME_PROB
+        - expression_variability: mean total-variation distance between consecutive
+          frame distributions (0 = identical frames, 1 = completely different)
+        - label_changes / label_change_rate: how often the top expression switches
+        - expressions_observed: classes that were the top class in >= 10% of frames
+        - timeline: per-frame top class with its probability (for review/UI)
+        Nothing here is an interpretation of the candidate's state.
+        """
+        vecs = []
+        for item in sampled_emotions or []:
+            v = np.asarray(item, dtype=np.float32).reshape(-1)
+            t = float(v.sum())
+            if t > 0:
+                vecs.append(v / t)
+        n = len(vecs)
+        if n == 0:
+            return {"frames_analyzed": 0, "mean_top_probability": None, "low_confidence_frame_ratio": None,
+                    "expression_variability": None, "label_changes": None, "label_change_rate": None,
+                    "expressions_observed": [], "timeline": []}
+        tops = [int(np.argmax(v)) for v in vecs]
+        top_probs = [float(v[i]) for v, i in zip(vecs, tops)]
+        if n > 1:
+            tv = [0.5 * float(np.abs(vecs[k] - vecs[k - 1]).sum()) for k in range(1, n)]
+            variability = round(float(np.mean(tv)), 3)
+            changes = sum(1 for k in range(1, n) if tops[k] != tops[k - 1])
+            change_rate = round(changes / (n - 1), 3)
+        else:
+            variability, changes, change_rate = None, 0, None
+        counts: Dict[int, int] = {}
+        for i in tops:
+            counts[i] = counts.get(i, 0) + 1
+        observed = [EMOTION_LABELS[i] for i, c in sorted(counts.items(), key=lambda kv: -kv[1]) if c / n >= 0.10]
+        ts = sampled_timestamps or [float(k) for k in range(n)]
+        timeline = [
+            {"t": round(float(ts[k]), 2) if k < len(ts) else None, "expression": EMOTION_LABELS[tops[k]], "p": round(top_probs[k], 3)}
+            for k in range(n)
+        ][:60]
+        return {
+            "frames_analyzed": n,
+            "mean_top_probability": round(float(np.mean(top_probs)), 3),
+            "low_confidence_frame_ratio": round(sum(1 for p in top_probs if p < LOW_CONFIDENCE_FRAME_PROB) / n, 3),
+            "expression_variability": variability,
+            "label_changes": changes,
+            "label_change_rate": change_rate,
+            "expressions_observed": observed,
+            "timeline": timeline,
+        }
+
+    @staticmethod
+    def _camera_presence(presence_track: List[Tuple[float, bool]], duration_seconds: float) -> Dict:
+        """MEASURED: share of sampled frames where the candidate's face was in
+        frame, and the stretches of the answer where it was not. Each sampled
+        frame stands for an equal slice of the answer, so seconds are estimates."""
+        n = len(presence_track)
+        if n < MIN_FRAMES_FOR_PRESENCE:
+            return {"status": "not_measured", "ratio": None, "frames_sampled": n,
+                    "reason": f"Only {n} frames could be sampled (minimum {MIN_FRAMES_FOR_PRESENCE})."}
+        present = sum(1 for _, p in presence_track if p)
+        ratio = round(present / n, 3)
+        slice_s = (duration_seconds or 0.0) / n if duration_seconds else 0.0
+        segments: List[Dict] = []
+        start = None
+        for k, (t, p) in enumerate(presence_track):
+            if not p and start is None:
+                start = t
+            if p and start is not None:
+                segments.append({"start": round(start, 1), "end": round(presence_track[k - 1][0] + slice_s, 1)})
+                start = None
+        if start is not None:
+            segments.append({"start": round(start, 1), "end": round(presence_track[-1][0] + slice_s, 1)})
+        off_seconds = round((n - present) * slice_s, 1)
+        longest = max((s["end"] - s["start"] for s in segments), default=0.0)
+        return {
+            "status": "measured",
+            "ratio": ratio,
+            "frames_sampled": n,
+            "frames_with_face": present,
+            "off_camera_seconds": off_seconds,
+            "longest_off_camera_seconds": round(longest, 1),
+            "off_camera_segments": segments[:5],
+            "mostly_off_camera": ratio < OFF_CAMERA_PRESENCE_THRESHOLD,
+            "method": "YuNet face detection on sampled frames (measured, not interpreted)",
+        }
+
+    @staticmethod
+    def _expression_conduct(dynamics: Dict, ambiguous_face_ratio: float) -> Dict:
+        """Flags what the expression model observed that looks unprofessional
+        in an interview. It cannot recognise teasing, tongue-out or mocking
+        faces as such; these flags report the model's own classes only."""
+        timeline = (dynamics or {}).get("timeline") or []
+        frames = len(timeline)
+        if frames < MIN_FRAMES_FOR_CONDUCT:
+            return {"status": "not_assessed", "flags": [],
+                    "reason": f"Only {frames} frames with a visible face (minimum {MIN_FRAMES_FOR_CONDUCT})."}
+        if ambiguous_face_ratio > MAX_AMBIGUOUS_FACE_RATIO:
+            return {"status": "not_assessed", "flags": [],
+                    "reason": "Several similar-sized faces in view; expressions cannot be attributed to the candidate."}
+        flags: List[Dict] = []
+        hits = [f for f in timeline if f.get("expression") in CONDUCT_LABELS and (f.get("p") or 0) >= CONDUCT_FRAME_PROB]
+        share = len(hits) / frames
+        if len(hits) >= CONDUCT_MIN_FRAMES and share >= CONDUCT_SHARE_THRESHOLD:
+            labels: Dict[str, int] = {}
+            for f in hits:
+                labels[f["expression"]] = labels.get(f["expression"], 0) + 1
+            named = " / ".join(sorted(labels, key=lambda k: -labels[k]))
+            flags.append({
+                "type": "negative_expressions",
+                "share": round(share, 3),
+                "frames": len(hits),
+                "labels": labels,
+                "message": (f"Your face was read as {named} in {share:.0%} of the frames where you were visible. "
+                            "Frowning, grimacing or pulling faces can look like this. Keep a neutral, attentive expression."),
+            })
+        change_rate = dynamics.get("label_change_rate")
+        variability = dynamics.get("expression_variability")
+        if (change_rate is not None and variability is not None
+                and change_rate >= CHANGE_RATE_FLUCTUATING and variability >= VARIABILITY_FLUCTUATING):
+            flags.append({
+                "type": "rapid_expression_changes",
+                "label_change_rate": change_rate,
+                "message": (f"Your expression kept switching ({dynamics.get('label_changes')} changes across {frames} frames). "
+                            "Exaggerated or changing faces look distracting in an interview."),
+            })
+        return {
+            "status": "assessed",
+            "flags": flags,
+            "frames_considered": frames,
+            "method": "share of confident anger/disgust/contempt frames + expression switching (thresholds not calibrated on labelled data)",
+            "limitation": "The model cannot recognise teasing, tongue-out or mocking faces directly; flags describe the expression classes it observed.",
+        }
+
+    def check_presence(self, image_bytes: bytes) -> Dict:
+        """Live single-frame check used during the interview: is exactly one
+        face clearly in frame? Nothing is stored."""
+        arr = np.frombuffer(image_bytes or b"", dtype=np.uint8)
+        frame = cv2.imdecode(arr, cv2.IMREAD_COLOR) if arr.size else None
+        if frame is None:
+            return {"status": "invalid_image", "face_detected": False, "face_count": 0}
+        h, w = frame.shape[:2]
+        detector = None
+        if YUNET_MODEL_PATH.is_file():
+            try:
+                det_w, det_h = w, h
+                if w > 640 or h > 480:
+                    s = min(640.0 / w, 480.0 / h)
+                    det_w, det_h = int(w * s), int(h * s)
+                detector = cv2.FaceDetectorYN.create(str(YUNET_MODEL_PATH), "", (det_w, det_h),
+                                                     score_threshold=0.55, nms_threshold=0.3, top_k=50)
+            except Exception as e:
+                logger.warning(f"YuNet creation failed for presence check: {e}")
+        crop, _, count = self._extract_face(frame, detector, w, h, return_count=True)
+        return {"status": "ok", "face_detected": crop is not None, "face_count": int(count)}
+
+    def _assess_evidence(
+        self,
+        dynamics: Dict,
+        presence_ratio: float,
+        multi_face_ratio: float = 0.0,
+        ambiguous_face_ratio: Optional[float] = None,
+    ) -> Tuple[str, List[str]]:
+        """Decides whether facial measurements are adequate to support interpreted
+        indicators. Returns ("sufficient" | "insufficient", notes): blocking
+        reasons first, then informational notes."""
+        if ambiguous_face_ratio is None:  # callers without per-frame dominance data
+            ambiguous_face_ratio = multi_face_ratio
+        blocking: List[str] = []
+        info: List[str] = []
+        frames = dynamics.get("frames_analyzed") or 0
+        if frames < MIN_FRAMES_FOR_INDICATORS:
+            blocking.append(f"Only {frames} analysable frames (minimum {MIN_FRAMES_FOR_INDICATORS}); answer too short or face not visible.")
+        mtp = dynamics.get("mean_top_probability")
+        if mtp is not None and mtp < MIN_MEAN_TOP_PROBABILITY:
+            blocking.append(f"Model certainty is low (mean top-class probability {mtp:.2f}).")
+        lcr = dynamics.get("low_confidence_frame_ratio")
+        if lcr is not None and lcr > MAX_LOW_CONFIDENCE_FRAME_RATIO:
+            blocking.append(f"{lcr:.0%} of frames have an uncertain prediction.")
+        if presence_ratio < MIN_FACE_PRESENCE_FOR_INDICATORS:
+            blocking.append(f"Face visible in only {presence_ratio:.0%} of sampled frames.")
+        if ambiguous_face_ratio > MAX_AMBIGUOUS_FACE_RATIO:
+            blocking.append(f"Several similar-sized faces in {ambiguous_face_ratio:.0%} of frames; expressions cannot be attributed to the candidate.")
+        elif multi_face_ratio > 0.05:
+            info.append(f"Another person was visible in {multi_face_ratio:.0%} of frames; the analysis uses the candidate's (largest) face.")
+        info.append("The expression model only recognises: " + ", ".join(EMOTION_LABELS)
+                    + ". It cannot detect teasing, sarcasm, intent, confidence or nervousness directly.")
+        return ("insufficient" if blocking else "sufficient"), blocking + info
+
     def _derive_indicators(
         self,
         presence_ratio: float,
         distribution: Dict[str, float],
         face_centers_x: List[float],
+        dynamics: Optional[Dict] = None,
+        evidence_sufficient: bool = True,
     ) -> Tuple[str, str, str]:
         """
-        Derives report-aligned behavioral indicators:
-        - Engagement Level: Based on continuous eye/face presence and horizontal framing stability.
-        - Composure Index: Reflects emotional stability vs rapid agitated expression shifts.
-        - Observable Tension: Reflects elevated fear/anger/sadness expression signals.
+        Interpreted indicators, derived ONLY from adequate measured evidence:
+        - Engagement Level: always "Not Assessed". The pipeline measures whether a
+          face is in frame (camera_presence_ratio), not gaze or attention, so
+          presence is never reported as engagement.
+        - Composure Index: consistency of the model's expression predictions over
+          time (variability / label-change rate) plus the share of negative
+          expressions. A steady happy or neutral face is "consistent", which is
+          an observation about expression stability, not about inner calm.
+        - Observable Tension: share of negative expression classes.
+        Insufficient evidence -> "Not Assessed" (never a positive default).
         """
-        # 1. Engagement Level
-        center_variance = float(np.var(face_centers_x)) if len(face_centers_x) > 1 else 0.0
-        if presence_ratio >= 0.85 and center_variance < 0.04:
-            engagement_level = "High"
-        elif presence_ratio >= 0.60:
-            engagement_level = "Moderate"
-        else:
-            engagement_level = "Low (Gaze Disengaged)"
+        engagement_level = "Not Assessed"
+        if not evidence_sufficient or not dynamics:
+            return engagement_level, "Not Assessed", "Not Assessed"
 
-        # 2. Composure Index
-        positive_stable = distribution.get("neutral", 0.0) + distribution.get("happiness", 0.0)
-        negative_agitated = distribution.get("anger", 0.0) + distribution.get("fear", 0.0) + distribution.get("disgust", 0.0)
+        negative = sum(float(distribution.get(lbl, 0.0)) for lbl in NEGATIVE_LABELS)
+        variability = dynamics.get("expression_variability")
+        change_rate = dynamics.get("label_change_rate")
+        if variability is None or change_rate is None:
+            return engagement_level, "Not Assessed", "Not Assessed"
 
-        if positive_stable >= 70.0 and negative_agitated < 15.0:
-            composure_index = "Composed & Stable"
-        elif positive_stable >= 50.0:
+        if variability >= VARIABILITY_FLUCTUATING or change_rate >= CHANGE_RATE_FLUCTUATING or negative >= 30.0:
+            composure_index = "Fluctuating Composure"
+        elif variability >= VARIABILITY_MODERATE or change_rate >= CHANGE_RATE_MODERATE or negative >= 15.0:
             composure_index = "Moderate Composure"
         else:
-            composure_index = "Fluctuating Composure"
+            composure_index = "Composed & Stable"
 
-        # 3. Observable Tension
-        if negative_agitated >= 25.0:
+        if negative >= 25.0:
             observable_tension = "Elevated"
-        elif negative_agitated >= 12.0:
+        elif negative >= 12.0:
             observable_tension = "Moderate"
         else:
             observable_tension = "Low"

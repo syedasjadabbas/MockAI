@@ -326,7 +326,9 @@ def run_tests():
     assert "behavioral_composure" in dim
     assert dim["technical_content"] == round((90.0 + 80.0 + 95.0) / 3, 1)  # 88.3
     assert dim["communication_fluency"] == round((80.0 + 70.0 + 95.0) / 3, 1)  # 81.7
-    assert dim["behavioral_composure"] == 85.0
+    # v2 vision score uses expression consistency only (engagement is no longer
+    # inferred from camera presence): "Composed & Stable" -> 70.0 (was 85.0).
+    assert dim["behavioral_composure"] == 70.0
     print(f"  Technical Content Avg:      {dim['technical_content']}%")
     print(f"  Communication Fluency Avg:  {dim['communication_fluency']}%")
     print(f"  Behavioral Composure Avg:   {dim['behavioral_composure']}%")

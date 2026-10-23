@@ -157,6 +157,11 @@ const EvaluationResults = () => {
   const languageSummary = evaluation?.language_summary ?? insights?.language_analysis ?? interview?.languageSummary ?? null;
   const facialSummary = evaluation?.facial_summary;
   const hasVisionSummary = facialSummary?.status === 'completed';
+  // Camera presence & expression flags (measured per answer by the backend)
+  const cameraConduct = evaluation?.camera_conduct ?? insights?.camera_conduct ?? null;
+  const offCameraAnswers = cameraConduct?.off_camera_answers || [];
+  const flaggedAnswers = cameraConduct?.flagged_answers || [];
+  const hasCameraIssues = offCameraAnswers.length > 0 || flaggedAnswers.length > 0;
 
   const answeredCount = (interview?.responses || []).length;
   const totalQuestions = (interview?.questions || []).length;
@@ -198,6 +203,9 @@ const EvaluationResults = () => {
         callbacks: {
           label: (context) => {
             const val = context.raw;
+            if (context.dataIndex === 2 && !hasVisionSummary && offCameraAnswers.length > 0) {
+              return `Behavioral Composure: ${val}% (scored on camera presence - you were out of frame)`;
+            }
             if (context.dataIndex === 2 && !hasVisionSummary) {
               return facialSummary?.status === 'no_face_detected'
                 ? 'Behavioral Composure: Not Observed (No Face Detected)'
@@ -636,7 +644,9 @@ const EvaluationResults = () => {
                   )}
                 </div>
                 <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                  {hasVisionSummary
+                  {offCameraAnswers.length > 0 && !hasVisionSummary
+                    ? `You were out of frame for most of answer${offCameraAnswers.length > 1 ? 's' : ''} ${offCameraAnswers.join(', ')}. The camera share of those answers was scored on presence.`
+                    : hasVisionSummary
                     ? `Observable facial composure: ${facialSummary?.overall_composure || 'Not Assessed'}. Dominant expression: ${facialSummary?.dominant_expression || 'Not Observed'}.`
                     : facialSummary?.status === 'no_face_detected'
                     ? 'Camera was recorded, but no human face was detected in responses. Non-verbal signals omitted without penalty.'
@@ -864,6 +874,27 @@ const EvaluationResults = () => {
             </span>
           </div>
 
+          {hasCameraIssues && (
+            <div className="c-badge-warning rounded-md p-3.5 flex items-start gap-2.5 text-xs" role="note">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <p className="font-semibold">Camera check for this interview</p>
+                {offCameraAnswers.length > 0 && (
+                  <p>
+                    You were away from the camera for most of answer{offCameraAnswers.length > 1 ? 's' : ''}{' '}
+                    {offCameraAnswers.join(', ')}. That lowered the score for {offCameraAnswers.length > 1 ? 'those answers' : 'that answer'}.
+                  </p>
+                )}
+                {flaggedAnswers.length > 0 && (
+                  <p>
+                    Your expressions were flagged in answer{flaggedAnswers.length > 1 ? 's' : ''} {flaggedAnswers.join(', ')}{' '}
+                    (read as anger, disgust or contempt, or changing rapidly). The model cannot tell teasing from other faces, so review the recording.
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
           <div className="divide-y" style={{ borderColor: 'var(--c-border)' }}>
             {(interview?.questions || []).map((q, idx) => {
               const resp = (interview?.responses || []).find((r) => (r.question_id || r.questionId) === q.id);
@@ -892,6 +923,14 @@ const EvaluationResults = () => {
               // Facial real metrics
               const facial = qEval?.facial_analysis;
               const hasRealVision = facial && facial.status === 'completed';
+              const camera = qEval?.camera_conduct;
+              const cameraMeasured = camera?.status === 'measured';
+              const offCamera = !!camera?.mostly_off_camera;
+              const cameraNotes = camera?.notes || [];
+              const visionContribution = qEval?.multimodal?.vision_contribution;
+              // The camera notes are also appended to `feedback` by the backend;
+              // show them once, in the camera callout.
+              const feedbackText = cameraNotes.reduce((txt, note) => txt.replace(note, ''), feedback || '').trim();
 
               return (
                 <div key={q.id} className="py-6 space-y-4">
@@ -1058,7 +1097,9 @@ const EvaluationResults = () => {
                           <Eye className={`w-3.5 h-3.5 ${hasRealVision ? 'text-[#FF9F1C]' : 'text-neutral-500'}`} />
                           <span>Vision & Facial</span>
                         </span>
-                        {hasRealVision ? (
+                        {offCamera ? (
+                          <span className="text-[10px] font-mono text-amber-400/90 font-medium">[AWAY]</span>
+                        ) : hasRealVision ? (
                           <span className="text-[10px] font-mono text-emerald-400/90 font-medium">[ACTIVE]</span>
                         ) : facial?.status === 'no_face_detected' ? (
                           <span className="text-[10px] font-mono text-amber-400/90 font-medium">[NO FACE]</span>
@@ -1099,7 +1140,9 @@ const EvaluationResults = () => {
                             <span className="text-neutral-300 font-medium">Not Assessed</span>
                           </div>
                           <p className="text-[10px] text-neutral-400 pt-0.5 leading-tight">
-                            No face detected in video. Vision weight redistributed to verbal signals without penalty.
+                            {offCamera
+                              ? `No face in frame. The camera share was scored on presence (${Math.round(visionContribution?.raw_score ?? 0)}/100).`
+                              : 'No face detected in video. Vision weight redistributed to verbal signals without penalty.'}
                           </p>
                         </div>
                       ) : facial?.status === 'analysis_failed' || facial?.status === 'corrupt_media' ? (
@@ -1115,8 +1158,29 @@ const EvaluationResults = () => {
                           Vision analysis unavailable. Facial analysis will appear here when vision evaluation is enabled.
                         </p>
                       )}
+                      {cameraMeasured && (
+                        <div className="flex items-center justify-between text-[10px] font-mono pt-1 border-t" style={{ borderColor: 'var(--c-border)' }}>
+                          <span className="text-neutral-400">In frame:</span>
+                          <span className={offCamera ? 'text-amber-400 font-semibold' : 'text-neutral-200 font-semibold'}>
+                            {Math.round((camera.camera_presence_ratio ?? 0) * 100)}%
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
+
+                  {/* Camera conduct callout (away from camera / flagged expressions) */}
+                  {cameraNotes.length > 0 && (
+                    <div className="c-badge-warning rounded-md p-3 flex items-start gap-2 text-xs">
+                      <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                      <div className="space-y-1">
+                        <p className="font-semibold">Camera check</p>
+                        {cameraNotes.map((note, i) => (
+                          <p key={i}>{note}</p>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Transcribed Response (Restrained inset block) */}
                   {transcript && (
@@ -1133,9 +1197,9 @@ const EvaluationResults = () => {
                   <QuestionLanguageNotes textAnalysis={qEval?.text_analysis} />
 
                   {/* Specific Feedback if provided */}
-                  {feedback && (
+                  {feedbackText && (
                     <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                      <strong className="font-semibold" style={{ color: 'var(--c-text)' }}>Notes:</strong> {feedback}
+                      <strong className="font-semibold" style={{ color: 'var(--c-text)' }}>Notes:</strong> {feedbackText}
                     </p>
                   )}
                 </div>

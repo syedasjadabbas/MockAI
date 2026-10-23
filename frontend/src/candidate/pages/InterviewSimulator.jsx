@@ -29,7 +29,13 @@ import {
   submitResponseMetadataOnly,
   submitTextResponse,
   endInterview,
+  checkCameraPresence,
 } from '../services/candidateApi';
+
+// Live presence check: one frame every 2 s; warn after 2 misses in a row
+// (about 4 s out of frame) so a brief glance away does not trigger it.
+const PRESENCE_CHECK_MS = 2000;
+const PRESENCE_MISSES_TO_WARN = 2;
 
 // FR10/FR11/FR12/FR33/FR15 - Full multimodal audio/video prompt simulator
 const InterviewSimulator = () => {
@@ -76,6 +82,12 @@ const InterviewSimulator = () => {
   const chunksRef = useRef([]);
   const timerRef = useRef(null);
   const [pendingRecording, setPendingRecording] = useState(null);
+
+  // Live camera presence: 'ok' | 'away' | 'multiple'
+  const [presence, setPresence] = useState('ok');
+  const presenceMissesRef = useRef(0);
+  const presenceInFlightRef = useRef(false);
+  const presenceCanvasRef = useRef(null);
 
   // 1. Fetch active interview session on mount
   useEffect(() => {
@@ -181,6 +193,48 @@ const InterviewSimulator = () => {
       }
     };
   }, [textOnly, consentChecked]);
+
+  // 2b. Live camera presence check - warns the candidate while they can still
+  // fix it. Stops quietly if the server refuses (e.g. no camera consent).
+  useEffect(() => {
+    if (textOnly || !streamReady || !interview?.id) return undefined;
+    let stopped = false;
+
+    const tick = async () => {
+      const video = videoRef.current;
+      if (stopped || presenceInFlightRef.current || !video || !video.videoWidth) return;
+      const canvas = presenceCanvasRef.current || (presenceCanvasRef.current = document.createElement('canvas'));
+      const w = 320;
+      const h = Math.round((video.videoHeight / video.videoWidth) * w);
+      canvas.width = w;
+      canvas.height = h;
+      canvas.getContext('2d').drawImage(video, 0, 0, w, h);
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.7));
+      if (!blob || stopped) return;
+      presenceInFlightRef.current = true;
+      try {
+        const res = await checkCameraPresence(interview.id, blob);
+        if (stopped) return;
+        if (!res.face_detected) {
+          presenceMissesRef.current += 1;
+          if (presenceMissesRef.current >= PRESENCE_MISSES_TO_WARN) setPresence('away');
+        } else {
+          presenceMissesRef.current = 0;
+          setPresence(res.face_count > 1 ? 'multiple' : 'ok');
+        }
+      } catch (err) {
+        if (err?.status === 403 || err?.status === 400 || err?.status === 404) stopped = true;
+      } finally {
+        presenceInFlightRef.current = false;
+      }
+    };
+
+    const timer = setInterval(tick, PRESENCE_CHECK_MS);
+    return () => {
+      stopped = true;
+      clearInterval(timer);
+    };
+  }, [textOnly, streamReady, interview?.id]);
 
   // 3. Start Recording
   const startRecording = () => {
@@ -593,6 +647,23 @@ const InterviewSimulator = () => {
                 </div>
               )}
 
+              {!isTextMode && !textOnly && presence === 'away' && (
+                <div className="c-badge-warning rounded-md p-3 flex items-start gap-2 text-xs" role="status" aria-live="polite">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <p>
+                    <strong>We can't see your face.</strong> Move back in front of the camera.
+                    {isRecording ? ' Time spent out of frame lowers your score for this answer.' : ''}
+                  </p>
+                </div>
+              )}
+
+              {!isTextMode && !textOnly && presence === 'multiple' && (
+                <div className="c-badge-warning rounded-md p-3 flex items-start gap-2 text-xs" role="status" aria-live="polite">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <p>Another person is in view. Answer on your own, with only your face in frame.</p>
+                </div>
+              )}
+
               {streamError && !isTextMode && (
                 <div className="c-badge-danger rounded-md p-3 flex items-start gap-2 text-xs">
                   <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
@@ -727,6 +798,15 @@ const InterviewSimulator = () => {
                   playsInline
                   className="w-full h-full object-cover"
                 />
+              )}
+
+              {!textOnly && presence === 'away' && (
+                <div
+                  className="absolute inset-x-0 top-1/2 -translate-y-1/2 mx-4 px-3 py-2 rounded-md border text-center text-xs font-bold pointer-events-none"
+                  style={{ background: 'rgba(10, 16, 32, 0.85)', borderColor: 'var(--c-warning)', color: 'var(--c-warning)' }}
+                >
+                  Face not in frame
+                </div>
               )}
 
               {/* Viewfinder Top Bar Overlay */}

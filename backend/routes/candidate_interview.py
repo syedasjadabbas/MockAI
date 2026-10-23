@@ -568,6 +568,38 @@ async def upload_response_media(
 
 
 # ---------------------------------------------------------------------------
+# Live camera presence check - warns the candidate during the interview when
+# their face leaves the frame. One small still frame per call; it is analysed
+# in memory and never stored.
+# ---------------------------------------------------------------------------
+
+MAX_PRESENCE_FRAME_BYTES = 300 * 1024
+
+
+@router.post("/interviews/{interview_id}/presence-check")
+async def presence_check(
+    interview_id: str,
+    frame: UploadFile = File(...),
+    token_payload: dict = Depends(verify_candidate),
+):
+    interview = _get_owned_interview_or_404(interview_id, token_payload.get("user_id"))
+    if interview.get("status") == "Completed":
+        raise HTTPException(status_code=400, detail="This interview has already been completed")
+    _require_recording_consent(interview, needs_camera=True)
+
+    content_type = (frame.content_type or "").split(";")[0].strip().lower()
+    if content_type not in ("image/jpeg", "image/webp", "image/png"):
+        raise HTTPException(status_code=400, detail="Expected a JPEG, WebP or PNG frame")
+    data = await frame.read()
+    if not data or len(data) > MAX_PRESENCE_FRAME_BYTES:
+        raise HTTPException(status_code=400, detail="Frame is empty or too large")
+
+    from services.facial_analyzer import FacialAnalyzer
+    result = FacialAnalyzer().check_presence(data)
+    return {"face_detected": result["face_detected"], "face_count": result["face_count"]}
+
+
+# ---------------------------------------------------------------------------
 # Complete interview - FR10
 # ---------------------------------------------------------------------------
 

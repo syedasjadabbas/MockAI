@@ -186,7 +186,7 @@ In the report profile the DeepFace CNN is combined with FERPlus (30/70 weighted 
 
 ## 🧪 Testing & Verification Evidence
 
-`backend/` holds 20 maintained test scripts (older one-off audit scripts are kept in `backend/tests_archive/`). The 18 suites below were last re-run on **20 October 2026** in both AI profiles — `report` (DistilBERT, BERT-CoLA, DeepFace on Python 3.11) and `lite` (MiniLM, rules, FERPlus) — against MongoDB Atlas, and all passed. The production frontend build compiles 1,645 modules with no errors.
+`backend/` holds 20 maintained test scripts (older one-off audit scripts are kept in `backend/tests_archive/`). The suites below were last re-run on **20 October 2026** in both AI profiles — `report` (DistilBERT, BERT-CoLA, DeepFace on Python 3.11) and `lite` (MiniLM, rules, FERPlus) — against MongoDB Atlas, and all passed. The production frontend build compiles 1,645 modules with no errors.
 
 | # | Suite | What it verifies |
 | :-: | :--- | :--- |
@@ -208,8 +208,12 @@ In the report profile the DeepFace CNN is combined with FERPlus (30/70 weighted 
 | 16 | `test_candidate_interview_api.py` | Interview sessions, ownership, role separation |
 | 17 | `test_qb_api.py` | Question Bank CRUD, search, stats, audit log |
 | 18 | `test_evaluation_foundation.py` | Evaluation state machine, no fabricated scores |
+| 19 | `test_evaluation_honesty.py` | Evidence gating for confidence/stress and facial indicators; missing signals never default to Neutral/Stable/High/Low; worker result = database = API |
+| 20 | `test_camera_conduct.py` | Live "face not in frame" check, measured camera presence, off-camera scoring, expression flags, feedback naming the answers (incl. a real clip with the candidate out of frame) |
 
 `test_final_production_acceptance.py` and `test_production_facial_live.py` run the same checks against the live Render deployment.
+
+What the behavioural scores can and cannot claim, and the plan to validate them against human ratings, is in [`docs/EVALUATION_VALIDATION_PLAN.md`](docs/EVALUATION_VALIDATION_PLAN.md).
 
 **Not yet done:** a pilot study with real users. The in-app survey and `backend/evaluate_accuracy.py` (agreement between MockAI scores and human ratings — see `docs/accuracy_ratings_template.csv`) are in place to collect that evidence.
 

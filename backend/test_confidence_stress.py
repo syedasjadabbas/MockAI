@@ -169,17 +169,20 @@ def run_tests():
     # -------------------------------------------------------------------------
     # TEST 4: Missing Speech Fallback (Vision-Only Assessment)
     # -------------------------------------------------------------------------
-    print("\n[TEST 4] Missing Speech Fallback (Vision-Only):")
+    print("\n[TEST 4] Missing Speech (Vision-Only) -> Not Assessed:")
+    # v2: a face alone is not enough to infer confidence or stress. Previously
+    # this case returned >= 80% confidence / < 35% stress from facial labels,
+    # which produced the 93% / 10% results on silent real interviews.
     res4 = analyze_question_confidence_and_stress(None, facial_high)
-    assert res4["modality_status"] == {"speech": "unavailable", "vision": "available"}
+    assert res4["modality_status"]["speech"] == "unavailable"
     assert res4["speech_evidence"] is None
-    assert res4["facial_evidence"] is not None
-    assert res4["confidence_score"] >= 80.0
-    assert res4["stress_score"] < 35.0
+    assert res4["facial_evidence"] is not None  # observations still reported
+    assert res4["confidence_level"] == "Not Assessed"
+    assert res4["stress_level"] == "Not Assessed"
     print(f"  Confidence: {res4['confidence_score']}% ({res4['confidence_level']})")
     print(f"  Stress:     {res4['stress_score']}% ({res4['stress_level']})")
     print(f"  Rationale:  {res4['rationale']}")
-    print("  PASS: Vision-only fallback operated without failure.")
+    print("  PASS: Vision-only answer honestly reported as Not Assessed.")
 
     # -------------------------------------------------------------------------
     # TEST 5: Missing Vision Fallback (Speech-Only Assessment)

@@ -16,6 +16,7 @@ from services.delivery_analyzer import analyze_delivery
 from services.multimodal_fusion import fuse_per_question
 from services.confidence_stress_analyzer import analyze_question_confidence_and_stress
 from services.language_analyzer import analyze_language
+from services.camera_conduct import assess_answer_camera_conduct
 
 DIFFICULTY_WEIGHTS: Dict[str, float] = {
     "Easy": 1.0,
@@ -139,6 +140,7 @@ def evaluate_question_response(
     confidence_and_stress_data = analyze_question_confidence_and_stress(
         delivery_result=delivery_result,
         facial_result=facial_analysis_data,
+        language_result=language_result,
     )
 
     # 6. Derive strengths, feedback, and missing concepts
@@ -181,6 +183,12 @@ def evaluate_question_response(
         missing_concepts = nlp_result.get("missing_concepts", [])
         feedback = f"{nlp_result['notes']} {delivery_result['notes']} {language_result.get('notes', '')}".strip()
 
+    # Camera presence / expression flags: measured even for unanswered takes,
+    # so a candidate who walked away is told so.
+    camera_conduct = assess_answer_camera_conduct(facial_analysis_data)
+    if camera_conduct.get("notes"):
+        feedback = f"{feedback} {' '.join(camera_conduct['notes'])}".strip()
+
     asr_data = {
         "status": asr_status or ("completed" if transcript else "empty"),
         "transcript": transcript,
@@ -222,6 +230,7 @@ def evaluate_question_response(
         "delivery": delivery_result,
         "multimodal": multimodal_data,
         "confidence_and_stress": confidence_and_stress_data,
+        "camera_conduct": camera_conduct,
         "strengths": strengths,
         "missing_concepts": missing_concepts,
         "feedback": feedback,

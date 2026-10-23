@@ -18,6 +18,7 @@ from typing import Any, Dict, List, Optional
 from services.confidence_stress_analyzer import aggregate_confidence_and_stress
 from services.insights_service import generate_interview_insights
 from services.language_analyzer import summarize_language, language_feedback
+from services.camera_conduct import summarize_camera_conduct, camera_conduct_feedback
 
 DIFFICULTY_WEIGHTS: Dict[str, float] = {
     "Easy": 1.0,
@@ -382,6 +383,15 @@ def aggregate_interview_evaluation(per_question_results: List[Dict]) -> Dict:
     composure_indices: List[str] = []
     engagement_levels: List[str] = []
 
+    # Vision scores from every recorded answer: an answer given mostly off
+    # camera has no "completed" facial analysis but does have a measured
+    # camera-presence score (see multimodal_fusion._vision_assessment).
+    from services.multimodal_fusion import _facial_to_score
+    for q in per_question_results:
+        f_score = _facial_to_score(q.get("facial_analysis") or {})
+        if f_score is not None:
+            facial_scores.append(f_score)
+
     for f in facial_results:
         if f.get("dominant_expression"):
             dominant_expressions.append(f["dominant_expression"])
@@ -392,22 +402,33 @@ def aggregate_interview_evaluation(per_question_results: List[Dict]) -> Dict:
             composure_indices.append(comp)
         if eng:
             engagement_levels.append(eng)
-        from services.multimodal_fusion import _facial_to_score
-        f_score = _facial_to_score(f)
-        if f_score is not None:
-            facial_scores.append(f_score)
 
     most_common_expression = max(set(dominant_expressions), key=dominant_expressions.count) if dominant_expressions else "Not Observed"
-    stable_count = sum(1 for c in composure_indices if c == "Composed & Stable")
-    overall_composure = "Composed & Stable" if stable_count >= (len(facial_results) / 2) and facial_results else ("Moderate Composure" if facial_results else "Not Assessed")
+    # Interview-level composure only from answers whose indicators were actually
+    # assessed (enough facial evidence). No assessed answers -> "Not Assessed";
+    # previously any analysed face defaulted to at least "Moderate Composure".
+    _order = ["Fluctuating Composure", "Moderate Composure", "Composed & Stable"]
+    assessed_composure = [c for c in composure_indices if c in _order]
+    if assessed_composure:
+        counts = {c: assessed_composure.count(c) for c in _order}
+        top = max(counts.values())
+        # ties resolve to the more cautious label
+        overall_composure = next(c for c in _order if counts[c] == top)
+    else:
+        overall_composure = "Not Assessed"
     avg_facial_score = round(sum(facial_scores) / len(facial_scores), 1) if facial_scores else None
 
     if facial_results:
+        per_answer_expressions = [f.get("dominant_expression", "Not Observed") for f in facial_results]
         facial_summary = {
             "status": "completed",
             "evaluated_takes": len(facial_results),
+            "assessed_takes": len(assessed_composure),
             "dominant_expression": most_common_expression,
             "overall_composure": overall_composure,
+            # Measured change ACROSS answers (each answer's dominant expression)
+            "expressions_by_answer": per_answer_expressions,
+            "distinct_expressions_across_answers": sorted(set(per_answer_expressions)),
         }
     else:
         facial_summary = {
@@ -489,6 +510,19 @@ def aggregate_interview_evaluation(per_question_results: List[Dict]) -> Dict:
     insights["weaknesses"] = (insights["weaknesses"] + lang_fb["weaknesses"])[:5]
     insights["suggestions"] = (insights["suggestions"] + lang_fb["suggestions"])[:5]
 
+    # Camera presence & expression flags: listed first, since they explain a
+    # lowered behavioural score and name the answers concerned.
+    camera_summary = summarize_camera_conduct(per_question_results)
+    cam_fb = camera_conduct_feedback(camera_summary)
+    insights["camera_conduct"] = camera_summary
+    insights["strengths"] = (insights["strengths"] + cam_fb["strengths"])[:5]
+    insights["weaknesses"] = (cam_fb["weaknesses"] + insights["weaknesses"])[:5]
+    insights["weaknesses_detail"] = (cam_fb["weaknesses_detail"] + insights.get("weaknesses_detail", []))[:5]
+    insights["suggestions"] = (cam_fb["suggestions"] + insights["suggestions"])[:5]
+    facial_summary["camera_conduct"] = {
+        k: camera_summary.get(k) for k in ("status", "average_presence_ratio", "off_camera_answers", "flagged_answers")
+    }
+
     interpretation = insights["score_explanation"]["overall_summary"]
     strengths = insights["strengths"]
     weaknesses = insights["weaknesses"]
@@ -525,5 +559,5 @@ def aggregate_interview_evaluation(per_question_results: List[Dict]) -> Dict:
         "insights": insights,
         "summary_report": summary_report,
         "language_summary": language_summary,
+        "camera_conduct": camera_summary,
     }
-
