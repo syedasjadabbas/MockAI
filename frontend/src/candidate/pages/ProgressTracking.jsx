@@ -23,9 +23,8 @@ const ProgressTracking = () => {
       <div className="space-y-10 py-2">
         {/* Header directly on page */}
         <div className="border-b pb-6" style={{ borderColor: 'var(--c-border)' }}>
-          <p className="c-eyebrow mb-1">Telemetry</p>
           <h1 className="c-heading text-2xl sm:text-3xl font-bold" style={{ color: 'var(--c-text)' }}>
-            Performance Progress
+            Your progress
           </h1>
           <p className="text-xs sm:text-sm mt-1" style={{ color: 'var(--c-text-secondary)' }}>
             Score and confidence trajectory across your recorded practice sessions.
@@ -53,8 +52,7 @@ const ProgressTracking = () => {
             <section aria-label="Score Trajectory" className="border-b pb-10 space-y-4" style={{ borderColor: 'var(--c-border)' }}>
               <div className="flex items-baseline justify-between">
                 <div>
-                  <p className="c-eyebrow mb-0.5">Trends</p>
-                  <h2 className="c-heading text-lg font-bold" style={{ color: 'var(--c-text)' }}>Score Trajectory</h2>
+                  <h2 className="c-heading text-lg font-bold" style={{ color: 'var(--c-text)' }}>Scores over time</h2>
                 </div>
                 <span className="text-xs font-mono" style={{ color: 'var(--c-text-muted)' }}>Multi-Session</span>
               </div>
@@ -68,7 +66,6 @@ const ProgressTracking = () => {
               <section aria-label="Average Score by Domain" className="space-y-4">
                 <div className="flex items-baseline justify-between">
                   <div>
-                    <p className="c-eyebrow mb-0.5">Breakdown</p>
                     <h2 className="c-heading text-lg font-bold" style={{ color: 'var(--c-text)' }}>Average Score by Domain</h2>
                   </div>
                   <span className="text-xs font-mono" style={{ color: 'var(--c-text-muted)' }}>Domains</span>

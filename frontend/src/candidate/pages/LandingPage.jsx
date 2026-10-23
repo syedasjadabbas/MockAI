@@ -1,19 +1,14 @@
-import React, { Suspense, lazy, useState, useEffect, useRef, useMemo } from 'react';
+import React, { Suspense, lazy, useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowRight,
   Code2,
   Mic,
-  BarChart3,
   Clock,
   Video,
   FileCheck2,
   ChevronRight,
-  ShieldCheck,
   TrendingUp,
-  Terminal,
-  Activity,
-  CheckCircle2,
   Server,
   Users,
   Briefcase,
@@ -24,12 +19,14 @@ import {
   Megaphone,
   Palette,
   HardHat,
+  MessageSquareText,
+  SpellCheck,
+  ScanFace,
+  Gauge,
 } from 'lucide-react';
 import PublicNav from '../components/PublicNav';
 import AnimatedBackground3D from '../components/AnimatedBackground3D';
 import { CANDIDATE_IMAGES } from '../assets/images';
-import { isAuthenticated } from '../services/candidateAuth';
-import { getCategories } from '../services/candidateApi';
 import {
   CornerReticles,
   LiveAudioWaveform,
@@ -41,10 +38,12 @@ import {
   SqlMatrixSchematic,
 } from '../components/TechnicalDoodles';
 import TypewriterCode from '../components/TypewriterCode';
+import { isAuthenticated } from '../services/candidateAuth';
+import { getCategories } from '../services/candidateApi';
 
 const HeroScene3D = lazy(() => import('../components/HeroScene3D'));
 
-// Map domain tracks to tailored micro schematics
+// Map domain tracks to small line drawings
 function getDomainSchematic(categoryName = '') {
   const str = categoryName.toLowerCase();
   if (str.includes('front') || str.includes('web') || str.includes('react') || str.includes('ui')) return FrontendLayoutSchematic;
@@ -149,6 +148,101 @@ const CURATED_TRACKS = [
     questionCount: 5,
   },
 ];
+
+const STEPS = [
+  {
+    image: null,
+    code: 'STEP1_CODE_LINES',
+    title: 'Pick a field',
+    body: 'Choose the interview track that matches the job you are preparing for. Each session has five questions.',
+  },
+  {
+    image: 'studioMic',
+    code: 'STEP2_CODE_LINES',
+    title: 'Answer on camera',
+    body: 'Speak your answers with your camera and microphone on, or type them if you prefer. You get one question at a time.',
+  },
+  {
+    image: 'evalChart',
+    code: 'STEP3_CODE_LINES',
+    title: 'Read your feedback',
+    body: 'See a score for each answer, what you covered and missed, how you spoke, and how you came across on video.',
+  },
+];
+
+const DIMENSIONS = [
+  {
+    icon: FileCheck2,
+    title: 'What you said',
+    body: 'Your answer is compared with what a strong answer covers. You see the points you made and the ones you missed.',
+  },
+  {
+    icon: Mic,
+    title: 'How you said it',
+    body: 'Speaking pace, pauses and filler words like "um" and "uh", measured from your recording.',
+  },
+  {
+    icon: SpellCheck,
+    title: 'Language',
+    body: 'Grammar, clarity and tone of your answer, with the sentences worth fixing.',
+  },
+  {
+    icon: ScanFace,
+    title: 'On camera',
+    body: 'Whether you stayed in frame and faced the camera, and how steady your expression was.',
+  },
+  {
+    icon: Gauge,
+    title: 'Confidence and stress',
+    body: 'Estimated from your speech and expression, and only shown when an answer is long enough to judge.',
+  },
+  {
+    icon: MessageSquareText,
+    title: 'What to work on',
+    body: 'Strengths, weaknesses and specific suggestions for your next practice session.',
+  },
+];
+
+const VALUES = [
+  {
+    icon: Clock,
+    title: 'Timed questions',
+    body: 'Answer under a clock, the way a real interview feels.',
+  },
+  {
+    icon: Video,
+    title: 'Recorded answers',
+    body: 'Your camera and microphone record each answer in the browser. Nothing is recorded until you agree.',
+  },
+  {
+    icon: FileCheck2,
+    title: 'Feedback per question',
+    body: 'Specific notes on each answer, not one vague overall grade.',
+  },
+  {
+    icon: TrendingUp,
+    title: 'Progress over time',
+    body: 'Every session is saved, so you can see whether your scores improve.',
+  },
+];
+
+// Step 1 preview: what choosing a track looks like.
+const TrackPickerPreview = () => (
+  <div className="relative aspect-video rounded-lg overflow-hidden border p-3 flex flex-col justify-center gap-1.5 select-none bg-[#0F1013]" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+    <div className="p-2 rounded-md border border-orange-500/25 bg-orange-500/[0.06] flex items-center gap-2">
+      <span className="w-2 h-2 rounded-full bg-orange-500" />
+      <p className="text-[11px] font-bold text-[#F5F5F5] leading-none">Healthcare & Medicine</p>
+    </div>
+    <div className="grid grid-cols-2 gap-1.5">
+      {['Marketing & Brand', 'Frontend Development', 'Law & Legal Practice', 'Education & Teaching'].map((t) => (
+        <div key={t} className="p-1.5 rounded-md border border-white/[0.06] bg-white/[0.02] flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-zinc-600" />
+          <span className="text-[10px] text-zinc-400 font-medium truncate">{t}</span>
+        </div>
+      ))}
+    </div>
+  </div>
+);
 
 // Typewriter Code Snippets — Calibrated Professional Syntax Highlighting
 const STEP1_CODE_LINES = [
@@ -334,6 +428,8 @@ const AnimatedScoreMeter = ({ label, targetPercent, color = '#FF6B35' }) => {
   );
 };
 
+const STEP_CODE = { STEP1_CODE_LINES, STEP2_CODE_LINES, STEP3_CODE_LINES };
+
 const LandingPage = () => {
   const authed = isAuthenticated();
   const ctaDestination = authed ? '/interview/goal' : '/register';
@@ -372,320 +468,124 @@ const LandingPage = () => {
       className="candidate-app min-h-screen flex flex-col font-sans relative selection:bg-[#FF6B35]/30 selection:text-[#FFFFFF] overflow-x-hidden"
       style={{ background: 'var(--c-bg)' }}
     >
-      {/* 3D Ambient Background Layer */}
       <AnimatedBackground3D />
 
       <div className="relative z-10 flex flex-col min-h-screen">
-        {/* Public Navigation */}
         <PublicNav />
 
-        {/* ===================================================================
-            SECTION 1 — HERO (Flagship Interactive 3D Section)
-           =================================================================== */}
-        <section className="relative border-b overflow-hidden" style={{ borderColor: 'var(--c-border)' }}>
+        {/* Hero */}
+        <section className="relative border-b" style={{ borderColor: 'var(--c-border)' }}>
           <div className="c-page py-12 sm:py-20 lg:py-24">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
-              
-              {/* Left Copy & Actions */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
               <div className="lg:col-span-7 space-y-6">
-
-                {/* Flagship Headline */}
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.08]" style={{ color: 'var(--c-text)' }}>
                   Practice before <br className="hidden sm:block" />
                   <span className="text-[#FF6B35]">it matters.</span>
                 </h1>
-
-                {/* Supporting Copy */}
                 <p className="text-base sm:text-lg leading-relaxed max-w-xl" style={{ color: 'var(--c-text-secondary)' }}>
-                  Simulate realistic technical and behavioral interviews, record synchronized spoken and video responses, and receive objective AI-powered evaluation with actionable performance telemetry.
+                  Answer real interview questions on camera, then see what went well and what to work on: the content of your answer, how you spoke, and how you came across on video.
                 </p>
-
-                {/* CTAs */}
                 <div className="flex flex-wrap items-center gap-3 pt-2">
                   <Link
                     to={ctaDestination}
                     className="c-btn c-btn-primary px-6 py-3 font-semibold text-sm rounded-xl flex items-center gap-2 select-none group"
                   >
-                    <span>Start Practicing</span>
+                    <span>Start practicing</span>
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                   </Link>
-
                   <a
                     href="#how-it-works"
                     className="c-btn c-btn-secondary px-5 py-3 font-medium text-sm rounded-xl flex items-center gap-2 transition-all group"
                   >
-                    <span>Explore MockAI</span>
-                    <ChevronRight className="w-4 h-4 text-zinc-400 group-hover:translate-x-0.5 transition-transform" />
+                    <span>How it works</span>
+                    <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" style={{ color: 'var(--c-text-muted)' }} />
                   </a>
                 </div>
-
-                {/* Dual Live Audio & Video Stream Indicators */}
-                <div className="pt-3 flex flex-wrap items-center gap-5 text-xs font-mono">
-                  {/* Live Audio Equalizer */}
-                  <div className="flex items-center gap-2">
-                    <LiveAudioWaveform bars={12} height={16} color="var(--c-accent)" />
-                    <span className="text-[11px] font-mono tracking-wider uppercase" style={{ color: 'var(--c-text-secondary)' }}>
-                      Audio Stream
-                    </span>
-                  </div>
-
-                  <span className="text-[#3A3A3A]">•</span>
-
-                  {/* Animated Video Optical Viewfinder & Scanner */}
+                <div className="pt-3 flex flex-wrap items-center gap-5" aria-hidden="true">
+                  <LiveAudioWaveform bars={12} height={16} color="var(--c-accent)" />
                   <LiveVideoIndicator />
                 </div>
-
               </div>
 
-              {/* Right Flagship Interactive 3D Hero Visual */}
               <div className="lg:col-span-5 relative flex items-center justify-center w-full max-w-lg lg:max-w-none mx-auto">
                 <div
                   className="relative w-full aspect-[4/3] rounded-xl overflow-hidden border shadow-2xl"
-                  style={{
-                    borderColor: 'var(--c-border)',
-                    background: 'var(--c-surface)',
-                    isolation: 'isolate',
-                  }}
+                  style={{ borderColor: 'var(--c-border)', background: 'var(--c-surface)', isolation: 'isolate' }}
                 >
                   <CornerReticles size={12} color="var(--c-accent)" />
-                  
                   <Suspense
                     fallback={
-                      <div className="w-full h-full flex items-center justify-center bg-[#111111] rounded-xl overflow-hidden">
-                        <img
-                          src={CANDIDATE_IMAGES.dashboardHero}
-                          alt="MockAI 3D Microphone & AI Analysis Core"
-                          className="w-full h-full object-cover rounded-xl"
-                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                        />
-                      </div>
+                      <img
+                        src={CANDIDATE_IMAGES.dashboardHero}
+                        alt="MockAI"
+                        className="w-full h-full object-cover rounded-xl"
+                      />
                     }
                   >
                     <HeroScene3D />
                   </Suspense>
                 </div>
               </div>
-
             </div>
           </div>
         </section>
 
-        {/* ===================================================================
-            SECTION 2 — HOW MOCKAI WORKS (Visuals + Micro Code Snippets)
-           =================================================================== */}
+        {/* How it works */}
         <section id="how-it-works" className="border-b py-16 sm:py-24" style={{ borderColor: 'var(--c-border)' }}>
           <div className="c-page">
-            
-            {/* Section Header */}
-            <div className="max-w-2xl mb-14 space-y-2">
-              <p className="c-eyebrow" style={{ color: 'var(--c-accent)' }}>Workflow Architecture</p>
+            <div className="max-w-2xl mb-12 space-y-2">
               <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight" style={{ color: 'var(--c-text)' }}>
-                How MockAI works.
+                How it works
               </h2>
               <p className="text-sm sm:text-base leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                Three streamlined steps from track configuration to granular assessment.
+                Three steps, about fifteen minutes.
               </p>
             </div>
-
-            {/* 3 Step Sequence with 3D Visuals & Code Snippets */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              
-              {/* Step 01 */}
-              <div className="flex flex-col justify-between p-5 rounded-xl border border-[var(--c-border)] bg-[var(--c-surface-card)] hover:border-[var(--c-border-strong)] transition-all duration-200 space-y-4 group shadow-sm">
-                <div>
-                  {/* Step 1 Visual — Interactive Track Selection Matrix */}
-                  <div
-                    className="relative aspect-video rounded-lg overflow-hidden border border-white/[0.08] mb-4 p-3 flex flex-col justify-between select-none bg-[#0F1013]"
+            <ol className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {STEPS.map((step, i) => (
+                <li
+                  key={step.title}
+                  className="p-5 rounded-xl border space-y-3 group"
+                  style={{ background: 'var(--c-surface-card)', borderColor: 'var(--c-border)' }}
+                >
+                  {step.image ? (
+                    <div className="relative aspect-video rounded-lg overflow-hidden border" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+                      <img
+                        src={CANDIDATE_IMAGES[step.image]}
+                        alt=""
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                    </div>
+                  ) : (
+                    <TrackPickerPreview />
+                  )}
+                  <span
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
+                    style={{ background: 'var(--c-accent-soft, rgba(255,107,53,0.12))', color: 'var(--c-accent)' }}
                   >
-                    {/* Header Tags */}
-                    <div className="flex items-center justify-between z-10">
-                      <span className="px-2 py-0.5 rounded-md font-mono text-[10px] font-medium bg-white/[0.05] text-zinc-300 border border-white/[0.08]">
-                        STEP 01
-                      </span>
-                      <span className="px-2 py-0.5 rounded-md font-mono text-[10px] font-medium bg-white/[0.04] text-zinc-300 border border-white/[0.08] flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-orange-400/80" /> 16+ DOMAINS AVAILABLE
-                      </span>
-                    </div>
-
-                    {/* Track Selection Card Chips */}
-                    <div className="grid grid-cols-2 gap-1.5 my-auto z-10">
-                      {/* Active Selected Track */}
-                      <div className="col-span-2 p-2 rounded-md border border-orange-500/25 bg-orange-500/[0.06] flex items-center justify-between transition-all">
-                        <div className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-orange-500" />
-                          <div>
-                            <p className="text-[11px] font-bold text-[#F5F5F5] leading-none">Healthcare & Medicine</p>
-                            <p className="text-[9.5px] font-mono text-zinc-400 mt-0.5">Clinical Protocol • Senior Practitioner</p>
-                          </div>
-                        </div>
-                        <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-orange-500/15 text-orange-200 font-medium uppercase tracking-wider border border-orange-500/30">
-                          SELECTED
-                        </span>
-                      </div>
-
-                      {/* Secondary Track 1 */}
-                      <div className="p-1.5 rounded-md border border-white/[0.06] bg-white/[0.02] flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-zinc-600" />
-                        <span className="text-[10px] text-zinc-400 font-medium truncate">Marketing & Brand</span>
-                      </div>
-
-                      {/* Secondary Track 2 */}
-                      <div className="p-1.5 rounded-md border border-white/[0.06] bg-white/[0.02] flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-zinc-600" />
-                        <span className="text-[10px] text-zinc-400 font-medium truncate">Frontend Development</span>
-                      </div>
-                    </div>
-
-                    {/* Footer Telemetry */}
-                    <div className="flex items-center justify-between text-[10px] font-mono text-zinc-500 pt-1 border-t border-white/5 z-10">
-                      <span>⏱ 45 MIN SESSION</span>
-                      <span className="text-zinc-300 font-medium tracking-wide flex items-center gap-1">
-                        READY TO LAUNCH <span className="text-orange-400">→</span>
-                      </span>
-                    </div>
-
-                    {/* Ambient coordinate grid watermark */}
-                    <div className="absolute inset-0 c-tech-grid opacity-25 pointer-events-none" />
+                    {i + 1}
+                  </span>
+                  <h3 className="text-base font-bold" style={{ color: 'var(--c-text)' }}>{step.title}</h3>
+                  <p className="text-sm leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>{step.body}</p>
+                  <div className="rounded-lg p-3 font-mono text-[11px] leading-relaxed border border-white/[0.06] bg-[#0E0F12]" aria-hidden="true">
+                    <TypewriterCode lines={STEP_CODE[step.code]} duration={1800} />
                   </div>
-
-                  <h3 className="text-base font-bold mb-1" style={{ color: 'var(--c-text)' }}>
-                    Choose your interview
-                  </h3>
-                  <p className="text-xs leading-relaxed mb-3" style={{ color: 'var(--c-text-secondary)' }}>
-                    Select an interview category and difficulty, then begin a structured mock interview tailored to your selected track.
-                  </p>
-                </div>
-
-                {/* Code Snippet */}
-                <div className="rounded-lg p-3 font-mono text-[11px] leading-relaxed border border-white/[0.06] bg-[#0E0F12]">
-                  <div className="flex items-center justify-between text-[10px] text-zinc-500 border-b border-white/[0.05] pb-1.5 mb-2">
-                    <span className="flex items-center gap-1 text-zinc-300 font-mono">
-                      <Terminal className="w-3 h-3 text-orange-400" /> config.json
-                    </span>
-                    <span className="text-zinc-500">REST API</span>
-                  </div>
-                  <TypewriterCode lines={STEP1_CODE_LINES} duration={1800} />
-                </div>
-              </div>
-
-              {/* Step 02 */}
-              <div className="flex flex-col justify-between p-5 rounded-xl border border-[var(--c-border)] bg-[var(--c-surface-card)] hover:border-[var(--c-border-strong)] transition-all duration-200 space-y-4 group shadow-sm">
-                <div>
-                  {/* Step Image */}
-                  <div className="relative aspect-video rounded-lg overflow-hidden border border-white/[0.08] mb-4 group">
-                    <img
-                      src={CANDIDATE_IMAGES.studioMic}
-                      alt="Answer realistic questions"
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/40 pointer-events-none" />
-
-                    <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-md font-mono text-[10px] font-medium bg-black/75 backdrop-blur-md text-zinc-300 border border-white/10">
-                      STEP 02
-                    </span>
-
-                    <span className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-md font-mono text-[10px] font-medium bg-black/75 backdrop-blur-md text-zinc-200 border border-white/10 flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" /> LIVE CAPTURE
-                    </span>
-
-                    <div className="absolute bottom-2 left-2.5 right-2.5 flex items-center justify-between text-[10.5px] font-mono text-white/90">
-                      <span className="flex items-center gap-1 text-zinc-300">
-                        ● Audio + Video Synced
-                      </span>
-                      <span className="text-zinc-300 font-mono font-medium">44.1kHz • 60fps</span>
-                    </div>
-                  </div>
-
-                  <h3 className="text-base font-bold mb-1" style={{ color: 'var(--c-text)' }}>
-                    Answer realistic questions
-                  </h3>
-                  <p className="text-xs leading-relaxed mb-3" style={{ color: 'var(--c-text-secondary)' }}>
-                    Respond under realistic interview conditions with synchronized audio and video capture, speech transcription, and facial-expression analysis.
-                  </p>
-                </div>
-
-                {/* Code Snippet */}
-                <div className="rounded-lg p-3 font-mono text-[11px] leading-relaxed border border-white/[0.06] bg-[#0E0F12]">
-                  <div className="flex items-center justify-between text-[10px] text-zinc-500 border-b border-white/[0.05] pb-1.5 mb-2">
-                    <span className="flex items-center gap-1 text-zinc-300 font-mono">
-                      <Mic className="w-3 h-3 text-orange-400" /> stream.ts
-                    </span>
-                    <span className="text-zinc-400 font-mono text-[10px]">44.1kHz REC</span>
-                  </div>
-                  <TypewriterCode lines={STEP2_CODE_LINES} duration={1800} />
-                </div>
-              </div>
-
-              {/* Step 03 */}
-              <div className="flex flex-col justify-between p-5 rounded-xl border border-[var(--c-border)] bg-[var(--c-surface-card)] hover:border-[var(--c-border-strong)] transition-all duration-200 space-y-4 group shadow-sm">
-                <div>
-                  {/* Step Image */}
-                  <div className="relative aspect-video rounded-lg overflow-hidden border border-white/[0.08] mb-4 group">
-                    <img
-                      src={CANDIDATE_IMAGES.evalChart}
-                      alt="Review your performance"
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/40 pointer-events-none" />
-
-                    <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-md font-mono text-[10px] font-medium bg-black/75 backdrop-blur-md text-zinc-300 border border-white/10">
-                      STEP 03
-                    </span>
-
-                    <span className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-md font-mono text-[10px] font-medium bg-black/75 backdrop-blur-md text-zinc-300 border border-white/10">
-                      MULTIMODAL SYNTHESIS
-                    </span>
-
-                    <div className="absolute bottom-2 left-2.5 right-2.5 flex items-center justify-between text-[10.5px] font-mono text-white/90">
-                      <span className="flex items-center gap-1 text-zinc-300">
-                        ● Composite Score
-                      </span>
-                      <span className="text-zinc-100 font-mono font-bold">
-                        93.2 <span className="text-zinc-400 font-normal text-[10px]">/ 100</span>
-                      </span>
-                    </div>
-                  </div>
-
-                  <h3 className="text-base font-bold mb-1" style={{ color: 'var(--c-text)' }}>
-                    Review your performance
-                  </h3>
-                  <p className="text-xs leading-relaxed mb-3" style={{ color: 'var(--c-text-secondary)' }}>
-                    Explore explainable feedback across technical accuracy, speech delivery, facial expressions, confidence indicators, stress indicators, pacing, and answer completeness.
-                  </p>
-                </div>
-
-                {/* Code Snippet */}
-                <div className="rounded-lg p-3 font-mono text-[11px] leading-relaxed border border-white/[0.06] bg-[#0E0F12]">
-                  <div className="flex items-center justify-between text-[10px] text-zinc-500 border-b border-white/[0.05] pb-1.5 mb-2">
-                    <span className="flex items-center gap-1 text-zinc-300 font-mono">
-                      <BarChart3 className="w-3 h-3 text-orange-400" /> report.json
-                    </span>
-                    <span className="px-1.5 py-0.5 rounded bg-white/[0.04] border border-white/[0.08] text-zinc-300 font-mono text-[10px] font-medium">SCORE: 93.2</span>
-                  </div>
-                  <TypewriterCode lines={STEP3_CODE_LINES} duration={1800} />
-                </div>
-              </div>
-
-            </div>
-
+                </li>
+              ))}
+            </ol>
           </div>
         </section>
 
-        {/* ===================================================================
-            SECTION — INTERVIEW TRACKS / DOMAINS (Multi-Industry Balanced Mix)
-           =================================================================== */}
-        <section id="tracks" aria-label="Available Practice Tracks" className="border-b py-16 sm:py-24" style={{ borderColor: 'var(--c-border)' }}>
+        {/* Interview tracks */}
+        <section id="tracks" aria-label="Interview tracks" className="border-b py-16 sm:py-24" style={{ borderColor: 'var(--c-border)' }}>
           <div className="c-page">
-            
-            {/* Section Header */}
             <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-12 gap-4">
               <div className="max-w-2xl space-y-2">
-                <p className="c-eyebrow" style={{ color: 'var(--c-accent)' }}>Domains</p>
                 <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight" style={{ color: 'var(--c-text)' }}>
-                  Interview Tracks.
+                  Interview tracks
                 </h2>
                 <p className="text-sm sm:text-base leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                  Practice realistic, role-tailored mock interviews across diverse professional industries.
+                  Questions written for specific jobs, from software to healthcare to law.
                 </p>
               </div>
               <Link
@@ -698,31 +598,22 @@ const LandingPage = () => {
               </Link>
             </div>
 
-            {/* 12 Practice Track Cards Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {displayTracks.map((cat) => {
                 const Icon = getCategoryIcon(cat.name);
                 const Schematic = getDomainSchematic(cat.name);
-
                 return (
                   <Link
                     key={cat.id || cat.name}
                     to={ctaDestination}
                     className="c-card c-card-hover text-left p-5 rounded-lg flex flex-col justify-between group transition-all relative overflow-hidden block select-none"
-                    style={{
-                      background: 'var(--c-surface-card)',
-                      borderColor: 'var(--c-border)',
-                    }}
+                    style={{ background: 'var(--c-surface-card)', borderColor: 'var(--c-border)' }}
                   >
                     <div>
                       <div className="flex items-center justify-between mb-3">
                         <div
                           className="w-9 h-9 rounded-md flex items-center justify-center border transition-colors group-hover:border-orange-500/50"
-                          style={{
-                            background: 'var(--c-surface-muted)',
-                            borderColor: 'var(--c-border)',
-                            color: 'var(--c-text)',
-                          }}
+                          style={{ background: 'var(--c-surface-muted)', borderColor: 'var(--c-border)', color: 'var(--c-text)' }}
                         >
                           <Icon className="w-4.5 h-4.5" />
                         </div>
@@ -736,19 +627,15 @@ const LandingPage = () => {
                         {cat.name}
                       </h3>
                       <p className="text-xs leading-relaxed line-clamp-2" style={{ color: 'var(--c-text-secondary)' }}>
-                        {cat.description || 'Targeted interview practice with structured prompts and AI scoring.'}
+                        {cat.description || 'Interview questions for this field, with feedback on every answer.'}
                       </p>
                     </div>
-
-                    <div
-                      className="mt-5 pt-3 border-t flex items-center justify-between text-xs font-medium"
-                      style={{ borderColor: 'var(--c-border)' }}
-                    >
+                    <div className="mt-5 pt-3 border-t flex items-center justify-between text-xs font-medium" style={{ borderColor: 'var(--c-border)' }}>
                       <span style={{ color: 'var(--c-text-muted)' }}>
-                        {cat.questionCount ? `${cat.questionCount} Questions` : 'Official Track'}
+                        {cat.questionCount ? `${cat.questionCount} questions` : 'Interview track'}
                       </span>
-                      <span className="flex items-center gap-1 font-semibold text-orange-500" style={{ color: 'var(--c-accent)' }}>
-                        <span>Start Practice</span>
+                      <span className="flex items-center gap-1 font-semibold" style={{ color: 'var(--c-accent)' }}>
+                        <span>Start</span>
                         <ChevronRight className="w-3.5 h-3.5" />
                       </span>
                     </div>
@@ -756,397 +643,131 @@ const LandingPage = () => {
                 );
               })}
             </div>
-
           </div>
         </section>
 
-        {/* ===================================================================
-            SECTION 3 — WHAT MOCKAI EVALUATES (Rubric Grid + Telemetry Inspector)
-           =================================================================== */}
+        {/* What you get feedback on */}
         <section id="evaluation" className="border-b py-16 sm:py-24" style={{ borderColor: 'var(--c-border)' }}>
           <div className="c-page">
-            
-            <div className="max-w-2xl mb-14 space-y-2">
-              <p className="c-eyebrow" style={{ color: 'var(--c-accent)' }}>Assessment Dimensions</p>
+            <div className="max-w-2xl mb-12 space-y-2">
               <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight" style={{ color: 'var(--c-text)' }}>
-                What MockAI evaluates.
+                What you get feedback on
               </h2>
               <p className="text-sm sm:text-base leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                Objective, explainable rubrics focused on the core signals technical hiring teams look for.
+                Each answer is scored on its content, your delivery and your video. When there is not enough to judge, MockAI says so instead of guessing.
               </p>
             </div>
-
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-              
-              {/* Left Column: 6 Rubric Dimension Cards */}
-              <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                
-                {/* 01 • CONTENT */}
-                <div className="p-4 rounded-xl border border-[var(--c-border)] bg-[var(--c-surface-card)] hover:bg-[var(--c-surface-muted)] hover:border-[var(--c-border-strong)] transition-all duration-200 space-y-2.5 group shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-[11px] font-medium text-zinc-500 dark:text-zinc-400 tracking-wider">01 • CONTENT</span>
-                    <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-medium px-2 py-0.5 rounded-md bg-slate-100 dark:bg-white/[0.04] text-zinc-700 dark:text-zinc-300 border border-slate-200 dark:border-white/[0.08]">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400/80" />
-                      Accuracy %
-                    </span>
-                  </div>
-                  <h3 className="text-sm font-bold" style={{ color: 'var(--c-text)' }}>
-                    Technical Accuracy
-                  </h3>
-                  <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                    Conceptual correctness, technical depth, reasoning, and relevance of the response.
-                  </p>
-                </div>
-
-                {/* 02 • DELIVERY */}
-                <div className="p-4 rounded-xl border border-[var(--c-border)] bg-[var(--c-surface-card)] hover:bg-[var(--c-surface-muted)] hover:border-[var(--c-border-strong)] transition-all duration-200 space-y-2.5 group shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-[11px] font-medium text-zinc-500 dark:text-zinc-400 tracking-wider">02 • DELIVERY</span>
-                    <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-medium px-2 py-0.5 rounded-md bg-slate-100 dark:bg-white/[0.04] text-zinc-700 dark:text-zinc-300 border border-slate-200 dark:border-white/[0.08]">
-                      <span className="w-1.5 h-1.5 rounded-full bg-sky-400/80" />
-                      Fluency & WPM
-                    </span>
-                  </div>
-                  <h3 className="text-sm font-bold" style={{ color: 'var(--c-text)' }}>
-                    Speech & Communication
-                  </h3>
-                  <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                    Spoken fluency, articulation, clarity, and precision during the response.
-                  </p>
-                </div>
-
-                {/* 03 • VISION */}
-                <div className="p-4 rounded-xl border border-[var(--c-border)] bg-[var(--c-surface-card)] hover:bg-[var(--c-surface-muted)] hover:border-[var(--c-border-strong)] transition-all duration-200 space-y-2.5 group shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-[11px] font-medium text-zinc-500 dark:text-zinc-400 tracking-wider">03 • VISION</span>
-                    <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-medium px-2 py-0.5 rounded-md bg-slate-100 dark:bg-white/[0.04] text-zinc-700 dark:text-zinc-300 border border-slate-200 dark:border-white/[0.08]">
-                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-400/80" />
-                      Face Tracking
-                    </span>
-                  </div>
-                  <h3 className="text-sm font-bold" style={{ color: 'var(--c-text)' }}>
-                    Facial Expression
-                  </h3>
-                  <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                    Analysis of observable facial-expression and engagement signals during the interview.
-                  </p>
-                </div>
-
-                {/* 04 • BEHAVIOR */}
-                <div className="p-4 rounded-xl border border-[var(--c-border)] bg-[var(--c-surface-card)] hover:bg-[var(--c-surface-muted)] hover:border-[var(--c-border-strong)] transition-all duration-200 space-y-2.5 group shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-[11px] font-medium text-zinc-500 dark:text-zinc-400 tracking-wider">04 • BEHAVIOR</span>
-                    <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-medium px-2 py-0.5 rounded-md bg-slate-100 dark:bg-white/[0.04] text-zinc-700 dark:text-zinc-300 border border-slate-200 dark:border-white/[0.08]">
-                      <span className="w-1.5 h-1.5 rounded-full bg-violet-400/80" />
-                      Composure Index
-                    </span>
-                  </div>
-                  <h3 className="text-sm font-bold" style={{ color: 'var(--c-text)' }}>
-                    Confidence & Stress
-                  </h3>
-                  <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                    Visual behavioral indicators associated with confidence and stress during responses.
-                  </p>
-                </div>
-
-                {/* 05 • STRUCTURE */}
-                <div className="p-4 rounded-xl border border-[var(--c-border)] bg-[var(--c-surface-card)] hover:bg-[var(--c-surface-muted)] hover:border-[var(--c-border-strong)] transition-all duration-200 space-y-2.5 group shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-[11px] font-medium text-zinc-500 dark:text-zinc-400 tracking-wider">05 • STRUCTURE</span>
-                    <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-medium px-2 py-0.5 rounded-md bg-slate-100 dark:bg-white/[0.04] text-zinc-700 dark:text-zinc-300 border border-slate-200 dark:border-white/[0.08]">
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400/80" />
-                      Scope Coverage
-                    </span>
-                  </div>
-                  <h3 className="text-sm font-bold" style={{ color: 'var(--c-text)' }}>
-                    Completeness & Clarity
-                  </h3>
-                  <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                    Directness, organization, completeness, and coverage of the question.
-                  </p>
-                </div>
-
-                {/* 06 • SYNTHESIS */}
-                <div className="p-4 rounded-xl border border-[var(--c-border)] bg-[var(--c-surface-card)] hover:bg-[var(--c-surface-muted)] hover:border-[var(--c-border-strong)] transition-all duration-200 space-y-2.5 group shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-[11px] font-medium text-zinc-500 dark:text-zinc-400 tracking-wider">06 • SYNTHESIS</span>
-                    <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-medium px-2 py-0.5 rounded-md bg-slate-100 dark:bg-white/[0.04] text-zinc-700 dark:text-zinc-300 border border-slate-200 dark:border-white/[0.08]">
-                      <span className="w-1.5 h-1.5 rounded-full bg-orange-400/80" />
-                      0–100 Score
-                    </span>
-                  </div>
-                  <h3 className="text-sm font-bold" style={{ color: 'var(--c-text)' }}>
-                    Overall Performance
-                  </h3>
-                  <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                    A multimodal performance assessment combining textual, speech, and visual signals.
-                  </p>
-                </div>
-
-              </div>
-
-              {/* Right Column: Code Telemetry Terminal Inspector */}
-              <div className="lg:col-span-5 rounded-xl border p-5 space-y-4 shadow-2xl"
-                style={{
-                  background: '#141414',
-                  borderColor: 'var(--c-border)',
-                }}
-              >
-                <div className="flex items-center justify-between border-b pb-3" style={{ borderColor: 'var(--c-border)' }}>
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
-                    <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/80" />
-                    <span className="w-2.5 h-2.5 rounded-full bg-green-500/80" />
-                    <span className="text-xs font-mono text-zinc-400 ml-2">evaluator_engine.ts</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-mono font-medium tracking-wider">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    <span>LIVE TELEMETRY</span>
+            <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-8">
+              {DIMENSIONS.map(({ icon: Icon, title, body }) => (
+                <div key={title} className="flex gap-3.5 items-start">
+                  <Icon className="w-5 h-5 shrink-0 mt-0.5" style={{ color: 'var(--c-accent)' }} />
+                  <div className="space-y-1">
+                    <h3 className="text-sm font-bold" style={{ color: 'var(--c-text)' }}>{title}</h3>
+                    <p className="text-sm leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>{body}</p>
                   </div>
                 </div>
-
-                <TypewriterCode lines={EVALUATOR_CODE_LINES} duration={2400} />
-
-                {/* Animated Visual Level Meters */}
-                <div className="pt-3 border-t space-y-2.5 text-xs font-mono" style={{ borderColor: 'var(--c-border)' }}>
-                  <AnimatedScoreMeter label="Technical Reasoning" targetPercent={94} color="linear-gradient(90deg, #EA580C, #F97316)" />
-                  <AnimatedScoreMeter label="Speech Fluency" targetPercent={91} color="linear-gradient(90deg, #0284C7, #38BDF8)" />
-                </div>
-
-              </div>
-
+              ))}
             </div>
-
+            <div className="lg:col-span-5 rounded-xl border p-5 space-y-4 shadow-2xl" style={{ background: '#141414', borderColor: 'var(--c-border)' }} aria-hidden="true">
+              <div className="flex items-center gap-2 border-b pb-3" style={{ borderColor: 'var(--c-border)' }}>
+                <span className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
+                <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/80" />
+                <span className="w-2.5 h-2.5 rounded-full bg-green-500/80" />
+              </div>
+              <TypewriterCode lines={EVALUATOR_CODE_LINES} duration={2400} />
+              <div className="pt-3 border-t space-y-2.5 text-xs font-mono" style={{ borderColor: 'var(--c-border)' }}>
+                <AnimatedScoreMeter label="Content" targetPercent={94} color="linear-gradient(90deg, #EA580C, #F97316)" />
+                <AnimatedScoreMeter label="Speaking" targetPercent={91} color="linear-gradient(90deg, #0284C7, #38BDF8)" />
+              </div>
+            </div>
+            </div>
           </div>
         </section>
 
-        {/* ===================================================================
-            SECTION 4 — WHY MOCKAI (Visual Composition + Product Value)
-           =================================================================== */}
+        {/* Why MockAI */}
         <section id="why-mockai" className="border-b py-16 sm:py-24" style={{ borderColor: 'var(--c-border)' }}>
           <div className="c-page">
-            
-            <div className="max-w-2xl mb-14 space-y-2">
-              <p className="c-eyebrow" style={{ color: 'var(--c-accent)' }}>Product Value</p>
+            <div className="max-w-2xl mb-12 space-y-2">
               <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight" style={{ color: 'var(--c-text)' }}>
-                Why candidates choose MockAI.
+                Why practice with MockAI
               </h2>
               <p className="text-sm sm:text-base leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                Built to replace high-stakes guesswork with calibrated, repeatable practice.
+                Rehearsing out loud, on camera, is the closest thing to the real interview.
               </p>
             </div>
-
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-              
-              {/* Left Column: 4 Core Pillars */}
-              <div className="lg:col-span-7 space-y-5">
-                
-                <div className="flex gap-4 items-start p-4 rounded-lg border"
-                  style={{
-                    background: 'var(--c-surface)',
-                    borderColor: 'var(--c-border)',
-                  }}
+            <div className="lg:col-span-7 space-y-4">
+              {VALUES.map(({ icon: Icon, title, body }) => (
+                <div
+                  key={title}
+                  className="flex gap-4 items-start p-4 rounded-lg border"
+                  style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}
                 >
-                  <div className="w-9 h-9 rounded-md flex items-center justify-center shrink-0 border"
+                  <div
+                    className="w-9 h-9 rounded-md flex items-center justify-center shrink-0 border"
                     style={{ background: 'var(--c-surface-muted)', borderColor: 'var(--c-border)', color: 'var(--c-accent)' }}
                   >
-                    <Clock className="w-4 h-4" />
+                    <Icon className="w-4 h-4" />
                   </div>
                   <div className="space-y-1">
-                    <h3 className="text-sm font-bold" style={{ color: 'var(--c-text)' }}>
-                      Timed Interview Simulation
-                    </h3>
-                    <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                      Practice answering under realistic countdown pressure, developing muscle memory for real interviews.
-                    </p>
+                    <h3 className="text-sm font-bold" style={{ color: 'var(--c-text)' }}>{title}</h3>
+                    <p className="text-sm leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>{body}</p>
                   </div>
                 </div>
-
-                <div className="flex gap-4 items-start p-4 rounded-lg border"
-                  style={{
-                    background: 'var(--c-surface)',
-                    borderColor: 'var(--c-border)',
-                  }}
-                >
-                  <div className="w-9 h-9 rounded-md flex items-center justify-center shrink-0 border"
-                    style={{ background: 'var(--c-surface-muted)', borderColor: 'var(--c-border)', color: 'var(--c-accent)' }}
-                  >
-                    <Video className="w-4 h-4" />
-                  </div>
-                  <div className="space-y-1">
-                    <h3 className="text-sm font-bold" style={{ color: 'var(--c-text)' }}>
-                      Audio/Video Response Capture
-                    </h3>
-                    <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                      Direct browser-native media recording with instant local playback review for self-reflection.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex gap-4 items-start p-4 rounded-lg border"
-                  style={{
-                    background: 'var(--c-surface)',
-                    borderColor: 'var(--c-border)',
-                  }}
-                >
-                  <div className="w-9 h-9 rounded-md flex items-center justify-center shrink-0 border"
-                    style={{ background: 'var(--c-surface-muted)', borderColor: 'var(--c-border)', color: 'var(--c-accent)' }}
-                  >
-                    <FileCheck2 className="w-4 h-4" />
-                  </div>
-                  <div className="space-y-1">
-                    <h3 className="text-sm font-bold" style={{ color: 'var(--c-text)' }}>
-                      Explainable AI Evaluation
-                    </h3>
-                    <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                      No vague buzzwords. Get specific, question-by-question feedback identifying exactly what was strong and what to refine.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex gap-4 items-start p-4 rounded-lg border"
-                  style={{
-                    background: 'var(--c-surface)',
-                    borderColor: 'var(--c-border)',
-                  }}
-                >
-                  <div className="w-9 h-9 rounded-md flex items-center justify-center shrink-0 border"
-                    style={{ background: 'var(--c-surface-muted)', borderColor: 'var(--c-border)', color: 'var(--c-accent)' }}
-                  >
-                    <TrendingUp className="w-4 h-4" />
-                  </div>
-                  <div className="space-y-1">
-                    <h3 className="text-sm font-bold" style={{ color: 'var(--c-text)' }}>
-                      Continuous Progress Tracking
-                    </h3>
-                    <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                      Every attempt is stored in your candidate history ledger to track progression across technical tracks over time.
-                    </p>
-                  </div>
-                </div>
-
-              </div>
-
-              {/* Right Column: 3D Visual Asset Card */}
-              <div className="lg:col-span-5 relative">
-                <div className="rounded-xl overflow-hidden border shadow-2xl relative"
-                  style={{
-                    borderColor: 'var(--c-border)',
-                    background: 'var(--c-surface)',
-                  }}
-                >
-                  <CornerReticles size={10} color="var(--c-accent)" />
-                  <img
-                    src={CANDIDATE_IMAGES.completionSeal}
-                    alt="MockAI Mastery & Verification"
-                    className="w-full aspect-[4/3] object-cover"
-                  />
-                  
-                  {/* Floating Telemetry Badge */}
-                  <div className="p-4 border-t space-y-2" style={{ borderColor: 'var(--c-border)', background: 'var(--c-surface)' }}>
-                    <div className="flex items-center justify-between text-xs font-mono">
-                      <span className="font-medium px-2 py-0.5 rounded-md text-[10.5px] bg-slate-100 dark:bg-white/[0.04] text-zinc-700 dark:text-zinc-300 border border-slate-200 dark:border-white/[0.08]">VERIFIED_SIMULATION</span>
-                      <span className="text-emerald-400 font-medium text-[10.5px] flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> PASS_RATE +48%
-                      </span>
-                    </div>
-                    <p className="text-[11px] leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                      Candidates using MockAI's structured rubric show measurable improvements in response conciseness and technical articulation within 3 practice sessions.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
+              ))}
             </div>
-
+            <div className="lg:col-span-5">
+              <div className="rounded-xl overflow-hidden border shadow-2xl relative" style={{ borderColor: 'var(--c-border)', background: 'var(--c-surface)' }}>
+                <CornerReticles size={10} color="var(--c-accent)" />
+                <img src={CANDIDATE_IMAGES.completionSeal} alt="" className="w-full aspect-[4/3] object-cover" />
+              </div>
+            </div>
+            </div>
           </div>
         </section>
 
-        {/* ===================================================================
-            SECTION 5 — FINAL CTA & FOOTER
-           =================================================================== */}
-        <section
-          className="relative py-24 sm:py-32 overflow-hidden border-t"
-          style={{ borderColor: 'var(--c-border)', background: 'var(--c-bg)' }}
-        >
-          {/* Relevant Cinematic Background Image & Lighting Overlays */}
+        {/* Final call to action */}
+        <section className="relative py-24 sm:py-32 overflow-hidden" style={{ background: 'var(--c-bg)' }}>
           <div className="absolute inset-0 select-none pointer-events-none overflow-hidden">
-            <img
-              src={CANDIDATE_IMAGES.ctaBanner}
-              alt=""
-              className="w-full h-full object-cover object-center opacity-75"
-            />
-            {/* Radial Vignette for High-Contrast Text Legibility */}
+            <img src={CANDIDATE_IMAGES.ctaBanner} alt="" className="w-full h-full object-cover object-center opacity-75" />
             <div
               className="absolute inset-0"
-              style={{
-                background: 'radial-gradient(circle at center, rgba(17, 17, 17, 0.50) 0%, rgba(17, 17, 17, 0.80) 70%, var(--c-bg) 100%)',
-              }}
+              style={{ background: 'radial-gradient(circle at center, rgba(17, 17, 17, 0.50) 0%, rgba(17, 17, 17, 0.80) 70%, var(--c-bg) 100%)' }}
             />
-            {/* Top & Bottom Soft Feathering into Neighboring Sections */}
-            <div
-              className="absolute inset-x-0 top-0 h-24 pointer-events-none"
-              style={{
-                background: 'linear-gradient(to bottom, var(--c-bg), transparent)',
-              }}
-            />
-            <div
-              className="absolute inset-x-0 bottom-0 h-24 pointer-events-none"
-              style={{
-                background: 'linear-gradient(to top, var(--c-bg), transparent)',
-              }}
-            />
+            <div className="absolute inset-x-0 top-0 h-24" style={{ background: 'linear-gradient(to bottom, var(--c-bg), transparent)' }} />
+            <div className="absolute inset-x-0 bottom-0 h-24" style={{ background: 'linear-gradient(to top, var(--c-bg), transparent)' }} />
           </div>
-
           <div className="relative z-10 c-page space-y-6">
-            
-            <p className="c-eyebrow text-orange-400 font-semibold tracking-wider">Get Ready Today</p>
-            
-            <h2
-              className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight"
-              style={{ color: '#FFFFFF' }}
-            >
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight" style={{ color: '#FFFFFF' }}>
               Your next interview <br />
               starts with practice.
             </h2>
-            
-            <p
-              className="text-sm sm:text-base max-w-lg leading-relaxed"
-              style={{ color: 'rgba(255, 255, 255, 0.90)' }}
-            >
-              Build confidence, master technical articulation, and eliminate surprise before your real interview.
+            <p className="text-sm sm:text-base max-w-lg leading-relaxed" style={{ color: 'rgba(255, 255, 255, 0.90)' }}>
+              Find out what you would say before someone asks.
             </p>
-
             <div className="pt-2 flex">
               <Link
                 to={ctaDestination}
-                className="c-btn c-btn-primary px-8 py-3.5 text-sm font-semibold rounded-xl shadow-xl flex items-center gap-2.5 select-none group"
+                className="c-btn c-btn-primary px-8 py-3.5 text-sm font-semibold rounded-xl flex items-center gap-2.5 select-none group"
               >
-                <span>Start Practicing</span>
+                <span>Start practicing</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
               </Link>
             </div>
-
           </div>
         </section>
 
-        {/* Minimalist Public Footer */}
         <footer className="border-t py-8 mt-auto" style={{ borderColor: 'var(--c-border)', background: 'var(--c-bg)' }}>
           <div className="c-page flex flex-col sm:flex-row items-center justify-between gap-4 text-xs" style={{ color: 'var(--c-text-muted)' }}>
             <div className="flex items-center gap-2">
               <span className="font-bold" style={{ color: 'var(--c-text)' }}>MockAI</span>
               <span>•</span>
-              <span>AI-Powered Interview Practice Platform</span>
+              <span>Mock interview practice</span>
             </div>
-
-            <div className="flex items-center gap-4 font-mono text-[11px]">
-              <span className="text-[#22C55E]">● ALL SYSTEMS OPERATIONAL</span>
-              <span>•</span>
-              <span>© {new Date().getFullYear()} MockAI</span>
-            </div>
+            <span>© {new Date().getFullYear()} MockAI</span>
           </div>
         </footer>
-
       </div>
     </div>
   );

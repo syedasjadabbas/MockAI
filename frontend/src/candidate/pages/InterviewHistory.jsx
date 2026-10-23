@@ -133,7 +133,6 @@ const InterviewHistory = () => {
         {/* Page Header (Directly on page) */}
         <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4 border-b pb-6" style={{ borderColor: 'var(--c-border)' }}>
           <div>
-            <p className="c-eyebrow mb-1">Archive & Sessions</p>
             <h1 className="c-heading text-2xl sm:text-3xl font-bold" style={{ color: 'var(--c-text)' }}>
               Interview History
             </h1>
@@ -152,7 +151,7 @@ const InterviewHistory = () => {
         </div>
 
         {/* LEVEL 1 — Telemetry Metrics (Directly on page with clean typography and dividers) */}
-        <section aria-label="History Telemetry" className="border-b pb-8" style={{ borderColor: 'var(--c-border)' }}>
+        <section aria-label="History summary" className="border-b pb-8" style={{ borderColor: 'var(--c-border)' }}>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-10">
             <div>
               <p className="text-[11px] font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--c-text-muted)' }}>
@@ -342,7 +341,6 @@ const InterviewHistory = () => {
                   ? `/interview/${session.id}/results` 
                   : `/interview/${session.id}/session`;
                 const dateStr = formatDate(session.created_at || session.createdAt || session.completedAt);
-                const refId = session.id ? session.id.slice(-6).toUpperCase() : '';
 
                 return (
                   <div
@@ -371,12 +369,6 @@ const InterviewHistory = () => {
                           >
                             {session.role || 'Practice Session'}
                           </Link>
-                          <span
-                            className="text-[10px] font-mono block mt-0.5"
-                            style={{ color: 'var(--c-text-muted)' }}
-                          >
-                            REF: {refId}
-                          </span>
                         </div>
                       </div>
 
@@ -450,9 +442,6 @@ const InterviewHistory = () => {
                             <Link to={targetUrl} className="text-xs font-bold truncate block" style={{ color: 'var(--c-text)' }}>
                               {session.role || 'Practice Session'}
                             </Link>
-                            <span className="text-[10px] font-mono" style={{ color: 'var(--c-text-muted)' }}>
-                              REF: {refId}
-                            </span>
                           </div>
                         </div>
 

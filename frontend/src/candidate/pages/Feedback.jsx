@@ -27,7 +27,6 @@ const Feedback = () => {
         
         {/* Header directly on page */}
         <div className="border-b pb-6" style={{ borderColor: 'var(--c-border)' }}>
-          <p className="c-eyebrow mb-1">Coaching Report</p>
           <h1 className="c-heading text-2xl sm:text-3xl font-bold" style={{ color: 'var(--c-text)' }}>
             Detailed Feedback
           </h1>

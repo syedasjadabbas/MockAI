@@ -37,14 +37,9 @@ import InterviewFlowLayout from '../layouts/InterviewFlowLayout';
 import { getActiveInterview, getRealEvaluation, startEvaluation, endInterview } from '../services/candidateApi';
 import { formatDate } from '../../utils/dateFormat';
 import { CANDIDATE_IMAGES } from '../assets/images';
+import { AssessmentDossierSeal } from '../components/TechnicalDoodles';
 import { LanguageSummarySection, QuestionLanguageNotes } from '../components/LanguageAnalysis';
 import InterviewSurvey from '../components/InterviewSurvey';
-import {
-  AssessmentDossierSeal,
-  CornerReticles,
-  TechnicalHUDTag,
-  LiveAudioWaveform,
-} from '../components/TechnicalDoodles';
 
 // FR17-FR23 - Real Multimodal Evaluation Results (Assessment Report Layout)
 const EvaluationResults = () => {
@@ -367,26 +362,24 @@ const EvaluationResults = () => {
         <section aria-label="Assessment Metadata" className="border-b pb-8" style={{ borderColor: 'var(--c-border)' }}>
           <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
             <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--c-text-muted)' }}>
-              <span className="font-semibold" style={{ color: 'var(--c-text)' }}>Executive Assessment Report</span>
-              <span>/</span>
-              <span className="font-mono">REF: {id ? id.slice(-6).toUpperCase() : '------'}</span>
+              <span className="font-semibold" style={{ color: 'var(--c-text)' }}>Interview feedback</span>
             </div>
             <div className="flex items-center gap-3">
               <AssessmentDossierSeal size={28} />
               {isCompleted && (
                 <span className="c-badge c-badge-success text-xs font-bold">
-                  Evaluation Finalized
+                  Feedback ready
                 </span>
               )}
               {isProcessing && (
                 <span className="c-badge c-badge-accent text-xs font-bold flex items-center gap-1.5">
                   <div className="w-2 h-2 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                  <span>Processing Evaluation</span>
+                  <span>Preparing feedback</span>
                 </span>
               )}
               {isFailed && (
                 <span className="c-badge c-badge-danger text-xs font-bold">
-                  Evaluation Interrupted
+                  Feedback failed
                 </span>
               )}
             </div>
@@ -402,8 +395,8 @@ const EvaluationResults = () => {
               </p>
             </div>
 
-            <div className="text-xs font-mono" style={{ color: 'var(--c-text-muted)' }}>
-              {answeredCount} of {totalQuestions} Prompts Evaluated
+            <div className="text-xs" style={{ color: 'var(--c-text-muted)' }}>
+              {answeredCount} of {totalQuestions} questions answered
             </div>
           </div>
         </section>
@@ -413,19 +406,16 @@ const EvaluationResults = () => {
            =================================================================== */}
         {isCompleted ? (
           <section aria-label="Overall Score" className="border-b pb-10" style={{ borderColor: 'var(--c-border)' }}>
-            <p className="c-eyebrow mb-2">Overall Score</p>
-            
-            {/* 3D eval chart visual */}
+            <h2 className="c-heading text-xl font-bold mb-3" style={{ color: 'var(--c-text)' }}>Overall score</h2>
             <div className="relative rounded-lg overflow-hidden border mb-6 group" style={{ borderColor: 'var(--c-border)', aspectRatio: '21/9' }}>
               <img
                 src={CANDIDATE_IMAGES.evalChart}
-                alt="Evaluation Analytics"
+                alt=""
                 className="w-full h-full object-cover opacity-80 transition-transform duration-700 group-hover:scale-105"
               />
               <div className="absolute inset-0" style={{ background: 'linear-gradient(to right, var(--c-bg) 0%, transparent 40%, var(--c-bg) 100%)' }} />
               <div className="absolute inset-0 flex items-center justify-start pl-8">
                 <div>
-                  <span className="block c-tech-annotation text-[10px] text-orange-400 mb-1">[ASSESSMENT ANALYTICS]</span>
                   <span className="c-serif-num text-5xl sm:text-7xl font-bold tracking-tight" style={{ color: 'var(--c-text)' }}>
                     {Math.round(overallScore)}%
                   </span>
@@ -437,13 +427,10 @@ const EvaluationResults = () => {
                   </div>
                 </div>
               </div>
-              <div className="absolute bottom-2 right-2">
-                <span className="c-tech-annotation px-1.5 py-0.5 rounded bg-black/60 text-orange-400 border border-white/10 text-[10px]">[COMPOSITE SCORE]</span>
-              </div>
             </div>
             <p className="text-xs sm:text-sm mt-4 leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
               {interpretation || 
-                `This composite score is computed from response delivery, technical depth, and domain concept coverage across ${answeredCount} evaluated prompt takes.`}
+                `This score combines the content of your answers, how you spoke, and how you came across on camera, across ${answeredCount} answered questions.`}
             </p>
 
             {/* FR24: Score Interpretation & Behavioral Rationale */}
@@ -452,9 +439,7 @@ const EvaluationResults = () => {
                 className="mt-4 p-3.5 rounded-lg border text-xs leading-relaxed space-y-1.5"
                 style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}
               >
-                <div className="flex items-center gap-2 text-[10px] font-mono font-bold uppercase tracking-wider text-orange-400">
-                  <span>Score Rationale & Behavioral Attribution</span>
-                </div>
+                <p className="text-xs font-semibold" style={{ color: 'var(--c-text)' }}>How this score was worked out</p>
                 <p style={{ color: 'var(--c-text-secondary)' }}>{scoreRationale}</p>
               </div>
             )}
@@ -468,8 +453,7 @@ const EvaluationResults = () => {
               >
                 <div className="flex items-center justify-between border-b pb-2" style={{ borderColor: 'var(--c-border)' }}>
                   <div>
-                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-orange-400 block">[FR 29-01 GRAPH]</span>
-                    <h3 className="c-heading text-xs font-bold" style={{ color: 'var(--c-text)' }}>Performance Dimensions Breakdown</h3>
+                    <h3 className="c-heading text-xs font-bold" style={{ color: 'var(--c-text)' }}>Score by area</h3>
                   </div>
                   <span className="text-[10px] font-mono text-neutral-400">Scale 0-100%</span>
                 </div>
@@ -477,9 +461,9 @@ const EvaluationResults = () => {
                   <Bar data={dimensionChartData} options={dimensionChartOptions} />
                 </div>
                 <div className="flex items-center justify-between text-[10px] font-mono text-neutral-400 pt-1 border-t" style={{ borderColor: 'var(--c-border)' }}>
-                  <span>Domain: {Math.round(dimensionScores?.technical_content ?? 0)}%</span>
-                  <span>Fluency: {Math.round(dimensionScores?.communication_fluency ?? 0)}%</span>
-                  <span>Composure: {hasVisionSummary ? `${Math.round(dimensionScores?.behavioral_composure ?? 0)}%` : 'Offline'}</span>
+                  <span>Content: {Math.round(dimensionScores?.technical_content ?? 0)}%</span>
+                  <span>Speaking: {Math.round(dimensionScores?.communication_fluency ?? 0)}%</span>
+                  <span>Camera: {hasVisionSummary ? `${Math.round(dimensionScores?.behavioral_composure ?? 0)}%` : 'not measured'}</span>
                 </div>
               </div>
 
@@ -490,10 +474,9 @@ const EvaluationResults = () => {
               >
                 <div className="flex items-center justify-between border-b pb-2" style={{ borderColor: 'var(--c-border)' }}>
                   <div>
-                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-orange-400 block">[FR 29-01 GRAPH]</span>
-                    <h3 className="c-heading text-xs font-bold" style={{ color: 'var(--c-text)' }}>Per-Question Performance Trajectory</h3>
+                    <h3 className="c-heading text-xs font-bold" style={{ color: 'var(--c-text)' }}>Score by question</h3>
                   </div>
-                  <span className="text-[10px] font-mono text-neutral-400">{answeredCount}/{totalQuestions} Takes</span>
+                  <span className="text-[10px] text-neutral-400">{answeredCount} of {totalQuestions} answered</span>
                 </div>
                 <div className="h-44 w-full">
                   <Bar data={trajectoryChartData} options={trajectoryChartOptions} />
@@ -501,11 +484,11 @@ const EvaluationResults = () => {
                 <div className="flex items-center justify-between text-[10px] font-mono text-neutral-400 pt-1 border-t" style={{ borderColor: 'var(--c-border)' }}>
                   <span className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-[#FF6B35]" />
-                    <span>Evaluated</span>
+                    <span>Answered</span>
                   </span>
                   <span className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-slate-500" />
-                    <span>Skipped / Unassessed</span>
+                    <span>Skipped</span>
                   </span>
                   <span className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-red-500/70" />
@@ -518,21 +501,21 @@ const EvaluationResults = () => {
             {/* FR 28-03: Structured Performance Overview (Audit Summary) */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-6">
               <div className="p-3 rounded-lg border space-y-1" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
-                <span className="text-[10px] uppercase font-mono tracking-wider block" style={{ color: 'var(--c-text-muted)' }}>Total Prompts</span>
+                <span className="text-xs block" style={{ color: 'var(--c-text-muted)' }}>Questions</span>
                 <span className="font-mono text-lg font-bold" style={{ color: 'var(--c-text)' }}>{totalQuestions}</span>
               </div>
               <div className="p-3 rounded-lg border space-y-1" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
-                <span className="text-[10px] uppercase font-mono tracking-wider block" style={{ color: 'var(--c-text-muted)' }}>Evaluated Takes</span>
+                <span className="text-xs block" style={{ color: 'var(--c-text-muted)' }}>Answered</span>
                 <span className="font-mono text-lg font-bold" style={{ color: 'var(--c-text)' }}>{answeredCount}</span>
               </div>
               <div className="p-3 rounded-lg border space-y-1" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
-                <span className="text-[10px] uppercase font-mono tracking-wider block" style={{ color: 'var(--c-text-muted)' }}>Skipped Takes</span>
+                <span className="text-xs block" style={{ color: 'var(--c-text-muted)' }}>Skipped</span>
                 <span className="font-mono text-lg font-bold" style={{ color: 'var(--c-text-muted)' }}>
                   {summaryReport?.performance_overview?.skipped_questions ?? Math.max(0, totalQuestions - answeredCount)}
                 </span>
               </div>
               <div className="p-3 rounded-lg border space-y-1" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
-                <span className="text-[10px] uppercase font-mono tracking-wider block" style={{ color: 'var(--c-text-muted)' }}>Completion Rate</span>
+                <span className="text-xs block" style={{ color: 'var(--c-text-muted)' }}>Completed</span>
                 <span className="font-mono text-lg font-bold text-[#FF6B35]">
                   {summaryReport?.performance_overview?.completion_rate ?? (totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0)}%
                 </span>
@@ -544,17 +527,17 @@ const EvaluationResults = () => {
             <div className="c-badge-danger p-4 rounded-md flex items-start gap-3 text-xs">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-500" />
               <div>
-                <p className="font-bold">Evaluation Interrupted</p>
-                <p className="mt-0.5">{evaluation?.failed_reason || 'An issue occurred during evaluation processing.'}</p>
+                <p className="font-bold">Feedback could not be prepared</p>
+                <p className="mt-0.5">{evaluation?.failed_reason || 'Something went wrong while scoring this interview.'}</p>
               </div>
             </div>
           </section>
         ) : (
           <section aria-label="Evaluation In Progress" className="border-b pb-8" style={{ borderColor: 'var(--c-border)' }}>
             <div className="p-4 rounded-md border text-xs" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
-              <p className="font-bold mb-1" style={{ color: 'var(--c-text)' }}>Evaluation in Pipeline</p>
+              <p className="font-bold mb-1" style={{ color: 'var(--c-text)' }}>Preparing your feedback</p>
               <p style={{ color: 'var(--c-text-secondary)' }}>
-                Your responses have been safely ingested. As soon as transcript analysis and multimodal scoring finish, scores and question feedback will appear here.
+                Your answers are saved. Your scores and feedback will appear here in a minute or two.
               </p>
             </div>
           </section>
@@ -564,14 +547,13 @@ const EvaluationResults = () => {
             3. MULTIMODAL EVALUATION FRAMEWORK (Triad Signal Architecture)
            =================================================================== */}
         {isCompleted && (
-          <section aria-label="Multimodal Triad Framework" className="border-b pb-10 space-y-4" style={{ borderColor: 'var(--c-border)' }}>
+          <section aria-label="What was scored" className="border-b pb-10 space-y-4" style={{ borderColor: 'var(--c-border)' }}>
             <div>
-              <p className="c-eyebrow mb-1">Architecture</p>
               <h2 className="c-heading text-xl font-bold" style={{ color: 'var(--c-text)' }}>
-                Multimodal Assessment Framework
+                What was scored
               </h2>
               <p className="text-xs mt-1" style={{ color: 'var(--c-text-secondary)' }}>
-                MockAI synthesizes natural language content, acoustic speech dynamics, and computer-vision behavioral indicators into an integrated assessment.
+                Each answer is scored on three things: what you said, how you said it, and how you came across on camera.
               </p>
             </div>
 
@@ -585,14 +567,14 @@ const EvaluationResults = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <FileText className="w-4 h-4 text-[#FF6B35]" />
-                    <span className="text-xs font-bold text-white uppercase tracking-wider">Content & NLP</span>
+                    <span className="text-sm font-bold" style={{ color: 'var(--c-text)' }}>What you said</span>
                   </div>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded border font-medium bg-emerald-500/10 text-emerald-400/90 border-emerald-500/20">
-                    ACTIVE
+                  <span className="text-[11px] px-2 py-0.5 rounded border font-medium bg-emerald-500/10 text-emerald-400/90 border-emerald-500/20">
+                    Scored
                   </span>
                 </div>
                 <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                  BERT/DistilBERT semantic alignment against rubrics, question relevance, key technical concept coverage, and response completeness.
+                  Compared with what a strong answer covers: relevance, the key points, and how complete it was.
                 </p>
               </div>
 
@@ -604,14 +586,14 @@ const EvaluationResults = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Mic className="w-4 h-4 text-[#FF9F1C]" />
-                    <span className="text-xs font-bold text-white uppercase tracking-wider">Speech & Fluency</span>
+                    <span className="text-sm font-bold" style={{ color: 'var(--c-text)' }}>How you said it</span>
                   </div>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded border font-medium bg-emerald-500/10 text-emerald-400/90 border-emerald-500/20">
-                    ACTIVE
+                  <span className="text-[11px] px-2 py-0.5 rounded border font-medium bg-emerald-500/10 text-emerald-400/90 border-emerald-500/20">
+                    Scored
                   </span>
                 </div>
                 <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                  Acoustic speech rate (WPM), articulation pacing, speech pause duration, and disfluency/filler-word minimization.
+                  Speaking pace, pauses, and filler words such as "um" and "uh".
                 </p>
               </div>
 
@@ -623,23 +605,23 @@ const EvaluationResults = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Eye className={`w-4 h-4 ${hasVisionSummary ? 'text-[#FF9F1C]' : 'text-neutral-500'}`} />
-                    <span className="text-xs font-bold text-white uppercase tracking-wider">Vision & Behavior</span>
+                    <span className="text-sm font-bold" style={{ color: 'var(--c-text)' }}>On camera</span>
                   </div>
                   {hasVisionSummary ? (
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded border font-medium bg-emerald-500/10 text-emerald-400/90 border-emerald-500/20">
-                      ACTIVE
+                    <span className="text-[11px] px-2 py-0.5 rounded border font-medium bg-emerald-500/10 text-emerald-400/90 border-emerald-500/20">
+                      Scored
                     </span>
                   ) : facialSummary?.status === 'no_face_detected' ? (
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded border font-medium bg-amber-500/10 text-amber-400/90 border-amber-500/20">
-                      NO FACE
+                    <span className="text-[11px] px-2 py-0.5 rounded border font-medium bg-amber-500/10 text-amber-400/90 border-amber-500/20">
+                      No face found
                     </span>
                   ) : facialSummary?.status === 'analysis_failed' || facialSummary?.status === 'corrupt_media' ? (
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded border font-medium bg-rose-500/10 text-rose-400/90 border-rose-500/20">
-                      FAILED
+                    <span className="text-[11px] px-2 py-0.5 rounded border font-medium bg-rose-500/10 text-rose-400/90 border-rose-500/20">
+                      Video unreadable
                     </span>
                   ) : (
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded border font-medium bg-neutral-800 text-neutral-400 border-neutral-700">
-                      OFFLINE
+                    <span className="text-[11px] px-2 py-0.5 rounded border font-medium bg-neutral-800 text-neutral-400 border-neutral-700">
+                      Not scored
                     </span>
                   )}
                 </div>
@@ -647,31 +629,16 @@ const EvaluationResults = () => {
                   {offCameraAnswers.length > 0 && !hasVisionSummary
                     ? `You were out of frame for most of answer${offCameraAnswers.length > 1 ? 's' : ''} ${offCameraAnswers.join(', ')}. The camera share of those answers was scored on presence.`
                     : hasVisionSummary
-                    ? `Observable facial composure: ${facialSummary?.overall_composure || 'Not Assessed'}. Dominant expression: ${facialSummary?.dominant_expression || 'Not Observed'}.`
+                    ? `Expression steadiness: ${facialSummary?.overall_composure || 'Not Assessed'}. Most common expression: ${facialSummary?.dominant_expression || 'Not Observed'}.`
                     : facialSummary?.status === 'no_face_detected'
-                    ? 'Camera was recorded, but no human face was detected in responses. Non-verbal signals omitted without penalty.'
+                    ? 'Video was recorded but no face was found, so the camera part was not scored.'
                     : facialSummary?.status === 'analysis_failed' || facialSummary?.status === 'corrupt_media'
-                    ? 'Facial video analysis encountered an unreadable clip. Non-verbal signals omitted without penalty.'
-                    : 'Facial expression valence, eye gaze attentiveness, head pose composure, and observable micro-hesitations.'}
+                    ? 'The video could not be read, so the camera part was not scored.'
+                    : 'Whether you stayed in frame, faced the camera, and kept a steady expression.'}
                 </p>
               </div>
             </div>
 
-            {/* Technical Footnote / Signal Disclosure */}
-            <div
-              className="p-3.5 rounded-lg border text-xs flex items-start gap-2.5"
-              style={{ background: 'var(--c-surface-muted)', borderColor: 'var(--c-border)' }}
-            >
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-[#FF9F1C]" />
-              <span style={{ color: 'var(--c-text-secondary)' }}>
-                <strong className="font-semibold" style={{ color: 'var(--c-text)' }}>Evaluation Signal Notice: </strong>
-                {hasVisionSummary
-                  ? `Multimodal signals integrated from active NLP semantic analysis, speech delivery metrics, and real computer-vision facial composure analysis (${facialSummary?.evaluated_takes ?? answeredCount} takes evaluated).`
-                  : facialSummary?.status === 'no_face_detected'
-                  ? `Camera was active, but no valid face was detected across interview takes. Vision weight was safely redistributed to verbal modalities without penalty.`
-                  : `The composite overall score (${Math.round(overallScore)}%) is computed strictly from active NLP content and acoustic speech signals. Computer-vision facial analysis is unmounted; vision metrics will be integrated upon vision model deployment.`}
-              </span>
-            </div>
           </section>
         )}
 
@@ -681,10 +648,9 @@ const EvaluationResults = () => {
         {isCompleted && (
           <section aria-label="Performance Breakdown" className="border-b pb-10 space-y-4" style={{ borderColor: 'var(--c-border)' }}>
             <div>
-              <p className="c-eyebrow mb-1">Dimensions</p>
-              <h2 className="c-heading text-xl font-bold" style={{ color: 'var(--c-text)' }}>Behavioral & Delivery Indicators</h2>
+              <h2 className="c-heading text-xl font-bold" style={{ color: 'var(--c-text)' }}>Confidence, stress and expression</h2>
               <p className="text-xs mt-1" style={{ color: 'var(--c-text-secondary)' }}>
-                Multidimensional assessment signals across acoustic composure and observable non-verbal behavior.
+                Estimated from your speech and video. Shown only when your answers were long enough to judge.
               </p>
             </div>
 
@@ -693,12 +659,9 @@ const EvaluationResults = () => {
               {/* Confidence Indicator (FR 29-02 Visual Indicator) */}
               <div className="p-4 rounded-lg border space-y-2" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
                 <div className="flex items-center justify-between">
-                  <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--c-text-muted)' }}>
-                    Confidence Indicator
+                  <p className="text-sm font-bold" style={{ color: 'var(--c-text-muted)' }}>
+                    Confidence
                   </p>
-                  <span className="text-[10px] font-mono text-neutral-400">
-                    {confidenceLevel === 'Not Assessed' || confidenceScore == null ? 'UNASSESSED' : (hasVisionSummary ? 'MULTIMODAL' : 'ACOUSTIC')}
-                  </span>
                 </div>
                 <div className="flex items-baseline gap-2">
                   <p className="c-serif-num text-3xl font-bold" style={{ color: 'var(--c-text)' }}>
@@ -723,34 +686,30 @@ const EvaluationResults = () => {
                       />
                     </div>
                     <div className="flex justify-between text-[9px] font-mono text-neutral-500">
-                      <span>0% Dev</span>
-                      <span>60% Mod</span>
-                      <span>80% High</span>
+                      <span>Developing</span>
+                      <span>Moderate</span>
+                      <span>High</span>
                     </div>
                   </div>
                 ) : (
                   <div className="pt-1 space-y-1">
                     <div className="h-2 w-full rounded-full bg-neutral-800/50 border border-white/5 overflow-hidden" />
                     <div className="flex justify-between text-[9px] font-mono text-neutral-500">
-                      <span>Not Assessed</span>
-                      <span>Unmeasured</span>
+                      <span>Not enough to judge</span>
                     </div>
                   </div>
                 )}
                 <p className="text-[11px] leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                  Synthesized from vocal pacing, articulation fluency, and non-verbal poise.
+                  Based on how steadily you spoke, phrases like "I don't know", and your expression.
                 </p>
               </div>
 
               {/* Stress / Composure Indicator (FR 29-02 Visual Indicator) */}
               <div className="p-4 rounded-lg border space-y-2" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
                 <div className="flex items-center justify-between">
-                  <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--c-text-muted)' }}>
-                    Composure Indicator
+                  <p className="text-sm font-bold" style={{ color: 'var(--c-text-muted)' }}>
+                    Stress
                   </p>
-                  <span className="text-[10px] font-mono text-neutral-400">
-                    {stressLevel === 'Not Assessed' || stressScore == null ? 'UNASSESSED' : (hasVisionSummary ? 'MULTIMODAL' : 'BEHAVIORAL')}
-                  </span>
                 </div>
                 <div className="flex items-baseline gap-2">
                   <p className="c-serif-num text-3xl font-bold" style={{ color: 'var(--c-text)' }}>
@@ -775,32 +734,30 @@ const EvaluationResults = () => {
                       />
                     </div>
                     <div className="flex justify-between text-[9px] font-mono text-neutral-500">
-                      <span>0% Low</span>
-                      <span>35% Mod</span>
-                      <span>65% Elev</span>
+                      <span>Low</span>
+                      <span>Moderate</span>
+                      <span>Elevated</span>
                     </div>
                   </div>
                 ) : (
                   <div className="pt-1 space-y-1">
                     <div className="h-2 w-full rounded-full bg-neutral-800/50 border border-white/5 overflow-hidden" />
                     <div className="flex justify-between text-[9px] font-mono text-neutral-500">
-                      <span>Not Assessed</span>
-                      <span>Unmeasured</span>
+                      <span>Not enough to judge</span>
                     </div>
                   </div>
                 )}
                 <p className="text-[11px] leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                  Observable stability and tension minimization across sequential prompt takes.
+                  Based on pauses and hesitation in your speech, and visible tension on camera.
                 </p>
               </div>
 
               {/* Facial Expression Analysis */}
               <div className={`p-4 rounded-lg border space-y-1.5 ${hasVisionSummary ? '' : 'opacity-85'}`} style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
                 <div className="flex items-center justify-between">
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">
-                    Facial Expression
+                  <p className="text-sm font-bold text-neutral-300">
+                    Most common expression
                   </p>
-                  <span className="text-[10px] font-mono text-neutral-400">VISION</span>
                 </div>
                 {hasVisionSummary ? (
                   <p className="c-serif-num text-2xl font-bold text-white pt-0.5">
@@ -812,25 +769,24 @@ const EvaluationResults = () => {
                   </p>
                 ) : (
                   <p className="text-xs font-bold text-neutral-400 pt-1 font-mono">
-                    [Vision Offline]
+                    Camera not used
                   </p>
                 )}
                 <p className="text-[11px] leading-relaxed text-neutral-400">
                   {hasVisionSummary
-                    ? 'Model-derived primary facial expression observed across interview takes.'
+                    ? 'The expression the face model saw most often. It describes your face, not your feelings.'
                     : facialSummary?.status === 'no_face_detected'
-                    ? 'Camera was active, but no valid human face was observed in recorded takes.'
-                    : 'Camera was unmounted; facial expression cues omitted without fabrication.'}
+                    ? 'Video was recorded but no face was found.'
+                    : 'No video was recorded for these answers.'}
                 </p>
               </div>
 
               {/* Engagement Level */}
               <div className={`p-4 rounded-lg border space-y-1.5 ${hasVisionSummary ? '' : 'opacity-85'}`} style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
                 <div className="flex items-center justify-between">
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">
-                    Attentive Engagement
+                  <p className="text-sm font-bold text-neutral-300">
+                    Expression steadiness
                   </p>
-                  <span className="text-[10px] font-mono text-neutral-400">VISION</span>
                 </div>
                 {hasVisionSummary ? (
                   <p className="c-serif-num text-2xl font-bold text-white pt-0.5">
@@ -842,15 +798,15 @@ const EvaluationResults = () => {
                   </p>
                 ) : (
                   <p className="text-xs font-bold text-neutral-400 pt-1 font-mono">
-                    [Vision Offline]
+                    Camera not used
                   </p>
                 )}
                 <p className="text-[11px] leading-relaxed text-neutral-400">
                   {hasVisionSummary
-                    ? 'Eye presence consistency and observable non-verbal composure.'
+                    ? 'How much your expression changed during your answers.'
                     : facialSummary?.status === 'no_face_detected'
-                    ? 'No face detected in recording; behavioral composure unassessed.'
-                    : 'Attentiveness and head pose cues unrecorded; non-verbal analysis omitted.'}
+                    ? 'No face was found, so this was not measured.'
+                    : 'No video was recorded for these answers.'}
                 </p>
               </div>
             </div>
@@ -866,11 +822,10 @@ const EvaluationResults = () => {
         <section aria-label="Question Review" className="border-b pb-10 space-y-6" style={{ borderColor: 'var(--c-border)' }}>
           <div className="flex items-baseline justify-between">
             <div>
-              <p className="c-eyebrow mb-1">Audit</p>
-              <h2 className="c-heading text-xl font-bold" style={{ color: 'var(--c-text)' }}>Question Review & Multi-Signal Audit</h2>
+              <h2 className="c-heading text-xl font-bold" style={{ color: 'var(--c-text)' }}>Question by question</h2>
             </div>
-            <span className="text-xs font-mono font-bold" style={{ color: 'var(--c-text-muted)' }}>
-              {answeredCount}/{totalQuestions} Takes
+            <span className="text-xs font-semibold" style={{ color: 'var(--c-text-muted)' }}>
+              {answeredCount} of {totalQuestions} answered
             </span>
           </div>
 
@@ -1098,17 +1053,17 @@ const EvaluationResults = () => {
                           <span>Vision & Facial</span>
                         </span>
                         {offCamera ? (
-                          <span className="text-[10px] font-mono text-amber-400/90 font-medium">[AWAY]</span>
+                          <span className="text-[11px] text-amber-400/90 font-medium">Away</span>
                         ) : hasRealVision ? (
-                          <span className="text-[10px] font-mono text-emerald-400/90 font-medium">[ACTIVE]</span>
+                          <span className="text-[11px] text-emerald-400/90 font-medium">Scored</span>
                         ) : facial?.status === 'no_face_detected' ? (
-                          <span className="text-[10px] font-mono text-amber-400/90 font-medium">[NO FACE]</span>
+                          <span className="text-[11px] text-amber-400/90 font-medium">No face</span>
                         ) : facial?.status === 'analysis_failed' || facial?.status === 'corrupt_media' ? (
-                          <span className="text-[10px] font-mono text-rose-400/90 font-medium">[FAILED]</span>
+                          <span className="text-[11px] text-rose-400/90 font-medium">Failed</span>
                         ) : facial?.status === 'insufficient_data' ? (
-                          <span className="text-[10px] font-mono text-amber-400/90 font-medium">[UNCERTAIN]</span>
+                          <span className="text-[11px] text-amber-400/90 font-medium">Unclear</span>
                         ) : (
-                          <span className="text-[10px] font-mono text-neutral-500">[OFFLINE]</span>
+                          <span className="text-[11px] text-neutral-500">Not used</span>
                         )}
                       </div>
                       {hasRealVision ? (
@@ -1187,8 +1142,8 @@ const EvaluationResults = () => {
                     <div className="p-3 rounded-md border text-xs leading-relaxed"
                       style={{ background: 'var(--c-surface-muted)', borderColor: 'var(--c-border)', color: 'var(--c-text)' }}
                     >
-                      <span className="font-bold text-[10px] uppercase tracking-wider block mb-1" style={{ color: 'var(--c-text-muted)' }}>
-                        {resp?.response_mode === 'text' ? 'Typed Answer' : 'Transcript'}
+                      <span className="font-semibold text-xs block mb-1" style={{ color: 'var(--c-text-muted)' }}>
+                        {resp?.response_mode === 'text' ? 'Your typed answer' : 'What you said'}
                       </span>
                       "{transcript}"
                     </div>
@@ -1214,8 +1169,7 @@ const EvaluationResults = () => {
         {(strengths.length > 0 || weaknesses.length > 0 || suggestions.length > 0) && (
           <section aria-label="Strengths and Recommendations" className="border-b pb-10 space-y-6" style={{ borderColor: 'var(--c-border)' }}>
             <div>
-              <p className="c-eyebrow mb-1">Qualitative Insights</p>
-              <h2 className="c-heading text-xl font-bold" style={{ color: 'var(--c-text)' }}>Assessment Highlights & Coaching</h2>
+              <h2 className="c-heading text-xl font-bold" style={{ color: 'var(--c-text)' }}>Strengths and what to work on</h2>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

@@ -112,11 +112,9 @@ html.dark .candidate-app,
 
 .candidate-app .c-eyebrow {
   font-family: var(--c-font-body);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--c-accent);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--c-text-secondary);
 }
 
 .candidate-app .c-serif-num {
@@ -498,25 +496,6 @@ html.dark .candidate-app,
 .candidate-app .c-hud-tr { top: -1px; right: -1px; border-top: 1.5px solid; border-right: 1.5px solid; }
 .candidate-app .c-hud-bl { bottom: -1px; left: -1px; border-bottom: 1.5px solid; border-left: 1.5px solid; }
 .candidate-app .c-hud-br { bottom: -1px; right: -1px; border-bottom: 1.5px solid; border-right: 1.5px solid; }
-
-/* Subtle coordinate grid watermark */
-.candidate-app .c-tech-grid {
-  background-size: 24px 24px;
-  background-image:
-    linear-gradient(to right, var(--c-border) 1px, transparent 1px),
-    linear-gradient(to bottom, var(--c-border) 1px, transparent 1px);
-  opacity: 0.25;
-}
-
-/* Doodles and annotations */
-.candidate-app .c-tech-annotation {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--c-accent);
-  user-select: none;
-}
 
 /* Accent rule — eyebrow decoration */
 .candidate-app .c-gold-rule,

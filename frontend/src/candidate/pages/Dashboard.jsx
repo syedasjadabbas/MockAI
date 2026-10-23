@@ -33,7 +33,6 @@ const HeroScene3D = lazy(() => import('../components/HeroScene3D'));
 import {
   CornerReticles,
   LiveAudioWaveform,
-  TechnicalHUDTag,
   FrontendLayoutSchematic,
   BackendClusterSchematic,
   NeuralNodesDiagram,
@@ -41,24 +40,14 @@ import {
   SqlMatrixSchematic,
 } from '../components/TechnicalDoodles';
 
-// Map domain tracks to tailored micro schematics
+// Map domain tracks to small line drawings
 function getDomainSchematic(categoryName = '') {
   const str = categoryName.toLowerCase();
-  if (str.includes('front') || str.includes('web') || str.includes('react') || str.includes('ui')) {
-    return FrontendLayoutSchematic;
-  }
-  if (str.includes('back') || str.includes('node') || str.includes('server') || str.includes('distribut')) {
-    return BackendClusterSchematic;
-  }
-  if (str.includes('ai') || str.includes('ml') || str.includes('learning') || str.includes('neural')) {
-    return NeuralNodesDiagram;
-  }
-  if (str.includes('behav') || str.includes('leader') || str.includes('culture') || str.includes('hr')) {
-    return BehavioralDialogueSchematic;
-  }
-  if (str.includes('data') || str.includes('sql') || str.includes('db') || str.includes('analyt')) {
-    return SqlMatrixSchematic;
-  }
+  if (str.includes('front') || str.includes('web') || str.includes('react') || str.includes('ui')) return FrontendLayoutSchematic;
+  if (str.includes('back') || str.includes('node') || str.includes('server') || str.includes('distribut')) return BackendClusterSchematic;
+  if (str.includes('ai') || str.includes('ml') || str.includes('learning') || str.includes('neural')) return NeuralNodesDiagram;
+  if (str.includes('behav') || str.includes('leader') || str.includes('culture') || str.includes('hr')) return BehavioralDialogueSchematic;
+  if (str.includes('data') || str.includes('sql') || str.includes('db') || str.includes('analyt')) return SqlMatrixSchematic;
   return null;
 }
 
@@ -163,7 +152,6 @@ const Dashboard = () => {
   return (
     <div className="candidate-app min-h-screen flex flex-col font-sans relative" style={{ background: 'var(--c-bg)' }}>
       <AnimatedBackground3D />
-      
       {/* Navigation */}
       <div className="relative z-10">
         <CandidateNav />
@@ -178,8 +166,6 @@ const Dashboard = () => {
       >
         <div className="c-page py-10 sm:py-16">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-            
-            {/* Left Content Area */}
             <div className="lg:col-span-7 space-y-5">
               <div className="flex flex-wrap items-center gap-2.5">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold border"
@@ -193,10 +179,10 @@ const Dashboard = () => {
                   <span>Welcome back, {session?.name || 'Candidate'}</span>
                 </div>
 
-                <div className="hidden sm:flex items-center gap-2 pl-1">
+                <div className="hidden sm:flex items-center gap-2 pl-1" aria-hidden="true">
                   <LiveAudioWaveform bars={8} height={14} color="var(--c-accent)" />
-                  <TechnicalHUDTag value="STUDIO READY" tone="accent" />
                 </div>
+
               </div>
 
               <h1 className="c-heading text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-[1.1]"
@@ -209,7 +195,7 @@ const Dashboard = () => {
                 className="text-sm sm:text-base leading-relaxed max-w-xl"
                 style={{ color: 'var(--c-text-secondary)' }}
               >
-                Simulate realistic interviews with timed prompts, audio-visual recording, and deterministic evaluation scoring.
+                Pick a field, answer five questions on camera, and get feedback on every answer.
               </p>
 
               <div className="flex flex-wrap items-center gap-3 pt-2">
@@ -231,25 +217,18 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* Right 3D Visual Asset — Real WebGL 3D Interactive Scene */}
+
+            {/* Right: 3D scene */}
             <div className="lg:col-span-5 relative flex items-center justify-center">
               <div
                 className="relative w-full aspect-[4/3] rounded-lg overflow-hidden border shadow-2xl group"
-                style={{
-                  borderColor: 'var(--c-border)',
-                  background: 'var(--c-surface)',
-                }}
+                style={{ borderColor: 'var(--c-border)', background: 'var(--c-surface)' }}
               >
                 <CornerReticles size={12} color="var(--c-accent)" />
-                
                 <Suspense
                   fallback={
                     <div className="w-full h-full flex items-center justify-center bg-[#111111]">
-                      <img
-                        src={CANDIDATE_IMAGES.dashboardHero}
-                        alt="MockAI 3D Microphone & AI Analysis Core"
-                        className="w-full h-full object-cover"
-                      />
+                      <img src={CANDIDATE_IMAGES.dashboardHero} alt="MockAI" className="w-full h-full object-cover" />
                     </div>
                   }
                 >
@@ -257,7 +236,6 @@ const Dashboard = () => {
                 </Suspense>
               </div>
             </div>
-
           </div>
         </div>
       </section>
@@ -270,7 +248,6 @@ const Dashboard = () => {
           <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2 mb-6">
             <div className="flex items-center gap-3">
               <div>
-                <p className="c-eyebrow mb-1">Telemetry</p>
                 <h2 className="c-heading text-xl font-bold" style={{ color: 'var(--c-text)' }}>Practice Record</h2>
               </div>
             </div>
@@ -286,10 +263,9 @@ const Dashboard = () => {
             {/* Total Sessions */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <p className="text-[11px] uppercase tracking-wider font-bold" style={{ color: 'var(--c-text-muted)' }}>
+                <p className="text-xs font-semibold" style={{ color: 'var(--c-text-muted)' }}>
                   Total Sessions
                 </p>
-                <span className="c-tech-annotation opacity-40 hidden sm:inline" aria-hidden="true">SESSION.LOG</span>
               </div>
               <p className="c-serif-num text-3xl sm:text-4xl font-bold" style={{ color: 'var(--c-text)' }}>
                 {loading ? '—' : summary?.totalInterviews ?? 0}
@@ -305,10 +281,9 @@ const Dashboard = () => {
             {/* Completed */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <p className="text-[11px] uppercase tracking-wider font-bold" style={{ color: 'var(--c-text-muted)' }}>
+                <p className="text-xs font-semibold" style={{ color: 'var(--c-text-muted)' }}>
                   Completed
                 </p>
-                <span className="c-tech-annotation opacity-40 hidden sm:inline" aria-hidden="true">EVAL.DONE</span>
               </div>
               <p className="c-serif-num text-3xl sm:text-4xl font-bold text-emerald-500">
                 {loading ? '—' : summary?.completedInterviews ?? 0}
@@ -330,10 +305,9 @@ const Dashboard = () => {
             {/* Average Score */}
             <div className="col-span-2 md:col-span-1 space-y-2">
               <div className="flex items-center justify-between">
-                <p className="text-[11px] uppercase tracking-wider font-bold" style={{ color: 'var(--c-text-muted)' }}>
+                <p className="text-xs font-semibold" style={{ color: 'var(--c-text-muted)' }}>
                   Average Score
                 </p>
-                <span className="c-tech-annotation opacity-40 hidden sm:inline" aria-hidden="true">ACCURACY</span>
               </div>
               <p className="c-serif-num text-3xl sm:text-4xl font-bold" style={{ color: 'var(--c-text)' }}>
                 {loading ? '—' : hasScore ? `${Math.round(summary.averageScore)}%` : '—'}
@@ -353,7 +327,6 @@ const Dashboard = () => {
           <section aria-label="Available Practice Tracks" className="border-b pb-12" style={{ borderColor: 'var(--c-border)' }}>
             <div className="flex items-center justify-between mb-6">
               <div>
-                <p className="c-eyebrow mb-1">Domains</p>
                 <h2 className="c-heading text-xl font-bold" style={{ color: 'var(--c-text)' }}>Interview Tracks</h2>
               </div>
               <Link to="/interview/goal" className="text-xs font-semibold flex items-center gap-1 hover:opacity-80 transition-opacity" style={{ color: 'var(--c-text-secondary)' }}>
@@ -400,7 +373,7 @@ const Dashboard = () => {
                         {cat.name}
                       </h3>
                       <p className="text-xs leading-relaxed line-clamp-2" style={{ color: 'var(--c-text-secondary)' }}>
-                        {cat.description || 'Targeted interview practice with structured prompts and AI scoring.'}
+                        {cat.description || 'Interview questions for this field, with feedback on every answer.'}
                       </p>
                     </div>
 
@@ -408,7 +381,7 @@ const Dashboard = () => {
                       style={{ borderColor: 'var(--c-border)' }}
                     >
                       <span style={{ color: 'var(--c-text-muted)' }}>
-                        {cat.questionCount ? `${cat.questionCount} Questions` : 'Official Track'}
+                        {cat.questionCount ? `${cat.questionCount} questions` : 'Interview track'}
                       </span>
                       <span className="flex items-center gap-1 font-semibold text-orange-500" style={{ color: 'var(--c-accent)' }}>
                         {isLaunching ? 'Preparing...' : 'Start Session'}
@@ -426,7 +399,6 @@ const Dashboard = () => {
         <section aria-label="Recent Practice Sessions">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <p className="c-eyebrow mb-1">Activity</p>
               <h2 className="c-heading text-xl font-bold" style={{ color: 'var(--c-text)' }}>Recent Sessions</h2>
             </div>
             {hasInterviews && (
@@ -447,7 +419,7 @@ const Dashboard = () => {
             <div className="py-10 border-t border-b" style={{ borderColor: 'var(--c-border)' }}>
               <h3 className="text-base font-bold mb-1.5" style={{ color: 'var(--c-text)' }}>No interviews recorded yet</h3>
               <p className="text-xs max-w-sm mb-5" style={{ color: 'var(--c-text-secondary)' }}>
-                Begin your first mock session to unlock speech fluency analysis and structured evaluation scoring.
+                Your scores and feedback will show up here after your first interview.
               </p>
               <Link to="/interview/goal" className="c-btn c-btn-primary px-5 py-2.5 text-xs font-semibold rounded-md">
                 Start Your First Interview

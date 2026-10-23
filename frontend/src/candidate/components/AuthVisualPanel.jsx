@@ -56,10 +56,6 @@ const AuthVisualPanel = () => {
         >
           <CornerReticles size={10} color="var(--c-accent)" />
           
-          <div className="flex items-center justify-between mb-2">
-            <p className="c-eyebrow" style={{ color: '#FF9F1C' }}>Practice Platform</p>
-          </div>
-          
           <h1 className="c-heading text-2xl xl:text-3xl font-bold leading-tight mb-4" style={{ color: '#FFFFFF' }}>
             Practice before it matters.
           </h1>
@@ -91,7 +87,7 @@ const AuthVisualPanel = () => {
           </div>
 
           <p className="text-xs leading-relaxed text-slate-300">
-            Simulate realistic interviews with timed prompts, speech recording, and structured evaluation scoring.
+            Answer interview questions on camera and get feedback on every answer.
           </p>
         </div>
       </div>

@@ -190,9 +190,6 @@ const Mentors = () => {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <p className="c-eyebrow" style={{ color: 'var(--c-accent, #FF6B35)' }}>
-              1-on-1 Guidance
-            </p>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mt-1" style={{ color: 'var(--c-text)' }}>
               Technical Mentors & Coaching
             </h1>
@@ -592,12 +589,12 @@ const Mentors = () => {
                 icon={CalendarCheck2}
                 title={
                   appointmentError
-                    ? 'Appointment Ledger Awaiting Backend Deployment'
+                    ? 'Bookings are not available yet'
                     : `No ${appointmentFilter !== 'all' ? appointmentFilter : ''} Mentorship Sessions`
                 }
                 description={
                   appointmentError
-                    ? 'When the /candidate/appointments endpoint is mounted, all upcoming and past booked coaching sessions will appear in this ledger.'
+                    ? 'Mentor booking is coming soon. Your booked sessions will be listed here.'
                     : 'You do not have any sessions scheduled yet. Discover a technical mentor to book a 1-on-1 interview practice session.'
                 }
                 actionLabel="Find a Mentor"

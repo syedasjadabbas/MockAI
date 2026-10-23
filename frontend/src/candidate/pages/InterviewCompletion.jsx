@@ -13,11 +13,6 @@ import InterviewFlowLayout from '../layouts/InterviewFlowLayout';
 import { getActiveInterview, getRealEvaluation, startEvaluation, endInterview } from '../services/candidateApi';
 import { formatDate } from '../../utils/dateFormat';
 import { CANDIDATE_IMAGES } from '../assets/images';
-import {
-  AssessmentDossierSeal,
-  CornerReticles,
-  TechnicalHUDTag,
-} from '../components/TechnicalDoodles';
 
 const InterviewCompletion = () => {
   const { id } = useParams();
@@ -150,19 +145,13 @@ const InterviewCompletion = () => {
         
         {/* Top Context & Reference */}
         <div className="flex flex-wrap items-center justify-between gap-4 border-b pb-4" style={{ borderColor: 'var(--c-border)' }}>
-          <div className="flex items-center gap-2.5">
-            <span className="c-eyebrow">Session Status</span>
-            <span style={{ color: 'var(--c-border)' }}>/</span>
-            <span className="text-xs font-mono px-2 py-0.5 rounded border font-semibold"
-              style={{ borderColor: 'var(--c-border)', background: 'var(--c-surface-muted)', color: 'var(--c-text-secondary)' }}
-            >
-              REF: {id.slice(-6).toUpperCase()}
-            </span>
-          </div>
+          <span className="text-xs font-medium" style={{ color: 'var(--c-text-muted)' }}>
+            {formatDate(interview.completedAt || interview.createdAt)}
+          </span>
 
           <div className="flex items-center gap-2">
             <span className="c-badge c-badge-success flex items-center gap-1 font-semibold text-xs">
-              <Check className="w-3 h-3" /> Submitted & Finalized
+              <Check className="w-3 h-3" /> Submitted
             </span>
           </div>
         </div>
@@ -170,24 +159,14 @@ const InterviewCompletion = () => {
         {/* Hero Title Statement directly on page */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <p className="c-eyebrow mb-1">Receipt</p>
             <h1 className="c-heading text-2xl sm:text-3xl font-bold" style={{ color: 'var(--c-text)' }}>
               Interview Finished
             </h1>
             <p className="text-xs sm:text-sm mt-1 max-w-2xl leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-              Your responses for <strong className="font-semibold" style={{ color: 'var(--c-text)' }}>{interview.role}</strong> have been finalized and recorded.
+              Your responses for <strong className="font-semibold" style={{ color: 'var(--c-text)' }}>{interview.role}</strong> are saved.
             </p>
           </div>
 
-          <div className="hidden sm:flex items-center gap-3 pr-2">
-            <AssessmentDossierSeal size={40} />
-            <div className="text-left">
-              <span className="c-tech-annotation block text-[10px]">INGESTION COMPLETE</span>
-              <span className="text-xs font-mono font-bold" style={{ color: 'var(--c-text)' }}>
-                {answeredCount}/{totalQuestions} TAKES
-              </span>
-            </div>
-          </div>
         </div>
 
         {/* Main Two-Column Summary & Evaluation Dossier */}
@@ -200,8 +179,7 @@ const InterviewCompletion = () => {
             <div className="space-y-3">
               <div className="border-b pb-2 flex items-center justify-between" style={{ borderColor: 'var(--c-border)' }}>
                 <div>
-                  <p className="c-eyebrow mb-0.5">Overview</p>
-                  <h2 className="c-heading text-base font-bold" style={{ color: 'var(--c-text)' }}>Session Summary</h2>
+                  <h2 className="c-heading text-base font-bold" style={{ color: 'var(--c-text)' }}>Summary</h2>
                 </div>
                 <span className="text-xs font-mono" style={{ color: 'var(--c-text-muted)' }}>
                   {formatDate(interview.completedAt || interview.createdAt)}
@@ -248,11 +226,10 @@ const InterviewCompletion = () => {
             <div className="space-y-3">
               <div className="border-b pb-2 flex items-center justify-between" style={{ borderColor: 'var(--c-border)' }}>
                 <div>
-                  <p className="c-eyebrow mb-0.5">Prompts</p>
-                  <h3 className="c-heading text-base font-bold" style={{ color: 'var(--c-text)' }}>Recorded Takes</h3>
+                  <h3 className="c-heading text-base font-bold" style={{ color: 'var(--c-text)' }}>Your answers</h3>
                 </div>
                 <span className="text-xs font-mono font-bold" style={{ color: 'var(--c-text-secondary)' }}>
-                  {answeredCount}/{totalQuestions} Received
+                  {answeredCount} of {totalQuestions} answered
                 </span>
               </div>
 
@@ -300,28 +277,22 @@ const InterviewCompletion = () => {
           {/* Right Column: Actions (5 cols) */}
           <div className="lg:col-span-5 space-y-6">
 
-            {/* 3D Completion Visual */}
             <div className="relative rounded-lg overflow-hidden border group" style={{ borderColor: 'var(--c-border)', aspectRatio: '16/9' }}>
               <img
                 src={CANDIDATE_IMAGES.completionSeal}
-                alt="Interview Complete"
+                alt=""
                 className="w-full h-full object-cover opacity-90 transition-transform duration-700 group-hover:scale-105"
               />
               <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, var(--c-bg) 0%, transparent 60%)' }} />
-              <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between">
-                <span className="c-tech-annotation px-1.5 py-0.5 rounded bg-black/60 text-emerald-400 border border-white/10 text-[10px]">[SESSION FINALIZED]</span>
-                <span className="c-tech-annotation px-1.5 py-0.5 rounded bg-black/60 text-orange-400 border border-white/10 text-[10px]">{answeredCount}/{totalQuestions} TAKES</span>
-              </div>
             </div>
-            
+
             {/* Evaluation Status & Actions Panel */}
             <div className="c-card p-5 space-y-4 rounded-lg border"
               style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}
             >
               <div className="border-b pb-2.5 flex items-center justify-between" style={{ borderColor: 'var(--c-border)' }}>
                 <div>
-                  <p className="c-eyebrow mb-0.5">Report</p>
-                  <h3 className="c-heading text-base font-bold" style={{ color: 'var(--c-text)' }}>Evaluation Status</h3>
+                  <h3 className="c-heading text-base font-bold" style={{ color: 'var(--c-text)' }}>Your feedback</h3>
                 </div>
 
                 {isEvalCompleted ? (

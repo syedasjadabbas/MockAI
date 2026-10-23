@@ -27,7 +27,6 @@ import { getCategories, startInterview, interpretGoal } from '../services/candid
 import { CANDIDATE_IMAGES } from '../assets/images';
 import {
   CornerReticles,
-  TechnicalHUDTag,
   FrontendLayoutSchematic,
   BackendClusterSchematic,
   NeuralNodesDiagram,
@@ -35,6 +34,7 @@ import {
   SqlMatrixSchematic,
 } from '../components/TechnicalDoodles';
 
+// Map domain tracks to small line drawings
 function getDomainSchematic(categoryName = '') {
   const str = categoryName.toLowerCase();
   if (str.includes('front') || str.includes('web') || str.includes('react') || str.includes('ui')) return FrontendLayoutSchematic;
@@ -292,15 +292,13 @@ const GoalSelection = () => {
     <InterviewFlowLayout step="goal">
       <div className="py-6 sm:py-10 space-y-8">
         
-        {/* Header with 3D Visual */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
           <div className="lg:col-span-8">
-            <p className="c-eyebrow mb-1">Goal Setup</p>
             <h1 className="c-heading text-2xl sm:text-3xl font-bold" style={{ color: 'var(--c-text)' }}>
               {currentPrompt}
             </h1>
             <p className="text-xs sm:text-sm mt-1" style={{ color: 'var(--c-text-secondary)' }}>
-              Choose a practice track to generate tailored interview prompts and evaluation criteria.
+              Choose a field and we'll pick five interview questions for it.
             </p>
           </div>
           <div className="hidden lg:block lg:col-span-4">
@@ -308,10 +306,7 @@ const GoalSelection = () => {
               style={{ borderColor: 'var(--c-border)', background: 'var(--c-surface)' }}
             >
               <CornerReticles size={8} color="var(--c-accent)" />
-              <img src={CANDIDATE_IMAGES.neuralSphere} alt="AI Neural Network" className="w-full h-full object-cover opacity-90 transition-transform duration-700 group-hover:scale-105" />
-              <div className="absolute bottom-2 left-2">
-                <span className="c-tech-annotation px-1.5 py-0.5 rounded bg-black/60 text-orange-400 border border-white/10">[AI NETWORK]</span>
-              </div>
+              <img src={CANDIDATE_IMAGES.neuralSphere} alt="" className="w-full h-full object-cover opacity-90 transition-transform duration-700 group-hover:scale-105" />
             </div>
           </div>
         </div>
@@ -365,9 +360,6 @@ const GoalSelection = () => {
                           >
                             <Icon className="w-4 h-4" />
                           </div>
-                          <span className="c-tech-annotation opacity-40 group-hover:opacity-100 transition-opacity">
-                            {type.id === 'technical' ? '[DOMAIN]' : type.id === 'behavioral' ? '[DIALOGUE]' : '[SCENARIO]'}
-                          </span>
                         </div>
                         <div>
                           <span className="text-xs font-bold block group-hover:text-orange-500 transition-colors" style={{ color: 'var(--c-text)' }}>

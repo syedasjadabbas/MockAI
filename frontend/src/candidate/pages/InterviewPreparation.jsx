@@ -9,17 +9,13 @@ import {
   AlertCircle,
   RefreshCw,
   Keyboard,
+  VideoOff,
 } from 'lucide-react';
 import InterviewFlowLayout from '../layouts/InterviewFlowLayout';
 import CandidateEmptyState from '../components/CandidateEmptyState';
 import { getActiveInterview, recordConsent } from '../services/candidateApi';
 import { CANDIDATE_IMAGES } from '../assets/images';
-import {
-  CornerReticles,
-  OpticalLensReticle,
-  LiveAudioWaveform,
-  TechnicalHUDTag,
-} from '../components/TechnicalDoodles';
+import { CornerReticles, OpticalLensReticle, LiveAudioWaveform } from '../components/TechnicalDoodles';
 
 const InterviewPreparation = () => {
   const { id } = useParams();
@@ -184,7 +180,7 @@ const InterviewPreparation = () => {
         {/* Header directly on page */}
         <div className="border-b pb-6" style={{ borderColor: 'var(--c-border)' }}>
           <div className="flex items-center gap-2 text-xs mb-1.5" style={{ color: 'var(--c-text-muted)' }}>
-            <span className="font-semibold" style={{ color: 'var(--c-text)' }}>Practice Studio</span>
+            <span className="font-semibold" style={{ color: 'var(--c-text)' }}>Practice interview</span>
             <span>/</span>
             <span className="capitalize">{interview.type || 'Technical'} Track</span>
           </div>
@@ -192,7 +188,7 @@ const InterviewPreparation = () => {
             {interview.role}
           </h1>
           <p className="text-xs sm:text-sm mt-1 max-w-2xl leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-            Calibrate your audio and video sensors, verify background lighting, and enter the studio when you are ready.
+Check that your camera and microphone work and that your face is well lit, then start when you're ready.
           </p>
         </div>
 
@@ -223,11 +219,10 @@ const InterviewPreparation = () => {
                 />
               ) : (
                 <div className="flex-1 flex flex-col items-center justify-center p-6 text-center gap-3 relative">
-                  {/* 3D Mic visual as idle background */}
                   <div className="absolute inset-0 overflow-hidden rounded-lg">
-                    <img 
-                      src={CANDIDATE_IMAGES.studioMic} 
-                      alt="Studio Microphone" 
+                    <img
+                      src={CANDIDATE_IMAGES.studioMic}
+                      alt=""
                       className="w-full h-full object-cover opacity-25"
                     />
                     <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, var(--c-surface-card) 20%, transparent 80%)' }} />
@@ -237,10 +232,10 @@ const InterviewPreparation = () => {
                   </div>
                   <div className="relative z-10 space-y-0.5">
                     <p className="text-xs font-bold" style={{ color: 'var(--c-text)' }}>
-                      Camera &amp; Microphone Inactive
+                      Camera and microphone are off
                     </p>
                     <p className="text-[11px] max-w-xs" style={{ color: 'var(--c-text-muted)' }}>
-                      Authorize hardware access below to verify audio clarity and framing.
+                      Turn them on below to check your framing and sound.
                     </p>
                   </div>
                 </div>
@@ -249,58 +244,38 @@ const InterviewPreparation = () => {
               {/* Viewfinder Top Bar Overlay */}
               <div className="absolute top-3 inset-x-3 flex items-center justify-between pointer-events-none">
                 <span 
-                  className="px-2 py-0.5 rounded text-[10px] font-mono font-bold border"
+                  className="px-2 py-0.5 rounded text-[11px] font-semibold border"
                   style={{
                     background: cameraStatus === 'granted' ? 'var(--c-badge-success-bg)' : 'var(--c-badge-muted-bg)',
                     color: cameraStatus === 'granted' ? 'var(--c-badge-success-text)' : 'var(--c-badge-muted-text)',
                     borderColor: 'var(--c-border)'
                   }}
                 >
-                  {cameraStatus === 'granted' ? '● SENSOR ACTIVE' : 'OFFLINE'}
+                  {cameraStatus === 'granted' ? 'Camera on' : 'Camera off'}
                 </span>
-
-                <div className="flex items-center gap-2">
-                  {cameraStatus === 'granted' && micStatus === 'granted' && (
-                    <LiveAudioWaveform bars={8} height={14} color="var(--c-accent)" />
-                  )}
-                  <span 
-                    className="px-2 py-0.5 rounded text-[10px] font-mono border"
-                    style={{
-                      background: 'var(--c-surface-card)',
-                      borderColor: 'var(--c-border)',
-                      color: 'var(--c-text)'
-                    }}
-                  >
-                    1080p
-                  </span>
-                </div>
+                {cameraStatus === 'granted' && micStatus === 'granted' && (
+                  <LiveAudioWaveform bars={8} height={14} color="var(--c-accent)" />
+                )}
               </div>
 
-              {/* Audio Overlay on Live Viewfinder */}
               {cameraStatus === 'granted' && (
-                <div className="absolute bottom-3 inset-x-3 pointer-events-none">
-                  <div 
+                <div className="absolute bottom-3 inset-x-3 pointer-events-none" aria-hidden="true">
+                  <div
                     className="px-3 py-1.5 rounded-md border flex items-center justify-between gap-2.5"
-                    style={{
-                      background: 'var(--c-surface-card)',
-                      borderColor: 'var(--c-border)',
-                      color: 'var(--c-text)'
-                    }}
+                    style={{ background: 'var(--c-surface-card)', borderColor: 'var(--c-border)', color: 'var(--c-text)' }}
                   >
-                    <div className="flex items-center gap-2">
-                      <Mic className="w-3.5 h-3.5 text-orange-500 shrink-0" />
-                      <span className="text-[10px] font-mono">INPUT LEVEL</span>
-                    </div>
+                    <Mic className="w-3.5 h-3.5 text-orange-500 shrink-0" />
                     <LiveAudioWaveform bars={12} height={12} color="var(--c-accent)" />
                   </div>
                 </div>
               )}
+
             </div>
 
             {/* LEVEL 2 — Equipment Verification Rows (No nested box container) */}
             <div className="space-y-3">
-              <h3 className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--c-text-muted)' }}>
-                Equipment Status
+              <h3 className="text-sm font-bold" style={{ color: 'var(--c-text)' }}>
+                Your devices
               </h3>
 
               <div className="divide-y text-xs border-t border-b" style={{ borderColor: 'var(--c-border)' }}>
@@ -318,7 +293,7 @@ const InterviewPreparation = () => {
                       <Camera className="w-3.5 h-3.5" />
                     </div>
                     <div>
-                      <p className="font-bold" style={{ color: 'var(--c-text)' }}>Camera Sensor</p>
+                      <p className="font-bold" style={{ color: 'var(--c-text)' }}>Camera</p>
                       <p className="text-[11px]" style={{ color: 'var(--c-text-muted)' }}>
                         Response video recording
                       </p>
@@ -420,7 +395,7 @@ const InterviewPreparation = () => {
                       className="c-btn c-btn-primary w-full py-3 text-xs font-bold rounded-md flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <RefreshCw className="w-3.5 h-3.5" />
-                      <span>Authorize Camera & Microphone</span>
+                      <span>Turn on camera and microphone</span>
                     </button>
                     <button
                       onClick={handleTextOnly}
@@ -451,13 +426,12 @@ const InterviewPreparation = () => {
             {/* Session Specifications Ledger */}
             <div className="space-y-3">
               <div className="border-b pb-2" style={{ borderColor: 'var(--c-border)' }}>
-                <p className="c-eyebrow mb-0.5">Specifications</p>
                 <h2 className="c-heading text-base font-bold" style={{ color: 'var(--c-text)' }}>Session Overview</h2>
               </div>
 
               <dl className="divide-y text-xs" style={{ borderColor: 'var(--c-border)' }}>
                 <div className="py-2.5 flex items-center justify-between">
-                  <dt style={{ color: 'var(--c-text-secondary)' }}>Target Role</dt>
+                  <dt style={{ color: 'var(--c-text-secondary)' }}>Role</dt>
                   <dd className="font-bold text-right" style={{ color: 'var(--c-text)' }}>{interview.role}</dd>
                 </div>
 
@@ -467,13 +441,13 @@ const InterviewPreparation = () => {
                 </div>
 
                 <div className="py-2.5 flex items-center justify-between">
-                  <dt style={{ color: 'var(--c-text-secondary)' }}>Question Volume</dt>
-                  <dd className="font-bold text-right font-mono" style={{ color: 'var(--c-text)' }}>{questionCount} Prompts</dd>
+                  <dt style={{ color: 'var(--c-text-secondary)' }}>Questions</dt>
+                  <dd className="font-bold text-right font-mono" style={{ color: 'var(--c-text)' }}>{questionCount} questions</dd>
                 </div>
 
                 <div className="py-2.5 flex items-center justify-between">
-                  <dt style={{ color: 'var(--c-text-secondary)' }}>Estimated Runtime</dt>
-                  <dd className="font-bold text-right font-mono" style={{ color: 'var(--c-text)' }}>~{minDuration}–{maxDuration} Min</dd>
+                  <dt style={{ color: 'var(--c-text-secondary)' }}>Estimated time</dt>
+                  <dd className="font-bold text-right font-mono" style={{ color: 'var(--c-text)' }}>~{minDuration}–{maxDuration} min</dd>
                 </div>
               </dl>
             </div>
@@ -481,8 +455,7 @@ const InterviewPreparation = () => {
             {/* Structured Protocol */}
             <div className="space-y-3">
               <div className="border-b pb-2" style={{ borderColor: 'var(--c-border)' }}>
-                <p className="c-eyebrow mb-0.5">Instructions</p>
-                <h2 className="c-heading text-base font-bold" style={{ color: 'var(--c-text)' }}>Protocol & Rules</h2>
+                <h2 className="c-heading text-base font-bold" style={{ color: 'var(--c-text)' }}>Before you start</h2>
               </div>
 
               <div className="space-y-3 text-xs">
@@ -520,10 +493,10 @@ const InterviewPreparation = () => {
             <div className="pt-2 border-t" style={{ borderColor: 'var(--c-border)' }}>
               <div className="flex items-center gap-2 mb-1">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-                <span className="font-bold text-[11px]" style={{ color: 'var(--c-text)' }}>Privacy Guarantee</span>
+                <span className="font-bold text-[11px]" style={{ color: 'var(--c-text)' }}>Your privacy</span>
               </div>
               <p className="text-[11px] leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                Sensors are only recorded during active answering takes. Video slices are safely transmitted for evaluation processing.
+                Recording only runs while you answer a question. Your recordings are used only to evaluate this interview.
               </p>
             </div>
 

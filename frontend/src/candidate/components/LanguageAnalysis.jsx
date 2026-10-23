@@ -31,7 +31,6 @@ export const LanguageSummarySection = ({ summary }) => {
   return (
     <section aria-label="Language and Tone" className="border-b pb-10 space-y-4" style={{ borderColor: 'var(--c-border)' }}>
       <div>
-        <p className="c-eyebrow mb-1">Language</p>
         <h2 className="c-heading text-xl font-bold" style={{ color: 'var(--c-text)' }}>Grammar, Clarity & Tone</h2>
         <p className="text-xs mt-1" style={{ color: 'var(--c-text-secondary)' }}>
           How well your answers were expressed, across {summary.evaluated_answers} answered question{summary.evaluated_answers === 1 ? '' : 's'}.

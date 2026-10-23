@@ -5,9 +5,9 @@ import { isAuthenticated, getSession } from '../services/candidateAuth';
 import logo from '../../assets/logo.png';
 
 const PUBLIC_NAV_LINKS = [
-  { label: 'How It Works', href: '#how-it-works' },
-  { label: 'Domains', href: '#tracks' },
-  { label: 'Evaluation', href: '#evaluation' },
+  { label: 'How it works', href: '#how-it-works' },
+  { label: 'Tracks', href: '#tracks' },
+  { label: 'Feedback', href: '#evaluation' },
   { label: 'Why MockAI', href: '#why-mockai' },
 ];
 

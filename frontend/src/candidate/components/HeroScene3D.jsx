@@ -729,7 +729,7 @@ const HeroScene3D = () => {
       />
       {!isLoaded && (
         <div className="absolute inset-0 bg-[#111111] flex items-center justify-center rounded-[inherit]">
-          <span className="c-tech-annotation text-orange-400">[INITIALIZING 3D ENGINE...]</span>
+          <span className="text-xs" style={{ color: 'var(--c-text-muted)' }}>Loading…</span>
         </div>
       )}
     </div>

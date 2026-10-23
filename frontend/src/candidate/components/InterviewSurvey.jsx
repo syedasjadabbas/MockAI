@@ -72,7 +72,6 @@ const InterviewSurvey = ({ interviewId }) => {
   return (
     <section aria-label="Feedback Survey" className="border-b pb-10 space-y-4" style={{ borderColor: 'var(--c-border)' }}>
       <div>
-        <p className="c-eyebrow mb-1">Survey</p>
         <h2 className="c-heading text-xl font-bold" style={{ color: 'var(--c-text)' }}>Rate This Session</h2>
         <p className="text-xs mt-1" style={{ color: 'var(--c-text-secondary)' }}>
           Takes under a minute. Your answers help us measure how accurate and useful MockAI is.

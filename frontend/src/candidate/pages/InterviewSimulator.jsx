@@ -18,11 +18,7 @@ import {
   Save,
 } from 'lucide-react';
 import InterviewFlowLayout from '../layouts/InterviewFlowLayout';
-import {
-  CornerReticles,
-  LiveAudioWaveform,
-  TechnicalHUDTag,
-} from '../components/TechnicalDoodles';
+import { CornerReticles, LiveAudioWaveform } from '../components/TechnicalDoodles';
 import {
   getActiveInterview,
   submitResponse,
@@ -593,15 +589,13 @@ const InterviewSimulator = () => {
                   <div className="flex items-center gap-3">
                     <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse shrink-0" />
                     <div>
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-red-500">Recording Active</p>
+                      <p className="text-xs font-semibold text-red-500">Recording</p>
                       <p className="font-mono text-xl font-bold" style={{ color: 'var(--c-text)' }}>{formatTime(elapsed)}</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <LiveAudioWaveform bars={16} height={20} color="var(--c-danger)" active={true} />
-                    <span className="text-[10px] font-mono text-red-400 font-bold">44.1kHz</span>
-                  </div>
+                  <LiveAudioWaveform bars={16} height={20} color="var(--c-danger)" active={true} />
+
                 </div>
               )}
 
@@ -812,7 +806,7 @@ const InterviewSimulator = () => {
               {/* Viewfinder Top Bar Overlay */}
               <div className="absolute top-2.5 inset-x-2.5 flex items-center justify-between pointer-events-none">
                 <span 
-                  className="px-2 py-0.5 rounded text-[10px] font-mono font-bold border"
+                  className="px-2 py-0.5 rounded text-[11px] font-semibold border"
                   style={{
                     background: isRecording 
                       ? 'var(--c-danger)' 
@@ -823,51 +817,30 @@ const InterviewSimulator = () => {
                     borderColor: 'var(--c-border)'
                   }}
                 >
-                  {isRecording ? `● REC ${formatTime(elapsed)}` : textOnly ? 'CAMERA OFF' : streamReady ? '● LIVE' : 'OFFLINE'}
+                  {isRecording ? `● Recording ${formatTime(elapsed)}` : textOnly ? 'Camera off' : streamReady ? 'Camera on' : 'Camera not connected'}
                 </span>
-
-                <div className="flex items-center gap-1.5">
-                  <span 
-                    className="px-2 py-0.5 rounded text-[10px] font-mono border"
-                    style={{
-                      background: 'var(--c-surface-card)',
-                      borderColor: 'var(--c-border)',
-                      color: 'var(--c-text)'
-                    }}
-                  >
-                    1080p
-                  </span>
-                </div>
               </div>
 
-              {/* Viewfinder Bottom Audio Overlay */}
-              <div className={`absolute bottom-2.5 inset-x-2.5 pointer-events-none ${textOnly ? 'hidden' : ''}`}>
-                <div 
+              <div className={`absolute bottom-2.5 inset-x-2.5 pointer-events-none ${textOnly ? 'hidden' : ''}`} aria-hidden="true">
+                <div
                   className="px-2.5 py-1 rounded-md border flex items-center justify-between gap-2 backdrop-blur-sm"
-                  style={{
-                    background: 'rgba(10, 16, 32, 0.75)',
-                    borderColor: 'var(--c-border)',
-                    color: 'var(--c-text)'
-                  }}
+                  style={{ background: 'rgba(10, 16, 32, 0.75)', borderColor: 'var(--c-border)', color: 'var(--c-text)' }}
                 >
-                  <div className="flex items-center gap-1.5">
-                    <Mic className="w-3 h-3 shrink-0" style={{ color: isRecording ? 'var(--c-danger)' : 'var(--c-accent)' }} />
-                    <span className="text-[10px] font-mono">{isRecording ? 'STREAM RECORDING' : 'AUDIO ACTIVE'}</span>
-                  </div>
+                  <Mic className="w-3 h-3 shrink-0" style={{ color: isRecording ? 'var(--c-danger)' : 'var(--c-accent)' }} />
                   <LiveAudioWaveform bars={12} height={12} color={isRecording ? 'var(--c-danger)' : 'var(--c-accent)'} active={true} />
                 </div>
               </div>
+
             </div>
 
             {/* Question Bank Navigator Ledger */}
             <div className="space-y-2.5">
               <div className="border-b pb-2 flex items-center justify-between" style={{ borderColor: 'var(--c-border)' }}>
                 <div>
-                  <p className="c-eyebrow mb-0.5">Sequence</p>
-                  <h3 className="c-heading text-sm font-bold" style={{ color: 'var(--c-text)' }}>Prompt Bank</h3>
+                  <h3 className="c-heading text-sm font-bold" style={{ color: 'var(--c-text)' }}>Questions</h3>
                 </div>
                 <span className="text-xs font-mono font-bold" style={{ color: 'var(--c-text-secondary)' }}>
-                  {answeredCount}/{total} Complete
+                  {answeredCount} of {total} answered
                 </span>
               </div>
 
@@ -944,8 +917,7 @@ const InterviewSimulator = () => {
             style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}
           >
             <div className="space-y-1">
-              <p className="c-eyebrow">Confirmation</p>
-              <h3 className="c-heading text-lg font-bold" style={{ color: 'var(--c-text)' }}>Conclude Interview Session?</h3>
+              <h3 className="c-heading text-lg font-bold" style={{ color: 'var(--c-text)' }}>End the interview?</h3>
             </div>
 
             <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>

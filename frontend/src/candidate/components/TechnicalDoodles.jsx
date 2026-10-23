@@ -88,12 +88,6 @@ export const LiveVideoIndicator = ({ className = '' }) => (
       {/* Center Camera Target Point */}
       <span className="w-1 h-1 rounded-full bg-[#FF6B35] c-lens-pulse" />
     </div>
-
-    {/* Video Stream Status Label */}
-    <div className="flex items-center gap-1.5 text-[11px] font-mono uppercase tracking-wider text-[#FF9F1C]">
-      <span className="w-1.5 h-1.5 rounded-full bg-[#FF6B35] animate-pulse" />
-      <span>Video Stream</span>
-    </div>
   </div>
 );
 
