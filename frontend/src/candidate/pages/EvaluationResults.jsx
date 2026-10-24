@@ -19,6 +19,7 @@ import {
   FileText,
   Eye,
   ShieldAlert,
+  ChevronDown,
 } from 'lucide-react';
 import {
   Chart as ChartJS,
@@ -39,7 +40,6 @@ import { formatDate } from '../../utils/dateFormat';
 import { CANDIDATE_IMAGES } from '../assets/images';
 import { AssessmentDossierSeal } from '../components/TechnicalDoodles';
 import { LanguageSummarySection, QuestionLanguageNotes } from '../components/LanguageAnalysis';
-import InterviewSurvey from '../components/InterviewSurvey';
 
 // FR17-FR23 - Real Multimodal Evaluation Results (Assessment Report Layout)
 const EvaluationResults = () => {
@@ -50,6 +50,8 @@ const EvaluationResults = () => {
   const [realEval, setRealEval] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [openQuestion, setOpenQuestion] = useState(null);
+  const [showDetails, setShowDetails] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -322,7 +324,7 @@ const EvaluationResults = () => {
         <div className="py-20 flex flex-col items-center justify-center gap-3 text-center">
           <div className="w-6 h-6 border-2 rounded-full animate-spin" style={{ borderColor: 'var(--c-accent)', borderTopColor: 'transparent' }} />
           <p className="text-xs font-medium" style={{ color: 'var(--c-text-secondary)' }}>
-            Generating executive assessment dossier…
+            Loading your results…
           </p>
         </div>
       </InterviewFlowLayout>
@@ -352,10 +354,54 @@ const EvaluationResults = () => {
     );
   }
 
+  const verdictFor = (score) => (
+    score >= 75 ? 'Strong' : score >= 55 ? 'Good' : score >= 35 ? 'Getting there' : 'Needs work'
+  );
+  const firstSentence = (text) => {
+    const match = (text || '').trim().match(/^.*?[.!?](\s|$)/);
+    return (match ? match[0] : (text || '')).trim();
+  };
+  const cameraAreaMeasured = hasVisionSummary || offCameraAnswers.length > 0;
+  const areaRows = [
+    {
+      key: 'content',
+      icon: FileText,
+      label: 'What you said',
+      score: dimensionScores?.technical_content,
+      measured: true,
+      help: 'Did your answers cover the key points a good answer would?',
+    },
+    {
+      key: 'speaking',
+      icon: Mic,
+      label: 'How you said it',
+      score: dimensionScores?.communication_fluency,
+      measured: true,
+      help: 'Your speaking pace, pauses, and filler words like "um".',
+    },
+    {
+      key: 'camera',
+      icon: Eye,
+      label: 'On camera',
+      score: dimensionScores?.behavioral_composure,
+      measured: cameraAreaMeasured,
+      help: offCameraAnswers.length > 0 && !hasVisionSummary
+        ? `You were out of frame for most of answer${offCameraAnswers.length > 1 ? 's' : ''} ${offCameraAnswers.join(', ')}.`
+        : cameraAreaMeasured
+        ? 'Staying in frame, facing the camera and keeping a steady expression.'
+        : facialSummary?.status === 'no_face_detected'
+        ? 'Video was recorded but no face was found, so this was not scored.'
+        : 'No video was used, so this was not scored.',
+    },
+  ];
+  const topFixes = weaknesses.slice(0, 3);
+  const topStrengths = strengths.slice(0, 2);
+
   return (
     <InterviewFlowLayout step="results">
       <div className="space-y-12 py-6 sm:py-10">
-        
+
+        {/* ===================================================================
         {/* ===================================================================
             1. ASSESSMENT HEADER (Candidate / Role / Date / REF)
            =================================================================== */}
@@ -402,37 +448,314 @@ const EvaluationResults = () => {
         </section>
 
         {/* ===================================================================
-            2. OVERALL SCORE & INTERPRETATION (Directly on page with dividers)
+            2. HOW DID I DO? Score, one plain sentence, three simple areas
            =================================================================== */}
         {isCompleted ? (
-          <section aria-label="Overall Score" className="border-b pb-10" style={{ borderColor: 'var(--c-border)' }}>
-            <h2 className="c-heading text-xl font-bold mb-3" style={{ color: 'var(--c-text)' }}>Overall score</h2>
-            <div className="relative rounded-lg overflow-hidden border mb-6 group" style={{ borderColor: 'var(--c-border)', aspectRatio: '21/9' }}>
+          <section aria-label="Your result" className="space-y-6">
+            <div className="relative rounded-lg overflow-hidden border group" style={{ borderColor: 'var(--c-border)' }}>
               <img
                 src={CANDIDATE_IMAGES.evalChart}
                 alt=""
-                className="w-full h-full object-cover opacity-80 transition-transform duration-700 group-hover:scale-105"
+                className="absolute inset-0 w-full h-full object-cover opacity-60 transition-transform duration-700 group-hover:scale-105"
               />
-              <div className="absolute inset-0" style={{ background: 'linear-gradient(to right, var(--c-bg) 0%, transparent 40%, var(--c-bg) 100%)' }} />
-              <div className="absolute inset-0 flex items-center justify-start pl-8">
-                <div>
-                  <span className="c-serif-num text-5xl sm:text-7xl font-bold tracking-tight" style={{ color: 'var(--c-text)' }}>
+              <div className="absolute inset-0" style={{ background: 'linear-gradient(to right, var(--c-bg) 15%, rgba(17,17,17,0.75) 55%, var(--c-bg) 100%)' }} />
+              <div className="relative p-6 sm:p-10 max-w-2xl">
+                <p className="text-sm font-medium" style={{ color: 'var(--c-text-secondary)' }}>Your score</p>
+                <div className="flex items-baseline gap-3 mt-1">
+                  <span className="c-serif-num text-6xl sm:text-7xl font-bold tracking-tight" style={{ color: 'var(--c-text)' }}>
                     {Math.round(overallScore)}%
                   </span>
-                  <div className="w-32 bg-slate-500/20 h-1 rounded-full overflow-hidden mt-2">
-                    <div
-                      className="h-full bg-orange-500 rounded-full transition-all duration-1000"
-                      style={{ width: `${Math.min(100, Math.max(0, overallScore))}%` }}
-                    />
-                  </div>
+                  <span className="text-lg sm:text-xl font-semibold" style={{ color: 'var(--c-accent)' }}>
+                    {verdictFor(overallScore)}
+                  </span>
                 </div>
+                <div className="w-40 bg-slate-500/20 h-1.5 rounded-full overflow-hidden mt-3">
+                  <div
+                    className="h-full rounded-full transition-all duration-1000"
+                    style={{ width: `${Math.min(100, Math.max(0, overallScore))}%`, background: 'var(--c-accent)' }}
+                  />
+                </div>
+                <p className="text-sm sm:text-base mt-5 leading-relaxed" style={{ color: 'var(--c-text)' }}>
+                  {interpretation ||
+                    `This score combines what you said, how you said it, and how you came across on camera, across ${answeredCount} answered questions.`}
+                </p>
               </div>
             </div>
-            <p className="text-xs sm:text-sm mt-4 leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-              {interpretation || 
-                `This score combines the content of your answers, how you spoke, and how you came across on camera, across ${answeredCount} answered questions.`}
-            </p>
 
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {areaRows.map(({ key, icon: Icon, label, score, measured, help }) => (
+                <div key={key} className="p-4 rounded-lg border space-y-2.5" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="flex items-center gap-2 text-sm font-semibold" style={{ color: 'var(--c-text)' }}>
+                      <Icon className="w-4 h-4 text-[var(--c-text-muted)]" />
+                      {label}
+                    </span>
+                    <span className="font-mono text-sm font-bold" style={{ color: measured ? 'var(--c-text)' : 'var(--c-text-muted)' }}>
+                      {measured ? `${Math.round(score ?? 0)}%` : 'Not scored'}
+                    </span>
+                  </div>
+                  <div className="h-1.5 w-full rounded-full bg-slate-500/20 overflow-hidden">
+                    {measured && (
+                      <div
+                        className="h-full rounded-full transition-all duration-1000"
+                        style={{ width: `${Math.min(100, Math.max(0, score ?? 0))}%`, background: 'var(--c-accent)' }}
+                      />
+                    )}
+                  </div>
+                  <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>{help}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        ) : isFailed ? (
+          <section aria-label="Evaluation Failure" className="border-b pb-8" style={{ borderColor: 'var(--c-border)' }}>
+            <div className="c-badge-danger p-4 rounded-md flex items-start gap-3 text-xs">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-500" />
+              <div>
+                <p className="font-bold">Feedback could not be prepared</p>
+                <p className="mt-0.5">{evaluation?.failed_reason || 'Something went wrong while scoring this interview.'}</p>
+              </div>
+            </div>
+          </section>
+        ) : (
+          <section aria-label="Evaluation In Progress" className="border-b pb-8" style={{ borderColor: 'var(--c-border)' }}>
+            <div className="p-4 rounded-md border text-xs" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
+              <p className="font-bold mb-1" style={{ color: 'var(--c-text)' }}>Preparing your feedback</p>
+              <p style={{ color: 'var(--c-text-secondary)' }}>
+                Your answers are saved. Your scores and feedback will appear here in a minute or two.
+              </p>
+            </div>
+          </section>
+        )}
+
+        {/* ===================================================================
+            3. WHAT SHOULD I FIX? Top fixes and strengths, in plain words
+           =================================================================== */}
+        {isCompleted && (topFixes.length > 0 || topStrengths.length > 0) && (
+          <section aria-label="What to work on" className={`grid grid-cols-1 gap-4 ${topFixes.length > 0 && topStrengths.length > 0 ? 'md:grid-cols-2' : ''}`}>
+            {topFixes.length > 0 && (
+              <div className="p-5 rounded-lg border space-y-3" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
+                <h2 className="c-heading text-base font-bold flex items-center gap-2" style={{ color: 'var(--c-text)' }}>
+                  <AlertCircle className="w-4 h-4" style={{ color: 'var(--c-warning)' }} />
+                  What to work on
+                </h2>
+                <ol className="space-y-2.5 text-sm">
+                  {topFixes.map((fix, i) => (
+                    <li key={i} className="flex items-start gap-3 leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
+                      <span className="font-mono text-xs font-bold mt-0.5 shrink-0" style={{ color: 'var(--c-text-muted)' }}>{i + 1}.</span>
+                      <span>{fix}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
+            {topStrengths.length > 0 && (
+              <div className="p-5 rounded-lg border space-y-3" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
+                <h2 className="c-heading text-base font-bold flex items-center gap-2" style={{ color: 'var(--c-text)' }}>
+                  <ThumbsUp className="w-4 h-4 text-emerald-500" />
+                  What you did well
+                </h2>
+                <ul className="space-y-2.5 text-sm">
+                  {topStrengths.map((st, i) => (
+                    <li key={i} className="flex items-start gap-3 leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
+                      <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-emerald-500" />
+                      <span>{st}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* ===================================================================
+            4. HOW DID EACH ANSWER GO? One row per question, tap to open
+           =================================================================== */}
+        <section aria-label="Your answers" className="space-y-4">
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 className="c-heading text-xl font-bold" style={{ color: 'var(--c-text)' }}>Your answers</h2>
+            <span className="text-xs font-semibold" style={{ color: 'var(--c-text-muted)' }}>
+              {answeredCount} of {totalQuestions} answered
+            </span>
+          </div>
+
+          {hasCameraIssues && (
+            <div className="c-badge-warning rounded-md p-3.5 flex items-start gap-2.5 text-xs" role="note">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <p className="font-semibold">Camera check for this interview</p>
+                {offCameraAnswers.length > 0 && (
+                  <p>
+                    You were away from the camera for most of answer{offCameraAnswers.length > 1 ? 's' : ''}{' '}
+                    {offCameraAnswers.join(', ')}. That lowered the score for {offCameraAnswers.length > 1 ? 'those answers' : 'that answer'}.
+                  </p>
+                )}
+                {flaggedAnswers.length > 0 && (
+                  <p>
+                    Your face conduct was flagged in answer{flaggedAnswers.length > 1 ? 's' : ''} {flaggedAnswers.join(', ')}{' '}
+                    (pulled or hostile-looking faces, mouth open while not speaking, or looking away). The analysis measures what your face did, not why, so review the notes under each answer.
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="rounded-lg border divide-y overflow-hidden" style={{ borderColor: 'var(--c-border)', background: 'var(--c-surface)' }}>
+            {(interview?.questions || []).map((q, idx) => {
+              const resp = (interview?.responses || []).find((r) => (r.question_id || r.questionId) === q.id);
+              const qEval = perQuestionEval.find((item) => (item.question_id || item.questionId) === q.id);
+              const isRecorded = !!resp;
+              const duration = resp?.duration_seconds || resp?.durationSeconds;
+              const transcript = qEval?.asr?.transcript;
+              const questionScore = qEval?.multimodal?.score ?? qEval?.score;
+              const wpm = qEval?.delivery?.words_per_minute;
+              const pacing = qEval?.delivery?.pacing;
+              const feedback = qEval?.feedback || qEval?.nlp?.feedback;
+
+              // NLP real metrics
+              const textAnalysis = qEval?.text_analysis;
+              const coveredConcepts = textAnalysis?.covered_concepts || [];
+              const missingConcepts = textAnalysis?.missing_concepts || qEval?.missing_concepts || [];
+              const contentScore = textAnalysis?.content_score;
+              const semanticSimScore = textAnalysis?.semantic_similarity_score;
+              const nlpModel = textAnalysis?.model;
+
+              // Delivery real metrics
+              const delivery = qEval?.delivery;
+              const fillerCount = delivery?.filler_count ?? delivery?.filler_words_count;
+              const fluencyIndicator = delivery?.fluency_indicator;
+
+              // Facial real metrics
+              const facial = qEval?.facial_analysis;
+              const hasRealVision = facial && facial.status === 'completed';
+              const camera = qEval?.camera_conduct;
+              const cameraMeasured = camera?.status === 'measured';
+              const offCamera = !!camera?.mostly_off_camera;
+              const cameraNotes = camera?.notes || [];
+              const visionContribution = qEval?.multimodal?.vision_contribution;
+              // The camera notes are also appended to `feedback` by the backend;
+              // show them once, in the camera callout.
+              const feedbackText = cameraNotes.reduce((txt, note) => txt.replace(note, ''), feedback || '').trim();
+              const isOpen = openQuestion === q.id;
+              const failed = qEval?.status === 'failed';
+              const summaryLine = !isRecorded
+                ? 'You skipped this question.'
+                : failed
+                ? 'This answer could not be processed.'
+                : firstSentence(feedbackText) || (questionScore != null ? `${verdictFor(questionScore)} answer.` : 'Being scored.');
+
+              return (
+                <div key={q.id} style={{ borderColor: 'var(--c-border)' }}>
+                  <button
+                    type="button"
+                    onClick={() => setOpenQuestion(isOpen ? null : q.id)}
+                    aria-expanded={isOpen}
+                    className="w-full text-left px-4 sm:px-5 py-4 flex items-start gap-3 sm:gap-4 transition-colors hover:bg-white/[0.03]"
+                  >
+                    <span className="font-mono text-xs font-bold mt-1 shrink-0" style={{ color: 'var(--c-text-muted)' }}>
+                      Q{idx + 1}
+                    </span>
+                    <span className="flex-1 min-w-0 space-y-1">
+                      <span className="block text-sm font-semibold leading-snug" style={{ color: 'var(--c-text)' }}>
+                        {q.question_text}
+                      </span>
+                      <span className="block text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
+                        {summaryLine}
+                      </span>
+                    </span>
+                    <span className="shrink-0 flex items-center gap-2 mt-0.5">
+                      {!isRecorded ? (
+                        <span className="c-badge c-badge-muted text-[11px] py-0.5 px-1.5">Skipped</span>
+                      ) : failed ? (
+                        <span className="c-badge c-badge-danger text-[11px] py-0.5 px-1.5 font-bold">Failed</span>
+                      ) : questionScore != null ? (
+                        <span className="font-mono text-sm font-bold" style={{ color: 'var(--c-text)' }}>{Math.round(questionScore)}%</span>
+                      ) : null}
+                      <ChevronDown
+                        className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+                        style={{ color: 'var(--c-text-muted)' }}
+                      />
+                    </span>
+                  </button>
+
+                  {isOpen && (
+                    <div className="px-4 sm:px-5 pb-5 sm:pl-14 space-y-3">
+                      {failed && (
+                        <div className="p-2.5 rounded border text-xs bg-rose-500/10 border-rose-500/20 text-rose-300">
+                          {qEval?.failed_reason || 'The recording for this answer could not be read.'}
+                        </div>
+                      )}
+                      {!isRecorded && (
+                        <p className="text-xs" style={{ color: 'var(--c-text-muted)' }}>No answer was recorded for this question.</p>
+                      )}
+                      {transcript && (
+                        <div className="p-3 rounded-md border text-xs leading-relaxed"
+                          style={{ background: 'var(--c-surface-muted)', borderColor: 'var(--c-border)', color: 'var(--c-text)' }}
+                        >
+                          <span className="font-semibold text-xs block mb-1" style={{ color: 'var(--c-text-muted)' }}>
+                            {resp?.response_mode === 'text' ? 'Your typed answer' : 'What you said'}
+                          </span>
+                          "{transcript}"
+                        </div>
+                      )}
+                      {feedbackText && (
+                        <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
+                          <strong className="font-semibold" style={{ color: 'var(--c-text)' }}>Feedback:</strong> {feedbackText}
+                        </p>
+                      )}
+                      {cameraNotes.length > 0 && (
+                        <div className="c-badge-warning rounded-md p-3 flex items-start gap-2 text-xs">
+                          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                          <div className="space-y-1">
+                            <p className="font-semibold">Camera check</p>
+                            {cameraNotes.map((note, i) => (
+                              <p key={i}>{note}</p>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      <QuestionLanguageNotes textAnalysis={qEval?.text_analysis} />
+                      {isRecorded && (
+                        <p className="text-[11px] font-mono" style={{ color: 'var(--c-text-muted)' }}>
+                          {[
+                            duration != null ? `${duration}s long` : null,
+                            wpm ? `${Math.round(wpm)} words per minute` : null,
+                            fillerCount ? `${fillerCount} filler word${fillerCount > 1 ? 's' : ''}` : null,
+                          ].filter(Boolean).join(' · ')}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* ===================================================================
+            5. FULL ANALYSIS - every detailed chart, metric and panel, on request
+           =================================================================== */}
+        {isCompleted && (
+          <section aria-label="Full analysis" className="space-y-10">
+            <button
+              type="button"
+              onClick={() => setShowDetails((v) => !v)}
+              aria-expanded={showDetails}
+              className="c-btn c-btn-secondary w-full sm:w-auto px-5 py-3 text-sm font-semibold rounded-md flex items-center justify-center gap-2"
+            >
+              <span>{showDetails ? 'Hide full analysis' : 'See full analysis'}</span>
+              <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showDetails ? 'rotate-180' : ''}`} />
+            </button>
+
+            {showDetails && (
+              <div className="space-y-12">
+                <div className="space-y-6">
+                  <div>
+                    <h2 className="c-heading text-xl font-bold" style={{ color: 'var(--c-text)' }}>Score details</h2>
+                    <p className="text-xs mt-1" style={{ color: 'var(--c-text-secondary)' }}>
+                      Charts and numbers behind your score.
+                    </p>
+                  </div>
             {/* FR24: Score Interpretation & Behavioral Rationale */}
             {scoreRationale && (
               <div
@@ -521,27 +844,7 @@ const EvaluationResults = () => {
                 </span>
               </div>
             </div>
-          </section>
-        ) : isFailed ? (
-          <section aria-label="Evaluation Failure" className="border-b pb-8" style={{ borderColor: 'var(--c-border)' }}>
-            <div className="c-badge-danger p-4 rounded-md flex items-start gap-3 text-xs">
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-500" />
-              <div>
-                <p className="font-bold">Feedback could not be prepared</p>
-                <p className="mt-0.5">{evaluation?.failed_reason || 'Something went wrong while scoring this interview.'}</p>
-              </div>
-            </div>
-          </section>
-        ) : (
-          <section aria-label="Evaluation In Progress" className="border-b pb-8" style={{ borderColor: 'var(--c-border)' }}>
-            <div className="p-4 rounded-md border text-xs" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
-              <p className="font-bold mb-1" style={{ color: 'var(--c-text)' }}>Preparing your feedback</p>
-              <p style={{ color: 'var(--c-text-secondary)' }}>
-                Your answers are saved. Your scores and feedback will appear here in a minute or two.
-              </p>
-            </div>
-          </section>
-        )}
+                </div>
 
         {/* ===================================================================
             3. MULTIMODAL EVALUATION FRAMEWORK (Triad Signal Architecture)
@@ -817,41 +1120,85 @@ const EvaluationResults = () => {
         {isCompleted && <LanguageSummarySection summary={languageSummary} />}
 
         {/* ===================================================================
-            5. QUESTION-BY-QUESTION REVIEW (Editorial Multi-Signal Stream)
+            5. STRENGTHS, WEAKNESSES & COACHING STRATEGIES (FR25, FR26, FR27)
            =================================================================== */}
-        <section aria-label="Question Review" className="border-b pb-10 space-y-6" style={{ borderColor: 'var(--c-border)' }}>
-          <div className="flex items-baseline justify-between">
+        {(strengths.length > 0 || weaknesses.length > 0 || suggestions.length > 0) && (
+          <section aria-label="Strengths and Recommendations" className="border-b pb-10 space-y-6" style={{ borderColor: 'var(--c-border)' }}>
             <div>
-              <h2 className="c-heading text-xl font-bold" style={{ color: 'var(--c-text)' }}>Question by question</h2>
+              <h2 className="c-heading text-xl font-bold" style={{ color: 'var(--c-text)' }}>All strengths and areas to improve</h2>
             </div>
-            <span className="text-xs font-semibold" style={{ color: 'var(--c-text-muted)' }}>
-              {answeredCount} of {totalQuestions} answered
-            </span>
-          </div>
 
-          {hasCameraIssues && (
-            <div className="c-badge-warning rounded-md p-3.5 flex items-start gap-2.5 text-xs" role="note">
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-              <div className="space-y-1">
-                <p className="font-semibold">Camera check for this interview</p>
-                {offCameraAnswers.length > 0 && (
-                  <p>
-                    You were away from the camera for most of answer{offCameraAnswers.length > 1 ? 's' : ''}{' '}
-                    {offCameraAnswers.join(', ')}. That lowered the score for {offCameraAnswers.length > 1 ? 'those answers' : 'that answer'}.
-                  </p>
-                )}
-                {flaggedAnswers.length > 0 && (
-                  <p>
-                    Your face conduct was flagged in answer{flaggedAnswers.length > 1 ? 's' : ''} {flaggedAnswers.join(', ')}{' '}
-                    (pulled or hostile-looking faces, mouth open while not speaking, or looking away). The analysis measures what your face did, not why, so review the notes under each answer.
-                  </p>
-                )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Demonstrated Strengths (FR25) */}
+              {strengths.length > 0 && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 border-b pb-2" style={{ borderColor: 'var(--c-border)' }}>
+                    <ThumbsUp className="w-4 h-4 text-emerald-500" />
+                    <h3 className="c-heading text-sm font-bold" style={{ color: 'var(--c-text)' }}>Strengths</h3>
+                  </div>
+                  <ul className="space-y-2.5 text-xs">
+                    {strengths.map((st, i) => (
+                      <li key={i} className="flex items-start gap-2.5 leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
+                        <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5 text-emerald-500" />
+                        <span>{st}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Areas for Improvement / Weaknesses (FR26) */}
+              {weaknesses.length > 0 && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 border-b pb-2" style={{ borderColor: 'var(--c-border)' }}>
+                    <AlertCircle className="w-4 h-4" style={{ color: 'var(--c-warning)' }} />
+                    <h3 className="c-heading text-sm font-bold" style={{ color: 'var(--c-text)' }}>Areas to improve</h3>
+                  </div>
+                  <ul className="space-y-2.5 text-xs">
+                    {weaknesses.map((wk, i) => (
+                      <li key={i} className="flex items-start gap-2.5 leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
+                        <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: 'var(--c-warning)' }} />
+                        <span>{wk}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+
+            {/* Personalized Coaching & Preparation Strategies (FR27) */}
+            {suggestions.length > 0 && (
+              <div
+                className="mt-6 p-4 rounded-lg border space-y-3"
+                style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}
+              >
+                <div className="flex items-center gap-2 border-b pb-2" style={{ borderColor: 'var(--c-border)' }}>
+                  <Lightbulb className="w-4 h-4 text-[var(--c-text-muted)]" />
+                  <h3 className="c-heading text-sm font-bold" style={{ color: 'var(--c-text)' }}>
+                    Tips for your next interview
+                  </h3>
+                </div>
+                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  {suggestions.map((sug, i) => (
+                    <li key={i} className="flex items-start gap-2 leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
+                      <span className="font-mono text-[var(--c-text-muted)] font-bold shrink-0 mt-0.5">0{i + 1}.</span>
+                      <span>{sug}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
-            </div>
-          )}
+            )}
+          </section>
+        )}
 
-          <div className="divide-y" style={{ borderColor: 'var(--c-border)' }}>
-            {(interview?.questions || []).map((q, idx) => {
+                <section aria-label="Answer details" className="space-y-6">
+                  <div>
+                    <h2 className="c-heading text-xl font-bold" style={{ color: 'var(--c-text)' }}>Answer details</h2>
+                    <p className="text-xs mt-1" style={{ color: 'var(--c-text-secondary)' }}>
+                      The measurements for each answer: content, speech and camera.
+                    </p>
+                  </div>
+                  {(interview?.questions || []).map((q, idx) => {
               const resp = (interview?.responses || []).find((r) => (r.question_id || r.questionId) === q.id);
               const qEval = perQuestionEval.find((item) => (item.question_id || item.questionId) === q.id);
               const isRecorded = !!resp;
@@ -886,75 +1233,13 @@ const EvaluationResults = () => {
               // The camera notes are also appended to `feedback` by the backend;
               // show them once, in the camera callout.
               const feedbackText = cameraNotes.reduce((txt, note) => txt.replace(note, ''), feedback || '').trim();
-
-              return (
-                <div key={q.id} className="py-6 space-y-4">
-                  {/* Header Row */}
-                  <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
-                    <div className="space-y-1 min-w-0 flex-1 basis-64">
-                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                        <span className="font-mono text-xs font-bold" style={{ color: 'var(--c-text-muted)' }}>
-                          Question {(idx + 1).toString().padStart(2, '0')}
-                        </span>
-                        <span className="text-[11px]" style={{ color: 'var(--c-border)' }}>•</span>
-                        <span className="text-[11px] capitalize font-medium" style={{ color: 'var(--c-text-secondary)' }}>
-                          {q.type || 'Technical'} ({q.difficulty || 'Medium'})
-                        </span>
-                        {wpm != null && (
-                          <>
-                            <span className="text-[11px]" style={{ color: 'var(--c-border)' }}>•</span>
-                            <span className="text-[11px] font-mono" style={{ color: 'var(--c-text-muted)' }}>
-                              {Math.round(wpm)} WPM ({pacing || 'Standard'})
-                            </span>
-                          </>
-                        )}
-                      </div>
-
-                      <h3 className="c-heading text-base font-bold" style={{ color: 'var(--c-text)' }}>
-                        {q.question_text}
-                      </h3>
-                    </div>
-
-                    <div className="shrink-0 flex items-center gap-2">
-                      {duration != null && (
-                        <span className="text-xs font-mono" style={{ color: 'var(--c-text-muted)' }}>
-                          {duration}s
-                        </span>
-                      )}
-                      {questionScore != null && (
-                        <span className="c-badge c-badge-accent text-xs font-mono font-bold px-2 py-0.5">
-                          {Math.round(questionScore)}%
-                        </span>
-                      )}
-                      {qEval?.status === 'failed' ? (
-                        <span className="c-badge c-badge-danger text-[11px] py-0.5 px-1.5 font-bold">
-                          Failed
-                        </span>
-                      ) : isRecorded ? (
-                        <span className="c-badge c-badge-success text-[11px] py-0.5 px-1.5 font-bold">
-                          Evaluated
-                        </span>
-                      ) : (
-                        <span className="c-badge c-badge-muted text-[11px] py-0.5 px-1.5">
-                          Skipped
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Status Disclosures */}
-                  {qEval?.status === 'failed' && (
-                    <div className="p-2.5 rounded border text-xs bg-rose-500/10 border-rose-500/20 text-rose-300">
-                      <span className="font-bold">Take Processing Note: </span>
-                      {qEval?.failed_reason || 'Media processing error encountered for this response take.'}
-                    </div>
-                  )}
-                  {!isRecorded && (
-                    <div className="p-2.5 rounded border text-xs bg-slate-800/40 border-slate-700/40 text-neutral-400 italic">
-                      Question was skipped by candidate; no response take submitted for evaluation.
-                    </div>
-                  )}
-
+                    if (!isRecorded) return null;
+                    return (
+                      <div key={q.id} className="space-y-2">
+                        <p className="text-xs font-semibold" style={{ color: 'var(--c-text)' }}>
+                          <span className="font-mono mr-2" style={{ color: 'var(--c-text-muted)' }}>Q{idx + 1}</span>
+                          {q.question_text}
+                        </p>
                   {/* Multi-Signal Assessment Strip */}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {/* Signal A: NLP Content */}
@@ -1123,120 +1408,15 @@ const EvaluationResults = () => {
                       )}
                     </div>
                   </div>
-
-                  {/* Camera conduct callout (away from camera / flagged expressions) */}
-                  {cameraNotes.length > 0 && (
-                    <div className="c-badge-warning rounded-md p-3 flex items-start gap-2 text-xs">
-                      <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                      <div className="space-y-1">
-                        <p className="font-semibold">Camera check</p>
-                        {cameraNotes.map((note, i) => (
-                          <p key={i}>{note}</p>
-                        ))}
                       </div>
-                    </div>
-                  )}
-
-                  {/* Transcribed Response (Restrained inset block) */}
-                  {transcript && (
-                    <div className="p-3 rounded-md border text-xs leading-relaxed"
-                      style={{ background: 'var(--c-surface-muted)', borderColor: 'var(--c-border)', color: 'var(--c-text)' }}
-                    >
-                      <span className="font-semibold text-xs block mb-1" style={{ color: 'var(--c-text-muted)' }}>
-                        {resp?.response_mode === 'text' ? 'Your typed answer' : 'What you said'}
-                      </span>
-                      "{transcript}"
-                    </div>
-                  )}
-
-                  <QuestionLanguageNotes textAnalysis={qEval?.text_analysis} />
-
-                  {/* Specific Feedback if provided */}
-                  {feedbackText && (
-                    <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                      <strong className="font-semibold" style={{ color: 'var(--c-text)' }}>Notes:</strong> {feedbackText}
-                    </p>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* ===================================================================
-            5. STRENGTHS, WEAKNESSES & COACHING STRATEGIES (FR25, FR26, FR27)
-           =================================================================== */}
-        {(strengths.length > 0 || weaknesses.length > 0 || suggestions.length > 0) && (
-          <section aria-label="Strengths and Recommendations" className="border-b pb-10 space-y-6" style={{ borderColor: 'var(--c-border)' }}>
-            <div>
-              <h2 className="c-heading text-xl font-bold" style={{ color: 'var(--c-text)' }}>Strengths and what to work on</h2>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Demonstrated Strengths (FR25) */}
-              {strengths.length > 0 && (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 border-b pb-2" style={{ borderColor: 'var(--c-border)' }}>
-                    <ThumbsUp className="w-4 h-4 text-emerald-500" />
-                    <h3 className="c-heading text-sm font-bold" style={{ color: 'var(--c-text)' }}>Demonstrated Strengths</h3>
-                  </div>
-                  <ul className="space-y-2.5 text-xs">
-                    {strengths.map((st, i) => (
-                      <li key={i} className="flex items-start gap-2.5 leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                        <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5 text-emerald-500" />
-                        <span>{st}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* Areas for Improvement / Weaknesses (FR26) */}
-              {weaknesses.length > 0 && (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 border-b pb-2" style={{ borderColor: 'var(--c-border)' }}>
-                    <AlertCircle className="w-4 h-4" style={{ color: 'var(--c-warning)' }} />
-                    <h3 className="c-heading text-sm font-bold" style={{ color: 'var(--c-text)' }}>Key Areas for Improvement</h3>
-                  </div>
-                  <ul className="space-y-2.5 text-xs">
-                    {weaknesses.map((wk, i) => (
-                      <li key={i} className="flex items-start gap-2.5 leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                        <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: 'var(--c-warning)' }} />
-                        <span>{wk}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-
-            {/* Personalized Coaching & Preparation Strategies (FR27) */}
-            {suggestions.length > 0 && (
-              <div
-                className="mt-6 p-4 rounded-lg border space-y-3"
-                style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}
-              >
-                <div className="flex items-center gap-2 border-b pb-2" style={{ borderColor: 'var(--c-border)' }}>
-                  <Lightbulb className="w-4 h-4 text-[var(--c-text-muted)]" />
-                  <h3 className="c-heading text-sm font-bold" style={{ color: 'var(--c-text)' }}>
-                    Personalized Coaching & Preparation Strategies
-                  </h3>
-                </div>
-                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                  {suggestions.map((sug, i) => (
-                    <li key={i} className="flex items-start gap-2 leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                      <span className="font-mono text-[var(--c-text-muted)] font-bold shrink-0 mt-0.5">0{i + 1}.</span>
-                      <span>{sug}</span>
-                    </li>
-                  ))}
-                </ul>
+                    );
+                  })}
+                </section>
               </div>
             )}
           </section>
         )}
 
-        {/* 5b. POST-INTERVIEW SURVEY (Objective 7) */}
-        {evaluationStatus === 'completed' && <InterviewSurvey interviewId={id} />}
 
         {/* ===================================================================
             6. ACTIONS BAR
@@ -1259,13 +1439,23 @@ const EvaluationResults = () => {
             </Link>
           </div>
 
-          <Link
-            to="/interview/goal"
-            className="c-btn c-btn-primary px-5 py-3 sm:py-2.5 text-xs font-bold rounded-md flex items-center justify-center gap-1.5"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span>Practice Another Session</span>
-          </Link>
+          {isCompleted ? (
+            <Link
+              to={`/interview/${id}/feedback`}
+              className="c-btn c-btn-primary px-5 py-3 sm:py-2.5 text-xs font-bold rounded-md flex items-center justify-center gap-1.5"
+            >
+              <span>Continue to feedback</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          ) : (
+            <Link
+              to="/interview/goal"
+              className="c-btn c-btn-primary px-5 py-3 sm:py-2.5 text-xs font-bold rounded-md flex items-center justify-center gap-1.5"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Practice Another Session</span>
+            </Link>
+          )}
         </section>
 
       </div>
@@ -1274,5 +1464,3 @@ const EvaluationResults = () => {
 };
 
 export default EvaluationResults;
-
-

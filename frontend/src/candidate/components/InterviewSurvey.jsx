@@ -19,6 +19,7 @@ const InterviewSurvey = ({ interviewId }) => {
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [skipped, setSkipped] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -69,13 +70,33 @@ const InterviewSurvey = ({ interviewId }) => {
     setSubmitted(false);
   };
 
+  if (skipped) {
+    return (
+      <section aria-label="Feedback Survey" className="border-b pb-8" style={{ borderColor: 'var(--c-border)' }}>
+        <p className="text-xs" style={{ color: 'var(--c-text-secondary)' }}>
+          Survey skipped.{' '}
+          <button type="button" onClick={() => setSkipped(false)} className="font-semibold underline underline-offset-2" style={{ color: 'var(--c-text)' }}>
+            Rate this session
+          </button>
+        </p>
+      </section>
+    );
+  }
+
   return (
     <section aria-label="Feedback Survey" className="border-b pb-10 space-y-4" style={{ borderColor: 'var(--c-border)' }}>
-      <div>
-        <h2 className="c-heading text-xl font-bold" style={{ color: 'var(--c-text)' }}>Rate This Session</h2>
-        <p className="text-xs mt-1" style={{ color: 'var(--c-text-secondary)' }}>
-          Takes under a minute. Your answers help us measure how accurate and useful MockAI is.
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h2 className="c-heading text-xl font-bold" style={{ color: 'var(--c-text)' }}>Rate this session</h2>
+          <p className="text-xs mt-1" style={{ color: 'var(--c-text-secondary)' }}>
+            Optional, takes under a minute. Your answers help us measure how accurate and useful MockAI is.
+          </p>
+        </div>
+        {!submitted && (
+          <button type="button" onClick={() => setSkipped(true)} className="c-btn c-btn-secondary shrink-0 px-3.5 py-2 text-xs font-semibold rounded-md">
+            Skip survey
+          </button>
+        )}
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -165,7 +186,7 @@ const InterviewSurvey = ({ interviewId }) => {
             disabled={saving || !complete}
             className="c-btn c-btn-primary px-5 py-2.5 text-xs font-bold rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {saving ? 'Submitting…' : submitted ? 'Update Response' : 'Submit Survey'}
+            {saving ? 'Submitting…' : submitted ? 'Update response' : 'Submit'}
           </button>
           {submitted && !saving && (
             <span className="text-xs flex items-center gap-1.5" style={{ color: 'var(--c-success)' }}>
