@@ -158,7 +158,7 @@ const PublicNav = () => {
               to="/dashboard"
               className="c-btn c-btn-secondary h-10 sm:h-auto px-3 py-1.5 sm:px-3.5 sm:py-2 text-xs font-semibold rounded-lg flex items-center gap-1.5"
             >
-              <LayoutDashboard className="w-3.5 h-3.5 text-orange-400" />
+              <LayoutDashboard className="w-3.5 h-3.5 text-[var(--c-text-muted)]" />
               <span>Dashboard</span>
             </Link>
           ) : (

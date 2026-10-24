@@ -107,8 +107,8 @@ const MentorProfileModal = ({ mentor, isOpen, onClose, onBook }) => {
               style={{ background: 'var(--c-surface-muted)', borderColor: 'var(--c-border, #2A2A2A)' }}
             >
               <div className="text-[11px] uppercase font-mono" style={{ color: 'var(--c-text-muted)' }}>Rating</div>
-              <div className="text-sm font-bold text-[#FF9F1C] flex items-center justify-center gap-1 mt-0.5">
-                <Star className="w-3.5 h-3.5 fill-[#FF9F1C]" />
+              <div className="text-sm font-bold text-[#FF6B35] flex items-center justify-center gap-1 mt-0.5">
+                <Star className="w-3.5 h-3.5 fill-[#FF6B35]" />
                 <span>{mentor.rating || '5.0'}</span>
               </div>
             </div>
@@ -184,7 +184,7 @@ const MentorProfileModal = ({ mentor, isOpen, onClose, onBook }) => {
                     style={{ background: 'var(--c-surface-muted)', borderColor: 'var(--c-border, #2A2A2A)' }}
                   >
                     <span style={{ color: 'var(--c-text-muted)' }}>{slot.date}</span>
-                    <span className="text-[#FF9F1C] font-semibold">{slot.start_time}</span>
+                    <span className="font-semibold" style={{ color: 'var(--c-text)' }}>{slot.start_time}</span>
                   </div>
                 ))}
               </div>

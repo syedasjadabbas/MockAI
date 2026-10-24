@@ -72,18 +72,18 @@ export const LiveVideoIndicator = ({ className = '' }) => (
   <div className={`inline-flex items-center gap-2 select-none ${className}`}>
     {/* Animated Viewfinder Target Box */}
     <div
-      className="relative rounded-[2px] border border-[#FF9F1C]/60 bg-[#FF9F1C]/10 flex items-center justify-center overflow-hidden shrink-0"
+      className="relative rounded-[2px] border border-[#FF6B35]/60 bg-[#FF6B35]/10 flex items-center justify-center overflow-hidden shrink-0"
       style={{ height: '18px', width: '24px' }}
       aria-hidden="true"
     >
       {/* 4-corner viewfinder marks */}
-      <span className="absolute top-[1.5px] left-[1.5px] w-[3px] h-[3px] border-t border-l border-[#FF9F1C]" />
-      <span className="absolute top-[1.5px] right-[1.5px] w-[3px] h-[3px] border-t border-r border-[#FF9F1C]" />
-      <span className="absolute bottom-[1.5px] left-[1.5px] w-[3px] h-[3px] border-b border-l border-[#FF9F1C]" />
-      <span className="absolute bottom-[1.5px] right-[1.5px] w-[3px] h-[3px] border-b border-r border-[#FF9F1C]" />
+      <span className="absolute top-[1.5px] left-[1.5px] w-[3px] h-[3px] border-t border-l border-[#FF6B35]" />
+      <span className="absolute top-[1.5px] right-[1.5px] w-[3px] h-[3px] border-t border-r border-[#FF6B35]" />
+      <span className="absolute bottom-[1.5px] left-[1.5px] w-[3px] h-[3px] border-b border-l border-[#FF6B35]" />
+      <span className="absolute bottom-[1.5px] right-[1.5px] w-[3px] h-[3px] border-b border-r border-[#FF6B35]" />
 
       {/* Optical Vertical Scanline Sweep */}
-      <div className="absolute inset-x-0 h-[1.5px] bg-[#FF9F1C] opacity-90 c-scanline" />
+      <div className="absolute inset-x-0 h-[1.5px] bg-[#FF6B35] opacity-90 c-scanline" />
 
       {/* Center Camera Target Point */}
       <span className="w-1 h-1 rounded-full bg-[#FF6B35] c-lens-pulse" />

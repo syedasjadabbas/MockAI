@@ -180,7 +180,7 @@ const Mentors = () => {
           {toast.type === 'error' ? (
             <AlertCircle className="w-4 h-4 text-rose-400" />
           ) : (
-            <CheckCircle2 className="w-4 h-4 text-[#FF6B35]" />
+            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
           )}
           <span>{toast.message}</span>
         </div>
@@ -214,7 +214,7 @@ const Mentors = () => {
             title="Refresh"
           >
             <RefreshCw
-              className={`w-3.5 h-3.5 ${loadingMentors || loadingAppointments ? 'animate-spin text-[#FF6B35]' : ''}`}
+              className={`w-3.5 h-3.5 ${loadingMentors || loadingAppointments ? 'animate-spin' : ''}`}
             />
             <span className="hidden sm:inline">Refresh</span>
           </button>
@@ -632,7 +632,7 @@ const Mentors = () => {
                           <h4 className="text-sm font-bold truncate" style={{ color: 'var(--c-text)' }}>{apt.mentor_name}</h4>
                           <p className="text-xs truncate" style={{ color: 'var(--c-text-secondary)' }}>{apt.mentor_title || 'Technical Mentor'}</p>
                           <div className="flex items-center gap-3 mt-1 text-xs font-mono">
-                            <span className="flex items-center gap-1 text-[#FF9F1C] shrink-0">
+                            <span className="flex items-center gap-1 shrink-0" style={{ color: 'var(--c-text)' }}>
                               <Calendar className="w-3.5 h-3.5" /> {apt.date}
                             </span>
                             <span className="flex items-center gap-1 shrink-0" style={{ color: 'var(--c-text-secondary)' }}>

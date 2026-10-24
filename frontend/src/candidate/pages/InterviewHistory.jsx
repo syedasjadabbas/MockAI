@@ -175,7 +175,7 @@ const InterviewHistory = () => {
               <p className="text-[11px] font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--c-text-muted)' }}>
                 In Progress
               </p>
-              <p className="c-serif-num text-3xl font-bold text-amber-500">
+              <p className="c-serif-num text-3xl font-bold" style={{ color: 'var(--c-text)' }}>
                 {stats.inProgress}
               </p>
             </div>

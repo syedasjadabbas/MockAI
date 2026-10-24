@@ -264,7 +264,7 @@ Check that your camera and microphone work and that your face is well lit, then 
                     className="px-3 py-1.5 rounded-md border flex items-center justify-between gap-2.5"
                     style={{ background: 'var(--c-surface-card)', borderColor: 'var(--c-border)', color: 'var(--c-text)' }}
                   >
-                    <Mic className="w-3.5 h-3.5 text-orange-500 shrink-0" />
+                    <Mic className="w-3.5 h-3.5 text-[var(--c-text-muted)] shrink-0" />
                     <LiveAudioWaveform bars={12} height={12} color="var(--c-accent)" />
                   </div>
                 </div>

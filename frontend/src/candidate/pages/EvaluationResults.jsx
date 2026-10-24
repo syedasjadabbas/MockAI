@@ -174,12 +174,12 @@ const EvaluationResults = () => {
         ],
         backgroundColor: [
           'rgba(255, 107, 53, 0.85)',
-          'rgba(255, 159, 28, 0.85)',
+          'rgba(255, 107, 53, 0.85)',
           hasVisionSummary ? 'rgba(148, 163, 184, 0.75)' : 'rgba(71, 85, 105, 0.35)',
         ],
         borderColor: [
           '#FF6B35',
-          '#FF9F1C',
+          '#FF6B35',
           hasVisionSummary ? '#94A3B8' : '#475569',
         ],
         borderWidth: 1.5,
@@ -516,7 +516,7 @@ const EvaluationResults = () => {
               </div>
               <div className="p-3 rounded-lg border space-y-1" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
                 <span className="text-xs block" style={{ color: 'var(--c-text-muted)' }}>Completed</span>
-                <span className="font-mono text-lg font-bold text-[#FF6B35]">
+                <span className="font-mono text-lg font-bold" style={{ color: 'var(--c-text)' }}>
                   {summaryReport?.performance_overview?.completion_rate ?? (totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0)}%
                 </span>
               </div>
@@ -566,7 +566,7 @@ const EvaluationResults = () => {
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-[#FF6B35]" />
+                    <FileText className="w-4 h-4 text-[var(--c-text-muted)]" />
                     <span className="text-sm font-bold" style={{ color: 'var(--c-text)' }}>What you said</span>
                   </div>
                   <span className="text-[11px] px-2 py-0.5 rounded border font-medium bg-emerald-500/10 text-emerald-400/90 border-emerald-500/20">
@@ -585,7 +585,7 @@ const EvaluationResults = () => {
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Mic className="w-4 h-4 text-[#FF9F1C]" />
+                    <Mic className="w-4 h-4 text-[var(--c-text-muted)]" />
                     <span className="text-sm font-bold" style={{ color: 'var(--c-text)' }}>How you said it</span>
                   </div>
                   <span className="text-[11px] px-2 py-0.5 rounded border font-medium bg-emerald-500/10 text-emerald-400/90 border-emerald-500/20">
@@ -604,7 +604,7 @@ const EvaluationResults = () => {
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Eye className={`w-4 h-4 ${hasVisionSummary ? 'text-[#FF9F1C]' : 'text-neutral-500'}`} />
+                    <Eye className="w-4 h-4 text-[var(--c-text-muted)]" />
                     <span className="text-sm font-bold" style={{ color: 'var(--c-text)' }}>On camera</span>
                   </div>
                   {hasVisionSummary ? (
@@ -681,7 +681,7 @@ const EvaluationResults = () => {
                         className="h-full rounded-full transition-all duration-1000"
                         style={{
                           width: `${Math.min(100, Math.max(0, confidenceScore))}%`,
-                          background: confidenceScore >= 80 ? '#FF6B35' : ((confidenceScore ?? 0) >= 60 ? '#FF9F1C' : '#94A3B8'),
+                          background: confidenceScore >= 80 ? '#FF6B35' : ((confidenceScore ?? 0) >= 60 ? 'rgba(255, 107, 53, 0.6)' : '#94A3B8'),
                         }}
                       />
                     </div>
@@ -964,16 +964,16 @@ const EvaluationResults = () => {
                     >
                       <div className="flex items-center justify-between">
                         <span className="font-bold flex items-center gap-1.5 text-neutral-300">
-                          <FileText className="w-3.5 h-3.5 text-[#FF6B35]" />
+                          <FileText className="w-3.5 h-3.5 text-[var(--c-text-muted)]" />
                           <span>NLP Content</span>
                           {nlpModel && nlpModel.includes('bert') && (
-                            <span className="text-[11px] font-mono px-1.5 py-0.2 rounded bg-[#FF6B35]/10 text-[#FF6B35] border border-[#FF6B35]/20">
+                            <span className="text-[11px] font-mono px-1.5 py-0.2 rounded bg-white/5 text-neutral-400 border border-white/10">
                               BERT
                             </span>
                           )}
                         </span>
                         {contentScore != null && (
-                          <span className="font-mono text-[#FF6B35] font-bold">
+                          <span className="font-mono text-neutral-200 font-bold">
                             {Math.round(contentScore)}%
                           </span>
                         )}
@@ -1018,11 +1018,11 @@ const EvaluationResults = () => {
                     >
                       <div className="flex items-center justify-between">
                         <span className="font-bold flex items-center gap-1.5 text-neutral-300">
-                          <Mic className="w-3.5 h-3.5 text-[#FF9F1C]" />
+                          <Mic className="w-3.5 h-3.5 text-[var(--c-text-muted)]" />
                           <span>Speech Delivery</span>
                         </span>
                         {wpm != null && (
-                          <span className="font-mono text-[#FF9F1C] font-bold">
+                          <span className="font-mono text-neutral-200 font-bold">
                             {Math.round(wpm)} WPM
                           </span>
                         )}
@@ -1049,7 +1049,7 @@ const EvaluationResults = () => {
                     >
                       <div className="flex items-center justify-between">
                         <span className="font-bold flex items-center gap-1.5 text-neutral-300">
-                          <Eye className={`w-3.5 h-3.5 ${hasRealVision ? 'text-[#FF9F1C]' : 'text-neutral-500'}`} />
+                          <Eye className="w-3.5 h-3.5 text-[var(--c-text-muted)]" />
                           <span>Vision & Facial</span>
                         </span>
                         {offCamera ? (
@@ -1195,13 +1195,13 @@ const EvaluationResults = () => {
               {weaknesses.length > 0 && (
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 border-b pb-2" style={{ borderColor: 'var(--c-border)' }}>
-                    <AlertCircle className="w-4 h-4 text-[#FF9F1C]" />
+                    <AlertCircle className="w-4 h-4" style={{ color: 'var(--c-warning)' }} />
                     <h3 className="c-heading text-sm font-bold" style={{ color: 'var(--c-text)' }}>Key Areas for Improvement</h3>
                   </div>
                   <ul className="space-y-2.5 text-xs">
                     {weaknesses.map((wk, i) => (
                       <li key={i} className="flex items-start gap-2.5 leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                        <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 bg-[#FF9F1C]" />
+                        <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: 'var(--c-warning)' }} />
                         <span>{wk}</span>
                       </li>
                     ))}
@@ -1217,7 +1217,7 @@ const EvaluationResults = () => {
                 style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}
               >
                 <div className="flex items-center gap-2 border-b pb-2" style={{ borderColor: 'var(--c-border)' }}>
-                  <Lightbulb className="w-4 h-4 text-orange-400" />
+                  <Lightbulb className="w-4 h-4 text-[var(--c-text-muted)]" />
                   <h3 className="c-heading text-sm font-bold" style={{ color: 'var(--c-text)' }}>
                     Personalized Coaching & Preparation Strategies
                   </h3>
@@ -1225,7 +1225,7 @@ const EvaluationResults = () => {
                 <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                   {suggestions.map((sug, i) => (
                     <li key={i} className="flex items-start gap-2 leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                      <span className="font-mono text-orange-400 font-bold shrink-0 mt-0.5">0{i + 1}.</span>
+                      <span className="font-mono text-[var(--c-text-muted)] font-bold shrink-0 mt-0.5">0{i + 1}.</span>
                       <span>{sug}</span>
                     </li>
                   ))}

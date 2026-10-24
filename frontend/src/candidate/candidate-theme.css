@@ -2,7 +2,7 @@
  * MockAI Candidate Panel — Charcoal + Orange Design System
  *
  * Scoped strictly under `.candidate-app` to prevent collision with Admin Panel.
- * Exclusively Dark Theme: Charcoal (#111111) base with Primary Orange (#FF6B35) & Highlight Orange (#FF9F1C).
+ * Exclusively Dark Theme: Charcoal (#111111) base with one accent, orange (#FF6B35). Amber (#FF9F1C) is only the warning colour.
  */
 
 /* ─── DARK THEME (Exclusively Supported) ─── */
@@ -29,7 +29,7 @@ html.dark .candidate-app,
   /* Primary Actions — Orange */
   --c-accent: #FF6B35;              /* Primary Orange */
   --c-accent-hover: #E8551E;        /* Darker Orange hover */
-  --c-accent-highlight: #FF9F1C;    /* Highlight Orange */
+  --c-accent-highlight: #FF6B35;    /* same as the accent: one orange */
   --c-accent-soft: rgba(255, 107, 53, 0.12);
   --c-accent-soft-strong: rgba(255, 107, 53, 0.20);
 
@@ -48,7 +48,7 @@ html.dark .candidate-app,
 
   /* Badges */
   --c-badge-accent-bg: rgba(255, 107, 53, 0.10);
-  --c-badge-accent-text: #FF9F1C;
+  --c-badge-accent-text: #FF7D4D;
   --c-badge-accent-border: rgba(255, 107, 53, 0.25);
 
   --c-badge-success-bg: rgba(34, 197, 94, 0.08);
@@ -190,8 +190,7 @@ html.dark .candidate-app,
   color: #FFFFFF;
   border: 1px solid rgba(255, 255, 255, 0.18);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25),
-              0 1px 2px rgba(0, 0, 0, 0.4),
-              0 4px 14px rgba(230, 90, 32, 0.25);
+              0 1px 2px rgba(0, 0, 0, 0.4);
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.25);
 }
 
@@ -200,8 +199,7 @@ html.dark .candidate-app,
   background: linear-gradient(180deg, #FB884B 0%, #EE672D 100%);
   border-color: rgba(255, 255, 255, 0.28);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35),
-              0 2px 6px rgba(0, 0, 0, 0.45),
-              0 6px 20px rgba(230, 90, 32, 0.35);
+              0 2px 6px rgba(0, 0, 0, 0.45);
   transform: translateY(-0.5px);
 }
 

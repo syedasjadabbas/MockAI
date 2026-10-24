@@ -180,7 +180,7 @@ const MentorBookingModal = ({ mentor, isOpen, onClose, onSuccess }) => {
                 </div>
                 <div className="flex justify-between">
                   <span style={{ color: 'var(--c-text-muted)' }}>Time Slot:</span>
-                  <span className="text-[#FF9F1C] font-semibold">{selectedSlot?.start_time}</span>
+                  <span className="font-semibold" style={{ color: 'var(--c-text)' }}>{selectedSlot?.start_time}</span>
                 </div>
                 <div className="flex justify-between">
                   <span style={{ color: 'var(--c-text-muted)' }}>Status:</span>
@@ -350,7 +350,7 @@ const MentorBookingModal = ({ mentor, isOpen, onClose, onSuccess }) => {
 
               {/* Policy Note */}
               <div className="flex items-center gap-2 text-[11px] text-neutral-400 pt-1">
-                <ShieldCheck className="w-3.5 h-3.5 text-[#FF9F1C] flex-shrink-0" />
+                <ShieldCheck className="w-3.5 h-3.5 text-[var(--c-text-muted)] flex-shrink-0" />
                 <span>Sessions include live 1-on-1 audio/video and structured rubric feedback.</span>
               </div>
 

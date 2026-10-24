@@ -74,7 +74,12 @@ def _category_profiles() -> List[Dict]:
             "description": c.get("description", ""),
             "profile_text": f"{c.get('name', '')}. {c.get('description', '')} " + " ".join(sample_qs),
         })
-    _profile_cache.update({"key": key, "at": time.time(), "profiles": profiles, "embeddings": None})
+    # Re-encoding all profiles takes ~5 s on CPU, so keep the embeddings when
+    # the 5-minute refresh finds the same profile texts (nothing changed).
+    old_profiles = _profile_cache.get("profiles") or []
+    unchanged = [p["profile_text"] for p in profiles] == [p["profile_text"] for p in old_profiles]  # type: ignore[index]
+    embeddings = _profile_cache.get("embeddings") if unchanged else None
+    _profile_cache.update({"key": key, "at": time.time(), "profiles": profiles, "embeddings": embeddings})
     return profiles
 
 
@@ -87,7 +92,8 @@ def _profile_similarities(text: str, profiles: List[Dict], analyzer: BertSemanti
 
     model = analyzer.get_model()
     with torch.inference_mode():
-        if _profile_cache.get("embeddings") is None or _profile_cache.get("profiles") is not profiles:
+        if _profile_cache.get("embeddings") is None or _profile_cache.get("profiles") is not profiles \
+                or len(_profile_cache["embeddings"]) != len(profiles):
             _profile_cache["embeddings"] = model.encode(
                 [p["profile_text"] for p in profiles], convert_to_tensor=True, show_progress_bar=False
             )

@@ -212,7 +212,7 @@ const CandidateNav = () => {
                   className="flex items-center gap-2 px-3 py-2.5 transition-colors hover:bg-[var(--c-surface-muted)] hover:text-[var(--c-text)] rounded"
                   style={{ color: 'var(--c-text-secondary)' }}
                 >
-                  <Home className="w-3.5 h-3.5 text-[#FF6B35]" />
+                  <Home className="w-3.5 h-3.5 text-[var(--c-text-muted)]" />
                   <span>Landing Page</span>
                 </Link>
 
@@ -222,7 +222,7 @@ const CandidateNav = () => {
                   className="flex items-center gap-2 px-3 py-2.5 transition-colors hover:bg-[var(--c-surface-muted)] hover:text-[var(--c-text)] rounded"
                   style={{ color: 'var(--c-text-secondary)' }}
                 >
-                  <User className="w-3.5 h-3.5" style={{ color: 'var(--c-accent)' }} />
+                  <User className="w-3.5 h-3.5 text-[var(--c-text-muted)]" />
                   <span>Candidate Profile</span>
                 </Link>
 
@@ -232,7 +232,7 @@ const CandidateNav = () => {
                   className="flex items-center gap-2 px-3 py-2.5 transition-colors hover:bg-[var(--c-surface-muted)] hover:text-[var(--c-text)] rounded"
                   style={{ color: 'var(--c-text-secondary)' }}
                 >
-                  <Users className="w-3.5 h-3.5 text-[#FF6B35]" />
+                  <Users className="w-3.5 h-3.5 text-[var(--c-text-muted)]" />
                   <span>Technical Mentors</span>
                 </Link>
 
@@ -242,7 +242,7 @@ const CandidateNav = () => {
                   className="flex items-center gap-2 px-3 py-2.5 transition-colors hover:bg-[var(--c-surface-muted)] hover:text-[var(--c-text)] rounded"
                   style={{ color: 'var(--c-text-secondary)' }}
                 >
-                  <History className="w-3.5 h-3.5" style={{ color: 'var(--c-accent-highlight)' }} />
+                  <History className="w-3.5 h-3.5 text-[var(--c-text-muted)]" />
                   <span>Interview History</span>
                 </Link>
 
@@ -252,7 +252,7 @@ const CandidateNav = () => {
                   className="flex items-center gap-2 px-3 py-2.5 transition-colors hover:bg-[var(--c-surface-muted)] hover:text-[var(--c-text)] rounded"
                   style={{ color: 'var(--c-text-secondary)' }}
                 >
-                  <TrendingUp className="w-3.5 h-3.5 text-green-500" />
+                  <TrendingUp className="w-3.5 h-3.5 text-[var(--c-text-muted)]" />
                   <span>Progress Analytics</span>
                 </Link>
 

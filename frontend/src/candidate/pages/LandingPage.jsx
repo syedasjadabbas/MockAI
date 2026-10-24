@@ -420,7 +420,6 @@ const AnimatedScoreMeter = ({ label, targetPercent, color = '#FF6B35' }) => {
           style={{
             width: `${currentPercent}%`,
             background: color,
-            boxShadow: '0 0 8px rgba(249, 115, 22, 0.25)',
           }}
         />
       </div>
@@ -661,7 +660,7 @@ const LandingPage = () => {
             <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-8">
               {DIMENSIONS.map(({ icon: Icon, title, body }) => (
                 <div key={title} className="flex gap-3.5 items-start">
-                  <Icon className="w-5 h-5 shrink-0 mt-0.5" style={{ color: 'var(--c-accent)' }} />
+                  <Icon className="w-5 h-5 shrink-0 mt-0.5" style={{ color: 'var(--c-text-secondary)' }} />
                   <div className="space-y-1">
                     <h3 className="text-sm font-bold" style={{ color: 'var(--c-text)' }}>{title}</h3>
                     <p className="text-sm leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>{body}</p>
@@ -706,7 +705,7 @@ const LandingPage = () => {
                 >
                   <div
                     className="w-9 h-9 rounded-md flex items-center justify-center shrink-0 border"
-                    style={{ background: 'var(--c-surface-muted)', borderColor: 'var(--c-border)', color: 'var(--c-accent)' }}
+                    style={{ background: 'var(--c-surface-muted)', borderColor: 'var(--c-border)', color: 'var(--c-text-secondary)' }}
                   >
                     <Icon className="w-4 h-4" />
                   </div>
