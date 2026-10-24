@@ -405,7 +405,7 @@ def _heuristic_analysis(
             "completeness_score": 0.0,
             "covered_concepts": [],
             "missing_concepts": target_concepts[:8] if target_concepts else full_pool[:5],
-            "notes": "No spoken response recorded or transcript was empty.",
+            "notes": "No answer was recorded for this question.",
             "model": "heuristic-fallback",
             "error": None,
             "is_echo": False,
@@ -500,17 +500,17 @@ def _heuristic_analysis(
     content_score = round(min(100.0, max(0.0, raw_score)), 1)
 
     if is_echo:
-        notes = "Response repeated the question prompt without demonstrating candidate understanding or substantive coverage."
+        notes = "Your answer mostly repeated the question without explaining anything."
     elif is_fragment:
-        notes = f"Response is a brief keyword fragment ({word_count} words) without technical explanation or context."
+        notes = f"Your answer was very short ({word_count} words) and did not explain the topic."
     elif content_score >= 80:
-        notes = f"Thorough response covering core concepts ({len(covered_target)} target concepts identified). Strong alignment with expected criteria."
+        notes = f"Thorough answer: you covered {len(covered_target)} key point(s) and matched what a strong answer includes."
     elif content_score >= 55:
-        notes = f"Satisfactory answer covering basic principles ({len(covered_target)} concepts), with opportunities for greater domain depth."
+        notes = f"Good answer covering the basics ({len(covered_target)} key point(s)); more depth would make it stronger."
     elif content_score < 25:
-        notes = "Low substantive relevance to expected criteria. Core domain concepts were not addressed."
+        notes = "Your answer did not address what the question was asking about."
     else:
-        notes = "Partial response with limited key concept coverage. Key areas were missed."
+        notes = "Partial answer: some key points were missing."
 
     def _concept_rank(c: str) -> Tuple[int, str]:
         c_low = c.lower()
@@ -575,7 +575,7 @@ def analyze_transcript(
             "completeness_score": 0.0,
             "covered_concepts": [],
             "missing_concepts": target_concepts[:8] if target_concepts else full_pool[:5],
-            "notes": "No spoken response recorded or transcript was empty.",
+            "notes": "No answer was recorded for this question.",
             "model": nlp_model_label(),
             "error": None,
             "is_echo": False,
@@ -721,17 +721,17 @@ def analyze_transcript(
 
         # Generate explainable grounded feedback summary
         if is_echo:
-            notes = "Response repeated the question prompt without demonstrating candidate understanding or substantive coverage."
+            notes = "Your answer mostly repeated the question without explaining anything."
         elif is_fragment:
-            notes = f"Response is a brief keyword fragment ({word_count} words) without technical explanation or context."
+            notes = f"Your answer was very short ({word_count} words) and did not explain the topic."
         elif content_score >= 80:
-            notes = f"Strong semantic alignment ({round(sem_score)}% similarity) with {len(covered_target)} key concepts demonstrated. Response is domain-accurate and comprehensive."
+            notes = f"Thorough answer: it closely matched a strong answer ({round(sem_score)}% match) and covered {len(covered_target)} key point(s)."
         elif content_score >= 55:
-            notes = f"Satisfactory response ({round(sem_score)}% semantic alignment) demonstrating core principles ({len(covered_target)} concepts), though additional depth is recommended."
+            notes = f"Good answer ({round(sem_score)}% match to a strong answer) covering the basics ({len(covered_target)} key point(s)); more depth would make it stronger."
         elif content_score < 25:
-            notes = f"Low substantive relevance ({round(sem_score)}% alignment) to expected criteria. Core domain concepts were not addressed."
+            notes = f"Your answer did not address what the question was asking about ({round(sem_score)}% match to a strong answer)."
         else:
-            notes = f"Partial response with limited key concept coverage. Key domain concepts were missed."
+            notes = "Partial answer: some key points were missing."
 
         def _concept_rank(c: str) -> Tuple[int, str]:
             c_low = c.lower()

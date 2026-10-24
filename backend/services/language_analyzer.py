@@ -375,10 +375,10 @@ def analyze_language(transcript: Optional[str], mode: str = "spoken") -> Dict:
         notes_parts.append("No common grammar errors were detected.")
     else:
         types = sorted({i["type"] for i in issues})
-        notes_parts.append(f"{len(issues)} language issue(s) found ({', '.join(types)}).")
-    notes_parts.append(f"Tone reads as {tone_label.lower()}")
+        notes_parts.append(f"{len(issues)} language issue(s) to fix ({', '.join(types)}).")
+    notes_parts.append(f"Your tone came across as {tone_label.lower()}")
     if hedges:
-        notes_parts[-1] += f" ({len(hedges)} hedging phrase(s) such as \"{hedges[0]}\")"
+        notes_parts[-1] += f" ({len(hedges)} unsure phrase(s) such as \"{hedges[0]}\")"
     notes_parts[-1] += "."
 
     return {
@@ -476,9 +476,9 @@ def language_feedback(summary: Dict) -> Dict[str, List[str]]:
     if tone in ("Tentative", "Uncertain"):
         hedges = summary.get("common_hedges") or []
         sample = f" (\"{hedges[0]}\")" if hedges else ""
-        out["weaknesses"].append(f"Tentative Tone: Frequent hedging{sample} makes answers sound unsure.")
+        out["weaknesses"].append(f"Unsure Tone: Frequent unsure phrases{sample} make your answers sound less confident.")
         out["suggestions"].append(
-            "Assertive Phrasing: Replace hedges like \"I think\" or \"maybe\" with direct statements and concrete outcomes (\"I implemented X, which reduced Y\")."
+            "Direct Phrasing: Replace phrases like \"I think\" or \"maybe\" with direct statements and concrete outcomes (\"I implemented X, which reduced Y\")."
         )
     if summary["avg_clarity_score"] < 65:
         out["suggestions"].append(

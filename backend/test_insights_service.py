@@ -156,7 +156,7 @@ def run_tests():
     assert "138.0 WPM" in ins1["score_explanation"]["score_rationale"]
     # FR25 Checks
     assert len(ins1["strengths"]) >= 2
-    assert any("pacing" in s.lower() or "cadence" in s.lower() for s in ins1["strengths"])
+    assert any("pace" in s.lower() or "cadence" in s.lower() for s in ins1["strengths"])
     assert any("depth" in s.lower() or "redux" in s.lower() for s in ins1["strengths"])
     # FR26 Checks
     assert len(ins1["weaknesses"]) > 0
@@ -224,7 +224,7 @@ def run_tests():
     )
     ins3 = generate_interview_insights(**mixed_data)
     # Communication should be in strengths
-    assert any("cadence" in s.lower() or "pacing" in s.lower() for s in ins3["strengths"])
+    assert any("cadence" in s.lower() or "pace" in s.lower() for s in ins3["strengths"])
     # Technical gaps should be in weaknesses
     assert any("concept" in w.lower() or "flexbox" in w.lower() for w in ins3["weaknesses"])
     # Suggestions should address missing technical concepts
@@ -318,8 +318,8 @@ def run_tests():
     ins7 = generate_interview_insights(**zero_data)
     assert ins7["strengths"] == []
     assert len(ins7["weaknesses"]) > 0
-    assert "unrecorded" in ins7["weaknesses"][0].lower() or "submitted without" in ins7["weaknesses"][0].lower()
-    assert "unassessed" in ins7["score_explanation"]["dimension_breakdown"]["technical"].lower()
+    assert "no answers recorded" in ins7["weaknesses"][0].lower()
+    assert "not scored" in ins7["score_explanation"]["dimension_breakdown"]["technical"].lower()
     print(f"  Summary: {ins7['score_explanation']['overall_summary']}")
     print(f"  Weaknesses: {ins7['weaknesses']}")
     print("  PASS: Zero-answer session handled honestly with zero synthetic data.")

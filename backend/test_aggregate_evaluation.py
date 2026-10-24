@@ -227,7 +227,7 @@ def run_tests():
     # Expected overall: 100.0 / 2.75 = 36.363... -> 36.4
     assert abs(res5["overall_score"] - 36.4) < 0.1, f"Expected 36.4, got {res5['overall_score']}"
     assert res5["aggregate_analysis"]["failed_questions"] == 1
-    assert any("processing issues" in w.lower() for w in res5["weaknesses"])
+    assert any("could not be processed" in w.lower() for w in res5["weaknesses"])
     print(f"  Overall Score: {res5['overall_score']}% (expected 36.4%)")
     print("  PASS: Failed question handled safely with honest penalty and error note.")
 

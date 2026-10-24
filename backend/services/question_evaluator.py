@@ -149,7 +149,7 @@ def evaluate_question_response(
     if is_unanswered:
         strengths: List[str] = []
         missing_concepts = nlp_result.get("missing_concepts", [])
-        feedback = "No response was recorded for this question prompt."
+        feedback = "No answer was recorded for this question."
     else:
         strengths = []
         covered = nlp_result.get("covered_concepts", [])
@@ -162,21 +162,21 @@ def evaluate_question_response(
         # (Must have >= 55% content score, demonstrate target concepts, and not be an echo or fragment)
         display_concepts = target_covered if target_covered else covered
         if content_score >= 55.0 and len(display_concepts) >= 1 and not is_echo and not is_fragment:
-            strengths.append(f"Clear grasp of key concepts: {', '.join(display_concepts[:3])}.")
+            strengths.append(f"You clearly explained {', '.join(display_concepts[:3])}.")
 
         if delivery_result.get("pacing") == "Optimal":
-            strengths.append(f"Optimal speaking pace ({delivery_result.get('words_per_minute')} WPM).")
+            strengths.append(f"Good speaking pace ({delivery_result.get('words_per_minute')} WPM).")
         elif delivery_result.get("fluency_indicator") == "Fluent":
-            strengths.append("Smooth conversational delivery with minimal hesitation.")
+            strengths.append("You spoke smoothly with little hesitation.")
         if content_score >= 80.0:
-            strengths.append("Thorough domain depth addressing core requirements.")
+            strengths.append("Thorough answer that covered what was asked.")
         if facial_analysis_data.get("status") == "completed":
             indicators = facial_analysis_data.get("behavioral_indicators", {})
             if indicators.get("composure_index") == "Composed & Stable":
-                strengths.append("Maintained calm facial composure throughout response.")
+                strengths.append("You looked calm and steady on camera.")
 
         if language_result.get("status") == "completed" and language_result["grammar_score"] >= 90 and language_result["word_count"] >= 20:
-            strengths.append("Grammatically clean, well-formed phrasing.")
+            strengths.append("Clear, grammatically correct sentences.")
         if language_result.get("tone", {}).get("label") == "Confident":
             strengths.append("Confident, direct tone.")
 

@@ -406,10 +406,10 @@ def analyze_delivery(
     if not transcript or not transcript.strip():
         sound = (acoustic_profile or {}).get("sound_activity_ratio")
         if sound:
-            note = (f"No words were recognised, although sound was present in {sound:.0%} of the recording; "
-                    "speech delivery could not be assessed.")
+            note = (f"No words were recognised, although there was sound in {sound:.0%} of the recording, "
+                    "so your speaking could not be assessed.")
         else:
-            note = "No spoken words were recorded for this prompt."
+            note = "No spoken words were recorded for this question."
         return {
             "status": "empty" if transcript == "" else "missing",
             "word_count": 0,
@@ -519,11 +519,11 @@ def analyze_delivery(
 
     # Notes
     if fluency_score >= 80.0:
-        notes = f"Fluid spoken delivery at {wpm} WPM ({pacing} pacing) with minimal hesitation ({hesitation_rate}% fillers/pauses)."
+        notes = f"You spoke smoothly at {wpm} WPM ({pacing.lower()} pace) with little hesitation ({hesitation_rate}% fillers and pauses)."
     elif fluency_score >= 50.0:
-        notes = f"Steady delivery at {wpm} WPM ({pacing} pacing). {filler_count} filler words detected with {pause_count} pauses."
+        notes = f"You spoke steadily at {wpm} WPM ({pacing.lower()} pace), with {filler_count} filler word(s) and {pause_count} pause(s)."
     else:
-        notes = f"Spoken delivery exhibited {hesitation_level.lower()} hesitation ({filler_count} fillers, {pause_duration}s pauses) at {wpm} WPM ({pacing})."
+        notes = f"You hesitated a fair amount ({filler_count} filler word(s), {pause_duration}s of pauses) at {wpm} WPM ({pacing.lower()} pace)."
 
     return {
         "status": "completed",

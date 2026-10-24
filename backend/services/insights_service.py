@@ -19,12 +19,26 @@ Implements report-aligned explainable AI feedback and coaching:
     - FR 27-02: Provide structured coaching guidance (STAR method, top-down communication).
     - FR 27-03: Recommend preparation strategies for future interviews.
 
+All text is written to the candidate ("you"), in plain language: no internal
+terms (fusion, prompt takes, semantic similarity) and no database IDs.
+
 Strict Guarantees:
 - Zero fabrication: If a modality was unavailable, its absence is explicitly documented and no
   synthetic observations or fake metrics are generated.
 - Deterministic and repeatable: Identical inputs produce identical structured insights.
 """
 from typing import Dict, List, Optional
+
+
+def _assessed(level: Optional[str]) -> bool:
+    return bool(level) and level != "Not Assessed"
+
+
+def _question_number(per_question_results: List[Dict], target: Dict) -> int:
+    for i, q in enumerate(per_question_results, start=1):
+        if q is target:
+            return i
+    return 0
 
 
 def generate_interview_insights(
@@ -50,7 +64,6 @@ def generate_interview_insights(
     compiled_metrics = aggregate_analysis.get("compiled_metrics", {})
     tech_metrics = compiled_metrics.get("technical", {})
     comm_metrics = compiled_metrics.get("communication", {})
-    behav_metrics = compiled_metrics.get("behavioral", {})
 
     # Modality availability flags
     has_speech = comm_metrics.get("avg_wpm", 0.0) > 0.0 or comm_metrics.get("avg_fluency_score", 0.0) > 0.0
@@ -61,174 +74,196 @@ def generate_interview_insights(
     # Zero-Answer / Incomplete Fallback (Honest Handling)
     # -------------------------------------------------------------------------
     if answered_q == 0 or not per_question_results:
-        empty_summary = "No candidate responses were recorded in this interview session. An evaluation cannot be conducted without audio or video submissions."
+        empty_summary = "No answers were recorded in this interview, so there is nothing to score yet."
         empty_rationale = (
-            f"The composite score of {round(overall_score)}/100 reflects that 0 of {total_q} prompts were completed. "
-            f"Without recorded audio or video takes, domain content, speech delivery, and facial composure could not be analyzed."
+            f"You answered 0 of {total_q} questions, so your score is {round(overall_score)}%. "
+            "Answer each question out loud or by typing to get feedback on what you said, how you said it and how you came across on camera."
         )
         return {
             "score_explanation": {
                 "overall_summary": empty_summary,
                 "score_rationale": empty_rationale,
                 "dimension_breakdown": {
-                    "technical": "Domain & Technical Content: Unassessed (no submitted text or speech).",
-                    "communication": "Speech & Delivery: Unassessed (no recorded audio).",
-                    "behavioral": "Behavioral Composure: Unassessed (no recorded video).",
+                    "technical": "What you said: not scored (no answers were recorded).",
+                    "communication": "How you said it: not scored (no audio was recorded).",
+                    "behavioral": "On camera: not scored (no video was recorded).",
                 },
                 "behavioral_observations": [
-                    f"Session Activity: {total_q} prompt(s) presented; {skipped_q} prompt(s) skipped without recorded response.",
+                    f"{total_q} question(s) were shown and {skipped_q} were skipped.",
                 ],
             },
             "strengths": [],
             "strengths_detail": [],
             "weaknesses": [
-                f"{total_q} prompt(s) were submitted without recorded responses, resulting in a zero-coverage evaluation."
+                f"No answers recorded: none of the {total_q} questions were answered."
             ],
             "weaknesses_detail": [
                 {
                     "category": "Completeness",
-                    "title": "Unrecorded Session",
-                    "description": "No responses were recorded for any of the interview prompts.",
-                    "evidence": f"0 of {total_q} prompts answered.",
+                    "title": "No answers recorded",
+                    "description": "None of the interview questions were answered.",
+                    "evidence": f"0 of {total_q} questions answered.",
                     "severity": "High",
                 }
             ],
             "suggestions": [
-                "Record and submit spoken responses for each prompt to receive a comprehensive diagnostic evaluation.",
-                "Ensure microphone and webcam permissions are granted before starting the interview simulation.",
+                "Answer each question out loud, or type your answer, to get feedback.",
+                "Before you start, check that the browser is allowed to use your camera and microphone.",
             ],
             "coaching_guidance": [
                 {
-                    "domain": "Session Preparation",
-                    "action": "Complete All Prompts",
-                    "practice_strategy": "Set aside an uninterrupted 15-minute window and complete all prompts in one sitting.",
-                    "target_metric": "100% Prompt Completion Rate",
+                    "domain": "Getting started",
+                    "action": "Answer every question",
+                    "practice_strategy": "Set aside 15 quiet minutes and answer all the questions in one go.",
+                    "target_metric": "All questions answered",
                 }
             ],
             "preparation_strategies": [
-                "Perform a pre-interview hardware check to confirm microphone volume and camera visibility.",
-                "Review the role questions and take 30 seconds to outline points mentally before recording.",
+                "Check your microphone and camera before you start.",
+                "Read each question and take 30 seconds to plan your main points before you answer.",
             ],
         }
 
     # -------------------------------------------------------------------------
     # FR24: Score Interpretation & Explanations (FR 24-01, FR 24-02, FR 24-03)
     # -------------------------------------------------------------------------
-    # Performance tier description
     if overall_score >= 80.0:
-        perf_tier = "Strong"
-        perf_verb = "demonstrated strong domain proficiency and confident communication"
+        perf_tier = "Strong result"
+        perf_verb = "You gave strong, well-covered answers"
     elif overall_score >= 60.0:
-        perf_tier = "Competent"
-        perf_verb = "demonstrated solid foundational understanding with opportunities for greater depth"
+        perf_tier = "Good result"
+        perf_verb = "You covered the basics well, with room for more depth"
     elif overall_score >= 35.0:
-        perf_tier = "Developing"
-        perf_verb = "showed emerging familiarity with core concepts but missed key domain details"
+        perf_tier = "Fair result"
+        perf_verb = "You showed some understanding but missed important points"
     else:
-        perf_tier = "Limited"
-        perf_verb = "had limited response coverage and key domain areas require review"
+        perf_tier = "Needs work"
+        perf_verb = "Your answers missed most of the key points"
+
+    conf_ok, stress_ok = _assessed(confidence_level), _assessed(stress_level)
+    if conf_ok and stress_ok:
+        behaviour_line = (f" You came across with {confidence_level.lower()} confidence ({round(confidence_score)}%) "
+                          f"and {stress_level.lower()} stress ({round(stress_score)}%).")
+    elif conf_ok:
+        behaviour_line = f" You came across with {confidence_level.lower()} confidence ({round(confidence_score)}%)."
+    else:
+        behaviour_line = " Confidence and stress were not assessed because your answers were too short to judge."
 
     overall_summary = (
-        f"{perf_tier} overall performance with a composite score of {round(overall_score)}/100. "
-        f"The candidate {perf_verb} across {answered_q} of {total_q} evaluated prompts. "
-        f"Delivery confidence was assessed at {round(confidence_score)}% ({confidence_level}) with {stress_level.lower()} observed tension ({round(stress_score)}%)."
+        f"{perf_tier}: you scored {round(overall_score)}%. "
+        f"{perf_verb} across {answered_q} of {total_q} questions."
+        f"{behaviour_line}"
     )
 
-    # Mathematical & behavioral score rationale
     content_score = dimension_scores.get("technical_content", 0.0)
     comm_score = dimension_scores.get("communication_fluency", 0.0)
     behav_score = dimension_scores.get("behavioral_composure", 0.0)
 
     score_rationale_parts = [
-        f"The overall score of {round(overall_score, 1)}/100 is calculated via difficulty-weighted trimodal fusion across {answered_q} evaluated prompt takes."
+        f"Your score of {round(overall_score, 1)}% combines what you said (50%), how you said it (30%) "
+        f"and how you came across on camera (20%), across {answered_q} answered question(s). Harder questions count more."
     ]
     if has_nlp:
         covered_n = len(tech_metrics.get("covered_concepts", []))
         score_rationale_parts.append(
-            f"Domain and technical content scored {round(content_score, 1)}%, driven by semantic similarity and concept coverage ({covered_n} key concepts demonstrated)."
+            f"What you said scored {round(content_score, 1)}%: your answers were compared with what a strong answer covers, "
+            f"and you covered {covered_n} key point(s)."
         )
     else:
-        score_rationale_parts.append("Domain and technical content was unassessed due to missing transcripts.")
+        score_rationale_parts.append("What you said was not scored because the transcript was missing.")
 
     if has_speech:
         avg_wpm = comm_metrics.get("avg_wpm", 0.0)
         hesitation = comm_metrics.get("avg_hesitation_rate", 0.0)
         score_rationale_parts.append(
-            f"Speech delivery contributed {round(comm_score, 1)}%, with a pacing cadence averaging {avg_wpm:.1f} WPM and a hesitation rate of {hesitation:.1f}%."
+            f"How you said it scored {round(comm_score, 1)}%: you averaged {avg_wpm:.1f} WPM (words per minute) "
+            f"with {hesitation:.1f}% hesitation (filler words and long pauses)."
         )
     else:
-        score_rationale_parts.append("Speech delivery metrics were unavailable because no audio track was recorded.")
+        score_rationale_parts.append("How you said it was not scored because no audio was recorded.")
 
     if has_vision:
         composure = facial_summary.get("overall_composure", "Moderate Composure")
         dominant = facial_summary.get("dominant_expression", "Neutral")
         score_rationale_parts.append(
-            f"Behavioral composure contributed {round(behav_score, 1)}%, tracked across {facial_summary.get('evaluated_takes', 0)} takes (dominant expression: {dominant}, composure: {composure})."
+            f"On camera scored {round(behav_score, 1)}% across {facial_summary.get('evaluated_takes', 0)} recorded answer(s) "
+            f"(most common expression: {dominant}; expression steadiness: {composure})."
         )
     else:
-        score_rationale_parts.append("Vision analysis was unmounted; non-verbal behavioral weights were redistributed to content and delivery.")
+        score_rationale_parts.append(
+            "The camera part was not scored, so its share was added to what you said and how you said it."
+        )
 
     if skipped_q > 0:
         score_rationale_parts.append(
-            f"Note: {skipped_q} prompt(s) were skipped, which reduced the total score denominator proportionally."
+            f"{skipped_q} skipped question(s) count as zero and lower your overall score."
         )
 
     score_rationale = " ".join(score_rationale_parts)
 
     # Dimension Breakdown
     tech_breakdown = (
-        f"Domain & Technical Content ({round(content_score, 1)}%): Semantic matching evaluated response depth against question rubrics. "
+        f"What you said ({round(content_score, 1)}%): your answers were compared with what a strong answer covers. "
         + (
-            f"Successfully covered: {', '.join(tech_metrics.get('covered_concepts', [])[:4])}."
+            f"You covered: {', '.join(tech_metrics.get('covered_concepts', [])[:4])}."
             if tech_metrics.get("covered_concepts")
-            else "Limited domain keyword and concept overlap detected."
+            else "Few of the key points came up in your answers."
         )
     )
 
     comm_breakdown = (
-        f"Communication & Fluency ({round(comm_score, 1)}%): Acoustic speech analysis measured cadence ({comm_metrics.get('avg_wpm', 0):.1f} WPM), "
-        f"hesitation rate ({comm_metrics.get('avg_hesitation_rate', 0):.1f}%), and filler frequency ({comm_metrics.get('total_fillers', 0)} fillers detected)."
+        f"How you said it ({round(comm_score, 1)}%): {comm_metrics.get('avg_wpm', 0):.1f} WPM, "
+        f"{comm_metrics.get('avg_hesitation_rate', 0):.1f}% hesitation and {comm_metrics.get('total_fillers', 0)} filler word(s)."
         if has_speech
-        else "Communication & Fluency: Audio track unavailable; speech metrics were not assessed."
+        else "How you said it: no audio was recorded, so this was unavailable."
     )
 
     behav_breakdown = (
-        f"Behavioral Composure ({round(behav_score, 1)}%): Computer-vision facial analysis observed {facial_summary.get('evaluated_takes', 0)} takes, "
-        f"classifying primary expression as '{facial_summary.get('dominant_expression')}' and composure as '{facial_summary.get('overall_composure')}'."
+        f"On camera ({round(behav_score, 1)}%): {facial_summary.get('evaluated_takes', 0)} answer(s) analysed; most common expression "
+        f"'{facial_summary.get('dominant_expression')}', expression steadiness '{facial_summary.get('overall_composure')}'."
         if has_vision
-        else "Behavioral Composure: Vision model unmounted; facial tension and engagement were not evaluated."
+        else "On camera: the face analysis was not available, so this was not evaluated."
     )
 
-    # Behavioral Observations list (FR 24-01)
+    # Observations list (FR 24-01)
     observations: List[str] = []
     if has_speech:
         avg_wpm = comm_metrics.get("avg_wpm", 0.0)
-        pacing_desc = "Optimal conversational range (120–160 WPM)" if 120 <= avg_wpm <= 160 else ("Rushed (>160 WPM)" if avg_wpm > 160 else "Deliberate / Slow (<120 WPM)")
-        observations.append(f"Speaking Cadence: Averaged {avg_wpm:.1f} WPM ({pacing_desc}).")
+        pacing_desc = (
+            "a comfortable pace (120–160 WPM)" if 120 <= avg_wpm <= 160
+            else ("fast, over 160 WPM" if avg_wpm > 160 else "slow, under 120 WPM")
+        )
+        observations.append(f"Speaking pace: {avg_wpm:.1f} WPM, {pacing_desc}.")
 
         hesitation = comm_metrics.get("avg_hesitation_rate", 0.0)
         fillers = comm_metrics.get("total_fillers", 0)
-        observations.append(f"Vocal Fluency: {fillers} filler word(s) detected across answers (hesitation rate: {hesitation:.1f}%).")
+        observations.append(f"Filler words: {fillers} across your answers ({hesitation:.1f}% hesitation).")
 
         pause_sec = comm_metrics.get("total_pause_duration_seconds", 0.0)
         pause_cnt = comm_metrics.get("total_pause_count", 0)
         if pause_cnt > 0:
-            observations.append(f"Acoustic Pauses: {pause_cnt} pause(s) exceeding 500ms (totaling {pause_sec:.1f}s dead air).")
+            observations.append(f"Long pauses: {pause_cnt} pause(s) over half a second, {pause_sec:.1f}s in total.")
         else:
-            observations.append("Acoustic Pauses: Continuous speech stream without extended dead air.")
+            observations.append("Long pauses: none, you spoke without long silences.")
 
     if has_vision:
         dominant = facial_summary.get("dominant_expression") or "Not Observed"
         composure = facial_summary.get("overall_composure") or "Moderate"
-        observations.append(f"Facial Tracking: Primary expression '{dominant}' with '{composure}' stability across takes.")
+        observations.append(f"Expression: mostly '{dominant}', steadiness '{composure}'.")
 
-    observations.append(f"Confidence Assessment: Evaluated at {round(confidence_score, 1)}% ({confidence_level}).")
-    observations.append(f"Observable Stress: Evaluated at {round(stress_score, 1)}% ({stress_level}).")
+    observations.append(
+        f"Confidence: {confidence_level} ({round(confidence_score, 1)}%)." if conf_ok
+        else "Confidence: not assessed (answers too short to judge)."
+    )
+    observations.append(
+        f"Stress: {stress_level} ({round(stress_score, 1)}%)." if stress_ok
+        else "Stress: not assessed (answers too short to judge)."
+    )
 
     if not has_vision:
-        observations.append("Notice: Computer-vision facial pipeline was offline; behavioral cues were not recorded.")
+        observations.append("The camera part was not available for this interview.")
     if not has_speech:
-        observations.append("Notice: Acoustic recording was unavailable; speech cues were not recorded.")
+        observations.append("No audio was recorded for this interview.")
 
     # -------------------------------------------------------------------------
     # FR25: Identify Strengths (FR 25-01, FR 25-02, FR 25-03)
@@ -236,96 +271,85 @@ def generate_interview_insights(
     strengths: List[str] = []
     strengths_detail: List[Dict] = []
 
-    # 1. Technical Domain Mastery & Depth
     covered = tech_metrics.get("covered_concepts", [])
     if covered:
-        st_text = f"Technical Domain Depth: Demonstrated clear mastery of core concepts: {', '.join(covered[:3])}."
-        strengths.append(st_text)
+        strengths.append(f"Key points covered: you explained {', '.join(covered[:3])} well.")
         strengths_detail.append({
             "category": "Technical",
-            "title": "Technical Domain Depth",
-            "description": "Addressed essential technical concepts defined in the evaluation rubric.",
+            "title": "Key points covered",
+            "description": "Your answers included the main points a strong answer is expected to cover.",
             "evidence": f"Covered: {', '.join(covered[:4])}",
         })
 
-    # High-scoring question highlight
     high_q = [q for q in per_question_results if float(q.get("score", 0.0)) >= 80.0]
     if high_q:
         top_q = max(high_q, key=lambda q: float(q.get("score", 0.0)))
-        q_id = top_q.get("question_id", "Prompt")
-        st_text = f"Strong Answer Execution: Delivered a comprehensive response on {q_id} (Score: {round(float(top_q.get('score', 0.0)))}%)."
-        strengths.append(st_text)
+        n = _question_number(per_question_results, top_q)
+        top_score = round(float(top_q.get("score", 0.0)))
+        strengths.append(f"Strong answer: question {n} scored {top_score}%.")
         strengths_detail.append({
             "category": "Technical",
-            "title": f"Strong Answer Execution ({q_id})",
-            "description": "Successfully fulfilled expected answer requirements and technical depth.",
-            "evidence": f"Score: {round(float(top_q.get('score', 0.0)))}%",
+            "title": f"Strong answer (question {n})",
+            "description": "This answer covered what was expected in good depth.",
+            "evidence": f"Score: {top_score}%",
         })
 
-    # 2. Communication Behavior Strengths (FR 25-01)
     if has_speech:
         avg_wpm = comm_metrics.get("avg_wpm", 0.0)
         if 120 <= avg_wpm <= 160:
-            st_text = f"Optimal Conversational Cadence: Maintained a steady pace averaging {avg_wpm:.1f} WPM, ensuring clear technical comprehension."
-            strengths.append(st_text)
+            strengths.append(f"Good speaking pace: you averaged {avg_wpm:.1f} WPM, which is easy to follow.")
             strengths_detail.append({
                 "category": "Communication",
-                "title": "Optimal Conversational Cadence",
-                "description": "Spoke within the professional interview cadence benchmark of 120–160 WPM.",
+                "title": "Good speaking pace",
+                "description": "You spoke within the comfortable interview range of 120–160 words per minute.",
                 "evidence": f"{avg_wpm:.1f} WPM",
             })
 
         fluency = comm_metrics.get("avg_fluency_score", 0.0)
         if fluency >= 80.0 and len(strengths) < 4:
-            st_text = f"High Vocal Fluency: Smooth, articulate speech delivery with minimal hesitation (fluency score: {round(fluency)}%)."
-            strengths.append(st_text)
+            strengths.append(f"Smooth delivery: you spoke smoothly with little hesitation (fluency {round(fluency)}%).")
             strengths_detail.append({
                 "category": "Communication",
-                "title": "High Vocal Fluency",
-                "description": "Demonstrated natural, continuous speech flow without broken phrasing.",
+                "title": "Smooth delivery",
+                "description": "Your speech flowed naturally without broken sentences.",
                 "evidence": f"{round(fluency)}% fluency",
             })
 
         hesitation = comm_metrics.get("avg_hesitation_rate", 0.0)
         if hesitation <= 3.0 and len(strengths) < 4:
-            st_text = f"Concise Articulation: Kept verbal filler usage low (hesitation rate: {hesitation:.1f}%)."
-            strengths.append(st_text)
+            strengths.append(f"Few filler words: only {hesitation:.1f}% hesitation across your answers.")
             strengths_detail.append({
                 "category": "Communication",
-                "title": "Concise Articulation",
-                "description": "Exhibited strong verbal discipline with very few filler words ('um', 'like').",
-                "evidence": f"{hesitation:.1f}% hesitation rate",
+                "title": "Few filler words",
+                "description": "You rarely used fillers like \"um\" and \"uh\".",
+                "evidence": f"{hesitation:.1f}% hesitation",
             })
 
-    # 3. Confident Responses & Behavioral Strengths (FR 25-02)
-    if confidence_score >= 75.0 and len(strengths) < 4:
-        st_text = f"Confident Delivery Presence: Assessed with strong overall interview confidence ({round(confidence_score)}%, {confidence_level})."
-        strengths.append(st_text)
+    if conf_ok and confidence_score >= 75.0 and len(strengths) < 4:
+        strengths.append(f"Confident delivery: you came across as confident ({round(confidence_score)}%, {confidence_level}).")
         strengths_detail.append({
             "category": "Behavioral",
-            "title": "Confident Delivery Presence",
-            "description": "Synthesized acoustic delivery and non-verbal poise conveyed solid assurance.",
+            "title": "Confident delivery",
+            "description": "Your speech and expression came across as sure of yourself.",
             "evidence": f"{round(confidence_score)}% ({confidence_level})",
         })
 
     if has_vision and facial_summary.get("overall_composure") == "Composed & Stable" and len(strengths) < 4:
-        st_text = "Composed Facial Stability: Maintained calm emotional expression and attentive forward gaze under pressure."
-        strengths.append(st_text)
+        strengths.append("Calm on camera: your expression stayed steady through your answers.")
         strengths_detail.append({
             "category": "Behavioral",
-            "title": "Composed Facial Stability",
-            "description": "Projected non-verbal composure with steady neutral/positive expressions.",
-            "evidence": f"{facial_summary.get('overall_composure')} across {facial_summary.get('evaluated_takes')} take(s)",
+            "title": "Calm on camera",
+            "description": "Your expression stayed steady and calm.",
+            "evidence": f"{facial_summary.get('overall_composure')} across {facial_summary.get('evaluated_takes')} answer(s)",
         })
 
-    # Fallback if no strengths detected yet answered
     if not strengths:
-        strengths.append("Prompt Completion: Successfully recorded and submitted answers for evaluation.")
+        strengths.append("You completed the interview and submitted your answers.")
         strengths_detail.append({
             "category": "General",
-            "title": "Prompt Completion",
-            "description": "Engaged with the interview prompts and provided recordable takes.",
-            "evidence": f"{answered_q} of {total_q} prompts completed",
+            "title": "Interview completed",
+            "description": "You worked through the interview and recorded your answers.",
+            "evidence": f"{answered_q} of {total_q} questions answered",
         })
 
     # -------------------------------------------------------------------------
@@ -334,54 +358,48 @@ def generate_interview_insights(
     weaknesses: List[str] = []
     weaknesses_detail: List[Dict] = []
 
-    # 1. Technical Gaps & Missing Rubric Concepts (FR 26-01)
     missing = tech_metrics.get("missing_concepts", [])
     if missing:
-        wk_text = f"Key Concept Gaps: Omitted core domain areas from rubric: {', '.join(missing[:3])}."
-        weaknesses.append(wk_text)
+        weaknesses.append(f"Missing key points: your answers did not cover {', '.join(missing[:3])}.")
         weaknesses_detail.append({
             "category": "Technical",
-            "title": "Omitted Domain Concepts",
-            "description": "The response did not sufficiently address expected rubric concepts.",
+            "title": "Missing key points",
+            "description": "Important points a strong answer would include did not come up.",
             "evidence": f"Missing: {', '.join(missing[:4])}",
             "severity": "High" if content_score < 60.0 else "Medium",
         })
 
-    # Low-scoring question highlight
     low_q = [q for q in per_question_results if float(q.get("score", 0.0)) < 60.0 and q.get("score") is not None]
     if low_q:
         weakest_q = min(low_q, key=lambda q: float(q.get("score", 0.0)))
-        q_id = weakest_q.get("question_id", "Prompt")
-        wk_text = f"Suboptimal Answer Depth: Underperformed on {q_id} (Score: {round(float(weakest_q.get('score', 0.0)))}%), omitting essential domain details."
-        weaknesses.append(wk_text)
+        n = _question_number(per_question_results, weakest_q)
+        low_score = round(float(weakest_q.get("score", 0.0)))
+        weaknesses.append(f"Weakest answer: question {n} scored {low_score}% and left out important details.")
         weaknesses_detail.append({
             "category": "Technical",
-            "title": f"Suboptimal Depth on {q_id}",
-            "description": "Limited domain explanation compared to expected benchmark.",
-            "evidence": f"Score: {round(float(weakest_q.get('score', 0.0)))}%",
+            "title": f"Weakest answer (question {n})",
+            "description": "This answer was missing much of what was expected.",
+            "evidence": f"Score: {low_score}%",
             "severity": "High",
         })
 
-    # 2. Weak Communication Indicators (FR 26-02)
     if has_speech:
         avg_wpm = comm_metrics.get("avg_wpm", 0.0)
         if avg_wpm > 165.0:
-            wk_text = f"Rushed Speaking Cadence: Average speed of {avg_wpm:.1f} WPM was too rapid, risking loss of answer clarity."
-            weaknesses.append(wk_text)
+            weaknesses.append(f"Speaking too fast: you averaged {avg_wpm:.1f} WPM, which can make answers hard to follow.")
             weaknesses_detail.append({
                 "category": "Communication",
-                "title": "Rushed Speaking Cadence",
-                "description": "Spoke above 165 WPM benchmark, which can make complex explanations difficult to follow.",
+                "title": "Speaking too fast",
+                "description": "Above 165 words per minute, detailed explanations become hard to follow.",
                 "evidence": f"{avg_wpm:.1f} WPM",
                 "severity": "Medium",
             })
-        elif avg_wpm < 110.0 and avg_wpm > 0.0:
-            wk_text = f"Slow Response Cadence: Average pace of {avg_wpm:.1f} WPM was hesitant, extending response duration."
-            weaknesses.append(wk_text)
+        elif 0.0 < avg_wpm < 110.0:
+            weaknesses.append(f"Speaking slowly: you averaged {avg_wpm:.1f} WPM, which makes answers feel long.")
             weaknesses_detail.append({
                 "category": "Communication",
-                "title": "Slow Response Cadence",
-                "description": "Spoke below 110 WPM benchmark, leading to deliberate but sluggish answers.",
+                "title": "Speaking slowly",
+                "description": "Below 110 words per minute, answers can sound hesitant.",
                 "evidence": f"{avg_wpm:.1f} WPM",
                 "severity": "Medium",
             })
@@ -389,82 +407,72 @@ def generate_interview_insights(
         hesitation = comm_metrics.get("avg_hesitation_rate", 0.0)
         fillers = comm_metrics.get("total_fillers", 0)
         if hesitation > 5.0 or fillers >= 4:
-            wk_text = f"Vocal Hesitation & Fillers: High reliance on filler words ({fillers} detected, {hesitation:.1f}% hesitation rate)."
-            weaknesses.append(wk_text)
+            weaknesses.append(f"Filler words: you used {fillers} fillers like \"um\" and \"uh\" ({hesitation:.1f}% hesitation).")
             weaknesses_detail.append({
                 "category": "Communication",
-                "title": "Elevated Filler Word Usage",
-                "description": "Frequent filler words ('um', 'like', 'you know') interrupt answer fluidity.",
-                "evidence": f"{fillers} fillers, {hesitation:.1f}% hesitation rate",
+                "title": "Filler words",
+                "description": "Frequent fillers (\"um\", \"uh\", \"you know\") break up your answers.",
+                "evidence": f"{fillers} fillers, {hesitation:.1f}% hesitation",
                 "severity": "Medium",
             })
 
         pause_sec = comm_metrics.get("total_pause_duration_seconds", 0.0)
         if pause_sec >= 3.0:
-            wk_text = f"Extended Silent Pauses: Totaled {pause_sec:.1f}s of dead air during response formulating."
-            weaknesses.append(wk_text)
+            weaknesses.append(f"Long silences: {pause_sec:.1f}s of silence in total while you were answering.")
             weaknesses_detail.append({
                 "category": "Communication",
-                "title": "Extended Silent Pauses",
-                "description": "Long silent pauses exceeded natural conversational rhythm.",
-                "evidence": f"{pause_sec:.1f}s total pause duration",
+                "title": "Long silences",
+                "description": "Long pauses made the answers feel stop-start.",
+                "evidence": f"{pause_sec:.1f}s of pauses",
                 "severity": "Low",
             })
 
-    # 3. Behavioral Weakness Indicators
     if has_vision:
-        if stress_score >= 65.0 or stress_level == "Elevated":
-            wk_text = f"Observable Stress Tension: Elevated non-verbal tension ({round(stress_score)}%) and rapid emotional shifts detected."
-            weaknesses.append(wk_text)
+        if stress_ok and (stress_score >= 65.0 or stress_level == "Elevated"):
+            weaknesses.append(f"Visible tension: the analysis saw signs of stress ({round(stress_score)}%).")
             weaknesses_detail.append({
                 "category": "Behavioral",
-                "title": "Elevated Observable Stress",
-                "description": "Visual signals indicated nervousness or fluctuating facial composure.",
-                "evidence": f"{round(stress_score)}% stress score",
+                "title": "Visible tension",
+                "description": "Your speech and expression showed signs of nervousness.",
+                "evidence": f"{round(stress_score)}% stress",
                 "severity": "Medium",
             })
         elif facial_summary.get("overall_composure") == "Fluctuating Composure":
-            wk_text = "Fluctuating Composure: Inconsistent non-verbal poise and shifting eye engagement during challenging prompts."
-            weaknesses.append(wk_text)
+            weaknesses.append("Changing expression: your expression shifted a lot during your answers.")
             weaknesses_detail.append({
                 "category": "Behavioral",
-                "title": "Fluctuating Composure",
-                "description": "Facial analysis tracked shifting composure indices across question takes.",
+                "title": "Changing expression",
+                "description": "The face analysis saw your expression change often.",
                 "evidence": "Fluctuating Composure",
                 "severity": "Low",
             })
 
-    # 4. Skipped prompts
     if skipped_q > 0:
-        wk_text = f"Incomplete Question Coverage: {skipped_q} prompt(s) were skipped without recorded responses."
-        weaknesses.append(wk_text)
+        weaknesses.append(f"Skipped questions: you skipped {skipped_q} question(s), which count as zero.")
         weaknesses_detail.append({
             "category": "Completeness",
-            "title": "Skipped Prompts",
-            "description": "Unanswered prompts directly lowered the overall composite score.",
-            "evidence": f"{skipped_q} skipped prompt(s)",
+            "title": "Skipped questions",
+            "description": "Unanswered questions lowered your overall score.",
+            "evidence": f"{skipped_q} skipped",
             "severity": "High",
         })
 
-    # 5. Failed / corrupt media prompts
     if failed_q > 0:
-        wk_text = f"{failed_q} prompt{'s encountered' if failed_q > 1 else ' encountered'} media processing issues."
-        weaknesses.append(wk_text)
+        weaknesses.append(f"{failed_q} answer(s) could not be processed because the recording was unreadable.")
         weaknesses_detail.append({
             "category": "Processing",
-            "title": "Media Processing Issues",
-            "description": "Recorded takes could not be processed due to media corruption.",
-            "evidence": f"{failed_q} failed prompt(s)",
+            "title": "Unreadable recordings",
+            "description": "Some recordings could not be read, so those answers were not scored.",
+            "evidence": f"{failed_q} answer(s)",
             "severity": "High",
         })
 
-    # If candidate was near perfect
     if not weaknesses:
-        weaknesses.append("Minor Domain Nuance: Focus on articulating edge-case trade-offs and practical depth.")
+        weaknesses.append("Room to polish: talk through trade-offs and edge cases to make strong answers even better.")
         weaknesses_detail.append({
             "category": "Refinement",
-            "title": "Advanced Trade-offs",
-            "description": "Performance was solid; further polish by discussing performance trade-offs, protocols, and edge cases.",
+            "title": "Room to polish",
+            "description": "Your answers were strong; discussing trade-offs, standard practice and edge cases would make them stand out.",
             "evidence": "Score >= 85%",
             "severity": "Low",
         })
@@ -476,102 +484,87 @@ def generate_interview_insights(
     coaching_guidance: List[Dict] = []
     preparation_strategies: List[str] = []
 
-    # 1. Suggestions Mapped Directly to Weaknesses (FR 27-01)
     if missing:
-        sug_text = f"Targeted Concept Review: Study and prepare concrete professional examples illustrating {', '.join(missing[:2])}."
-        suggestions.append(sug_text)
+        suggestions.append(f"Review the missing points: prepare short, real examples that show {', '.join(missing[:2])}.")
         coaching_guidance.append({
-            "domain": "Domain Knowledge",
+            "domain": "Knowledge",
             "action": f"Review {', '.join(missing[:2])}",
-            "practice_strategy": "Write out definitions and practical case scenarios connecting these missing concepts to real-world professional practice.",
-            "target_metric": ">=80% Rubric Concept Coverage",
+            "practice_strategy": "Write a short definition and one real example for each point, then explain it out loud.",
+            "target_metric": "Cover most key points in each answer",
         })
 
     if has_speech:
         avg_wpm = comm_metrics.get("avg_wpm", 0.0)
         if avg_wpm > 165.0:
-            sug_text = "Cadence Moderation: Use deliberate breathing and target 130–150 WPM to avoid rushing complex explanations."
-            suggestions.append(sug_text)
+            suggestions.append("Slow down: take a breath between points and aim for about 130–150 WPM.")
             coaching_guidance.append({
-                "domain": "Speech Pacing",
-                "action": "Slow down response delivery",
-                "practice_strategy": "Practice reading domain excerpts or scenario responses with a metronome set to 140 WPM to build muscle memory.",
-                "target_metric": "120–150 WPM Pacing Range",
+                "domain": "Speaking pace",
+                "action": "Slow down",
+                "practice_strategy": "Read a practice answer aloud at a calm pace, pausing briefly after each point.",
+                "target_metric": "120–150 WPM",
             })
-        elif avg_wpm < 110.0 and avg_wpm > 0.0:
-            sug_text = "Cadence Acceleration: Aim to increase response tempo toward 125–140 WPM to keep answers brisk and engaging."
-            suggestions.append(sug_text)
+        elif 0.0 < avg_wpm < 110.0:
+            suggestions.append("Pick up the pace a little: aim for about 125–140 WPM and keep answers to the point.")
             coaching_guidance.append({
-                "domain": "Speech Pacing",
-                "action": "Increase conversational tempo",
-                "practice_strategy": "Outline 3 bullet points before speaking and deliver answers concisely without long thinking pauses.",
-                "target_metric": ">=120 WPM Pacing Range",
+                "domain": "Speaking pace",
+                "action": "Speed up slightly",
+                "practice_strategy": "Jot down three points before you answer, then go through them without long breaks.",
+                "target_metric": "At least 120 WPM",
             })
 
         hesitation = comm_metrics.get("avg_hesitation_rate", 0.0)
         if hesitation > 4.0 or comm_metrics.get("total_fillers", 0) >= 3:
-            sug_text = "Pre-Response Buffer: Take a 2-second silent pause before answering to organize key thoughts and eliminate filler words ('um', 'like')."
-            suggestions.append(sug_text)
+            suggestions.append("Pause instead of saying \"um\": take two seconds to plan before you answer.")
             coaching_guidance.append({
-                "domain": "Articulation",
-                "action": "Eliminate filler words",
-                "practice_strategy": "Replace verbal fillers with deliberate silent pauses. Silence sounds confident; filler words sound uncertain.",
-                "target_metric": "<=2.5% Hesitation Rate",
+                "domain": "Filler words",
+                "action": "Replace fillers with short pauses",
+                "practice_strategy": "When you feel an \"um\" coming, stop for a moment instead. A short silence sounds more confident.",
+                "target_metric": "Under 2.5% hesitation",
             })
 
         if comm_metrics.get("total_pause_duration_seconds", 0.0) >= 3.0:
-            sug_text = "Verbalizing Thought Process: Instead of long dead-air pauses, vocalize your problem-solving approach aloud ('Let me break this into two parts...')."
-            suggestions.append(sug_text)
+            suggestions.append("Think out loud: instead of long silences, say how you are approaching it (\"Let me break this into two parts...\").")
             coaching_guidance.append({
-                "domain": "Cognitive Retrieval",
-                "action": "Narrate thought process aloud",
-                "practice_strategy": "Practice think-aloud problem-solving so the interviewer can track your reasoning during retrieval.",
-                "target_metric": "<=1.5s Maximum Silent Pause",
+                "domain": "Long silences",
+                "action": "Talk through your thinking",
+                "practice_strategy": "Practise saying your approach out loud so the interviewer can follow your reasoning.",
+                "target_metric": "No silence longer than 1.5 seconds",
             })
 
-    if has_vision and (stress_score >= 60.0 or facial_summary.get("overall_composure") != "Composed & Stable"):
-        sug_text = "Non-Verbal Grounding: Rehearse on camera focusing on steady forward gaze alignment and relaxed facial poise."
-        suggestions.append(sug_text)
+    if has_vision and ((stress_ok and stress_score >= 60.0) or facial_summary.get("overall_composure") != "Composed & Stable"):
+        suggestions.append("Practise on camera: look at the lens and keep a relaxed, steady expression.")
         coaching_guidance.append({
-            "domain": "Behavioral Poise",
-            "action": "Maintain camera eye contact",
-            "practice_strategy": "Position your webcam at eye level and maintain gentle, natural eye contact during response delivery.",
-            "target_metric": "Composed & Stable Composure Index",
+            "domain": "On camera",
+            "action": "Keep eye contact with the camera",
+            "practice_strategy": "Put your webcam at eye level and look at the lens while you answer.",
+            "target_metric": "Steady, calm expression",
         })
 
-    # Universal Structured Communication Guidance (FR 27-02)
     coaching_guidance.append({
-        "domain": "Structured Communication",
-        "action": "Apply STAR and Top-Down Frameworks",
-        "practice_strategy": "For situational questions use STAR (Situation, Task, Action, Result). For domain and technical questions state the decision first, then trade-offs.",
-        "target_metric": "Clear Answer Hierarchy",
+        "domain": "Structuring answers",
+        "action": "Use the STAR method",
+        "practice_strategy": "For situation questions, cover the Situation, Task, Action and Result. For technical questions, give your answer first, then explain why.",
+        "target_metric": "Clear, well-ordered answers",
     })
 
-    # Preparation Strategies for Future Interviews (FR 27-03)
     preparation_strategies.append(
-        "Simulated Rehearsals: Perform timed 2-minute prompt recordings under interview conditions and self-review transcripts."
+        "Practise under real conditions: record timed answers of about two minutes and read back your transcript."
     )
     if missing:
         preparation_strategies.append(
-            f"Targeted Domain Drilling: Dedicate your next study session to deep-dive practice and case studies on {', '.join(missing[:2])}."
+            f"Focus your next study session on {', '.join(missing[:2])}, with real examples."
         )
     preparation_strategies.append(
-        "MockAI Repetition: Re-attempt this interview track to verify that pacing and concept coverage improve on identical or related prompts."
+        "Retake this interview track and check whether your pace and key points improve."
     )
 
-    # Fallback for near-perfect candidates with no explicit weaknesses
     if not suggestions:
         suggestions.append(
-            "Advanced Trade-Off Analysis: Continue elevating answers by explicitly discussing practical trade-offs, standard protocols, and edge-case handling."
+            "Go deeper: mention trade-offs, standard practice and edge cases in your answers."
         )
         suggestions.append(
-            "Domain Practice Nuances: Elaborate on quality assurance, contingency handling, and industry best practices for complex scenarios."
+            "Back up each point with a real example from your experience or studies."
         )
-
-    # Limit top lists to clean numbers
-    prioritized_strengths = strengths[:4]
-    prioritized_weaknesses = weaknesses[:4]
-    prioritized_suggestions = suggestions[:4]
 
     return {
         "score_explanation": {
@@ -584,11 +577,11 @@ def generate_interview_insights(
             },
             "behavioral_observations": observations,
         },
-        "strengths": prioritized_strengths,
+        "strengths": strengths[:4],
         "strengths_detail": strengths_detail[:4],
-        "weaknesses": prioritized_weaknesses,
+        "weaknesses": weaknesses[:4],
         "weaknesses_detail": weaknesses_detail[:4],
-        "suggestions": prioritized_suggestions,
+        "suggestions": suggestions[:4],
         "coaching_guidance": coaching_guidance[:3],
         "preparation_strategies": preparation_strategies[:3],
     }
