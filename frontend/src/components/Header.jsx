@@ -398,7 +398,7 @@ const Header = ({ onToggleMobileMenu }) => {
         <div className="flex items-center gap-3">
           <button
             onClick={onToggleMobileMenu}
-            className="lg:hidden p-2 rounded-xl border border-[var(--border-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] transition-all"
+            className="lg:hidden w-10 h-10 flex items-center justify-center rounded-xl border border-[var(--border-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] transition-all"
             aria-label="Toggle menu"
           >
             <Menu className="w-5 h-5" />
@@ -470,7 +470,7 @@ const Header = ({ onToggleMobileMenu }) => {
               )}
             </button>
             {showNotifications && (
-              <div className="absolute top-12 right-0 w-80 sm:w-96 theme-modal rounded-2xl shadow-2xl z-50 overflow-hidden border">
+              <div className="fixed inset-x-4 top-16 sm:absolute sm:inset-x-auto sm:top-12 sm:right-0 sm:w-96 max-h-[calc(100dvh-5rem)] overflow-y-auto theme-modal rounded-2xl shadow-2xl z-50 border">
                 <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-table)] bg-[var(--bg-table-header)]">
                   <h3 className="text-sm font-bold text-[var(--text-primary)]">Notifications</h3>
                   <button onClick={handleClearNotifications} className="text-[11px] font-semibold text-orange-500 hover:text-orange-600">
@@ -534,7 +534,7 @@ const Header = ({ onToggleMobileMenu }) => {
       {/* Admin Profile Modal */}
       {showProfileModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="theme-modal p-6 sm:p-8 rounded-3xl w-full max-w-sm relative border">
+          <div className="theme-modal p-6 sm:p-8 rounded-3xl w-full max-w-sm relative border max-h-[90dvh] overflow-y-auto">
             <button 
               onClick={() => setShowProfileModal(false)} 
               className="absolute top-4 right-4 p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
@@ -643,7 +643,7 @@ const Header = ({ onToggleMobileMenu }) => {
       {/* Change Password Modal */}
       {showPasswordModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="theme-modal border p-6 sm:p-8 rounded-3xl w-full max-w-sm relative shadow-2xl">
+          <div className="theme-modal border p-6 sm:p-8 rounded-3xl w-full max-w-sm relative shadow-2xl max-h-[90dvh] overflow-y-auto">
             <button
               onClick={() => setShowPasswordModal(false)}
               className="absolute top-4 right-4 p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
@@ -695,7 +695,7 @@ const Header = ({ onToggleMobileMenu }) => {
       {/* Add Admin Modal */}
       {showAddAdminModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="theme-modal border p-6 sm:p-8 rounded-3xl w-full max-w-sm relative shadow-2xl">
+          <div className="theme-modal border p-6 sm:p-8 rounded-3xl w-full max-w-sm relative shadow-2xl max-h-[90dvh] overflow-y-auto">
             <button
               onClick={() => {
                 setShowAddAdminModal(false);

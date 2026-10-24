@@ -47,7 +47,7 @@ const PublicNav = () => {
   // Auto-close mobile drawer on desktop resize
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth >= 768) {
+      if (window.innerWidth >= 1024) {
         setMobileOpen(false);
       }
     };
@@ -108,7 +108,7 @@ const PublicNav = () => {
           <Link
             to="/"
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className="flex items-center gap-2.5 select-none focus:outline-none"
+            className="flex items-center gap-2.5 py-1 select-none focus:outline-none"
             aria-label="MockAI Home"
           >
             <img
@@ -119,7 +119,7 @@ const PublicNav = () => {
           </Link>
 
           {/* Desktop Public Navigation Links with Active Highlighting */}
-          <nav className="hidden md:flex items-center gap-1" aria-label="Public Navigation">
+          <nav className="hidden lg:flex items-center gap-1" aria-label="Public Navigation">
             {PUBLIC_NAV_LINKS.map((link) => {
               const targetId = link.href.replace('#', '');
               const isActive = activeSection === targetId;
@@ -156,7 +156,7 @@ const PublicNav = () => {
             /* Logged in candidate quick dashboard link */
             <Link
               to="/dashboard"
-              className="c-btn c-btn-secondary px-3 py-1.5 sm:px-3.5 sm:py-2 text-xs font-semibold rounded-lg flex items-center gap-1.5"
+              className="c-btn c-btn-secondary h-10 sm:h-auto px-3 py-1.5 sm:px-3.5 sm:py-2 text-xs font-semibold rounded-lg flex items-center gap-1.5"
             >
               <LayoutDashboard className="w-3.5 h-3.5 text-orange-400" />
               <span>Dashboard</span>
@@ -165,7 +165,7 @@ const PublicNav = () => {
             /* Public Visitor Log In */
             <Link
               to="/login"
-              className="c-btn c-btn-secondary px-3 py-1.5 sm:px-3.5 sm:py-2 text-xs font-medium rounded-lg flex items-center gap-1.5 group"
+              className="c-btn c-btn-secondary h-10 sm:h-auto px-3 py-1.5 sm:px-3.5 sm:py-2 text-xs font-medium rounded-lg flex items-center gap-1.5 group"
             >
               <LogIn className="w-3.5 h-3.5 text-[var(--c-text-muted)] group-hover:text-[var(--c-text)] transition-colors" />
               <span>Log In</span>
@@ -175,16 +175,16 @@ const PublicNav = () => {
           {/* Primary CTA */}
           <Link
             to={authed ? '/interview/goal' : '/register'}
-            className="c-btn c-btn-primary px-3.5 py-1.5 sm:px-4 sm:py-2 text-xs font-semibold rounded-lg flex items-center gap-1.5 select-none group"
+            className="c-btn c-btn-primary max-sm:!hidden px-3.5 py-1.5 sm:px-4 sm:py-2 text-xs font-semibold rounded-lg flex items-center gap-1.5 select-none group"
           >
             <span>Start Practicing</span>
             <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
           </Link>
 
-          {/* Mobile Menu Toggle Button: Hidden on desktop via md:!hidden to override .c-btn inline-flex specificity */}
+          {/* Mobile Menu Toggle Button: Hidden on desktop via lg:!hidden to override .c-btn inline-flex specificity */}
           <button
             onClick={() => setMobileOpen((v) => !v)}
-            className="md:!hidden c-btn c-btn-secondary !p-2 !rounded-lg transition-colors"
+            className="lg:!hidden c-btn c-btn-secondary !p-0 h-10 w-10 !rounded-lg transition-colors"
             aria-label="Toggle navigation menu"
             aria-expanded={mobileOpen}
           >
@@ -198,7 +198,7 @@ const PublicNav = () => {
          =================================================================== */}
       {mobileOpen && (
         <div
-          className="md:hidden border-t px-4 py-4 space-y-2 animate-in slide-in-from-top duration-200"
+          className="lg:hidden border-t px-4 py-4 space-y-2 animate-in slide-in-from-top duration-200"
           style={{
             background: 'var(--c-bg)',
             borderColor: 'var(--c-border)',
@@ -214,7 +214,7 @@ const PublicNav = () => {
                   key={link.label}
                   href={link.href}
                   onClick={(e) => handleScrollTo(e, link.href)}
-                  className="flex items-center justify-between px-3 py-2 text-xs font-semibold rounded-md transition-colors border"
+                  className="flex items-center justify-between px-3 py-3 text-sm font-semibold rounded-md transition-colors border"
                   style={{
                     color: isActive ? 'var(--c-text)' : 'var(--c-text-secondary)',
                     background: isActive ? 'var(--c-surface-muted)' : 'transparent',
@@ -238,7 +238,7 @@ const PublicNav = () => {
               <Link
                 to="/login"
                 onClick={() => setMobileOpen(false)}
-                className="c-btn c-btn-secondary w-full py-2 text-xs font-medium rounded-lg flex items-center justify-center gap-2"
+                className="c-btn c-btn-secondary w-full py-3 text-sm font-medium rounded-lg flex items-center justify-center gap-2"
               >
                 <LogIn className="w-3.5 h-3.5 text-zinc-400" />
                 <span>Log In</span>
@@ -248,7 +248,7 @@ const PublicNav = () => {
             <Link
               to={authed ? '/interview/goal' : '/register'}
               onClick={() => setMobileOpen(false)}
-              className="c-btn c-btn-primary w-full py-2.5 text-xs font-semibold rounded-lg flex items-center justify-center gap-2 select-none group"
+              className="c-btn c-btn-primary w-full py-3 text-sm font-semibold rounded-lg flex items-center justify-center gap-2 select-none group"
             >
               <span>Start Practicing</span>
               <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />

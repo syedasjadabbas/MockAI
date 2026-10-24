@@ -41,6 +41,37 @@ html.dark,
     color: var(--text-primary);
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     transition: background-color 0.25s ease, color 0.25s ease;
+    /* Long words, emails and URLs wrap instead of widening the page */
+    overflow-wrap: break-word;
+  }
+
+  img,
+  video,
+  canvas,
+  svg {
+    max-width: 100%;
+  }
+
+  /* Phones: 16px form text so iOS Safari does not zoom in when a field is
+     focused (it zooms on anything smaller). Scoped to small screens; the
+     !important is needed to win over Tailwind text-xs/text-sm utilities. */
+  @media (max-width: 640px) {
+    input:not([type='checkbox']):not([type='radio']):not([type='range']),
+    select,
+    textarea {
+      font-size: 16px !important;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 
@@ -63,13 +94,19 @@ html.dark,
   background: var(--scrollbar-thumb-hover);
 }
 
-.glass-panel {
-  background: var(--bg-panel);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-color: var(--border-panel);
-  transform: translateZ(0);
-  transition: background-color 0.2s ease, border-color 0.2s ease;
+/* In the components layer so Tailwind utilities on the same element win:
+   unlayered, its transform/transition overrode the admin sidebar's
+   -translate-x-full and transition-transform, leaving the sidebar open over
+   the page on phones and tablets. */
+@layer components {
+  .glass-panel {
+    background: var(--bg-panel);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-color: var(--border-panel);
+    transform: translateZ(0);
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+  }
 }
 
 .glass-card {
@@ -116,8 +153,11 @@ html.dark,
 }
 
 /* Snappy Page Transition */
+/* No "forwards" fill: a transform left on <main> after the animation makes it
+   the containing block for position:fixed, so admin modals were centred on
+   the whole page (often off-screen) instead of the viewport. */
 .page-content-transition {
-  animation: pageEnter 0.16s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: pageEnter 0.16s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes pageEnter {

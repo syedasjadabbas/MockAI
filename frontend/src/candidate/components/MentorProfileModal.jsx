@@ -18,7 +18,7 @@ const MentorProfileModal = ({ mentor, isOpen, onClose, onBook }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
       <div
-        className="w-full max-w-xl rounded-2xl border shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        className="w-full max-w-xl rounded-2xl border shadow-2xl overflow-hidden flex flex-col max-h-[90dvh]"
         style={{
           background: 'var(--c-surface, #181818)',
           borderColor: 'var(--c-border, #2A2A2A)',
@@ -31,7 +31,7 @@ const MentorProfileModal = ({ mentor, isOpen, onClose, onBook }) => {
         >
           <div className="flex items-center gap-2">
             <span
-              className="text-[10px] font-mono px-2 py-0.5 rounded font-bold uppercase tracking-wider"
+              className="text-[11px] font-mono px-2 py-0.5 rounded font-bold uppercase tracking-wider"
               style={{
                 background: 'rgba(255, 107, 53, 0.12)',
                 color: 'var(--c-accent, #FF6B35)',
@@ -77,7 +77,7 @@ const MentorProfileModal = ({ mentor, isOpen, onClose, onBook }) => {
               <div className="flex items-center gap-2 flex-wrap mb-1">
                 <h3 className="text-lg font-bold leading-tight" style={{ color: 'var(--c-text)' }}>{mentor.name}</h3>
                 <span
-                  className="text-[10px] font-mono px-2 py-0.5 rounded-full border uppercase"
+                  className="text-[11px] font-mono px-2 py-0.5 rounded-full border uppercase"
                   style={{
                     background: 'rgba(34, 197, 94, 0.1)',
                     borderColor: 'rgba(34, 197, 94, 0.25)',
@@ -106,7 +106,7 @@ const MentorProfileModal = ({ mentor, isOpen, onClose, onBook }) => {
               className="p-3 rounded-xl border text-center"
               style={{ background: 'var(--c-surface-muted)', borderColor: 'var(--c-border, #2A2A2A)' }}
             >
-              <div className="text-[10px] uppercase font-mono" style={{ color: 'var(--c-text-muted)' }}>Rating</div>
+              <div className="text-[11px] uppercase font-mono" style={{ color: 'var(--c-text-muted)' }}>Rating</div>
               <div className="text-sm font-bold text-[#FF9F1C] flex items-center justify-center gap-1 mt-0.5">
                 <Star className="w-3.5 h-3.5 fill-[#FF9F1C]" />
                 <span>{mentor.rating || '5.0'}</span>
@@ -117,7 +117,7 @@ const MentorProfileModal = ({ mentor, isOpen, onClose, onBook }) => {
               className="p-3 rounded-xl border text-center"
               style={{ background: 'var(--c-surface-muted)', borderColor: 'var(--c-border, #2A2A2A)' }}
             >
-              <div className="text-[10px] uppercase font-mono" style={{ color: 'var(--c-text-muted)' }}>Completed</div>
+              <div className="text-[11px] uppercase font-mono" style={{ color: 'var(--c-text-muted)' }}>Completed</div>
               <div className="text-sm font-bold mt-0.5" style={{ color: 'var(--c-text)' }}>
                 {mentor.sessions_completed || 0}+ Mocks
               </div>
@@ -127,7 +127,7 @@ const MentorProfileModal = ({ mentor, isOpen, onClose, onBook }) => {
               className="p-3 rounded-xl border text-center"
               style={{ background: 'var(--c-surface-muted)', borderColor: 'var(--c-border, #2A2A2A)' }}
             >
-              <div className="text-[10px] uppercase font-mono" style={{ color: 'var(--c-text-muted)' }}>Format</div>
+              <div className="text-[11px] uppercase font-mono" style={{ color: 'var(--c-text-muted)' }}>Format</div>
               <div className="text-sm font-bold text-[#22C55E] mt-0.5">1-on-1 Live</div>
             </div>
           </div>

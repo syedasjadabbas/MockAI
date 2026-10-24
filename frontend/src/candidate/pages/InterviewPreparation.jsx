@@ -400,7 +400,7 @@ Check that your camera and microphone work and that your face is well lit, then 
                     <button
                       onClick={handleTextOnly}
                       disabled={continuingTextOnly}
-                      className="c-btn c-btn-secondary w-full py-2.5 text-xs font-semibold rounded-md flex items-center justify-center gap-2"
+                      className="c-btn c-btn-secondary w-full py-2.5 text-xs font-semibold rounded-md flex items-center justify-center gap-2 !whitespace-normal text-center"
                     >
                       <Keyboard className="w-3.5 h-3.5" />
                       <span>Continue with typed answers only (no camera or mic)</span>
@@ -460,7 +460,7 @@ Check that your camera and microphone work and that your face is well lit, then 
 
               <div className="space-y-3 text-xs">
                 <div className="flex items-start gap-3">
-                  <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded border shrink-0"
+                  <span className="font-mono text-[11px] font-bold px-1.5 py-0.5 rounded border shrink-0"
                     style={{ borderColor: 'var(--c-border)', color: 'var(--c-text-secondary)', background: 'var(--c-surface-muted)' }}
                   >
                     01
@@ -474,7 +474,7 @@ Check that your camera and microphone work and that your face is well lit, then 
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded border shrink-0"
+                  <span className="font-mono text-[11px] font-bold px-1.5 py-0.5 rounded border shrink-0"
                     style={{ borderColor: 'var(--c-border)', color: 'var(--c-text-secondary)', background: 'var(--c-surface-muted)' }}
                   >
                     02

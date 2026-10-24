@@ -46,7 +46,7 @@ const InterviewTopBar = ({ activeStep, onExit }) => {
               <React.Fragment key={step.key}>
                 <div className="flex items-center gap-1.5 shrink-0">
                   <div
-                    className="w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold border transition-all"
+                    className="w-5 h-5 rounded-md flex items-center justify-center text-[11px] font-bold border transition-all"
                     style={{
                       background: isDone ? 'var(--c-success)' : isActive ? 'var(--c-accent)' : 'var(--c-surface-muted)',
                       borderColor: isDone ? 'var(--c-success)' : isActive ? 'var(--c-accent)' : 'var(--c-border)',

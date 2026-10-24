@@ -99,7 +99,8 @@ const Sidebar = ({ mobileOpen = false, setMobileOpen = () => {} }) => {
           </Link>
           <button 
             onClick={() => setMobileOpen(false)}
-            className="lg:hidden p-1.5 rounded-lg text-neutral-400 hover:text-neutral-200"
+            aria-label="Close menu"
+            className="lg:hidden w-10 h-10 flex items-center justify-center rounded-lg text-neutral-400 hover:text-neutral-200"
           >
             <X className="w-5 h-5" />
           </button>

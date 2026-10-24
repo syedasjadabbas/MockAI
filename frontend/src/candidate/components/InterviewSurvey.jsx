@@ -91,7 +91,7 @@ const InterviewSurvey = ({ interviewId }) => {
                     role="radio"
                     aria-checked={form[q.key] === n}
                     onClick={() => set(q.key, n)}
-                    className="w-8 h-8 rounded-md border text-xs font-bold transition-colors"
+                    className="w-10 h-10 sm:w-8 sm:h-8 rounded-md border text-xs font-bold transition-colors"
                     style={{
                       borderColor: form[q.key] === n ? 'var(--c-accent)' : 'var(--c-border)',
                       background: form[q.key] === n ? 'var(--c-accent)' : 'var(--c-surface)',

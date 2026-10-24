@@ -205,7 +205,7 @@ const InterviewHistory = () => {
                 <button
                   key={tab.value}
                   onClick={() => setStatusFilter(tab.value)}
-                  className="px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5"
+                  className="px-3 py-2.5 sm:py-1.5 rounded-md text-xs font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5"
                   style={{
                     background: active ? 'var(--c-surface-muted)' : 'transparent',
                     color: active ? 'var(--c-text)' : 'var(--c-text-secondary)',
@@ -214,7 +214,7 @@ const InterviewHistory = () => {
                 >
                   <span>{tab.label}</span>
                   <span
-                    className="text-[10px] font-mono px-1.5 py-0.2 rounded"
+                    className="text-[11px] font-mono px-1.5 py-0.2 rounded"
                     style={{
                       background: active ? 'var(--c-surface)' : 'var(--c-surface-muted)',
                       color: active ? 'var(--c-text)' : 'var(--c-text-muted)',
@@ -374,7 +374,7 @@ const InterviewHistory = () => {
 
                       {/* 2. Domain / Type (2 cols) */}
                       <div className="col-span-2 min-w-0">
-                        <span className="c-badge c-badge-muted text-[10px] py-0.5 px-2 font-medium capitalize truncate inline-block max-w-full">
+                        <span className="c-badge c-badge-muted text-[11px] py-0.5 px-2 font-medium capitalize truncate inline-block max-w-full">
                           {session.type || 'Technical'}
                         </span>
                       </div>
@@ -439,7 +439,7 @@ const InterviewHistory = () => {
                             <IconComponent className="w-3.5 h-3.5" />
                           </div>
                           <div className="min-w-0">
-                            <Link to={targetUrl} className="text-xs font-bold truncate block" style={{ color: 'var(--c-text)' }}>
+                            <Link to={targetUrl} className="text-xs font-bold truncate block py-1.5 sm:py-0" style={{ color: 'var(--c-text)' }}>
                               {session.role || 'Practice Session'}
                             </Link>
                           </div>
@@ -467,7 +467,7 @@ const InterviewHistory = () => {
                           )}
                           <Link
                             to={targetUrl}
-                            className="text-xs font-semibold flex items-center gap-1"
+                            className="text-xs font-semibold flex items-center gap-1 py-2.5 sm:py-0"
                             style={{ color: 'var(--c-accent)' }}
                           >
                             <span>{isCompleted ? 'Results' : 'Resume'}</span>

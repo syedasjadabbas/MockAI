@@ -237,7 +237,7 @@ const TrackPickerPreview = () => (
       {['Marketing & Brand', 'Frontend Development', 'Law & Legal Practice', 'Education & Teaching'].map((t) => (
         <div key={t} className="p-1.5 rounded-md border border-white/[0.06] bg-white/[0.02] flex items-center gap-1.5">
           <span className="w-1.5 h-1.5 rounded-full bg-zinc-600" />
-          <span className="text-[10px] text-zinc-400 font-medium truncate">{t}</span>
+          <span className="text-[11px] text-zinc-400 font-medium truncate">{t}</span>
         </div>
       ))}
     </div>

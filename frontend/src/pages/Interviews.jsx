@@ -136,36 +136,36 @@ const Interviews = () => {
         {/* Filters Group */}
         <div className="flex flex-wrap items-center gap-2.5">
           {/* Search */}
-          <div className="relative flex-1 min-w-[200px] sm:w-56">
+          <div className="relative flex-1 basis-full sm:basis-auto min-w-0 sm:min-w-[200px] sm:w-56">
             <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--text-muted)]" />
             <input 
               type="text" 
               placeholder="Search candidate, role..." 
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-              className="w-full pl-9 pr-4 py-2 rounded-xl text-xs sm:text-sm theme-input border focus:outline-none focus:border-orange-500/60 focus:ring-2 focus:ring-orange-500/20 transition-all"
+              className="w-full pl-9 pr-4 py-2 min-h-[40px] rounded-xl text-sm theme-input border focus:outline-none focus:border-orange-500/60 focus:ring-2 focus:ring-orange-500/20 transition-all"
             />
           </div>
 
           {/* Type Filter */}
-          <div className="flex items-center gap-1.5 px-3 py-2 border border-[var(--border-card)] rounded-xl bg-[var(--bg-input)] text-xs sm:text-sm">
+          <div className="flex items-center gap-1.5 px-3 py-0 min-h-[40px] min-w-0 max-w-full border border-[var(--border-card)] rounded-xl bg-[var(--bg-input)] text-xs sm:text-sm">
             <Filter className="w-3.5 h-3.5 text-[var(--text-muted)]" />
             <select 
               value={typeFilter}
               onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }}
-              className="bg-transparent text-[var(--text-primary)] focus:outline-none cursor-pointer text-xs"
+              className="min-w-0 max-w-full truncate self-stretch py-2 bg-transparent text-[var(--text-primary)] focus:outline-none cursor-pointer text-xs"
             >
               {types.map(t => <option key={t} value={t} className="bg-[var(--bg-panel-solid)]">{t === 'All' ? 'All Roles' : t}</option>)}
             </select>
           </div>
 
           {/* Status Filter */}
-          <div className="flex items-center gap-1.5 px-3 py-2 border border-[var(--border-card)] rounded-xl bg-[var(--bg-input)] text-xs sm:text-sm">
+          <div className="flex items-center gap-1.5 px-3 py-0 min-h-[40px] min-w-0 max-w-full border border-[var(--border-card)] rounded-xl bg-[var(--bg-input)] text-xs sm:text-sm">
             <Filter className="w-3.5 h-3.5 text-[var(--text-muted)]" />
             <select 
               value={statusFilter}
               onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-              className="bg-transparent text-[var(--text-primary)] focus:outline-none cursor-pointer text-xs"
+              className="min-w-0 max-w-full truncate self-stretch py-2 bg-transparent text-[var(--text-primary)] focus:outline-none cursor-pointer text-xs"
             >
               <option value="All" className="bg-[var(--bg-panel-solid)]">All Statuses</option>
               <option value="Completed" className="bg-[var(--bg-panel-solid)]">Completed</option>
@@ -175,13 +175,13 @@ const Interviews = () => {
           </div>
 
           {/* Date Filter */}
-          <div className="flex items-center gap-1.5 px-3 py-2 border border-[var(--border-card)] rounded-xl bg-[var(--bg-input)] text-xs">
+          <div className="flex items-center gap-1.5 px-3 py-0 min-h-[40px] min-w-0 max-w-full border border-[var(--border-card)] rounded-xl bg-[var(--bg-input)] text-xs">
             <Calendar className="w-3.5 h-3.5 text-[var(--text-muted)]" />
             <input 
               type="date" 
               value={dateFilter}
               onChange={(e) => { setDateFilter(e.target.value); setPage(1); }}
-              className="bg-transparent text-[var(--text-primary)] focus:outline-none cursor-pointer text-xs"
+              className="min-w-0 max-w-full truncate self-stretch py-2 bg-transparent text-[var(--text-primary)] focus:outline-none cursor-pointer text-xs"
             />
           </div>
 
@@ -262,7 +262,7 @@ const Interviews = () => {
                     <td className="py-4 px-6 text-right">
                       <button 
                         onClick={(e) => { e.stopPropagation(); setSelectedInterview(item); }} 
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[var(--border-card)] text-[var(--text-secondary)] hover:text-orange-400 hover:bg-[var(--bg-card-hover)] transition-all text-xs font-semibold"
+                        className="inline-flex items-center gap-1.5 px-3 py-2.5 sm:py-1.5 rounded-xl border border-[var(--border-card)] text-[var(--text-secondary)] hover:text-orange-400 hover:bg-[var(--bg-card-hover)] transition-all text-xs font-semibold"
                       >
                         <Eye className="w-3.5 h-3.5" />
                         Details
@@ -303,7 +303,7 @@ const Interviews = () => {
       {/* Selected Interview Details Modal */}
       {selectedInterview && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="theme-modal p-6 sm:p-8 rounded-3xl w-full max-w-lg relative border overflow-y-auto max-h-[90vh]">
+          <div className="theme-modal p-6 sm:p-8 rounded-3xl w-full max-w-lg relative border overflow-y-auto max-h-[90dvh]">
             <button 
               onClick={() => setSelectedInterview(null)} 
               className="absolute top-4 right-4 p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"

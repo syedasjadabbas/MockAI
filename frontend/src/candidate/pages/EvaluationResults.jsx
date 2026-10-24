@@ -455,12 +455,12 @@ const EvaluationResults = () => {
                   <div>
                     <h3 className="c-heading text-xs font-bold" style={{ color: 'var(--c-text)' }}>Score by area</h3>
                   </div>
-                  <span className="text-[10px] font-mono text-neutral-400">Scale 0-100%</span>
+                  <span className="text-[11px] font-mono text-neutral-400">Scale 0-100%</span>
                 </div>
                 <div className="h-44 w-full">
                   <Bar data={dimensionChartData} options={dimensionChartOptions} />
                 </div>
-                <div className="flex items-center justify-between text-[10px] font-mono text-neutral-400 pt-1 border-t" style={{ borderColor: 'var(--c-border)' }}>
+                <div className="flex items-center justify-between text-[11px] font-mono text-neutral-400 pt-1 border-t" style={{ borderColor: 'var(--c-border)' }}>
                   <span>Content: {Math.round(dimensionScores?.technical_content ?? 0)}%</span>
                   <span>Speaking: {Math.round(dimensionScores?.communication_fluency ?? 0)}%</span>
                   <span>Camera: {hasVisionSummary ? `${Math.round(dimensionScores?.behavioral_composure ?? 0)}%` : 'not measured'}</span>
@@ -476,12 +476,12 @@ const EvaluationResults = () => {
                   <div>
                     <h3 className="c-heading text-xs font-bold" style={{ color: 'var(--c-text)' }}>Score by question</h3>
                   </div>
-                  <span className="text-[10px] text-neutral-400">{answeredCount} of {totalQuestions} answered</span>
+                  <span className="text-[11px] text-neutral-400">{answeredCount} of {totalQuestions} answered</span>
                 </div>
                 <div className="h-44 w-full">
                   <Bar data={trajectoryChartData} options={trajectoryChartOptions} />
                 </div>
-                <div className="flex items-center justify-between text-[10px] font-mono text-neutral-400 pt-1 border-t" style={{ borderColor: 'var(--c-border)' }}>
+                <div className="flex items-center justify-between text-[11px] font-mono text-neutral-400 pt-1 border-t" style={{ borderColor: 'var(--c-border)' }}>
                   <span className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-[#FF6B35]" />
                     <span>Answered</span>
@@ -685,7 +685,7 @@ const EvaluationResults = () => {
                         }}
                       />
                     </div>
-                    <div className="flex justify-between text-[9px] font-mono text-neutral-500">
+                    <div className="flex justify-between text-[11px] font-mono text-neutral-500">
                       <span>Developing</span>
                       <span>Moderate</span>
                       <span>High</span>
@@ -694,7 +694,7 @@ const EvaluationResults = () => {
                 ) : (
                   <div className="pt-1 space-y-1">
                     <div className="h-2 w-full rounded-full bg-neutral-800/50 border border-white/5 overflow-hidden" />
-                    <div className="flex justify-between text-[9px] font-mono text-neutral-500">
+                    <div className="flex justify-between text-[11px] font-mono text-neutral-500">
                       <span>Not enough to judge</span>
                     </div>
                   </div>
@@ -733,7 +733,7 @@ const EvaluationResults = () => {
                         }}
                       />
                     </div>
-                    <div className="flex justify-between text-[9px] font-mono text-neutral-500">
+                    <div className="flex justify-between text-[11px] font-mono text-neutral-500">
                       <span>Low</span>
                       <span>Moderate</span>
                       <span>Elevated</span>
@@ -742,7 +742,7 @@ const EvaluationResults = () => {
                 ) : (
                   <div className="pt-1 space-y-1">
                     <div className="h-2 w-full rounded-full bg-neutral-800/50 border border-white/5 overflow-hidden" />
-                    <div className="flex justify-between text-[9px] font-mono text-neutral-500">
+                    <div className="flex justify-between text-[11px] font-mono text-neutral-500">
                       <span>Not enough to judge</span>
                     </div>
                   </div>
@@ -927,15 +927,15 @@ const EvaluationResults = () => {
                         </span>
                       )}
                       {qEval?.status === 'failed' ? (
-                        <span className="c-badge c-badge-danger text-[10px] py-0.5 px-1.5 font-bold">
+                        <span className="c-badge c-badge-danger text-[11px] py-0.5 px-1.5 font-bold">
                           Failed
                         </span>
                       ) : isRecorded ? (
-                        <span className="c-badge c-badge-success text-[10px] py-0.5 px-1.5 font-bold">
+                        <span className="c-badge c-badge-success text-[11px] py-0.5 px-1.5 font-bold">
                           Evaluated
                         </span>
                       ) : (
-                        <span className="c-badge c-badge-muted text-[10px] py-0.5 px-1.5">
+                        <span className="c-badge c-badge-muted text-[11px] py-0.5 px-1.5">
                           Skipped
                         </span>
                       )}
@@ -967,7 +967,7 @@ const EvaluationResults = () => {
                           <FileText className="w-3.5 h-3.5 text-[#FF6B35]" />
                           <span>NLP Content</span>
                           {nlpModel && nlpModel.includes('bert') && (
-                            <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-[#FF6B35]/10 text-[#FF6B35] border border-[#FF6B35]/20">
+                            <span className="text-[11px] font-mono px-1.5 py-0.2 rounded bg-[#FF6B35]/10 text-[#FF6B35] border border-[#FF6B35]/20">
                               BERT
                             </span>
                           )}
@@ -980,13 +980,13 @@ const EvaluationResults = () => {
                       </div>
                       <div className="space-y-1">
                         {semanticSimScore != null && semanticSimScore > 0 && (
-                          <div className="flex items-center justify-between text-[10px] font-mono text-neutral-400">
+                          <div className="flex items-center justify-between text-[11px] font-mono text-neutral-400">
                             <span>Semantic Alignment:</span>
                             <span className="text-neutral-200 font-semibold">{Math.round(semanticSimScore)}%</span>
                           </div>
                         )}
                         {coveredConcepts.length > 0 && (
-                          <div className="flex items-center gap-1 flex-wrap text-[10px] font-mono">
+                          <div className="flex items-center gap-1 flex-wrap text-[11px] font-mono">
                             <span className="text-neutral-400">Covered:</span>
                             {coveredConcepts.slice(0, 3).map((c, i) => (
                               <span key={i} className="px-1.5 py-0.2 rounded bg-neutral-800 text-emerald-400/90 border border-emerald-500/20">
@@ -996,7 +996,7 @@ const EvaluationResults = () => {
                           </div>
                         )}
                         {missingConcepts.length > 0 && (
-                          <div className="flex items-center gap-1 flex-wrap text-[10px] font-mono">
+                          <div className="flex items-center gap-1 flex-wrap text-[11px] font-mono">
                             <span className="text-neutral-400">Missing:</span>
                             {missingConcepts.slice(0, 2).map((c, i) => (
                               <span key={i} className="px-1.5 py-0.2 rounded bg-neutral-800 text-rose-400/90 border border-rose-500/20">
@@ -1094,7 +1094,7 @@ const EvaluationResults = () => {
                             <span className="text-neutral-400">Composure: </span>
                             <span className="text-neutral-300 font-medium">Not Assessed</span>
                           </div>
-                          <p className="text-[10px] text-neutral-400 pt-0.5 leading-tight">
+                          <p className="text-[11px] text-neutral-400 pt-0.5 leading-tight">
                             {offCamera
                               ? `No face in frame. The camera share was scored on presence (${Math.round(visionContribution?.raw_score ?? 0)}/100).`
                               : 'No face detected in video. Vision weight redistributed to verbal signals without penalty.'}
@@ -1114,7 +1114,7 @@ const EvaluationResults = () => {
                         </p>
                       )}
                       {cameraMeasured && (
-                        <div className="flex items-center justify-between text-[10px] font-mono pt-1 border-t" style={{ borderColor: 'var(--c-border)' }}>
+                        <div className="flex items-center justify-between text-[11px] font-mono pt-1 border-t" style={{ borderColor: 'var(--c-border)' }}>
                           <span className="text-neutral-400">In frame:</span>
                           <span className={offCamera ? 'text-amber-400 font-semibold' : 'text-neutral-200 font-semibold'}>
                             {Math.round((camera.camera_presence_ratio ?? 0) * 100)}%
@@ -1241,8 +1241,8 @@ const EvaluationResults = () => {
         {/* ===================================================================
             6. ACTIONS BAR
            =================================================================== */}
-        <section aria-label="Report Actions" className="pt-2 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
+        <section aria-label="Report Actions" className="pt-2 flex flex-col sm:flex-row sm:flex-wrap sm:items-center justify-between gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 sm:flex sm:items-center gap-3">
             <Link
               to="/history"
               className="c-btn c-btn-secondary px-4 py-2.5 text-xs font-semibold rounded-md flex items-center gap-1.5"
@@ -1261,7 +1261,7 @@ const EvaluationResults = () => {
 
           <Link
             to="/interview/goal"
-            className="c-btn c-btn-primary px-5 py-2.5 text-xs font-bold rounded-md flex items-center gap-1.5"
+            className="c-btn c-btn-primary px-5 py-3 sm:py-2.5 text-xs font-bold rounded-md flex items-center justify-center gap-1.5"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>Practice Another Session</span>

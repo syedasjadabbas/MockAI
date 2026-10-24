@@ -223,7 +223,7 @@ const Profile = () => {
                     ) : (
                       <>
                         <Edit2 className="w-4 h-4 mb-0.5 text-white" />
-                        <span className="text-[10px] font-bold text-white uppercase tracking-wider">Change</span>
+                        <span className="text-[11px] font-bold text-white uppercase tracking-wider">Change</span>
                       </>
                     )}
                     <input
@@ -239,7 +239,7 @@ const Profile = () => {
                 {avatarError && <p className="text-xs font-semibold text-red-500 mt-1 mb-2">{avatarError}</p>}
 
                 <h3 className="c-heading text-lg font-bold" style={{ color: 'var(--c-text)' }}>{session?.name}</h3>
-                <span className="c-badge c-badge-muted mt-1.5 text-[10px] font-bold">Candidate Account</span>
+                <span className="c-badge c-badge-muted mt-1.5 text-[11px] font-bold">Candidate Account</span>
 
                 <div className="w-full mt-4 pt-4 space-y-2 text-left border-t text-xs" style={{ borderColor: 'var(--c-border)' }}>
                   <div className="flex items-center gap-2 min-w-0">
@@ -386,7 +386,7 @@ const Profile = () => {
                         <button
                           type="button"
                           onClick={() => setShowPasswords((v) => !v)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 hover:opacity-80"
+                          className="absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center hover:opacity-80"
                           style={{ color: 'var(--c-text-muted)' }}
                           aria-label={showPasswords ? 'Hide passwords' : 'Show passwords'}
                         >

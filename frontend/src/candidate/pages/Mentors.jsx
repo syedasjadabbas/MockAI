@@ -205,7 +205,7 @@ const Mentors = () => {
               else loadAppointments();
             }}
             disabled={loadingMentors || loadingAppointments}
-            className="self-start sm:self-auto p-2 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-colors hover:border-[var(--c-border-strong)]"
+            className="self-start sm:self-auto p-2.5 sm:p-2 min-h-[40px] sm:min-h-0 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-colors hover:border-[var(--c-border-strong)]"
             style={{
               background: 'var(--c-surface, #181818)',
               borderColor: 'var(--c-border, #2A2A2A)',
@@ -237,7 +237,7 @@ const Mentors = () => {
             <Users className="w-3.5 h-3.5" />
             <span>Discover Mentors</span>
             {mentors.length > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 dark:bg-neutral-800 text-zinc-700 dark:text-neutral-300">
+              <span className="px-1.5 py-0.2 rounded-full text-[11px] bg-slate-200 dark:bg-neutral-800 text-zinc-700 dark:text-neutral-300">
                 {mentors.length}
               </span>
             )}
@@ -255,7 +255,7 @@ const Mentors = () => {
             <CalendarCheck2 className="w-3.5 h-3.5" />
             <span>My Bookings</span>
             {appointments.length > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 dark:bg-neutral-800 text-zinc-700 dark:text-neutral-300">
+              <span className="px-1.5 py-0.2 rounded-full text-[11px] bg-slate-200 dark:bg-neutral-800 text-zinc-700 dark:text-neutral-300">
                 {appointments.length}
               </span>
             )}
@@ -438,7 +438,7 @@ const Mentors = () => {
                         </div>
 
                         <span
-                          className="text-[10px] font-mono px-2 py-0.5 rounded-full border uppercase shrink-0 whitespace-nowrap mt-0.5"
+                          className="text-[11px] font-mono px-2 py-0.5 rounded-full border uppercase shrink-0 whitespace-nowrap mt-0.5"
                           style={{
                             background: 'rgba(34, 197, 94, 0.1)',
                             borderColor: 'rgba(34, 197, 94, 0.25)',
@@ -464,7 +464,7 @@ const Mentors = () => {
                           {mentor.specialization.slice(0, 3).map((spec, i) => (
                             <span
                               key={i}
-                              className="text-[10px] px-2 py-0.5 rounded border font-mono"
+                              className="text-[11px] px-2 py-0.5 rounded border font-mono"
                               style={{
                                 background: 'var(--c-surface-muted)',
                                 borderColor: 'var(--c-border, #2A2A2A)',
@@ -701,7 +701,7 @@ const Mentors = () => {
       {cancellingAppointment && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
           <div
-            className="w-full max-w-sm rounded-2xl border p-6 shadow-2xl space-y-4"
+            className="w-full max-w-sm rounded-2xl border p-6 shadow-2xl space-y-4 max-h-[90dvh] overflow-y-auto"
             style={{
               background: 'var(--c-surface, #181818)',
               borderColor: 'var(--c-border, #2A2A2A)',

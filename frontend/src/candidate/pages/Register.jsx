@@ -238,7 +238,7 @@ const Register = () => {
               {/* OR Divider */}
               <div className="flex items-center my-4 select-none">
                 <div className="flex-1 border-t" style={{ borderColor: 'var(--c-input-border)' }} />
-                <span className="px-3 text-[10px] uppercase tracking-wider font-semibold" style={{ color: 'var(--c-text-muted)' }}>or</span>
+                <span className="px-3 text-[11px] uppercase tracking-wider font-semibold" style={{ color: 'var(--c-text-muted)' }}>or</span>
                 <div className="flex-1 border-t" style={{ borderColor: 'var(--c-input-border)' }} />
               </div>
 

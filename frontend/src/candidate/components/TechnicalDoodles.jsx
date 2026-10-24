@@ -213,7 +213,7 @@ export const SqlMatrixSchematic = ({ size = 28, className = '' }) => (
  */
 export const TechnicalHUDTag = ({ label, value, tone = 'default', className = '' }) => (
   <div
-    className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-mono border select-none ${className}`}
+    className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-mono border select-none ${className}`}
     style={{
       background: 'var(--c-surface-muted)',
       borderColor: 'var(--c-border)',

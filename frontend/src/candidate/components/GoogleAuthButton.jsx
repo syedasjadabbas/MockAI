@@ -23,6 +23,7 @@ export default function GoogleAuthButton({
   const [loading, setLoading] = useState(false);
   const [rendered, setRendered] = useState(false);
   const googleBtnContainerRef = useRef(null);
+  const lastWidthRef = useRef(0);
   const inFlightRef = useRef(false);
   const onErrorRef = useRef(onError);
   const onSuccessRef = useRef(onSuccess);
@@ -92,7 +93,11 @@ export default function GoogleAuthButton({
           });
 
           if (googleBtnContainerRef.current) {
-            const containerWidth = googleBtnContainerRef.current.offsetWidth || 360;
+            // Google renders a fixed-width button (200-400px): size it to the
+            // space actually available so it never overflows a narrow phone.
+            const el = googleBtnContainerRef.current;
+            const containerWidth = el.parentElement?.clientWidth || el.offsetWidth || 300;
+            lastWidthRef.current = containerWidth;
             googleBtnContainerRef.current.innerHTML = '';
             window.google.accounts.id.renderButton(googleBtnContainerRef.current, {
               type: 'standard',
@@ -101,7 +106,7 @@ export default function GoogleAuthButton({
               text: mode === 'register' ? 'signup_with' : 'continue_with',
               shape: 'rectangular',
               logo_alignment: 'left',
-              width: Math.min(Math.max(containerWidth, 240), 400),
+              width: Math.round(Math.min(Math.max(containerWidth, 200), 400)),
             });
             setRendered(true);
           }
@@ -112,6 +117,17 @@ export default function GoogleAuthButton({
     };
 
     setupGoogleSignIn();
+
+    // Re-render when the available width changes noticeably (rotation, resize).
+    let resizeObserver;
+    const parent = googleBtnContainerRef.current?.parentElement;
+    if (parent && typeof ResizeObserver !== 'undefined') {
+      resizeObserver = new ResizeObserver(() => {
+        const w = parent.clientWidth;
+        if (w && Math.abs(w - lastWidthRef.current) > 16) setupGoogleSignIn();
+      });
+      resizeObserver.observe(parent);
+    }
 
     if (!window.google?.accounts?.id) {
       intervalId = setInterval(() => {
@@ -124,6 +140,7 @@ export default function GoogleAuthButton({
 
     return () => {
       if (intervalId) clearInterval(intervalId);
+      if (resizeObserver) resizeObserver.disconnect();
     };
   }, [mode, GOOGLE_CLIENT_ID]);
 

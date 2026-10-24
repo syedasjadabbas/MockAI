@@ -257,11 +257,11 @@ const InterviewCompletion = () => {
                           </span>
                         )}
                         {isSaved ? (
-                          <span className="c-badge c-badge-success text-[10px] py-0.5 px-1.5 font-bold flex items-center gap-1">
+                          <span className="c-badge c-badge-success text-[11px] py-0.5 px-1.5 font-bold flex items-center gap-1">
                             <Check className="w-2.5 h-2.5" /> Saved
                           </span>
                         ) : (
-                          <span className="c-badge c-badge-muted text-[10px] py-0.5 px-1.5">
+                          <span className="c-badge c-badge-muted text-[11px] py-0.5 px-1.5">
                             Skipped
                           </span>
                         )}

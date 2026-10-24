@@ -601,17 +601,17 @@ const QuestionBank = () => {
       </div>
 
       {/* Tabs Navigation */}
-      <div className="flex items-center gap-2 border-b border-[var(--border-panel)] pb-1">
+      <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 border-b border-[var(--border-panel)] pb-1">
         <button
           onClick={() => setActiveTab('questions')}
-          className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 relative ${
+          className={`flex items-center justify-center sm:justify-start gap-2 sm:gap-2.5 px-3 sm:px-5 py-2.5 min-w-0 rounded-xl font-bold text-sm transition-all duration-200 relative ${
             activeTab === 'questions'
               ? 'bg-orange-500/15 text-orange-400 border border-orange-500/30'
               : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-slate-800/20'
           }`}
         >
           <BookOpen className="w-4 h-4" />
-          <span>Questions Repository</span>
+          <span className="sm:hidden">Questions</span><span className="hidden sm:inline">Questions Repository</span>
           <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
             activeTab === 'questions'
               ? 'bg-orange-500/30 text-orange-300'
@@ -623,14 +623,14 @@ const QuestionBank = () => {
 
         <button
           onClick={() => setActiveTab('categories')}
-          className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 relative ${
+          className={`flex items-center justify-center sm:justify-start gap-2 sm:gap-2.5 px-3 sm:px-5 py-2.5 min-w-0 rounded-xl font-bold text-sm transition-all duration-200 relative ${
             activeTab === 'categories'
               ? 'bg-orange-500/15 text-orange-400 border border-orange-500/30'
               : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-slate-800/20'
           }`}
         >
           <Layers className="w-4 h-4" />
-          <span>Interview Categories</span>
+          <span className="sm:hidden">Categories</span><span className="hidden sm:inline">Interview Categories</span>
           <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
             activeTab === 'categories'
               ? 'bg-orange-500/30 text-orange-300'
@@ -675,7 +675,8 @@ const QuestionBank = () => {
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
+                  aria-label="Clear search"
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-200"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -683,12 +684,12 @@ const QuestionBank = () => {
             </div>
 
             {/* Filter Dropdowns */}
-            <div className="flex items-center gap-2.5 flex-wrap">
+            <div className="grid grid-cols-2 sm:flex sm:items-center gap-2.5 sm:flex-wrap min-w-0">
               {/* Category Filter */}
               <select
                 value={selectedCategoryFilter}
                 onChange={e => setSelectedCategoryFilter(e.target.value)}
-                className="theme-input px-3 py-2 rounded-xl text-xs sm:text-sm font-medium border focus:outline-none focus:ring-2 focus:ring-orange-500/30 transition-all cursor-pointer"
+                className="col-span-2 theme-input w-full sm:w-auto min-w-0 max-w-full min-h-[40px] px-3 py-2 rounded-xl text-xs sm:text-sm font-medium border focus:outline-none focus:ring-2 focus:ring-orange-500/30 transition-all cursor-pointer"
               >
                 <option value="all">All Categories</option>
                 {categories.map(c => (
@@ -702,7 +703,7 @@ const QuestionBank = () => {
               <select
                 value={selectedDifficultyFilter}
                 onChange={e => setSelectedDifficultyFilter(e.target.value)}
-                className="theme-input px-3 py-2 rounded-xl text-xs sm:text-sm font-medium border focus:outline-none focus:ring-2 focus:ring-orange-500/30 transition-all cursor-pointer"
+                className="theme-input w-full sm:w-auto min-w-0 max-w-full min-h-[40px] px-3 py-2 rounded-xl text-xs sm:text-sm font-medium border focus:outline-none focus:ring-2 focus:ring-orange-500/30 transition-all cursor-pointer"
               >
                 <option value="all">All Difficulties</option>
                 <option value="easy">Easy</option>
@@ -714,7 +715,7 @@ const QuestionBank = () => {
               <select
                 value={selectedStatusFilter}
                 onChange={e => setSelectedStatusFilter(e.target.value)}
-                className="theme-input px-3 py-2 rounded-xl text-xs sm:text-sm font-medium border focus:outline-none focus:ring-2 focus:ring-orange-500/30 transition-all cursor-pointer"
+                className="theme-input w-full sm:w-auto min-w-0 max-w-full min-h-[40px] px-3 py-2 rounded-xl text-xs sm:text-sm font-medium border focus:outline-none focus:ring-2 focus:ring-orange-500/30 transition-all cursor-pointer"
               >
                 <option value="all">All Status</option>
                 <option value="active">Active Only</option>
@@ -816,7 +817,7 @@ const QuestionBank = () => {
                           <td className="py-4 px-6 whitespace-nowrap">
                             <button
                               onClick={() => filterBySpecificCategory(q.category_id)}
-                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-semibold border transition-all hover:scale-105 bg-orange-500/10 text-orange-400 border-orange-500/20"
+                              className="inline-flex items-center gap-1.5 px-2.5 py-2 sm:py-1 rounded-xl text-xs font-semibold border transition-all hover:scale-105 bg-orange-500/10 text-orange-400 border-orange-500/20"
                               title="Filter by this category"
                             >
                               <Folder className="w-3 h-3" />
@@ -862,7 +863,7 @@ const QuestionBank = () => {
                           <td className="py-4 px-6 whitespace-nowrap">
                             <button
                               onClick={() => handleToggleQuestionStatus(q)}
-                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border transition-all ${
+                              className={`inline-flex items-center gap-1.5 px-2.5 py-2 sm:py-1 rounded-full text-xs font-bold border transition-all ${
                                 q.status === 'active'
                                   ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20'
                                   : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'
@@ -880,7 +881,7 @@ const QuestionBank = () => {
                               {/* View Details */}
                               <button
                                 onClick={() => setViewingQuestion(q)}
-                                className="p-2 rounded-lg text-slate-400 hover:text-orange-400 hover:bg-orange-500/10 transition-all"
+                                className="p-2.5 sm:p-2 rounded-lg text-slate-400 hover:text-orange-400 hover:bg-orange-500/10 transition-all"
                                 title="View Details"
                               >
                                 <Eye className="w-4 h-4" />
@@ -889,7 +890,7 @@ const QuestionBank = () => {
                               {/* Edit Question */}
                               <button
                                 onClick={() => openEditQuestionModal(q)}
-                                className="p-2 rounded-lg text-slate-400 hover:text-amber-400 hover:bg-amber-500/10 transition-all"
+                                className="p-2.5 sm:p-2 rounded-lg text-slate-400 hover:text-amber-400 hover:bg-amber-500/10 transition-all"
                                 title="Edit Question"
                               >
                                 <Edit2 className="w-4 h-4" />
@@ -898,7 +899,7 @@ const QuestionBank = () => {
                               {/* Archive / Restore Toggle */}
                               <button
                                 onClick={() => handleToggleQuestionStatus(q)}
-                                className={`p-2 rounded-lg transition-all ${
+                                className={`p-2.5 sm:p-2 rounded-lg transition-all ${
                                   q.status === 'active'
                                     ? 'text-slate-400 hover:text-rose-400 hover:bg-rose-500/10'
                                     : 'text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10'
@@ -911,7 +912,7 @@ const QuestionBank = () => {
                               {/* Delete Question */}
                               <button
                                 onClick={() => setConfirmDelete({ type: 'question', item: q })}
-                                className="p-2 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
+                                className="p-2.5 sm:p-2 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
                                 title="Delete Question Permanently"
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -1093,7 +1094,7 @@ const QuestionBank = () => {
       {/* ----------------- MODAL 1: ADD / EDIT QUESTION ----------------- */}
       {showQuestionModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in">
-          <div className="theme-modal rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl border flex flex-col max-h-[90vh] animate-scale-up">
+          <div className="theme-modal rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl border flex flex-col max-h-[90dvh] animate-scale-up">
             {/* Header */}
             <div className="p-6 border-b border-[var(--border-table)] flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -1268,7 +1269,7 @@ const QuestionBank = () => {
               </div>
 
               {/* Modal Actions */}
-              <div className="pt-4 border-t border-[var(--border-table)] flex items-center justify-end gap-3">
+              <div className="sticky -bottom-6 -mx-6 -mb-6 px-6 py-4 border-t border-[var(--border-table)] bg-[var(--bg-modal)] flex items-center justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setShowQuestionModal(false)}
@@ -1293,7 +1294,7 @@ const QuestionBank = () => {
       {/* ----------------- MODAL 2: ADD / EDIT CATEGORY ----------------- */}
       {showCategoryModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in">
-          <div className="theme-modal rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl border flex flex-col max-h-[90vh] animate-scale-up">
+          <div className="theme-modal rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl border flex flex-col max-h-[90dvh] animate-scale-up">
             {/* Header */}
             <div className="p-6 border-b border-[var(--border-table)] flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -1415,7 +1416,7 @@ const QuestionBank = () => {
               </div>
 
               {/* Modal Actions */}
-              <div className="pt-4 border-t border-[var(--border-table)] flex items-center justify-end gap-3">
+              <div className="sticky -bottom-6 -mx-6 -mb-6 px-6 py-4 border-t border-[var(--border-table)] bg-[var(--bg-modal)] flex items-center justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setShowCategoryModal(false)}
@@ -1440,7 +1441,7 @@ const QuestionBank = () => {
       {/* ----------------- MODAL 3: VIEW QUESTION DETAILS ----------------- */}
       {viewingQuestion && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in">
-          <div className="theme-modal rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl border flex flex-col max-h-[90vh] animate-scale-up">
+          <div className="theme-modal rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl border flex flex-col max-h-[90dvh] animate-scale-up">
             {/* Header */}
             <div className="p-6 border-b border-[var(--border-table)] flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -1549,7 +1550,7 @@ const QuestionBank = () => {
       {/* ----------------- MODAL 4: DELETE CONFIRMATION ----------------- */}
       {confirmDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in">
-          <div className="theme-modal rounded-3xl w-full max-w-md p-6 border shadow-2xl space-y-4 animate-scale-up">
+          <div className="theme-modal rounded-3xl w-full max-w-md p-6 border shadow-2xl space-y-4 animate-scale-up max-h-[90dvh] overflow-y-auto">
             <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500 mx-auto">
               <AlertCircle className="w-6 h-6" />
             </div>

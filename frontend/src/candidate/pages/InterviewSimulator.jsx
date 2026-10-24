@@ -457,9 +457,10 @@ const InterviewSimulator = () => {
                 key={q.id}
                 onClick={() => jumpToQuestion(i)}
                 disabled={isRecording || saving}
-                className="h-1.5 rounded-sm transition-all"
+                aria-label={`Go to question ${i + 1}`}
+                className="h-8 py-[13px] bg-clip-content rounded-sm transition-all"
                 style={{
-                  background: isCurrent
+                  backgroundColor: isCurrent
                     ? 'var(--c-accent)'
                     : isDone
                     ? 'var(--c-success)'
@@ -499,10 +500,10 @@ const InterviewSimulator = () => {
                 </div>
 
                 <div className="flex items-center gap-1.5">
-                  <span className="c-badge c-badge-muted text-[10px]">
+                  <span className="c-badge c-badge-muted text-[11px]">
                     {question.difficulty || 'Medium'}
                   </span>
-                  <span className="c-badge c-badge-accent text-[10px]">
+                  <span className="c-badge c-badge-accent text-[11px]">
                     {question.type || 'Technical'}
                   </span>
                 </div>
@@ -525,7 +526,7 @@ const InterviewSimulator = () => {
                   )}
                 </p>
                 {answeredCurrent && (
-                  <span className="shrink-0 c-badge c-badge-success flex items-center gap-1 font-semibold text-[10px]">
+                  <span className="shrink-0 c-badge c-badge-success flex items-center gap-1 font-semibold text-[11px]">
                     <CheckCircle2 className="w-3 h-3" />
                     {savedMode === 'text' ? 'Saved (typed)' : `Saved (${responses[question.id]?.durationSeconds || 0}s)`}
                   </span>
@@ -543,7 +544,7 @@ const InterviewSimulator = () => {
                       key={modeId}
                       onClick={() => { setAnswerMode(modeId); setSaveError(''); }}
                       disabled={isRecording || saving}
-                      className="px-3 py-1.5 rounded text-[11px] font-semibold flex items-center gap-1.5 transition-colors"
+                      className="px-3 py-2.5 sm:py-1.5 rounded text-xs sm:text-[11px] font-semibold flex items-center gap-1.5 transition-colors"
                       style={{
                         background: answerMode === modeId ? 'var(--c-surface)' : 'transparent',
                         color: answerMode === modeId ? 'var(--c-text)' : 'var(--c-text-muted)',
@@ -569,7 +570,7 @@ const InterviewSimulator = () => {
                     className="w-full rounded-md border p-3 text-sm leading-relaxed resize-y focus:outline-none"
                     style={{ background: 'var(--c-surface-muted)', borderColor: 'var(--c-border)', color: 'var(--c-text)' }}
                   />
-                  <div className="flex items-center justify-between text-[10px]" style={{ color: 'var(--c-text-muted)' }}>
+                  <div className="flex items-center justify-between text-[11px]" style={{ color: 'var(--c-text-muted)' }}>
                     <span>Typed answers are scored on content, grammar and tone. Speech and facial analysis are not applied.</span>
                     <span className="font-mono shrink-0 pl-2">{draftWordCount} words</span>
                   </div>
@@ -612,7 +613,7 @@ const InterviewSimulator = () => {
                   <div className="flex items-center gap-2.5">
                     <div className="w-4 h-4 border-2 rounded-full animate-spin shrink-0" style={{ borderColor: 'var(--c-accent)', borderTopColor: 'transparent' }} />
                     <div>
-                      <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--c-text)' }}>Ingesting Response</p>
+                      <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--c-text)' }}>Ingesting Response</p>
                       <p className="text-xs" style={{ color: 'var(--c-text-secondary)' }}>Uploading for evaluation…</p>
                     </div>
                   </div>
@@ -875,15 +876,15 @@ const InterviewSimulator = () => {
 
                       <div className="shrink-0">
                         {isSaved ? (
-                          <span className="c-badge c-badge-success text-[10px] py-0.5 px-1.5 font-bold">
+                          <span className="c-badge c-badge-success text-[11px] py-0.5 px-1.5 font-bold">
                             Saved
                           </span>
                         ) : isCurrent ? (
-                          <span className="c-badge c-badge-accent text-[10px] py-0.5 px-1.5 font-bold">
+                          <span className="c-badge c-badge-accent text-[11px] py-0.5 px-1.5 font-bold">
                             Active
                           </span>
                         ) : (
-                          <span className="c-badge c-badge-muted text-[10px] py-0.5 px-1.5">
+                          <span className="c-badge c-badge-muted text-[11px] py-0.5 px-1.5">
                             Pending
                           </span>
                         )}
@@ -913,7 +914,7 @@ const InterviewSimulator = () => {
       {/* Confirmation Modal to End Interview Session */}
       {confirmEnd && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="c-card p-6 rounded-lg w-full max-w-md space-y-4 border shadow-xl"
+          <div className="c-card p-6 rounded-lg w-full max-w-md space-y-4 border shadow-xl max-h-[90dvh] overflow-y-auto"
             style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}
           >
             <div className="space-y-1">

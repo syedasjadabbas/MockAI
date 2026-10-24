@@ -100,7 +100,7 @@ const MentorBookingModal = ({ mentor, isOpen, onClose, onSuccess }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
       <div
-        className="w-full max-w-lg rounded-2xl border shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        className="w-full max-w-lg rounded-2xl border shadow-2xl overflow-hidden flex flex-col max-h-[90dvh]"
         style={{
           background: 'var(--c-surface, #181818)',
           borderColor: 'var(--c-border, #2A2A2A)',
@@ -238,7 +238,7 @@ const MentorBookingModal = ({ mentor, isOpen, onClose, onSuccess }) => {
                   </p>
                 </div>
                 <div
-                  className="text-[10px] font-mono px-2 py-0.5 rounded-full border uppercase"
+                  className="text-[11px] font-mono px-2 py-0.5 rounded-full border uppercase"
                   style={{
                     background: 'rgba(34, 197, 94, 0.1)',
                     borderColor: 'rgba(34, 197, 94, 0.25)',
@@ -275,7 +275,7 @@ const MentorBookingModal = ({ mentor, isOpen, onClose, onSuccess }) => {
                   <label className="block text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--c-text-secondary)' }}>
                     Available Time Slots
                   </label>
-                  <span className="text-[10px]" style={{ color: 'var(--c-text-muted)' }}>
+                  <span className="text-[11px]" style={{ color: 'var(--c-text-muted)' }}>
                     {availableSlots.length > 0
                       ? `${availableSlots.length} available`
                       : 'Slots generated on demand'}

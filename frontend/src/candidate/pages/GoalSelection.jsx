@@ -183,8 +183,11 @@ const GoalSelection = () => {
       .finally(() => setCategoriesLoading(false));
   }, []);
 
+  // Follow the conversation once the candidate has replied; on first load the
+  // page stays at the top so the question is visible on small screens.
   useEffect(() => {
-    scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messages.length <= 1) return;
+    scrollRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }, [messages, categoriesLoading]);
 
   const pushBot = (text) => setMessages((m) => [...m, { from: 'bot', text }]);
@@ -471,9 +474,9 @@ const GoalSelection = () => {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
               placeholder="Or enter any role or domain — e.g., Doctor, Nurse, Teacher, Accountant, Lawyer, React..."
-              className="c-input flex-1 px-3.5 py-2.5 rounded-md text-xs"
+              className="c-input flex-1 min-w-0 px-3.5 py-2.5 rounded-md text-xs"
             />
-            <button onClick={handleSend} disabled={interpreting} className="c-btn c-btn-secondary px-4 py-2.5 rounded-md text-xs font-semibold">
+            <button onClick={handleSend} disabled={interpreting} className="c-btn c-btn-secondary shrink-0 px-4 py-2.5 rounded-md text-xs font-semibold">
               {interpreting ? 'Thinking…' : 'Go'}
             </button>
           </div>

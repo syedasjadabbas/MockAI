@@ -320,7 +320,7 @@ const Users = () => {
       {/* User Details Modal */}
       {selectedUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="theme-modal p-6 sm:p-8 rounded-3xl w-full max-w-md relative border">
+          <div className="theme-modal p-6 sm:p-8 rounded-3xl w-full max-w-md relative border max-h-[90dvh] overflow-y-auto">
             <button 
               onClick={() => setSelectedUser(null)} 
               className="absolute top-4 right-4 p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"

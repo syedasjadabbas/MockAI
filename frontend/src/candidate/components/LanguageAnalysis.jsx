@@ -58,7 +58,7 @@ export const LanguageSummarySection = ({ summary }) => {
           <ul className="divide-y text-xs border-t border-b" style={{ borderColor: 'var(--c-border)' }}>
             {examples.map((issue, i) => (
               <li key={i} className="py-2 flex flex-wrap items-center gap-x-3 gap-y-1">
-                <span className="c-badge c-badge-muted text-[10px]">{issue.type}</span>
+                <span className="c-badge c-badge-muted text-[11px]">{issue.type}</span>
                 <span className="line-through" style={{ color: 'var(--c-text-muted)' }}>{issue.excerpt}</span>
                 <span style={{ color: 'var(--c-text-muted)' }}>→</span>
                 <span className="font-semibold" style={{ color: 'var(--c-text)' }}>{issue.suggestion}</span>
@@ -77,9 +77,9 @@ export const QuestionLanguageNotes = ({ textAnalysis }) => {
   const issues = lang.grammar_issues || [];
   return (
     <div className="flex flex-wrap items-center gap-2 text-[11px]" style={{ color: 'var(--c-text-secondary)' }}>
-      <span className="c-badge c-badge-muted text-[10px]">Grammar {Math.round(lang.grammar_score)}%</span>
-      <span className="c-badge c-badge-muted text-[10px]">Clarity {Math.round(lang.clarity_score)}%</span>
-      <span className="c-badge c-badge-muted text-[10px]" style={{ color: TONE_COLORS[lang.tone?.label] }}>
+      <span className="c-badge c-badge-muted text-[11px]">Grammar {Math.round(lang.grammar_score)}%</span>
+      <span className="c-badge c-badge-muted text-[11px]">Clarity {Math.round(lang.clarity_score)}%</span>
+      <span className="c-badge c-badge-muted text-[11px]" style={{ color: TONE_COLORS[lang.tone?.label] }}>
         Tone: {lang.tone?.label}
       </span>
       {issues.slice(0, 3).map((issue, i) => (
