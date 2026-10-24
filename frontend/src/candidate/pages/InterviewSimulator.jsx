@@ -613,8 +613,8 @@ const InterviewSimulator = () => {
                   <div className="flex items-center gap-2.5">
                     <div className="w-4 h-4 border-2 rounded-full animate-spin shrink-0" style={{ borderColor: 'var(--c-accent)', borderTopColor: 'transparent' }} />
                     <div>
-                      <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--c-text)' }}>Ingesting Response</p>
-                      <p className="text-xs" style={{ color: 'var(--c-text-secondary)' }}>Uploading for evaluation…</p>
+                      <p className="text-xs font-semibold" style={{ color: 'var(--c-text)' }}>Saving your answer…</p>
+                      <p className="text-xs" style={{ color: 'var(--c-text-secondary)' }}>This only takes a moment.</p>
                     </div>
                   </div>
                 </div>
@@ -702,7 +702,7 @@ const InterviewSimulator = () => {
                     className="c-btn c-btn-primary w-full py-3.5 text-xs font-bold flex items-center justify-center gap-2 opacity-75 cursor-not-allowed rounded-md"
                   >
                     <div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                    <span>Saving Response…</span>
+                    <span>Saving…</span>
                   </button>
                 ) : (
                   <button

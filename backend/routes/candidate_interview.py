@@ -32,7 +32,6 @@ Mounted at prefix /candidate in main.py, alongside routes/candidate.py's
 router - same namespace, separate file for readability.
 """
 import os
-from dataclasses import asdict
 from datetime import datetime
 from typing import Optional
 
@@ -42,7 +41,6 @@ from pydantic import BaseModel
 
 from database import categories_collection, questions_collection, interviews_collection
 from middleware.candidate_auth import verify_candidate
-from services.asr_google import GoogleSpeechASRService
 from services.media_storage import get_media_storage
 
 router = APIRouter()
@@ -489,20 +487,6 @@ def _require_recording_consent(interview: dict, needs_camera: bool) -> None:
         )
 
 
-def _upsert_evaluation_per_question_asr(interview: dict, question_id: str, asr_result: dict) -> None:
-    evaluation = interview.get("evaluation") or {
-        "started_at": None, "completed_at": None, "per_question": [],
-        "overall_score": None, "confidence_score": None, "stress_level": None,
-        "interpretation": None, "strengths": None, "weaknesses": None,
-        "suggestions": None, "failed_reason": None,
-    }
-    per_question = [q for q in (evaluation.get("per_question") or []) if q.get("question_id") != question_id]
-    per_question.append({"question_id": question_id, "asr": asr_result})
-    evaluation["per_question"] = per_question
-
-    interviews_collection.update_one({"_id": interview["_id"]}, {"$set": {"evaluation": evaluation}})
-
-
 @router.post("/interviews/{interview_id}/responses/{question_id}/media")
 async def upload_response_media(
     interview_id: str,
@@ -556,12 +540,10 @@ async def upload_response_media(
     updated_responses = [r for r in existing_responses if r["question_id"] != question_id] + [new_response]
     interviews_collection.update_one({"_id": interview["_id"]}, {"$set": {"responses": updated_responses}})
 
-    # Re-fetch so the ASR upsert below (and the final response) reflect the
-    # response write we just made.
-    interview = interviews_collection.find_one({"_id": interview["_id"]})
-
-    asr_result = GoogleSpeechASRService().transcribe(media_ref, duration_seconds)
-    _upsert_evaluation_per_question_asr(interview, question_id, asdict(asr_result))
+    # Transcription and scoring run in the background while the candidate
+    # moves on, so saving the answer returns as soon as the file is stored.
+    from services.evaluation_worker import schedule_answer_analysis
+    schedule_answer_analysis(interview_id, question_id, media_ref)
 
     updated = interviews_collection.find_one({"_id": interview["_id"]})
     return _public_interview(updated)

@@ -8,12 +8,19 @@ Asynchronously orchestrates the end-to-end evaluation pipeline for a completed i
 4. Synthesizes overall performance via Aggregate Evaluator.
 5. Persists the complete evaluation record and updates evaluation_status ("completed" or "failed").
 6. Denormalizes top-level score, confidence, and stress for Admin reporting compatibility.
+
+Spoken answers are also analysed one by one as soon as they are uploaded
+(schedule_answer_analysis), while the candidate moves on to the next
+question. The final job reuses those results, so after the last answer only
+the remaining work and the aggregation are left.
 """
 import gc
 import logging
 import threading
+from concurrent.futures import Future, ThreadPoolExecutor
+from dataclasses import asdict
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 from bson import ObjectId
 
 from database import interviews_collection, questions_collection
@@ -37,6 +44,13 @@ _active_guard = threading.Lock()
 STALE_PROCESSING_MINUTES = 15
 MAX_RECOVERY_ATTEMPTS = 2
 
+# Per-answer analysis during the interview: one worker thread, results kept on
+# the interview under answer_analysis.<question_id> until the final job runs.
+_answer_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="answer-analysis")
+_pending_answers: Dict[Tuple[str, str], Future] = {}
+_pending_guard = threading.Lock()
+ANSWER_WAIT_SECONDS = 180
+
 
 def evaluate_interview_job(interview_id: str) -> Dict:
     """
@@ -47,6 +61,9 @@ def evaluate_interview_job(interview_id: str) -> Dict:
     with _active_guard:
         _active_jobs.add(str(interview_id))
     try:
+        # Let answers still being analysed finish first (outside the lock,
+        # which each of them takes), so their results are reused.
+        _wait_for_answer_analysis(str(interview_id))
         with _evaluation_lock:
             try:
                 return _evaluate_interview_job_unlocked(interview_id)
@@ -55,6 +72,92 @@ def evaluate_interview_job(interview_id: str) -> Dict:
     finally:
         with _active_guard:
             _active_jobs.discard(str(interview_id))
+
+
+def schedule_answer_analysis(interview_id: str, question_id: str, media_url: str) -> None:
+    """Transcribe and score one spoken answer in the background, right after
+    its upload. Safe to call again when the answer is re-recorded: a result is
+    only reused when its media_url still matches the stored response."""
+    key = (str(interview_id), question_id)
+    future = _answer_executor.submit(_analyse_answer, str(interview_id), question_id, media_url)
+    with _pending_guard:
+        _pending_answers[key] = future
+    future.add_done_callback(lambda f: _forget_answer(key, f))
+
+
+def _forget_answer(key: Tuple[str, str], future: Future) -> None:
+    with _pending_guard:
+        if _pending_answers.get(key) is future:
+            del _pending_answers[key]
+
+
+def _wait_for_answer_analysis(interview_id: str) -> None:
+    with _pending_guard:
+        futures = [f for (iid, _), f in _pending_answers.items() if iid == interview_id]
+    for future in futures:
+        try:
+            future.result(timeout=ANSWER_WAIT_SECONDS)
+        except Exception as err:  # the final job simply redoes that answer
+            logger.warning(f"Answer analysis for {interview_id} did not finish: {err}")
+
+
+def _question_criteria(q: Dict) -> Tuple[Optional[str], List]:
+    """Expected answer and tags, falling back to the Question Bank."""
+    q_id = q.get("question_id") or q.get("id")
+    expected_answer = q.get("expected_answer")
+    tags = q.get("tags", [])
+    try:
+        if q_id and not expected_answer:
+            q_db = questions_collection.find_one({"_id": ObjectId(q_id)})
+            if q_db:
+                expected_answer = q_db.get("expected_answer")
+                if not tags:
+                    tags = q_db.get("tags", [])
+    except Exception:
+        pass
+    return expected_answer, tags
+
+
+def _analyse_answer(interview_id: str, question_id: str, media_url: str) -> None:
+    interview = interviews_collection.find_one({"_id": ObjectId(interview_id)})
+    if not interview:
+        return
+    resp = next((r for r in interview.get("responses", []) if r.get("question_id") == question_id), None)
+    q = next((q for q in interview.get("questions", []) if (q.get("question_id") or q.get("id")) == question_id), None)
+    if not resp or not q or resp.get("media_url") != media_url:
+        return  # re-recorded or removed since it was scheduled
+
+    duration_seconds = resp.get("duration_seconds")
+    expected_answer, tags = _question_criteria(q)
+    with _evaluation_lock:
+        try:
+            asr = GoogleSpeechASRService().transcribe(media_url, duration_seconds)
+            result = evaluate_question_response(
+                question_id=question_id,
+                question_text=q.get("question_text") or q.get("question") or "",
+                expected_answer=expected_answer,
+                tags=tags,
+                difficulty=q.get("difficulty", "Medium"),
+                transcript=asr.transcript,
+                duration_seconds=duration_seconds,
+                media_url=media_url,
+                asr_status=asr.status,
+                asr_provider=asr.provider,
+                rubric=q.get("rubric"),
+                response_mode="spoken",
+            )
+        finally:
+            gc.collect()
+    interviews_collection.update_one(
+        {"_id": interview["_id"]},
+        {"$set": {f"answer_analysis.{question_id}": {
+            "media_url": media_url,
+            "recorded_at": resp.get("recorded_at"),  # tells re-recordings apart (same path)
+            "asr": asdict(asr),
+            "result": result,
+            "analysed_at": datetime.utcnow(),
+        }}},
+    )
 
 
 def _run_in_background(interview_id: str) -> None:
@@ -154,6 +257,7 @@ def _evaluate_interview_job_unlocked(interview_id: str) -> Dict:
         responses = {r.get("question_id"): r for r in interview.get("responses", [])}
         existing_evaluation = interview.get("evaluation") or {}
         existing_per_q = {q.get("question_id"): q for q in (existing_evaluation.get("per_question") or [])}
+        answer_analysis = interview.get("answer_analysis") or {}
 
         per_question_results: List[Dict] = []
 
@@ -162,23 +266,24 @@ def _evaluate_interview_job_unlocked(interview_id: str) -> Dict:
             q_text = q.get("question_text") or q.get("question") or ""
             q_difficulty = q.get("difficulty", "Medium")
 
-            # Look up criteria from questions_collection for expected_answer and tags
-            expected_answer = q.get("expected_answer")
-            tags = q.get("tags", [])
-            try:
-                if q_id and not expected_answer:
-                    q_db = questions_collection.find_one({"_id": ObjectId(q_id)})
-                    if q_db:
-                        expected_answer = q_db.get("expected_answer")
-                        if not tags:
-                            tags = q_db.get("tags", [])
-            except Exception:
-                pass
-
             resp = responses.get(q_id)
             duration_seconds = resp.get("duration_seconds") if resp else None
             media_url = resp.get("media_url") if resp else None
             response_mode = (resp.get("response_mode") if resp else None) or "spoken"
+
+            # Already analysed right after upload (same recording) - reuse it.
+            ready = answer_analysis.get(q_id) or {}
+            same_take = (
+                bool(media_url)
+                and ready.get("media_url") == media_url
+                and ready.get("recorded_at") == (resp or {}).get("recorded_at")
+            )
+            if response_mode != "text" and same_take and ready.get("result"):
+                per_question_results.append(ready["result"])
+                continue
+
+            # Look up criteria from questions_collection for expected_answer and tags
+            expected_answer, tags = _question_criteria(q)
 
             # Retrieve transcript: from per_question ASR or run ASR on media_url if available
             transcript = None
@@ -193,6 +298,11 @@ def _evaluate_interview_job_unlocked(interview_id: str) -> Dict:
                 asr_status = "typed" if transcript.strip() else "empty"
                 asr_provider = "typed_input"
                 media_url = None
+            elif same_take and ready.get("asr"):
+                asr_info = ready["asr"]
+                transcript = asr_info.get("transcript")
+                asr_status = asr_info.get("status", "completed" if transcript else "empty")
+                asr_provider = asr_info.get("provider")
             elif per_q_saved and per_q_saved.get("asr"):
                 asr_info = per_q_saved["asr"]
                 transcript = asr_info.get("transcript")
@@ -254,10 +364,10 @@ def _evaluate_interview_job_unlocked(interview_id: str) -> Dict:
             "failed_reason": None,
         }
 
-        # Persist completed evaluation
+        # Persist completed evaluation (the per-answer results now live in it)
         interviews_collection.update_one(
             {"_id": obj_id},
-            {"$set": {
+            {"$unset": {"answer_analysis": ""}, "$set": {
                 "evaluation_status": "completed",
                 "evaluation": evaluation_doc,
                 # Denormalize top-level fields for Admin's existing views

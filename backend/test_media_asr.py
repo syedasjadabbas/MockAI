@@ -291,13 +291,20 @@ def test_upload_endpoint():
     expect(body["responses"][0]["duration_seconds"] == 12.5, "duration_seconds from the form field is recorded")
     expect(body["responses"][0]["media_url"] == expected_ref, "media_url is set to the real storage reference")
 
+    # Transcription + scoring now run in the background right after upload;
+    # wait for that step, then check what it stored for this answer.
+    from services.evaluation_worker import _wait_for_answer_analysis
+    _wait_for_answer_analysis(interview_id)
     db_doc = interviews_collection.find_one({"_id": ObjectId(interview_id)})
-    per_q = db_doc["evaluation"]["per_question"]
-    expect(len(per_q) == 1 and per_q[0]["question_id"] == question_id, "ASR result was recorded against the correct question in evaluation.per_question")
+    analysis = (db_doc.get("answer_analysis") or {}).get(question_id) or {}
+    expect(analysis.get("media_url") == expected_ref, "Background analysis was recorded against the correct question and recording")
+    stored_take = next(r for r in db_doc["responses"] if r["question_id"] == question_id)["recorded_at"]
+    expect(analysis.get("recorded_at") == stored_take, "Background analysis is stamped with the take it analysed")
+    expect(isinstance(analysis.get("result"), dict), "The answer was already scored before the interview was finished")
     # Without Cloud credentials the free recognizer fallback runs. The test
     # clip is a synthetic tone, so the only honest outcomes are an empty
     # transcript (no speech) or a failure (offline) - never invented words.
-    asr = per_q[0]["asr"]
+    asr = analysis["asr"]
     expect(asr["status"] in ("completed", "failed"), "ASR reports a real outcome (completed via fallback, or failed when offline)")
     expect(not (asr.get("transcript") or "").strip(), "No words are invented for a recording that contains no speech")
     expect(db_doc["evaluation_status"] == "pending_evaluation", "evaluation_status is untouched by ASR alone - still 'pending_evaluation' (interview not completed yet)")
