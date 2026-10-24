@@ -29,6 +29,10 @@ Strict Guarantees:
 """
 from typing import Dict, List, Optional
 
+from services.delivery_analyzer import COMFORTABLE_WPM_MIN as PACE_MIN, COMFORTABLE_WPM_MAX as PACE_MAX
+
+_PACE_RANGE = f"{PACE_MIN:.0f}–{PACE_MAX:.0f} WPM"
+
 
 def _assessed(level: Optional[str]) -> bool:
     return bool(level) and level != "Not Assessed"
@@ -230,8 +234,8 @@ def generate_interview_insights(
     if has_speech:
         avg_wpm = comm_metrics.get("avg_wpm", 0.0)
         pacing_desc = (
-            "a comfortable pace (120–160 WPM)" if 120 <= avg_wpm <= 160
-            else ("fast, over 160 WPM" if avg_wpm > 160 else "slow, under 120 WPM")
+            f"a comfortable pace ({_PACE_RANGE})" if PACE_MIN <= avg_wpm <= PACE_MAX
+            else (f"fast, over {PACE_MAX:.0f} WPM" if avg_wpm > PACE_MAX else f"slow, under {PACE_MIN:.0f} WPM")
         )
         observations.append(f"Speaking pace: {avg_wpm:.1f} WPM, {pacing_desc}.")
 
@@ -296,12 +300,12 @@ def generate_interview_insights(
 
     if has_speech:
         avg_wpm = comm_metrics.get("avg_wpm", 0.0)
-        if 120 <= avg_wpm <= 160:
+        if PACE_MIN <= avg_wpm <= PACE_MAX:
             strengths.append(f"Good speaking pace: you averaged {avg_wpm:.1f} WPM, which is easy to follow.")
             strengths_detail.append({
                 "category": "Communication",
                 "title": "Good speaking pace",
-                "description": "You spoke within the comfortable interview range of 120–160 words per minute.",
+                "description": f"You spoke within the comfortable interview range of {PACE_MIN:.0f}–{PACE_MAX:.0f} words per minute.",
                 "evidence": f"{avg_wpm:.1f} WPM",
             })
 
@@ -385,21 +389,21 @@ def generate_interview_insights(
 
     if has_speech:
         avg_wpm = comm_metrics.get("avg_wpm", 0.0)
-        if avg_wpm > 165.0:
+        if avg_wpm > PACE_MAX:
             weaknesses.append(f"Speaking too fast: you averaged {avg_wpm:.1f} WPM, which can make answers hard to follow.")
             weaknesses_detail.append({
                 "category": "Communication",
                 "title": "Speaking too fast",
-                "description": "Above 165 words per minute, detailed explanations become hard to follow.",
+                "description": f"Above {PACE_MAX:.0f} words per minute, detailed explanations become hard to follow.",
                 "evidence": f"{avg_wpm:.1f} WPM",
                 "severity": "Medium",
             })
-        elif 0.0 < avg_wpm < 110.0:
+        elif 0.0 < avg_wpm < PACE_MIN:
             weaknesses.append(f"Speaking slowly: you averaged {avg_wpm:.1f} WPM, which makes answers feel long.")
             weaknesses_detail.append({
                 "category": "Communication",
                 "title": "Speaking slowly",
-                "description": "Below 110 words per minute, answers can sound hesitant.",
+                "description": f"Below {PACE_MIN:.0f} words per minute, answers can sound hesitant.",
                 "evidence": f"{avg_wpm:.1f} WPM",
                 "severity": "Medium",
             })
@@ -495,7 +499,7 @@ def generate_interview_insights(
 
     if has_speech:
         avg_wpm = comm_metrics.get("avg_wpm", 0.0)
-        if avg_wpm > 165.0:
+        if avg_wpm > PACE_MAX:
             suggestions.append("Slow down: take a breath between points and aim for about 130–150 WPM.")
             coaching_guidance.append({
                 "domain": "Speaking pace",
@@ -503,7 +507,7 @@ def generate_interview_insights(
                 "practice_strategy": "Read a practice answer aloud at a calm pace, pausing briefly after each point.",
                 "target_metric": "120–150 WPM",
             })
-        elif 0.0 < avg_wpm < 110.0:
+        elif 0.0 < avg_wpm < PACE_MIN:
             suggestions.append("Pick up the pace a little: aim for about 125–140 WPM and keep answers to the point.")
             coaching_guidance.append({
                 "domain": "Speaking pace",

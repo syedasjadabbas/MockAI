@@ -16,6 +16,11 @@ from typing import Dict, List, Optional, Set, Tuple
 
 logger = logging.getLogger("mockai.delivery")
 
+# Speaking pace that counts as comfortable for an interview. Shared with
+# insights_service so the feedback text uses the same range as the score.
+COMFORTABLE_WPM_MIN = 110.0
+COMFORTABLE_WPM_MAX = 165.0
+
 FILLER_WORDS: Set[str] = {
     "um", "uh", "er", "ah", "like", "you know", "i mean", "actually",
     "basically", "literally", "sort of", "kind of"
@@ -451,13 +456,13 @@ def analyze_delivery(
     # 2. Pacing classification
     if dur <= 0.0 and word_count == 0:
         pacing = "Unpaced"
-    elif 110.0 <= wpm <= 165.0:
+    elif COMFORTABLE_WPM_MIN <= wpm <= COMFORTABLE_WPM_MAX:
         pacing = "Optimal"
-    elif 80.0 <= wpm < 110.0:
+    elif 80.0 <= wpm < COMFORTABLE_WPM_MIN:
         pacing = "Deliberate"
     elif 0.0 < wpm < 80.0:
         pacing = "Slow"
-    elif 165.0 < wpm <= 195.0:
+    elif COMFORTABLE_WPM_MAX < wpm <= 195.0:
         pacing = "Fast"
     else:
         pacing = "Rushed"
