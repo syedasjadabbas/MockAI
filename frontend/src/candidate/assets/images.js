@@ -4,7 +4,7 @@ import mockaiNeural3D from './mockai_neural_3d.jpg';
 import mockaiMic3D from './mockai_mic_3d.jpg';
 import mockaiEval3D from './mockai_eval_3d.jpg';
 import mockaiComplete3D from './mockai_complete_3d.jpg';
-import mockaiCtaBg from './mockai_cta_bg.png';
+import mockaiCtaBg from './mockai_cta_bg.jpg';
 
 export const CANDIDATE_IMAGES = {
   // Flagship 3D AI Analysis Orb & Acoustic Frequency System for Dashboard

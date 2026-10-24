@@ -7,6 +7,9 @@ import { candidateRoutes } from './candidate/routes';
 import { isAuthenticated as isCandidateAuthenticated } from './candidate/services/candidateAuth';
 import CandidateShell from './candidate/components/CandidateShell';
 import { ThemeProvider } from './context/ThemeContext';
+import PageTitle from './components/PageTitle';
+
+const NotFound = React.lazy(() => import('./candidate/pages/NotFound'));
 
 function PageFallback() {
   return (
@@ -56,6 +59,7 @@ function App() {
   return (
     <ThemeProvider>
       <BrowserRouter>
+        <PageTitle />
         <Suspense fallback={<PageFallback />}>
           <Routes>
             {/* Admin Login Route */}
@@ -99,6 +103,9 @@ function App() {
 
             {/* Admin Root Redirect */}
             <Route path="/admin" element={<Navigate to="/admin/dashboard" />} />
+
+            {/* Anything else */}
+            <Route path="*" element={<CandidateShell><NotFound /></CandidateShell>} />
           </Routes>
         </Suspense>
       </BrowserRouter>

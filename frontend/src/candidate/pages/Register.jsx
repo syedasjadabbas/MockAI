@@ -139,7 +139,9 @@ const Register = () => {
           {step === REGISTER_STEPS.FORM && (
             <>
               <div className="mb-4 lg:hidden select-none">
-                <img src={logo} alt="MockAI Logo" className="c-brand-logo" />
+                <Link to="/" aria-label="MockAI Home" className="inline-block">
+                  <img src={logo} alt="MockAI Logo" className="c-brand-logo" />
+                </Link>
               </div>
 
               <h2 className="c-heading text-2xl font-bold mb-1" style={{ color: 'var(--c-text)' }}>Create Account</h2>

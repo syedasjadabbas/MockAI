@@ -25,6 +25,15 @@ import CandidateNav from '../components/CandidateNav';
 import AnimatedBackground3D from '../components/AnimatedBackground3D';
 import { getDashboardSummary, getCategories, startInterview } from '../services/candidateApi';
 import { getSession } from '../services/candidateAuth';
+
+const greeting = () => {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 17) return 'Good afternoon';
+  return 'Good evening';
+};
+
+const firstName = (name) => (name || '').trim().split(/\s+/)[0];
 import { formatDate } from '../../utils/dateFormat';
 import { CANDIDATE_IMAGES } from '../assets/images';
 
@@ -168,16 +177,9 @@ const Dashboard = () => {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
             <div className="lg:col-span-7 space-y-5">
               <div className="flex flex-wrap items-center gap-2.5">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold border"
-                  style={{
-                    background: 'var(--c-surface-muted)',
-                    borderColor: 'var(--c-border)',
-                    color: 'var(--c-text-secondary)',
-                  }}
-                >
-                  <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
-                  <span>Welcome back, {session?.name || 'Candidate'}</span>
-                </div>
+                <p className="text-sm font-medium" style={{ color: 'var(--c-text-secondary)' }}>
+                  {greeting()}{firstName(session?.name) ? `, ${firstName(session?.name)}` : ''}.
+                </p>
 
                 <div className="hidden sm:flex items-center gap-2 pl-1" aria-hidden="true">
                   <LiveAudioWaveform bars={8} height={14} color="var(--c-accent)" />
@@ -532,8 +534,14 @@ const Dashboard = () => {
       <footer className="border-t py-8 text-xs"
         style={{ borderColor: 'var(--c-border)', color: 'var(--c-text-muted)', background: 'var(--c-bg-subtle)' }}
       >
-        <div className="c-page">
-          <p>© 2026 MockAI • Real Question Banks & Explainable AI Evaluation</p>
+        <div className="c-page flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p>© {new Date().getFullYear()} MockAI · Mock interview practice</p>
+          <nav className="flex items-center gap-4" aria-label="Footer">
+            <Link to="/interview/goal" className="hover:text-[var(--c-text)] transition-colors">New interview</Link>
+            <Link to="/history" className="hover:text-[var(--c-text)] transition-colors">History</Link>
+            <Link to="/progress" className="hover:text-[var(--c-text)] transition-colors">Progress</Link>
+            <Link to="/profile" className="hover:text-[var(--c-text)] transition-colors">Profile</Link>
+          </nav>
         </div>
       </footer>
     </div>

@@ -764,6 +764,11 @@ const LandingPage = () => {
               <span>•</span>
               <span>Mock interview practice</span>
             </div>
+            <nav className="flex items-center gap-4" aria-label="Footer">
+              <a href="#how-it-works" className="hover:text-[var(--c-text)] transition-colors">How it works</a>
+              <Link to="/login" className="hover:text-[var(--c-text)] transition-colors">Sign in</Link>
+              <Link to="/register" className="hover:text-[var(--c-text)] transition-colors">Create account</Link>
+            </nav>
             <span>© {new Date().getFullYear()} MockAI</span>
           </div>
         </footer>
