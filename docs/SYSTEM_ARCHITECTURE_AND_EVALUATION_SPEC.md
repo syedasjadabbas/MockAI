@@ -87,7 +87,7 @@ When a candidate completes an interview session, the asynchronous evaluation pip
      ▼                                                 ▼
 [Google Cloud Speech ASR]                    [OpenCV YuNet Face Detector]
 - Transcribes Spoken Response                - Scans Sampled Video Frames (1-2 FPS)
-- Word Timestamps & Confidence               - Detects Bounding Boxes & Facial Landmarks
+- Long Answers Split into ≤25 s Chunks       - Detects Bounding Boxes & Facial Landmarks
 - Silence / Noise Detection                            │
      │                                                 ▼
      ├───────────────────────┐               [Emotion-FERPlus ONNX Classifier]
@@ -127,13 +127,16 @@ When a candidate completes an interview session, the asynchronous evaluation pip
 
 ### 3.1 Automatic Speech Recognition (ASR)
 - **Module:** `backend/services/asr_google.py` (Implements FR15)
-- **Provider:** Google Cloud Speech-to-Text API via Python `SpeechRecognition` library.
+- **Providers:**
+  - Primary: Google Cloud Speech-to-Text API (`google-cloud-speech`), used when `GOOGLE_APPLICATION_CREDENTIALS` points to a service-account key.
+  - Fallback: the free Google Web Speech endpoint via the Python `SpeechRecognition` library, used when no key is configured or the Cloud call fails.
 - **Input:** 16-bit linear PCM WAV, 16kHz sampling rate, mono channel.
+- **Long answers:** both endpoints only accept short audio, so the WAV is split into chunks of at most 25 s, each cut placed at the quietest 20 ms frame in the last 5 s before the limit. Chunk transcripts are joined; if any chunk fails, the whole answer is reported as failed.
 - **Output Schema:**
-  - `transcript`: Verbatim candidate speech string.
-  - `status`: `"completed"` | `"empty"` | `"failed"`
-  - `provider`: `"google_speech_v2"`
-- **Integrity Guarantee:** If audio is completely silent or below signal threshold, status is explicitly marked `"empty"` with `transcript: None`. The system never fabricates hallucinated speech.
+  - `transcript`: Verbatim candidate speech string (empty string when no speech was recognised).
+  - `status`: `"completed"` | `"failed"`
+  - `provider`: `"google_cloud_speech_v1"` or `"google_web_speech"` - always the recognizer that actually ran.
+- **Integrity Guarantee:** Silent audio yields `status: "completed"` with an empty transcript; any failure yields `status: "failed"` with `transcript: None` and an error message. The system never fabricates speech. Word-level timestamps and confidence are not requested; speaking rate is computed from word count and recording duration.
 
 ### 3.2 Semantic NLP & Content Analysis
 - **Module:** `backend/services/nlp_analyzer.py` (Implements FR16)

@@ -44,13 +44,13 @@ Two raters (for example, a supervisor and a trained peer) independently rate eve
 | Dominant visible expression | one of the model's 8 classes, or "other" |
 | Answer usable? (audible speech, face visible) | yes / no |
 
-Template: extend `docs/accuracy_ratings_template.csv` with these columns, one row per answer (interview_id, question_id).
+Sheet: `python export_rating_sheet.py --out ../scratch/rating_sheet.csv` (from `backend/`) writes one row per evaluated answer with the question, transcript and recording path, and empty columns for these labels. MockAI's own scores are left out so raters stay blind. Columns match `docs/accuracy_ratings_template.csv`. The sheet holds candidate transcripts, so keep it out of git.
 
 ### 3. Measure
 
 1. **Inter-rater agreement:** quadratic-weighted Cohen's kappa. Target ≥ 0.6 before using the labels; if lower, refine the rating guide and re-rate.
 2. **System vs consensus label:**
-   - For confidence and stress: Spearman correlation, mean absolute error after rescaling 1–5 to 0–100, and the share of answers within one rating step. `backend/evaluate_accuracy.py` already computes these.
+   - For confidence and stress: Spearman correlation, mean absolute error after rescaling 1–5 to 0–100, and the share of answers within one rating step. `backend/evaluate_accuracy.py --ratings` computes these, plus quadratic-weighted kappa for answers rated by two raters (step 1).
    - For dominant expression: per-class precision and recall, plus a confusion matrix.
 3. **Calibration:** only after steps 1–2, fit the thresholds in `services/confidence_stress_analyzer.py` and `services/facial_analyzer.py` on about 70% of the answers, and report results on the held-out 30%.
 4. **Report honestly:** publish the agreement figures, sample size and failure cases in FYP-II, including where the models disagree with the raters.

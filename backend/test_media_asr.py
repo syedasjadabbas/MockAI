@@ -174,7 +174,7 @@ def test_asr_service():
             mocked_result = service.transcribe(media_ref, duration_seconds=1.0)
     expect(mocked_result.status == "completed", "Mocked successful Google response maps to status='completed'")
     expect(mocked_result.transcript == "this is a mocked transcript", "Mocked transcript is passed through correctly")
-    expect(mocked_result.provider == "google_speech_v1", "Provider metadata is recorded")
+    expect(mocked_result.provider == "google_cloud_speech_v1", "Provider metadata names the Cloud API that produced the transcript")
 
     # Mocked: Google client raises - must fail honestly, never fabricate.
     class ExplodingSpeechClient:

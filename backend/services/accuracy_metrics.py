@@ -46,6 +46,27 @@ def spearman(xs: Sequence[float], ys: Sequence[float]) -> Optional[float]:
     return pearson(_ranks(xs), _ranks(ys))
 
 
+def weighted_kappa(a: Sequence[int], b: Sequence[int], categories: Sequence[int] = (1, 2, 3, 4, 5)) -> Optional[float]:
+    """Quadratic-weighted Cohen's kappa between two raters' ordinal ratings
+    (inter-rater agreement; 1 = perfect, 0 = chance level)."""
+    pairs = [(x, y) for x, y in zip(a, b) if x in categories and y in categories]
+    n, k = len(pairs), len(categories)
+    if n < 2:
+        return None
+    index = {c: i for i, c in enumerate(categories)}
+    observed = [[0.0] * k for _ in range(k)]
+    for x, y in pairs:
+        observed[index[x]][index[y]] += 1
+    row_totals = [sum(row) for row in observed]
+    col_totals = [sum(observed[i][j] for i in range(k)) for j in range(k)]
+    weight = lambda i, j: ((i - j) ** 2) / ((k - 1) ** 2)
+    disagreement_obs = sum(weight(i, j) * observed[i][j] for i in range(k) for j in range(k)) / n
+    disagreement_exp = sum(weight(i, j) * row_totals[i] * col_totals[j] for i in range(k) for j in range(k)) / (n * n)
+    if disagreement_exp == 0:
+        return None
+    return round(1.0 - disagreement_obs / disagreement_exp, 3)
+
+
 def agreement_report(system: Sequence[float], reference: Sequence[float], tolerance: float = 10.0) -> Dict:
     """
     system / reference: paired 0-100 scores.

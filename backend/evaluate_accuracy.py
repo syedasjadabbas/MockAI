@@ -16,8 +16,15 @@ Two reference sources:
        interview_id   - MongoDB id of the interview (required)
        question_id    - optional; if set, compares that question's score,
                         otherwise the interview's overall score
-       human_score    - 0-100 rating given by the human rater (required)
-       rater          - optional rater name, for per-rater agreement
+       human_score    - 0-100 rating given by the human rater
+       confidence_1to5, stress_1to5
+                      - optional 1-5 ratings, compared with the system's
+                        per-answer confidence / stress (needs question_id)
+       rater          - optional rater name, for per-rater agreement; answers
+                        rated by two raters also get inter-rater agreement
+                        (weighted kappa for the 1-5 ratings)
+   A row needs interview_id and at least one of the three ratings.
+   export_rating_sheet.py writes a blank sheet with these columns.
    Run:
        python evaluate_accuracy.py --ratings path/to/ratings.csv [--out results.csv]
 
@@ -31,7 +38,7 @@ from collections import defaultdict
 from bson import ObjectId
 
 from database import interviews_collection, surveys_collection
-from services.accuracy_metrics import agreement_report
+from services.accuracy_metrics import agreement_report, weighted_kappa
 
 
 def _print_report(title: str, report: dict) -> None:
@@ -72,27 +79,93 @@ def _system_score(interview: dict, question_id: str):
     return None
 
 
+def _system_confidence_stress(interview: dict, question_id: str):
+    """(confidence_score, stress_score) for one answer, or (None, None) when
+    the system marked it Not Assessed."""
+    for q in (interview.get("evaluation") or {}).get("per_question") or []:
+        if q.get("question_id") == question_id:
+            cs = q.get("confidence_and_stress") or {}
+            if cs.get("confidence_level") == "Not Assessed":
+                return None, None
+            return cs.get("confidence_score"), cs.get("stress_score")
+    return None, None
+
+
+def _rating(row: dict, column: str):
+    """A 1-5 rating from the sheet as an int, or None when blank/invalid."""
+    try:
+        value = int(float((row.get(column) or "").strip()))
+    except ValueError:
+        return None
+    return value if 1 <= value <= 5 else None
+
+
+def _report_confidence_stress(rows: list, cache: dict) -> None:
+    """System confidence/stress vs the raters' 1-5 ratings (rescaled 1->0,
+    5->100; tolerance 25 = one rating step), plus inter-rater agreement."""
+    for label, column, pick in (("confidence", "confidence_1to5", 0), ("stress", "stress_1to5", 1)):
+        system, human = [], []
+        for row in rows:
+            rating = _rating(row, column)
+            qid = (row.get("question_id") or "").strip()
+            interview = cache.get(row["interview_id"].strip())
+            if rating is None or not qid or not interview:
+                continue
+            value = _system_confidence_stress(interview, qid)[pick]
+            if value is not None:
+                system.append(value)
+                human.append((rating - 1) * 25.0)
+        if human:
+            _print_report(f"MockAI {label} vs human {label} rating (1-5 rescaled to 0-100)",
+                          agreement_report(system, human, tolerance=25.0))
+
+    by_answer = defaultdict(dict)
+    for row in rows:
+        by_answer[(row["interview_id"].strip(), (row.get("question_id") or "").strip())][
+            (row.get("rater") or "").strip() or "unspecified"] = row
+    double_rated = [list(r.values())[:2] for r in by_answer.values() if len(r) >= 2]
+    if not double_rated:
+        return
+    print("\nInter-rater agreement (first two raters per answer)")
+    print("-" * 51)
+    print(f"  Answers rated by two raters: {len(double_rated)}")
+    scores = [(float(a["human_score"]), float(b["human_score"])) for a, b in double_rated
+              if (a.get("human_score") or "").strip() and (b.get("human_score") or "").strip()]
+    if scores:
+        report = agreement_report([x for x, _ in scores], [y for _, y in scores])
+        print(f"  Overall score: Pearson r {report['pearson_r']}, MAE {report['mae']} points (n={report['n']})")
+    for label, column in (("Confidence", "confidence_1to5"), ("Stress", "stress_1to5")):
+        kappa = weighted_kappa([_rating(a, column) for a, _ in double_rated], [_rating(b, column) for _, b in double_rated])
+        print(f"  {label} weighted kappa: {kappa}  (target >= 0.6 before using the labels)")
+
+
 def run_ratings(path: str, out_path: str = None) -> int:
     rows = []
     with open(path, newline="", encoding="utf-8-sig") as f:
         for row in csv.DictReader(f):
-            if not (row.get("interview_id") or "").strip() or not (row.get("human_score") or "").strip():
+            if not (row.get("interview_id") or "").strip():
+                continue
+            if not any((row.get(c) or "").strip() for c in ("human_score", "confidence_1to5", "stress_1to5")):
                 continue
             rows.append(row)
     if not rows:
-        print("No usable rows found (need interview_id and human_score).")
+        print("No usable rows found (need interview_id and a human_score or 1-5 rating).")
         return 1
+    scored_rows = [r for r in rows if (r.get("human_score") or "").strip()]
 
     cache = {}
-    results = []
     for row in rows:
         iid = row["interview_id"].strip()
-        qid = (row.get("question_id") or "").strip()
         if iid not in cache:
             try:
                 cache[iid] = interviews_collection.find_one({"_id": ObjectId(iid)})
             except Exception:
                 cache[iid] = None
+
+    results = []
+    for row in scored_rows:
+        iid = row["interview_id"].strip()
+        qid = (row.get("question_id") or "").strip()
         interview = cache[iid]
         system = _system_score(interview, qid) if interview else None
         results.append({
@@ -109,9 +182,10 @@ def run_ratings(path: str, out_path: str = None) -> int:
         print(f"Warning: {len(missing)} row(s) had no evaluated system score and were skipped.")
 
     valid = [r for r in results if r["system_score"] is not None]
-    _print_report("MockAI score vs human rating (all raters)", agreement_report(
-        [r["system_score"] for r in valid], [r["human_score"] for r in valid]
-    ))
+    if results:
+        _print_report("MockAI score vs human rating (all raters)", agreement_report(
+            [r["system_score"] for r in valid], [r["human_score"] for r in valid]
+        ))
     by_rater = defaultdict(list)
     for r in valid:
         by_rater[r["rater"]].append(r)
@@ -121,7 +195,9 @@ def run_ratings(path: str, out_path: str = None) -> int:
                 [r["system_score"] for r in items], [r["human_score"] for r in items]
             ))
 
-    if out_path:
+    _report_confidence_stress(rows, cache)
+
+    if out_path and results:
         with open(out_path, "w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=list(results[0].keys()))
             writer.writeheader()

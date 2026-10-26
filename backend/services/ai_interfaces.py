@@ -46,7 +46,7 @@ class ASRResult:
     """FR15 - Speech to Text Conversion output for one response."""
     status: str = "not_implemented"  # "not_implemented" | "completed" | "failed"
     transcript: Optional[str] = None
-    provider: Optional[str] = None  # e.g. "google_speech" | "deepspeech" once real
+    provider: Optional[str] = None  # e.g. "google_cloud_speech_v1" | "google_web_speech"
     error: Optional[str] = None
 
 

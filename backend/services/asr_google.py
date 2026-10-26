@@ -42,7 +42,9 @@ from services.media_storage import get_media_storage
 
 logger = logging.getLogger("mockai.asr")
 
-PROVIDER_NAME = "google_speech_v1"
+# Recorded on every result so it always names the recognizer that actually ran
+CLOUD_PROVIDER = "google_cloud_speech_v1"   # Google Cloud Speech-to-Text API (service-account key)
+WEB_PROVIDER = "google_web_speech"          # free Google endpoint via the SpeechRecognition library
 
 # Chunking for long answers (see module docstring)
 CHUNK_MAX_SECONDS = 25.0
@@ -88,32 +90,36 @@ class GoogleSpeechASRService(ASRService):
         cred_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
         return bool(cred_path) and Path(cred_path).is_file()
 
+    def provider_name(self) -> str:
+        """The recognizer transcribe() will try first."""
+        return CLOUD_PROVIDER if self.is_configured() else WEB_PROVIDER
+
     def transcribe(self, media_url: Optional[str], duration_seconds: Optional[float] = None) -> ASRResult:
         if not media_url:
-            return ASRResult(status="failed", provider=PROVIDER_NAME, error="No media reference was provided for this response")
+            return ASRResult(status="failed", provider=self.provider_name(), error="No media reference was provided for this response")
 
         media_path = get_media_storage().resolve_path(media_url)
         if not media_path and os.path.isfile(str(media_url)):
             media_path = Path(media_url)
 
         if not media_path:
-            return ASRResult(status="failed", provider=PROVIDER_NAME, error=f"Stored media could not be found for reference: {media_url}")
+            return ASRResult(status="failed", provider=self.provider_name(), error=f"Stored media could not be found for reference: {media_url}")
 
         if not is_ffmpeg_available():
-            return ASRResult(status="failed", provider=PROVIDER_NAME, error="ffmpeg is required to extract audio from the recording but is not available")
+            return ASRResult(status="failed", provider=self.provider_name(), error="ffmpeg is required to extract audio from the recording but is not available")
 
         wav_path = Path(tempfile.gettempdir()) / f"mockai_asr_{uuid.uuid4().hex}.wav"
         try:
             try:
                 extract_audio_to_wav(media_path, wav_path)
             except (FFmpegNotFoundError, MediaConversionError) as exc:
-                return ASRResult(status="failed", provider=PROVIDER_NAME, error=f"Audio extraction failed: {exc}")
+                return ASRResult(status="failed", provider=self.provider_name(), error=f"Audio extraction failed: {exc}")
 
             try:
                 pcm, sample_rate, sample_width = _read_wav_pcm(wav_path)
                 chunks = _split_pcm(pcm, sample_rate)
             except Exception as exc:
-                return ASRResult(status="failed", provider=PROVIDER_NAME, error=f"Could not read extracted audio: {exc}")
+                return ASRResult(status="failed", provider=self.provider_name(), error=f"Could not read extracted audio: {exc}")
 
             # 1. Primary: Enterprise Google Cloud Speech-to-Text client
             if self.is_configured():
@@ -134,7 +140,7 @@ class GoogleSpeechASRService(ASRService):
                             if result.alternatives
                         )
                     transcript = " ".join(p for p in parts if p).strip()
-                    return ASRResult(status="completed", provider=PROVIDER_NAME, transcript=transcript)
+                    return ASRResult(status="completed", provider=CLOUD_PROVIDER, transcript=transcript)
                 except Exception as exc:
                     logger.warning("Google Cloud Speech-to-Text failed, using free recognizer: %s", exc)
 
@@ -152,10 +158,10 @@ class GoogleSpeechASRService(ASRService):
                         continue
                     except sr.RequestError as req_err:
                         where = f" (part {index + 1} of {len(chunks)})" if len(chunks) > 1 else ""
-                        return ASRResult(status="failed", provider=PROVIDER_NAME, error=f"Google Speech-to-Text request failed{where}: {req_err}")
-                return ASRResult(status="completed", provider=PROVIDER_NAME, transcript=" ".join(p for p in parts if p))
+                        return ASRResult(status="failed", provider=WEB_PROVIDER, error=f"Google Speech-to-Text request failed{where}: {req_err}")
+                return ASRResult(status="completed", provider=WEB_PROVIDER, transcript=" ".join(p for p in parts if p))
             except Exception as sr_err:
-                return ASRResult(status="failed", provider=PROVIDER_NAME, error=f"Speech recognition failed: {sr_err}")
+                return ASRResult(status="failed", provider=WEB_PROVIDER, error=f"Speech recognition failed: {sr_err}")
 
         finally:
             wav_path.unlink(missing_ok=True)
