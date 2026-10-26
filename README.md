@@ -247,6 +247,8 @@ Settings live in `backend/.env`:
 - `MONGO_TARGET=local` uses a local MongoDB on port 27017 instead of Atlas, for offline demos or networks that block Atlas's port 27017.
 
 ### Local database copy
+Local mode needs MongoDB Server running on port 27017. On Windows, `winget install MongoDB.Server` installs it as a service that starts automatically. To run the backend against it, use the `backend-local` launch configuration or set `MONGO_TARGET=local` in `backend/.env`.
+
 Fill or refresh the local database from Atlas while on a network that allows port 27017 (a phone hotspot works):
 
 ```bash

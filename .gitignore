@@ -55,5 +55,5 @@ scratch/
 # Python 3.11 env for the report AI profile
 .venv311/
 
-# Local MongoDB data for MONGO_TARGET=local (start-mockai.bat local)
+# Local MongoDB backups / data for MONGO_TARGET=local
 local-db/

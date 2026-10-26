@@ -12,7 +12,8 @@ mentors and the standard admin accounts; no candidate data):
   Admin accounts get the password in ADMIN_BOOTSTRAP_PASSWORD, or you are
   prompted for one.
 
-The local mongod must be running (start-mockai.bat local starts it).
+The local mongod must be running (the MongoDB Windows service, installed
+with `winget install MongoDB.Server`, starts it automatically).
 Data created while running in local mode stays local - it is NOT copied back
 to Atlas.
 """
@@ -83,7 +84,8 @@ def copy_from_atlas(force: bool) -> int:
             dst[name].insert_many(docs)
         print(f"  {name:20s} {len(docs)}")
     _finish_local()
-    print("Done. Start MockAI with:  start-mockai.bat local")
+    print("Done. Start MockAI in local mode with the backend-local launch configuration,")
+    print("or set MONGO_TARGET=local in backend/.env.")
     return 0
 
 
