@@ -3,7 +3,7 @@
   "configurations": [
     {
       "name": "backend",
-      "runtimeExecutable": "E:\\WEBS & APPS\\MockAI\\.venv311\\Scripts\\python.exe",
+      "runtimeExecutable": "D:\\WEBS & APPS\\MockAI\\.venv311\\Scripts\\python.exe",
       "runtimeArgs": [
         "-m",
         "uvicorn",
@@ -24,7 +24,7 @@
     },
     {
       "name": "backend-lite",
-      "runtimeExecutable": "E:\\WEBS & APPS\\MockAI\\.venv\\Scripts\\python.exe",
+      "runtimeExecutable": "D:\\WEBS & APPS\\MockAI\\.venv\\Scripts\\python.exe",
       "runtimeArgs": [
         "-m",
         "uvicorn",

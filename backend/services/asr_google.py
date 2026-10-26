@@ -15,23 +15,68 @@ human-readable `error`, never a fabricated or guessed transcript.
 Credentials: standard Google Cloud Application Default Credentials via the
 GOOGLE_APPLICATION_CREDENTIALS environment variable (path to a service-
 account JSON key). Never hardcoded, never committed - see .env.example.
-At the time this was written, this variable is NOT set in this project's
-environment (confirmed by inspection - see the accompanying report), so
-is_configured() returns False and transcribe() always takes the "failed:
-not configured" path here. The integration code path below is real and
-complete; only live execution is blocked, exactly as instructed.
+When it is not set, the free Google Speech Recognition endpoint (via the
+SpeechRecognition library) is used instead.
+
+Long answers: both Google endpoints only handle short audio (the Cloud
+synchronous API rejects anything over 60 s, and the free endpoint silently
+returns just the first ~30 s). The audio is therefore split into chunks of
+at most CHUNK_MAX_SECONDS, each cut placed at the quietest moment near the
+boundary so words are not sliced, and the chunk transcripts are joined. If
+any chunk fails the whole answer is reported as failed - never a partial
+transcript presented as complete.
 """
+import logging
 import os
 import tempfile
 import uuid
+import wave
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
+
+import numpy as np
 
 from services.ai_interfaces import ASRService, ASRResult
 from services.media_conversion import extract_audio_to_wav, is_ffmpeg_available, FFmpegNotFoundError, MediaConversionError
 from services.media_storage import get_media_storage
 
+logger = logging.getLogger("mockai.asr")
+
 PROVIDER_NAME = "google_speech_v1"
+
+# Chunking for long answers (see module docstring)
+CHUNK_MAX_SECONDS = 25.0
+CHUNK_SEARCH_SECONDS = 5.0   # look this far back from the limit for a quiet cut point
+CHUNK_FRAME_SECONDS = 0.02   # energy window used to find that quiet point
+
+
+def _read_wav_pcm(wav_path: Path):
+    """Returns (pcm_bytes, sample_rate, sample_width) of a mono PCM WAV."""
+    with wave.open(str(wav_path), "rb") as wf:
+        return wf.readframes(wf.getnframes()), wf.getframerate(), wf.getsampwidth()
+
+
+def _split_pcm(pcm: bytes, sample_rate: int) -> List[bytes]:
+    """Splits 16-bit mono PCM into chunks of at most CHUNK_MAX_SECONDS, cutting
+    at the lowest-energy frame in the last CHUNK_SEARCH_SECONDS of each chunk."""
+    samples = np.frombuffer(pcm, dtype=np.int16)
+    max_len = int(CHUNK_MAX_SECONDS * sample_rate)
+    if len(samples) <= max_len:
+        return [pcm]
+
+    search_len = int(CHUNK_SEARCH_SECONDS * sample_rate)
+    frame_len = max(1, int(CHUNK_FRAME_SECONDS * sample_rate))
+    chunks, start = [], 0
+    while len(samples) - start > max_len:
+        window_start = start + max_len - search_len
+        window = samples[window_start:start + max_len].astype(np.float64)
+        n_frames = len(window) // frame_len
+        energy = (window[:n_frames * frame_len].reshape(n_frames, frame_len) ** 2).mean(axis=1)
+        cut = window_start + int(np.argmin(energy)) * frame_len + frame_len // 2
+        chunks.append(samples[start:cut].tobytes())
+        start = cut
+    chunks.append(samples[start:].tobytes())
+    return chunks
 
 
 class GoogleSpeechASRService(ASRService):
@@ -64,46 +109,51 @@ class GoogleSpeechASRService(ASRService):
             except (FFmpegNotFoundError, MediaConversionError) as exc:
                 return ASRResult(status="failed", provider=PROVIDER_NAME, error=f"Audio extraction failed: {exc}")
 
+            try:
+                pcm, sample_rate, sample_width = _read_wav_pcm(wav_path)
+                chunks = _split_pcm(pcm, sample_rate)
+            except Exception as exc:
+                return ASRResult(status="failed", provider=PROVIDER_NAME, error=f"Could not read extracted audio: {exc}")
+
             # 1. Primary: Enterprise Google Cloud Speech-to-Text client
             if self.is_configured():
                 try:
                     from google.cloud import speech
                     client = speech.SpeechClient()
-                    audio_bytes = wav_path.read_bytes()
                     config = speech.RecognitionConfig(
                         encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
-                        sample_rate_hertz=16000,
+                        sample_rate_hertz=sample_rate,
                         language_code=self.language_code,
                     )
-                    audio = speech.RecognitionAudio(content=audio_bytes)
-                    response = client.recognize(config=config, audio=audio)
-                    if not response.results:
-                        return ASRResult(status="completed", provider=PROVIDER_NAME, transcript="")
-
-                    transcript = " ".join(
-                        result.alternatives[0].transcript
-                        for result in response.results
-                        if result.alternatives
-                    ).strip()
+                    parts = []
+                    for chunk in chunks:
+                        response = client.recognize(config=config, audio=speech.RecognitionAudio(content=chunk))
+                        parts.extend(
+                            result.alternatives[0].transcript.strip()
+                            for result in response.results
+                            if result.alternatives
+                        )
+                    transcript = " ".join(p for p in parts if p).strip()
                     return ASRResult(status="completed", provider=PROVIDER_NAME, transcript=transcript)
                 except Exception as exc:
-                    # Log failure and fall through to Google Speech Recognition fallback
-                    pass
+                    logger.warning("Google Cloud Speech-to-Text failed, using free recognizer: %s", exc)
 
             # 2. Integrated Fallback: Google Speech API Recognition
             try:
                 import speech_recognition as sr
                 recognizer = sr.Recognizer()
-                with sr.AudioFile(str(wav_path)) as src:
-                    audio_data = recognizer.record(src)
-                try:
-                    text = recognizer.recognize_google(audio_data, language=self.language_code)
-                    return ASRResult(status="completed", provider=PROVIDER_NAME, transcript=text.strip())
-                except sr.UnknownValueError:
-                    # Clean silence / no audible speech recognized
-                    return ASRResult(status="completed", provider=PROVIDER_NAME, transcript="")
-                except sr.RequestError as req_err:
-                    return ASRResult(status="failed", provider=PROVIDER_NAME, error=f"Google Speech-to-Text request failed: {req_err}")
+                parts = []
+                for index, chunk in enumerate(chunks):
+                    audio_data = sr.AudioData(chunk, sample_rate, sample_width)
+                    try:
+                        parts.append(recognizer.recognize_google(audio_data, language=self.language_code).strip())
+                    except sr.UnknownValueError:
+                        # Clean silence / no audible speech in this chunk
+                        continue
+                    except sr.RequestError as req_err:
+                        where = f" (part {index + 1} of {len(chunks)})" if len(chunks) > 1 else ""
+                        return ASRResult(status="failed", provider=PROVIDER_NAME, error=f"Google Speech-to-Text request failed{where}: {req_err}")
+                return ASRResult(status="completed", provider=PROVIDER_NAME, transcript=" ".join(p for p in parts if p))
             except Exception as sr_err:
                 return ASRResult(status="failed", provider=PROVIDER_NAME, error=f"Speech recognition failed: {sr_err}")
 
