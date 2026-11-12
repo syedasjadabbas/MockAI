@@ -102,17 +102,54 @@ def _public_question(q: dict) -> dict:
     }
 
 
-def _load_active_questions(category_id: str, limit: int = QUESTIONS_PER_INTERVIEW) -> list:
+# Objective 2 / FR 8-01 - the interview type chosen in the goal chatbot
+# decides which kind of question is asked.
+INTERVIEW_TYPE_QUESTION_TYPES = {
+    "technical": ("Technical", "Conceptual", "System Design"),
+    "behavioral": ("Behavioral",),
+    "situational": ("Situational",),
+}
+# HR and situational questions that apply to any profession; used to top up
+# a domain that has fewer than five questions of the chosen type.
+GENERAL_HR_CATEGORY_NAME = "Behavioral & Leadership"
+DEFAULT_QUESTION_PRIORITY = 50
+
+
+def _question_order(q: dict):
+    # Administrators set a question's priority in the Question Bank
+    # (lower = asked first); ties keep creation order.
+    return (q.get("priority", DEFAULT_QUESTION_PRIORITY), q["_id"])
+
+
+def _load_active_questions(category_id: str, limit: int = QUESTIONS_PER_INTERVIEW, interview_type: Optional[str] = None) -> list:
     """
-    Deterministic order: ascending by _id (== insertion order), matching
-    the existing Question Bank's own natural creation order. Not
-    randomized - FR08-02 asks for consistent, predefined sets, not a
-    shuffled quiz.
+    Deterministic (FR 8-02 asks for consistent, predefined sets, not a
+    shuffled quiz): questions are ordered by the administrator's priority,
+    then creation order.
+
+    With an interview type (FR 8-01), questions of that type come first;
+    for HR/behavioral and situational interviews a domain that has too few
+    is topped up with general questions of the same type, and only then with
+    the domain's other questions, so the set always has `limit` questions.
     """
-    cursor = questions_collection.find(
-        {"category_id": category_id, "status": "active"}
-    ).sort("_id", 1).limit(limit)
-    return list(cursor)
+    in_category = sorted(questions_collection.find({"category_id": category_id, "status": "active"}), key=_question_order)
+    wanted = INTERVIEW_TYPE_QUESTION_TYPES.get((interview_type or "").strip().lower())
+    if not wanted:
+        return in_category[:limit]
+
+    picked = [q for q in in_category if q.get("type") in wanted][:limit]
+    if len(picked) < limit and wanted != INTERVIEW_TYPE_QUESTION_TYPES["technical"]:
+        general = categories_collection.find_one({"name": GENERAL_HR_CATEGORY_NAME, "status": "active"})
+        if general and str(general["_id"]) != category_id:
+            extra = sorted(
+                questions_collection.find({"category_id": str(general["_id"]), "status": "active", "type": {"$in": list(wanted)}}),
+                key=_question_order,
+            )
+            picked += extra[: limit - len(picked)]
+    if len(picked) < limit:
+        chosen = {q["_id"] for q in picked}
+        picked += [q for q in in_category if q["_id"] not in chosen][: limit - len(picked)]
+    return picked[:limit]
 
 
 @router.get("/categories/{category_id}/questions")
@@ -152,6 +189,8 @@ def _public_interview(doc: dict, include_questions: bool = True) -> dict:
         "created_at": doc.get("created_at"),
         "completed_at": doc.get("completed_at"),
         "recording_consent": doc.get("recording_consent"),
+        "recordings_deleted_at": doc.get("recordings_deleted_at"),
+        "has_recordings": any((r or {}).get("media_url") for r in doc.get("responses") or []),
     }
     if include_questions:
         result["questions"] = doc.get("questions", [])
@@ -180,7 +219,7 @@ def start_interview(data: StartInterviewRequest, token_payload: dict = Depends(v
     if category.get("status") != "active":
         raise HTTPException(status_code=400, detail="This category is not currently available for interviews")
 
-    questions = _load_active_questions(data.category_id)
+    questions = _load_active_questions(data.category_id, interview_type=data.type)
     if not questions:
         raise HTTPException(status_code=400, detail="No active questions are available for this category yet")
 
@@ -324,12 +363,15 @@ def save_response(interview_id: str, data: SaveResponseRequest, token_payload: d
 # answer mode with no camera or microphone (see save_text_response below).
 # ---------------------------------------------------------------------------
 
-CONSENT_POLICY_VERSION = "2026-10-v1"
+CONSENT_POLICY_VERSION = "2026-11-v2"
 
 
 class RecordingConsentRequest(BaseModel):
     microphone: bool
     camera: bool
+    # NFR 11 - separate, optional permission to reuse the recordings to
+    # improve MockAI's accuracy. Default False: assessment only.
+    research_use: bool = False
 
 
 @router.post("/interviews/{interview_id}/consent")
@@ -343,7 +385,11 @@ def record_consent(interview_id: str, data: RecordingConsentRequest, token_paylo
         "microphone": data.microphone,
         "camera": data.camera,
         "policy_version": CONSENT_POLICY_VERSION,
-        "purpose": "Interview performance assessment only (NFR 11)",
+        "research_use": data.research_use,
+        "purpose": (
+            "Interview performance assessment, and anonymised accuracy improvement"
+            if data.research_use else "Interview performance assessment only (NFR 11)"
+        ),
         "recorded_at": datetime.utcnow(),
     }
     interviews_collection.update_one({"_id": interview["_id"]}, {"$set": {"recording_consent": consent}})
@@ -467,7 +513,9 @@ def save_text_response(
 # here entirely.
 # ---------------------------------------------------------------------------
 
-ALLOWED_MEDIA_CONTENT_TYPES = ("video/webm", "audio/webm")
+# WebM is what Chrome, Edge and Firefox record; MP4 is what Safari records
+# (NFR 14). FFmpeg reads both, so the analysis pipeline is the same.
+ALLOWED_MEDIA_CONTENT_TYPES = ("video/webm", "audio/webm", "video/mp4", "audio/mp4")
 
 
 def _require_recording_consent(interview: dict, needs_camera: bool) -> None:
@@ -506,7 +554,7 @@ async def upload_response_media(
 
     content_type = (file.content_type or "").split(";")[0].strip().lower()
     if content_type not in ALLOWED_MEDIA_CONTENT_TYPES:
-        raise HTTPException(status_code=400, detail=f"Unsupported media type: {file.content_type!r}. Expected webm audio/video.")
+        raise HTTPException(status_code=400, detail=f"Unsupported media type: {file.content_type!r}. Expected WebM or MP4 audio/video.")
 
     # NFR 10 - server-side consent enforcement: no recording is stored unless
     # this interview carries an explicit consent record covering the devices
@@ -520,7 +568,8 @@ async def upload_response_media(
     if len(data) > max_bytes:
         raise HTTPException(status_code=413, detail=f"Recording exceeds the {max_bytes // (1024 * 1024)}MB limit for a single response")
 
-    media_ref = get_media_storage().save(interview_id, question_id, "webm", data)
+    extension = "mp4" if content_type.endswith("/mp4") else "webm"
+    media_ref = get_media_storage().save(interview_id, question_id, extension, data)
 
     existing_responses = interview.get("responses", [])
     sequence = next(
@@ -579,6 +628,27 @@ async def presence_check(
     from services.facial_analyzer import FacialAnalyzer
     result = FacialAnalyzer().check_presence(data)
     return {"face_detected": result["face_detected"], "face_count": result["face_count"]}
+
+
+# ---------------------------------------------------------------------------
+# Delete my recordings - NFR 11 (Controlled Data Usage)
+# Once the evaluation has finished, the candidate can delete the audio/video
+# of an interview at any time. Scores, transcripts and feedback are kept.
+# ---------------------------------------------------------------------------
+
+@router.delete("/interviews/{interview_id}/recordings")
+def delete_recordings(interview_id: str, token_payload: dict = Depends(verify_candidate)):
+    from services.media_retention import FINISHED_EVALUATION_STATES, delete_interview_recordings
+
+    interview = _get_owned_interview_or_404(interview_id, token_payload.get("user_id"))
+    if interview.get("status") != "Completed" or interview.get("evaluation_status") not in FINISHED_EVALUATION_STATES:
+        raise HTTPException(
+            status_code=409,
+            detail="Recordings can be deleted once the interview has been evaluated.",
+        )
+    removed = delete_interview_recordings(interview, "candidate request")
+    updated = interviews_collection.find_one({"_id": interview["_id"]})
+    return {"deleted_files": removed, "interview": _public_interview(updated, include_questions=False)}
 
 
 # ---------------------------------------------------------------------------

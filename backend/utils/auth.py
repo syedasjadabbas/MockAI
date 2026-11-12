@@ -8,7 +8,13 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-SECRET_KEY = os.getenv("SECRET_KEY", "default-fallback-secret-key")
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    # No well-known fallback: without a configured key, tokens are signed
+    # with a random per-process key (users must sign in again after a restart).
+    import secrets
+    SECRET_KEY = secrets.token_urlsafe(48)
+    print("[SECURITY WARNING] SECRET_KEY is not set; using a temporary random signing key.")
 ALGORITHM = "HS256"
 
 import bcrypt as _bcrypt_lib

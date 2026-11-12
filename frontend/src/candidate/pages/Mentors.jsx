@@ -639,6 +639,15 @@ const Mentors = () => {
                               <Clock className="w-3.5 h-3.5" /> {apt.start_time}
                             </span>
                           </div>
+                          {!isCancelled && !isCompleted && (
+                            apt.meeting_link ? (
+                              <a href={apt.meeting_link} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold mt-1 inline-block hover:underline" style={{ color: 'var(--c-accent)' }}>
+                                Join meeting
+                              </a>
+                            ) : (
+                              <p className="text-[11px] mt-1" style={{ color: 'var(--c-text-muted)' }}>The meeting link will be e-mailed before the session.</p>
+                            )
+                          )}
                         </div>
                       </div>
 

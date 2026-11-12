@@ -20,6 +20,7 @@ mounted at /admin - a fully separate route namespace so nothing here can
 collide with or affect the Admin Panel.
 """
 import hashlib
+import re
 import os
 import random
 import secrets
@@ -344,6 +345,8 @@ def login_candidate(data: LoginRequest, request: Request):
             ensure_not_locked(users_collection.find_one({"_id": user["_id"]}))
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
     clear_failed_attempts(users_collection, user)
+    if user.get("status") == "suspended":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="This account has been suspended. Please contact support.")
 
     token_payload = {"user_id": str(user["_id"]), "role": "user"}
     access_token = create_access_token(token_payload)
@@ -393,6 +396,8 @@ def google_candidate_auth(data: GoogleAuthRequest, request: Request):
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Account does not have candidate permissions."
             )
+        if user.get("status") == "suspended":
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="This account has been suspended. Please contact support.")
         update_fields = {"is_verified": True}
         if not user.get("google_id"):
             update_fields["google_id"] = sub
@@ -461,6 +466,33 @@ def get_candidate_profile(token_payload: dict = Depends(verify_candidate)):
 # request body, so a candidate can only ever update their own document.
 # ---------------------------------------------------------------------------
 
+MAX_AVATAR_BYTES = 2 * 1024 * 1024
+
+
+def _validated_avatar(value: str) -> str:
+    """FR 5-03 - only an empty value, an https image URL (e.g. a Google
+    profile photo) or a PNG/JPEG/WebP data URL of at most 2 MB is stored."""
+    import base64
+    value = (value or "").strip()
+    if not value:
+        return ""
+    if value.startswith("https://") and len(value) <= 2048:
+        return value
+    m = re.match(r"^data:image/(png|jpeg|jpg|webp);base64,([A-Za-z0-9+/=\s]+)$", value)
+    if not m:
+        raise HTTPException(status_code=400, detail="Profile picture must be a PNG, JPEG or WebP image.")
+    try:
+        raw = base64.b64decode(m.group(2), validate=False)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Profile picture could not be read.")
+    if len(raw) > MAX_AVATAR_BYTES:
+        raise HTTPException(status_code=400, detail="Profile picture must be 2 MB or smaller.")
+    signatures = (b"\x89PNG", b"\xff\xd8\xff", b"RIFF")
+    if not raw.startswith(signatures):
+        raise HTTPException(status_code=400, detail="Profile picture is not a valid image file.")
+    return value
+
+
 class UpdateProfileRequest(BaseModel):
     name: str = Field(None, min_length=1, max_length=100)
     avatar: str = Field(None)
@@ -478,7 +510,7 @@ def update_candidate_profile(data: UpdateProfileRequest, token_payload: dict = D
         update_fields["name"] = clean_name
         
     if data.avatar is not None:
-        update_fields["avatar"] = data.avatar
+        update_fields["avatar"] = _validated_avatar(data.avatar)
         
     if not update_fields:
         raise HTTPException(status_code=400, detail="No fields to update")
@@ -717,6 +749,14 @@ def reset_candidate_password(data: ResetPasswordRequest):
         user_id = payload.get("user_id")
     except JWTError:
         raise HTTPException(status_code=400, detail="Invalid or expired password reset session. Please request a new code.")
+
+    # Single use: the reset session is only valid while its verified code
+    # record exists; it is deleted below, so the same token cannot reset twice.
+    verified_record = otps_collection.find_one({
+        "email": normalized_email, "type": "candidate_password_reset", "verified": True, "user_id": user_id,
+    })
+    if not verified_record:
+        raise HTTPException(status_code=400, detail="This password reset session has already been used or has expired. Please request a new code.")
 
     # Check that user exists
     user = users_collection.find_one({"_id": ObjectId(user_id), "role": "user"})

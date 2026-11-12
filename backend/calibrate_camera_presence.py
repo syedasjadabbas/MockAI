@@ -11,8 +11,12 @@ This validates the MEASUREMENT (does the detector see the face when it is
 there and not when it is gone). It does not validate expression flags, which
 need human-labelled recordings (see docs/EVALUATION_VALIDATION_PLAN.md).
 
+Only recordings whose candidates gave the optional research-use consent are
+read (NFR 11, see services/research_media.py); the team's own test sessions
+can be added with --interview-ids.
+
 Usage (from backend/, read-only on the database):
-  ../.venv311/Scripts/python.exe calibrate_camera_presence.py [--clips 6] [--out ../docs/camera_presence_calibration.json]
+  ../.venv311/Scripts/python.exe calibrate_camera_presence.py [--clips 6] [--interview-ids ID1,ID2] [--out ../docs/camera_presence_calibration.json]
 """
 import argparse
 import json
@@ -25,6 +29,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from services.facial_analyzer import FacialAnalyzer, OFF_CAMERA_PRESENCE_THRESHOLD  # noqa: E402
+from services.research_media import consented_recordings, parse_ids  # noqa: E402
 
 MEDIA = Path(__file__).parent / "media" / "interviews"
 OFF_SHARES = [0.0, 0.2, 0.4, 0.5, 0.7, 0.9]
@@ -40,17 +45,17 @@ def duration(path: Path) -> float:
     return max(times) if times else 0.0
 
 
-def fully_in_frame_clips(analyzer: FacialAnalyzer, limit: int):
+def fully_in_frame_clips(analyzer: FacialAnalyzer, limit: int, extra_ids=()):
     clips = []
-    for webm in sorted(MEDIA.glob("*/*/response.webm")):
+    for label, webm in consented_recordings(extra_ids):
         d = duration(webm)
         if d < 10:
             continue
         res = analyzer.analyze_video(str(webm), duration_seconds=d)
         cp = res.get("camera_presence") or {}
         if cp.get("status") == "measured" and cp.get("ratio", 0) >= 0.95:
-            clips.append((webm, min(d, CLIP_SECONDS)))
-            print(f"  baseline in frame {cp['ratio']:.0%}: {webm.parent.parent.name}/{webm.parent.name} ({d:.0f}s)", flush=True)
+            clips.append((label, webm, min(d, CLIP_SECONDS)))
+            print(f"  baseline in frame {cp['ratio']:.0%}: {label} ({d:.0f}s)", flush=True)
         if len(clips) >= limit:
             break
     return clips
@@ -61,18 +66,19 @@ def main():
     ap.add_argument("--clips", type=int, default=6)
     ap.add_argument("--out", default=None)
     ap.add_argument("--seed", type=int, default=7)
+    ap.add_argument("--interview-ids", default=None, help="comma-separated ids of the team's own test interviews")
     args = ap.parse_args()
     rng = random.Random(args.seed)
     analyzer = FacialAnalyzer()
 
     print("Finding recordings with the candidate in frame throughout...")
-    clips = fully_in_frame_clips(analyzer, args.clips)
+    clips = fully_in_frame_clips(analyzer, args.clips, parse_ids(args.interview_ids))
     if not clips:
-        sys.exit("No suitable recordings found under media/interviews.")
+        sys.exit("No suitable recordings with research-use consent were found.")
 
     rows = []
     with tempfile.TemporaryDirectory() as td:
-        for webm, d in clips:
+        for label, webm, d in clips:
             for share in OFF_SHARES:
                 off = share * d
                 start = rng.uniform(0, d - off) if off < d else 0.0
@@ -83,7 +89,7 @@ def main():
                 measured = (res.get("camera_presence") or {}).get("ratio")
                 true_in = 1.0 - share
                 rows.append({
-                    "clip": f"{webm.parent.parent.name}/{webm.parent.name}",
+                    "clip": label,
                     "true_in_frame": round(true_in, 3),
                     "measured_in_frame": measured,
                     "error": None if measured is None else round(measured - true_in, 3),

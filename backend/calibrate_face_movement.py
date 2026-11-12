@@ -2,7 +2,9 @@
 Calibrates the face-movement thresholds (services/face_movement.py) on real
 recordings of normal interview answers.
 
-For every recorded answer under media/interviews it samples frames like the
+For every recorded answer whose candidate gave the optional research-use
+consent (NFR 11; see services/research_media.py), plus the team's own test
+sessions named with --interview-ids, it samples frames like the
 evaluation does, measures jaw opening, the strongest "exaggerated" blendshape
 and head pose with MediaPipe, and marks whether the candidate was speaking at
 each frame (from the recording's audio). It then reports:
@@ -15,7 +17,7 @@ of people deliberately pulling faces, labelled by a person (add them with
 --labelled <dir>, one sub-folder per clip named faces_* or normal_*).
 
 Usage (from backend/, read-only):
-  ../.venv311/Scripts/python.exe calibrate_face_movement.py [--out ../docs/face_movement_calibration.json]
+  ../.venv311/Scripts/python.exe calibrate_face_movement.py [--interview-ids ID1,ID2] [--out ../docs/face_movement_calibration.json]
 """
 import argparse
 import json
@@ -58,7 +60,7 @@ def sample_frames(path: Path, d: float):
     return out
 
 
-def analyse(path: Path, label: str = "normal"):
+def analyse(path: Path, label: str = "normal", clip: str = None):
     d = duration(path)
     if d < 5:
         return None
@@ -71,7 +73,7 @@ def analyse(path: Path, label: str = "normal"):
     silent = [m for t, m in measured if FM._speaking_at(t, activity) is False]
     summary = FM.summarize_face_movement(samples, activity, d)
     return {
-        "clip": f"{path.parent.parent.name}/{path.parent.name}",
+        "clip": clip or f"{path.parent.parent.name}/{path.parent.name}",
         "label": label,
         "seconds": round(d, 1),
         "frames": len(measured),
@@ -95,12 +97,14 @@ def pct(values, q):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default=None)
+    ap.add_argument("--interview-ids", default=None, help="comma-separated ids of the team's own test interviews")
     ap.add_argument("--labelled", default=None, help="folder of labelled clips: faces_*/ or normal_* sub-folders with a video")
     args = ap.parse_args()
 
     rows = []
-    for webm in sorted(MEDIA.glob("*/*/response.webm")):
-        r = analyse(webm)
+    from services.research_media import consented_recordings, parse_ids
+    for clip, webm in consented_recordings(parse_ids(args.interview_ids)):
+        r = analyse(webm, clip=clip)
         if r:
             rows.append(r)
             print(f"  {r['clip']} {r['seconds']}s frames={r['frames']} silent={r['silent_frames']} flags={r['flags']}", flush=True)

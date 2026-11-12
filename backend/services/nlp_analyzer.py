@@ -36,7 +36,7 @@ SIMILARITY_CALIBRATION = {
     REPORT_SENTENCE_MODEL: (0.9795, 0.0510),
 }
 
-LITE_MODEL_LABEL = "bert-distilbert-minilm-v2"
+LITE_MODEL_LABEL = "minilm-l6-v2"
 REPORT_MODEL_LABEL = "distilbert-multi-qa-cos-v1"
 
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Filter, Calendar, Clock, CheckCircle2, AlertCircle, Eye, X, Search, Download, ChevronLeft, ChevronRight, Briefcase } from 'lucide-react';
+import { Filter, Calendar, Clock, CheckCircle2, AlertCircle, Eye, X, Search, Download, ChevronLeft, ChevronRight, Briefcase, Trash2 } from 'lucide-react';
 import { fetchWithAuth, getCachedData } from '../api';
 import { useLocation } from 'react-router-dom';
 import { exportToCSV } from '../utils/csvExport';
@@ -42,6 +42,11 @@ const Interviews = () => {
   }, [location.search]);
 
   const [selectedInterview, setSelectedInterview] = useState(null);
+  // FR 34-02 - the dossier comes from the stored evaluation, not the list row
+  const [detail, setDetail] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [interviewsData, setInterviewsData] = useState(() => hasCached ? formatInterviewItems(cachedInterviews) : []);
   const [loading, setLoading] = useState(!hasCached);
   const [loadError, setLoadError] = useState(null);
@@ -59,6 +64,39 @@ const Interviews = () => {
       .catch(() => setLoadError("Failed to load interviews. Please try again."))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    setDetail(null);
+    setConfirmDelete(false);
+    if (!selectedInterview?._id) return;
+    let active = true;
+    setDetailLoading(true);
+    fetchWithAuth(`/interviews/${selectedInterview._id}`)
+      .then((d) => { if (active) setDetail(d); })
+      .catch(() => { if (active) setDetail(null); })
+      .finally(() => { if (active) setDetailLoading(false); });
+    return () => { active = false; };
+  }, [selectedInterview?._id]);
+
+  const handleDeleteInterview = async () => {
+    if (!selectedInterview?._id) return;
+    setDeleting(true);
+    try {
+      await fetchWithAuth(`/interviews/${selectedInterview._id}`, { method: 'DELETE' });
+      setInterviewsData((prev) => prev.filter((i) => i._id !== selectedInterview._id));
+      showToast('Interview and its recordings deleted');
+      setSelectedInterview(null);
+    } catch (err) {
+      showToast(err.message || 'Could not delete the interview', 'error');
+    } finally {
+      setDeleting(false);
+      setConfirmDelete(false);
+    }
+  };
+
+  const evaluation = detail?.evaluation || null;
+  const detailQuestions = detail?.questions || [];
+  const perQuestion = evaluation?.per_question || [];
 
   const filteredInterviews = interviewsData.filter(item => {
     const matchStatus = statusFilter === 'All' || item.status === statusFilter;
@@ -303,7 +341,7 @@ const Interviews = () => {
       {/* Selected Interview Details Modal */}
       {selectedInterview && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="theme-modal p-6 sm:p-8 rounded-3xl w-full max-w-lg relative border overflow-y-auto max-h-[90dvh]">
+          <div className="theme-modal p-6 sm:p-8 rounded-3xl w-full max-w-2xl relative border overflow-y-auto max-h-[90dvh]">
             <button 
               onClick={() => setSelectedInterview(null)} 
               className="absolute top-4 right-4 p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
@@ -358,38 +396,74 @@ const Interviews = () => {
                 </div>
               </div>
 
-              {/* Feedback Summary */}
-              {selectedInterview.score != null && (
-                <div className="p-4 rounded-2xl bg-[var(--bg-table-header)] border border-[var(--border-table)] space-y-3">
-                  <div>
-                    <p className="text-xs text-emerald-500 font-bold uppercase tracking-wider mb-1">Strength</p>
-                    <p className="text-xs sm:text-sm text-[var(--text-secondary)]">
-                      {selectedInterview.score >= 80 ? 'Strong communication & technical accuracy' : selectedInterview.score >= 60 ? 'Good conceptual understanding' : 'Attempted core concepts'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-rose-500 font-bold uppercase tracking-wider mb-1">Area of Improvement</p>
-                    <p className="text-xs sm:text-sm text-[var(--text-secondary)]">
-                      {selectedInterview.score >= 80 ? 'Fine-tune edge cases' : selectedInterview.score >= 60 ? 'Structure answers with concise examples' : 'Needs reinforcement of fundamentals'}
-                    </p>
-                  </div>
-                </div>
+              {detailLoading && (
+                <p className="text-xs text-[var(--text-muted)]">Loading the evaluation…</p>
               )}
 
-              {/* Transcript */}
-              {selectedInterview.transcript && (
-                <div>
-                  <p className="text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Transcript</p>
-                  <div className="p-3.5 rounded-2xl bg-[var(--bg-table-header)] border border-[var(--border-table)] max-h-40 overflow-y-auto">
-                    <p className="text-xs text-[var(--text-secondary)] whitespace-pre-wrap leading-relaxed">
-                      {selectedInterview.transcript}
-                    </p>
-                  </div>
+              {/* FR 34-02 - real strengths and improvements from the evaluation */}
+              {evaluation && (evaluation.strengths?.length > 0 || evaluation.weaknesses?.length > 0) && (
+                <div className="p-4 rounded-2xl bg-[var(--bg-table-header)] border border-[var(--border-table)] space-y-3">
+                  {evaluation.strengths?.length > 0 && (
+                    <div>
+                      <p className="text-xs text-emerald-500 font-bold uppercase tracking-wider mb-1">Strengths</p>
+                      <ul className="list-disc pl-4 space-y-1">
+                        {evaluation.strengths.slice(0, 3).map((t, i) => <li key={i} className="text-xs sm:text-sm text-[var(--text-secondary)]">{t}</li>)}
+                      </ul>
+                    </div>
+                  )}
+                  {evaluation.weaknesses?.length > 0 && (
+                    <div>
+                      <p className="text-xs text-rose-500 font-bold uppercase tracking-wider mb-1">Areas to improve</p>
+                      <ul className="list-disc pl-4 space-y-1">
+                        {evaluation.weaknesses.slice(0, 3).map((t, i) => <li key={i} className="text-xs sm:text-sm text-[var(--text-secondary)]">{t}</li>)}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+              {detail && !evaluation && (
+                <p className="text-xs text-[var(--text-muted)]">This interview has not been evaluated yet.</p>
+              )}
+
+              {/* Per-question transcripts and scores */}
+              {detailQuestions.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-[var(--text-secondary)]">Answers</p>
+                  {detailQuestions.map((q, idx) => {
+                    const qe = perQuestion.find((p) => p.question_id === q.question_id) || {};
+                    const answer = qe.asr?.transcript || (detail.responses || []).find((r) => r.question_id === q.question_id)?.text_response;
+                    const qScore = qe.multimodal?.score ?? qe.score;
+                    return (
+                      <div key={q.question_id} className="p-3 rounded-2xl bg-[var(--bg-table-header)] border border-[var(--border-table)] space-y-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-xs font-semibold text-[var(--text-primary)]">Q{idx + 1}. {q.question_text}</p>
+                          <span className="text-xs font-mono font-bold text-orange-400 shrink-0">{qScore != null ? `${Math.round(qScore)}%` : '-'}</span>
+                        </div>
+                        <p className="text-xs text-[var(--text-secondary)] whitespace-pre-wrap leading-relaxed max-h-28 overflow-y-auto">
+                          {answer ? `"${answer}"` : 'No answer recorded.'}
+                        </p>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
 
-            <div className="mt-6">
+            <div className="mt-6 space-y-2.5">
+              {confirmDelete ? (
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <button onClick={handleDeleteInterview} disabled={deleting} className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-semibold text-sm transition-all">
+                    {deleting ? 'Deleting…' : 'Yes, delete interview and recordings'}
+                  </button>
+                  <button onClick={() => setConfirmDelete(false)} disabled={deleting} className="flex-1 py-2.5 rounded-xl border border-[var(--border-card)] text-[var(--text-primary)] font-semibold text-sm">
+                    Keep it
+                  </button>
+                </div>
+              ) : (
+                <button onClick={() => setConfirmDelete(true)} className="w-full py-2.5 rounded-xl border border-rose-500/40 text-rose-400 hover:bg-rose-500/10 font-semibold text-sm transition-all flex items-center justify-center gap-1.5">
+                  <Trash2 className="w-4 h-4" /> Delete interview
+                </button>
+              )}
               <button 
                 onClick={() => setSelectedInterview(null)} 
                 className="w-full py-2.5 rounded-xl border border-[var(--border-card)] hover:bg-[var(--bg-card-hover)] text-[var(--text-primary)] font-semibold text-sm transition-all"

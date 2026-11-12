@@ -238,7 +238,7 @@ def fuse_per_question(
             "raw_score": round(nlp_score, 1),
             "weight": w,
             "weighted_contribution": round(contrib, 2),
-            "model": nlp_result.get("model", "bert-distilbert-minilm-v2"),
+            "model": nlp_result.get("model", "unknown"),
         }
         contributions.append(f"NLP/Content {round(nlp_score, 1)}% × {w:.2f} = {round(contrib, 1)}")
 

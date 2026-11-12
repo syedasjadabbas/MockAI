@@ -9,6 +9,7 @@ const Logs = lazy(() => import('./pages/Logs'));
 const AdminLogin = lazy(() => import('./pages/AdminLogin'));
 const Admins = lazy(() => import('./pages/Admins'));
 const QuestionBank = lazy(() => import('./pages/QuestionBank'));
+const Mentors = lazy(() => import('./pages/Mentors'));
 
 export const routes = [
   {
@@ -39,6 +40,11 @@ export const routes = [
   {
     path: '/admin/question-bank',
     element: <QuestionBank />,
+    layout: true,
+  },
+  {
+    path: '/admin/mentors',
+    element: <Mentors />,
     layout: true,
   },
   {

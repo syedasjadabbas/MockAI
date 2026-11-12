@@ -83,6 +83,43 @@ export const ScoreTrendChart = ({ data }) => {
   return <div style={{ height: 260 }}><Line data={chartData} options={options} /></div>;
 };
 
+// FR 32-02 - stress level over time (lower is calmer). Only interviews where
+// stress could be assessed are plotted.
+export const StressTrendChart = ({ data }) => {
+  const chartData = {
+    labels: data.map((d) => formatDateOnly(d.date)),
+    datasets: [
+      {
+        label: 'Stress (lower is calmer)',
+        data: data.map((d) => d.stress),
+        borderColor: 'rgba(245, 158, 11, 1)',
+        backgroundColor: 'rgba(245, 158, 11, 0.08)',
+        fill: true,
+        tension: 0.2,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        pointBackgroundColor: 'rgba(245, 158, 11, 1)',
+      },
+    ],
+  };
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { labels: { color: TICK_COLOR, font: { size: 11, weight: '600', family: 'Inter' } } },
+      tooltip: {
+        callbacks: { label: (ctx) => `Stress: ${ctx.raw}% (${data[ctx.dataIndex]?.stress_level || ''})` },
+        backgroundColor: '#111827', titleColor: '#FFFFFF', bodyColor: '#94A3B8', borderColor: '#243044', borderWidth: 1, padding: 8, cornerRadius: 6,
+      },
+    },
+    scales: {
+      x: { grid: { color: GRID_COLOR }, ticks: { color: TICK_COLOR, font: { size: 11, family: 'Inter' } } },
+      y: { min: 0, max: 100, grid: { color: GRID_COLOR }, ticks: { color: TICK_COLOR, font: { size: 11, family: 'Inter' } } },
+    },
+  };
+  return <div style={{ height: 220 }}><Line data={chartData} options={options} /></div>;
+};
+
 // Category breakdown - average score per interview category practiced.
 export const CategoryBreakdownChart = ({ data }) => {
   const chartData = {

@@ -298,6 +298,26 @@ def generate_interview_insights(
             "evidence": f"Score: {top_score}%",
         })
 
+    # FR 25-02 - highlight the individual answers that were delivered
+    # confidently: steady pace, smooth flow and few fillers.
+    confident_q = []
+    for i, q in enumerate(per_question_results, start=1):
+        d = q.get("delivery") or {}
+        if (d.get("word_count") or 0) >= 20 and float(d.get("fluency_score") or 0.0) >= 80.0 \
+                and float(d.get("hesitation_rate") or 100.0) <= 3.0 \
+                and PACE_MIN <= float(d.get("words_per_minute") or 0.0) <= PACE_MAX:
+            confident_q.append(i)
+    if confident_q:
+        listed = ", ".join(str(n) for n in confident_q[:4])
+        plural = "s" if len(confident_q) > 1 else ""
+        strengths.append(f"Confidently delivered answer{plural}: question{plural} {listed} had a steady pace, smooth flow and few fillers.")
+        strengths_detail.append({
+            "category": "Communication",
+            "title": "Confidently delivered answers",
+            "description": "These answers were spoken at a comfortable pace with little hesitation.",
+            "evidence": f"Question{plural} {listed}",
+        })
+
     if has_speech:
         avg_wpm = comm_metrics.get("avg_wpm", 0.0)
         if PACE_MIN <= avg_wpm <= PACE_MAX:

@@ -18,6 +18,7 @@ from routes.candidate_evaluation import router as candidate_evaluation_router
 from routes.internal_evaluation import router as internal_evaluation_router
 from routes.candidate_survey import router as candidate_survey_router
 from routes.candidate_goal import router as candidate_goal_router
+from routes.admin_mentors import router as admin_mentors_router
 from database import admins_collection, admin_collection, client, init_db_indexes, MONGO_TARGET
 from utils.auth import hash_password
 
@@ -60,6 +61,8 @@ app.add_middleware(
 
 app.include_router(admin_router, prefix="/admin")
 app.include_router(admin_router, prefix="/api/v1/admin")  # versioned alias
+app.include_router(admin_mentors_router, prefix="/admin")
+app.include_router(admin_mentors_router, prefix="/api/v1/admin")  # versioned alias
 
 app.include_router(candidate_router, prefix="/candidate")
 app.include_router(candidate_router, prefix="/api/v1/candidate")  # versioned alias
@@ -156,6 +159,14 @@ async def startup_event():
     # 6. Resume evaluations left in "processing" by a restart or crash
     #    (their background job died with the old process).
     try:
+        # NFR 11 - delete recordings older than MEDIA_RETENTION_DAYS (only when set).
+        try:
+            from services.media_retention import purge_expired_recordings, retention_days
+            purged = purge_expired_recordings()
+            if purged:
+                print(f"Startup check: deleted recordings of {purged} interview(s) older than {retention_days()} days")
+        except Exception as purge_err:
+            print(f"Recording retention notice: {purge_err}")
         from services.evaluation_worker import recover_stuck_evaluations
         recovered = recover_stuck_evaluations(stale_minutes=0)
         if recovered:

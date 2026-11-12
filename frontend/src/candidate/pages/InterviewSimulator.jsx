@@ -18,7 +18,8 @@ import {
   Save,
 } from 'lucide-react';
 import InterviewFlowLayout from '../layouts/InterviewFlowLayout';
-import { CornerReticles, LiveAudioWaveform } from '../components/TechnicalDoodles';
+import { CornerReticles } from '../components/TechnicalDoodles';
+import AudioLevelMeter from '../components/AudioLevelMeter';
 import {
   getActiveInterview,
   submitResponse,
@@ -32,6 +33,21 @@ import {
 // (about 4 s out of frame) so a brief glance away does not trigger it.
 const PRESENCE_CHECK_MS = 2000;
 const PRESENCE_MISSES_TO_WARN = 2;
+
+// FR 12-03 / NFR 5-02 - a recording stops on its own after 3 minutes, so an
+// answer always fits the upload limit; a countdown shows in the last 15 s.
+const MAX_ANSWER_SECONDS = 180;
+const ANSWER_WARNING_SECONDS = 165;
+const VIDEO_BITS_PER_SECOND = 1_000_000;
+
+// Chrome, Edge and Firefox record WebM; Safari records MP4 (NFR 14).
+function pickRecorderType(audioOnly) {
+  const candidates = audioOnly
+    ? ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4']
+    : ['video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4'];
+  if (typeof MediaRecorder === 'undefined' || !MediaRecorder.isTypeSupported) return '';
+  return candidates.find((t) => MediaRecorder.isTypeSupported(t)) || '';
+}
 
 // FR10/FR11/FR12/FR33/FR15 - Full multimodal audio/video prompt simulator
 const InterviewSimulator = () => {
@@ -47,6 +63,10 @@ const InterviewSimulator = () => {
   const [consentDeclined, setConsentDeclined] = useState(false);
   const [consentChecked, setConsentChecked] = useState(false);
   const textOnly = !!location.state?.textOnly || consentDeclined;
+  // Objective 1 "voice" - microphone consented, camera not: audio-only answers.
+  const [voiceOnly, setVoiceOnly] = useState(!!location.state?.voiceOnly);
+  const [mediaStream, setMediaStream] = useState(null);
+  const [confirmLeave, setConfirmLeave] = useState(false);
   const [answerMode, setAnswerMode] = useState(location.state?.textOnly ? 'text' : 'spoken');
   const [typedDrafts, setTypedDrafts] = useState({});
   const typingStartRef = useRef({});
@@ -100,9 +120,11 @@ const InterviewSimulator = () => {
           if (consent && consent.microphone === false) {
             setConsentDeclined(true);
             setAnswerMode('text');
-          } else if (!(consent?.microphone && consent?.camera)) {
+          } else if (!consent?.microphone) {
             navigate(`/interview/${id}/prepare`, { replace: true });
             return;
+          } else if (!consent.camera) {
+            setVoiceOnly(true);
           }
         }
         setConsentChecked(true);
@@ -147,11 +169,9 @@ const InterviewSimulator = () => {
     async function initStream() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
-            facingMode: 'user',
-          },
+          video: voiceOnly
+            ? false
+            : { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
           audio: {
             echoCancellation: true,
             noiseSuppression: true,
@@ -164,7 +184,18 @@ const InterviewSimulator = () => {
           return;
         }
 
+        // NFR 5-03 - tell the candidate if a device is unplugged or blocked
+        // mid-session instead of failing silently on the next recording.
+        stream.getTracks().forEach((track) => {
+          track.addEventListener('ended', () => {
+            if (!active) return;
+            setStreamReady(false);
+            setStreamError(`Your ${track.kind === 'video' ? 'camera' : 'microphone'} was disconnected. Reconnect it and refresh the page; your saved answers are kept.`);
+          });
+        });
+
         streamRef.current = stream;
+        setMediaStream(stream);
         setStreamReady(true);
         setStreamError('');
 
@@ -188,12 +219,12 @@ const InterviewSimulator = () => {
         streamRef.current.getTracks().forEach((t) => t.stop());
       }
     };
-  }, [textOnly, consentChecked]);
+  }, [textOnly, consentChecked, voiceOnly]);
 
   // 2b. Live camera presence check - warns the candidate while they can still
   // fix it. Stops quietly if the server refuses (e.g. no camera consent).
   useEffect(() => {
-    if (textOnly || !streamReady || !interview?.id) return undefined;
+    if (textOnly || voiceOnly || !streamReady || !interview?.id) return undefined;
     let stopped = false;
 
     const tick = async () => {
@@ -230,7 +261,19 @@ const InterviewSimulator = () => {
       stopped = true;
       clearInterval(timer);
     };
-  }, [textOnly, streamReady, interview?.id]);
+  }, [textOnly, voiceOnly, streamReady, interview?.id]);
+
+  // NFR 6-02 / 7-03 - warn before the tab is closed or reloaded while an
+  // answer is being recorded or uploaded (it would be lost).
+  useEffect(() => {
+    if (!isRecording && !saving) return undefined;
+    const onBeforeUnload = (e) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, [isRecording, saving]);
 
   // 3. Start Recording
   const startRecording = () => {
@@ -239,16 +282,12 @@ const InterviewSimulator = () => {
     chunksRef.current = [];
     setPendingRecording(null);
 
-    let mimeType = 'video/webm;codecs=vp8,opus';
-    if (!MediaRecorder.isTypeSupported(mimeType)) {
-      mimeType = 'video/webm';
-      if (!MediaRecorder.isTypeSupported(mimeType)) {
-        mimeType = '';
-      }
-    }
+    const mimeType = pickRecorderType(voiceOnly);
 
     try {
-      const options = mimeType ? { mimeType } : undefined;
+      const options = { audioBitsPerSecond: 128000 };
+      if (mimeType) options.mimeType = mimeType;
+      if (!voiceOnly) options.videoBitsPerSecond = VIDEO_BITS_PER_SECOND;
       const recorder = new MediaRecorder(streamRef.current, options);
 
       recorder.ondataavailable = (e) => {
@@ -285,7 +324,7 @@ const InterviewSimulator = () => {
 
     mediaRecorderRef.current.onstop = async () => {
       try {
-        const mimeType = mediaRecorderRef.current?.mimeType || 'video/webm';
+        const mimeType = mediaRecorderRef.current?.mimeType || (voiceOnly ? 'audio/webm' : 'video/webm');
         const blob = new Blob(chunksRef.current, { type: mimeType });
 
         if (blob.size === 0) {
@@ -325,6 +364,13 @@ const InterviewSimulator = () => {
     }
     mediaRecorderRef.current.stop();
   };
+
+  // FR 12-03 - stop and save automatically at the time limit.
+  useEffect(() => {
+    if (isRecording && elapsed >= MAX_ANSWER_SECONDS) {
+      stopRecordingAndUpload();
+    }
+  }, [isRecording, elapsed]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleRetryUpload = async () => {
     if (!pendingRecording || saving) return;
@@ -403,14 +449,30 @@ const InterviewSimulator = () => {
     }
   };
 
+  // FR 10 - the interview can be ended from any question. A failed request
+  // is shown instead of moving on as if it had worked.
   const handleEnd = async () => {
     setEnding(true);
+    setEndError('');
     try {
       await endInterview(id);
     } catch (err) {
-      console.warn('Conclude interview sync notice:', err);
+      const alreadyDone = err?.status === 400 && /already been completed/i.test(err?.message || '');
+      if (!alreadyDone) {
+        setEnding(false);
+        setConfirmEnd(false);
+        setEndError(err?.message || 'Could not end the interview. Check your connection and try again.');
+        return;
+      }
     }
     navigate(`/interview/${id}/complete`);
+  };
+
+  // Leaving with the top-bar close button keeps the saved answers; the
+  // interview can be resumed from History or ended now.
+  const handleLeave = () => {
+    if (isRecording || saving) return;
+    setConfirmLeave(true);
   };
 
   const formatTime = (seconds) => {
@@ -444,7 +506,7 @@ const InterviewSimulator = () => {
   const savedMode = responses[question?.id]?.mode;
 
   return (
-    <InterviewFlowLayout step="session">
+    <InterviewFlowLayout step="session" onExit={handleLeave}>
       <div className="space-y-6 py-2">
         
         {/* Step Progress Tracker Strip */}
@@ -590,12 +652,18 @@ const InterviewSimulator = () => {
                   <div className="flex items-center gap-3">
                     <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse shrink-0" />
                     <div>
-                      <p className="text-xs font-semibold text-red-500">Recording</p>
-                      <p className="font-mono text-xl font-bold" style={{ color: 'var(--c-text)' }}>{formatTime(elapsed)}</p>
+                      <p className="text-xs font-semibold text-red-500">
+                        {elapsed >= ANSWER_WARNING_SECONDS
+                          ? `Recording - stops automatically in ${Math.max(0, MAX_ANSWER_SECONDS - elapsed)}s`
+                          : 'Recording'}
+                      </p>
+                      <p className="font-mono text-xl font-bold" style={{ color: 'var(--c-text)' }}>
+                        {formatTime(elapsed)} <span className="text-xs font-medium" style={{ color: 'var(--c-text-muted)' }}>/ {formatTime(MAX_ANSWER_SECONDS)}</span>
+                      </p>
                     </div>
                   </div>
 
-                  <LiveAudioWaveform bars={16} height={20} color="var(--c-danger)" active={true} />
+                  <AudioLevelMeter stream={mediaStream} bars={16} height={20} color="var(--c-danger)" />
 
                 </div>
               )}
@@ -642,7 +710,7 @@ const InterviewSimulator = () => {
                 </div>
               )}
 
-              {!isTextMode && !textOnly && presence === 'away' && (
+              {!isTextMode && !textOnly && !voiceOnly && presence === 'away' && (
                 <div className="c-badge-warning rounded-md p-3 flex items-start gap-2 text-xs" role="status" aria-live="polite">
                   <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                   <p>
@@ -652,7 +720,7 @@ const InterviewSimulator = () => {
                 </div>
               )}
 
-              {!isTextMode && !textOnly && presence === 'multiple' && (
+              {!isTextMode && !textOnly && !voiceOnly && presence === 'multiple' && (
                 <div className="c-badge-warning rounded-md p-3 flex items-start gap-2 text-xs" role="status" aria-live="polite">
                   <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                   <p>Another person is in view. Answer on your own, with only your face in frame.</p>
@@ -662,7 +730,7 @@ const InterviewSimulator = () => {
               {streamError && !isTextMode && (
                 <div className="c-badge-danger rounded-md p-3 flex items-start gap-2 text-xs">
                   <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                  <p>Hardware media stream disconnected. Please check camera/mic permissions and refresh.</p>
+                  <p>{streamError}</p>
                 </div>
               )}
 
@@ -757,6 +825,16 @@ const InterviewSimulator = () => {
                     </button>
                   )}
                 </div>
+                {!isFinalQuestion && (
+                  <button
+                    onClick={() => setConfirmEnd(true)}
+                    disabled={isRecording || saving}
+                    className="w-full text-center text-[11px] font-semibold underline-offset-2 hover:underline disabled:opacity-50"
+                    style={{ color: 'var(--c-text-muted)' }}
+                  >
+                    End interview now
+                  </button>
+                )}
               </div>
 
             </div>
@@ -785,6 +863,14 @@ const InterviewSimulator = () => {
                     Camera and microphone are off. Nothing is being recorded.
                   </p>
                 </div>
+              ) : voiceOnly ? (
+                <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-center p-6">
+                  <Mic className="w-8 h-8" style={{ color: isRecording ? 'var(--c-danger)' : 'var(--c-accent)' }} />
+                  <p className="text-xs font-bold" style={{ color: 'var(--c-text)' }}>Voice-only interview</p>
+                  <p className="text-[11px] max-w-xs" style={{ color: 'var(--c-text-muted)' }}>
+                    Only your voice is recorded while you answer. The camera is off, so facial analysis is skipped.
+                  </p>
+                </div>
               ) : (
                 <video
                   ref={videoRef}
@@ -795,7 +881,7 @@ const InterviewSimulator = () => {
                 />
               )}
 
-              {!textOnly && presence === 'away' && (
+              {!textOnly && !voiceOnly && presence === 'away' && (
                 <div
                   className="absolute inset-x-0 top-1/2 -translate-y-1/2 mx-4 px-3 py-2 rounded-md border text-center text-xs font-bold pointer-events-none"
                   style={{ background: 'rgba(10, 16, 32, 0.85)', borderColor: 'var(--c-warning)', color: 'var(--c-warning)' }}
@@ -818,7 +904,7 @@ const InterviewSimulator = () => {
                     borderColor: 'var(--c-border)'
                   }}
                 >
-                  {isRecording ? `● Recording ${formatTime(elapsed)}` : textOnly ? 'Camera off' : streamReady ? 'Camera on' : 'Camera not connected'}
+                  {isRecording ? `● Recording ${formatTime(elapsed)}` : textOnly || voiceOnly ? (voiceOnly && streamReady ? 'Microphone on' : 'Camera off') : streamReady ? 'Camera on' : 'Camera not connected'}
                 </span>
               </div>
 
@@ -828,7 +914,7 @@ const InterviewSimulator = () => {
                   style={{ background: 'rgba(10, 16, 32, 0.75)', borderColor: 'var(--c-border)', color: 'var(--c-text)' }}
                 >
                   <Mic className="w-3 h-3 shrink-0" style={{ color: isRecording ? 'var(--c-danger)' : 'var(--c-accent)' }} />
-                  <LiveAudioWaveform bars={12} height={12} color={isRecording ? 'var(--c-danger)' : 'var(--c-accent)'} active={true} />
+                  <AudioLevelMeter stream={mediaStream} bars={12} height={12} color={isRecording ? 'var(--c-danger)' : 'var(--c-accent)'} />
                 </div>
               </div>
 
@@ -902,7 +988,7 @@ const InterviewSimulator = () => {
                 <span className="text-[11px] font-bold" style={{ color: 'var(--c-text)' }}>Controlled Capture</span>
               </div>
               <p className="text-[11px] leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                Recording starts and stops strictly when initiated by you.
+                Recording starts when you click Start Answering and stops when you click Stop, or after 3 minutes.
               </p>
             </div>
 
@@ -910,6 +996,35 @@ const InterviewSimulator = () => {
 
         </div>
       </div>
+
+      {/* Leave dialog (top-bar close button) */}
+      {confirmLeave && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="c-card p-6 rounded-lg w-full max-w-md space-y-4 border shadow-xl"
+            style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}
+          >
+            <h3 className="c-heading text-lg font-bold" style={{ color: 'var(--c-text)' }}>Leave the interview?</h3>
+            <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
+              Your {answeredCount} saved answer{answeredCount === 1 ? '' : 's'} {answeredCount === 1 ? 'is' : 'are'} kept. You can come back and
+              finish it from Interview History, or end it now and get your results.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-2.5 pt-1">
+              <button onClick={() => setConfirmLeave(false)} className="c-btn c-btn-secondary flex-1 py-2 text-xs font-semibold rounded-md">
+                Stay
+              </button>
+              <button onClick={() => navigate('/history')} className="c-btn c-btn-secondary flex-1 py-2 text-xs font-semibold rounded-md">
+                Finish later
+              </button>
+              <button
+                onClick={() => { setConfirmLeave(false); setConfirmEnd(true); }}
+                className="c-btn c-btn-primary flex-1 py-2 text-xs font-bold rounded-md"
+              >
+                End now
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Confirmation Modal to End Interview Session */}
       {confirmEnd && (
@@ -923,7 +1038,7 @@ const InterviewSimulator = () => {
 
             <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
               {answeredCount < total
-                ? `You have answered ${answeredCount} of ${total} questions. Concluding now will submit your recorded takes and proceed to evaluation.`
+                ? `You have answered ${answeredCount} of ${total} questions. Unanswered questions score zero. Concluding now submits your saved answers for evaluation.`
                 : 'All prompts have been recorded. Concluding will finalize your session and proceed to evaluation processing.'}
             </p>
 

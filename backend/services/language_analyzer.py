@@ -38,6 +38,55 @@ logger = logging.getLogger("mockai.language")
 
 METHOD = "rule_based_language_v1"
 BERT_METHOD = "bert_cola+rules_v1"
+BERT_TONE_SUFFIX = "+distilbert_tone"
+
+# Example sentences for each tone (report profile). The answer's DistilBERT
+# embedding is compared with these; only the relative similarity is used.
+TONE_PROTOTYPES = {
+    "confident": [
+        "I am confident in this approach because I have used it successfully before.",
+        "I would handle it this way, and here is exactly why it works.",
+        "I clearly understand this and I can explain it step by step.",
+    ],
+    "tentative": [
+        "I am not really sure, maybe it is something like this, I think.",
+        "I guess I might try something, but I don't know exactly how it works.",
+        "Perhaps, it could possibly be this, but I am not certain.",
+    ],
+    "negative": [
+        "I have never been good at this and I always struggle with it.",
+        "Honestly I don't know, I am bad at this kind of thing.",
+        "I failed at this before and I am not able to do it well.",
+    ],
+}
+
+
+def _bert_tone(raw: str) -> Optional[Dict]:
+    """Report profile: tone from DistilBERT sentence embeddings. Returns
+    None when the encoder is unavailable (the lexicon is then used alone)."""
+    if not is_report_profile():
+        return None
+    try:
+        from services.nlp_analyzer import BertSemanticAnalyzer
+        analyzer = BertSemanticAnalyzer()
+        if analyzer.get_model() is None:
+            return None
+        labels, texts = [], []
+        for label, examples in TONE_PROTOTYPES.items():
+            for ex in examples:
+                labels.append(label)
+                texts.append(ex)
+        sims = analyzer.compute_similarities_batch(raw[:1500], texts)
+        if not sims or len(sims) != len(texts):
+            return None
+        by_label = {k: max(s for l, s in zip(labels, sims) if l == k) for k in TONE_PROTOTYPES}
+        confident = by_label["confident"]
+        doubtful = max(by_label["tentative"], by_label["negative"])
+        score = max(0.0, min(100.0, 60.0 + (confident - doubtful) * 200.0))
+        return {"assertiveness": round(score, 1), "similarities": {k: round(v, 3) for k, v in by_label.items()}}
+    except Exception as e:  # never fail the evaluation over tone
+        logger.warning("BERT tone analysis unavailable, using the lexicon only: %s", e)
+        return None
 
 
 # ---------------------------------------------------------------------------
@@ -357,7 +406,12 @@ def analyze_language(transcript: Optional[str], mode: str = "spoken") -> Dict:
     negative = _count_phrases(lower, NEGATIVE_SELF)
     per_100 = 100.0 / max(word_count, 30)
     assertiveness = 60.0 + len(assertive) * per_100 * 8.0 - len(hedges) * per_100 * 5.0 - len(negative) * per_100 * 10.0
-    assertiveness_score = round(max(0.0, min(100.0, assertiveness)), 1)
+    lexicon_assertiveness = round(max(0.0, min(100.0, assertiveness)), 1)
+    assertiveness_score = lexicon_assertiveness
+    bert_tone = _bert_tone(raw) if word_count >= 8 else None
+    if bert_tone is not None:
+        assertiveness_score = round(0.5 * lexicon_assertiveness + 0.5 * bert_tone["assertiveness"], 1)
+        method = method + BERT_TONE_SUFFIX
     if len(negative) >= 2 or (negative and assertiveness_score < 45):
         tone_label = "Uncertain"
     elif assertiveness_score >= 72:
@@ -394,6 +448,8 @@ def analyze_language(transcript: Optional[str], mode: str = "spoken") -> Dict:
         "tone": {
             "label": tone_label,
             "assertiveness_score": assertiveness_score,
+            "lexicon_assertiveness": lexicon_assertiveness,
+            "bert_assertiveness": bert_tone["assertiveness"] if bert_tone else None,
             "hedges": hedges[:6],
             "assertive_markers": assertive[:6],
             "negative_phrases": negative[:6],
@@ -432,9 +488,10 @@ def summarize_language(per_question_results: List[Dict]) -> Dict:
                 examples.append(issue)
     all_hedges = [h for a in analyses for h in a["tone"].get("hedges", [])]
 
+    methods = sorted({a.get("method") or METHOD for a in analyses})
     return {
         "status": "completed",
-        "method": METHOD,
+        "method": methods[0] if len(methods) == 1 else "+".join(methods),
         "evaluated_answers": len(analyses),
         "avg_language_quality": avg("language_quality_score"),
         "avg_grammar_score": avg("grammar_score"),

@@ -34,11 +34,14 @@ RATER_COLUMNS = [
 ]
 
 
-def build_rows(rater: str = ""):
+def build_rows(rater: str = "", extra_ids=()):
     storage = get_media_storage()
     rows = []
+    # NFR 11 - only interviews whose candidates allowed their answers to be
+    # used for accuracy checking (plus explicitly named own test sessions).
+    from services.research_media import research_consent_filter
     cursor = interviews_collection.find(
-        {"evaluation_status": "completed"},
+        {"evaluation_status": "completed", **research_consent_filter(extra_ids)},
         {"user_id": 1, "role": 1, "target_role": 1, "questions": 1, "responses": 1, "evaluation.per_question": 1, "created_at": 1},
     ).sort("created_at", 1)
     for interview in cursor:
@@ -71,11 +74,13 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Export a blind human-rating sheet (Objective 7)")
     parser.add_argument("--out", required=True, metavar="CSV", help="where to write the sheet")
     parser.add_argument("--rater", default="", help="pre-fill the rater column")
+    parser.add_argument("--interview-ids", default=None, help="comma-separated ids of the team's own test interviews")
     args = parser.parse_args()
 
-    rows = build_rows(args.rater)
+    from services.research_media import parse_ids
+    rows = build_rows(args.rater, parse_ids(args.interview_ids))
     if not rows:
-        print("No evaluated answers found.")
+        print("No evaluated answers with research-use consent found.")
         return 1
     with open(args.out, "w", newline="", encoding="utf-8-sig") as f:
         writer = csv.DictWriter(f, fieldnames=list(rows[0].keys()))

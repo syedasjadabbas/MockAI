@@ -190,6 +190,7 @@ const Header = ({ onToggleMobileMenu }) => {
       case '/admin/interviews': return 'Interviews';
       case '/admin/results': return 'Evaluation Results';
       case '/admin/logs': return 'Action Logs';
+      case '/admin/mentors': return 'Mentors';
       case '/admin/admins': return 'Manage Admins';
       default: return 'Admin Panel';
     }

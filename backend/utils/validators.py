@@ -24,7 +24,7 @@ def validate_email(email: str):
         raise HTTPException(status_code=400, detail="Invalid email format")
 
 
-def validate_password_strength(password: str, min_length: int = 6):
+def validate_password_strength(password: str, min_length: int = 8):
     if not password or len(password) < min_length:
         raise HTTPException(status_code=400, detail=f"Password must be at least {min_length} characters")
 

@@ -11,6 +11,7 @@ import {
   Terminal,
   Shield,
   BookOpen,
+  GraduationCap,
   X
 } from 'lucide-react';
 import { prefetch } from '../api';
@@ -66,6 +67,7 @@ const Sidebar = ({ mobileOpen = false, setMobileOpen = () => {} }) => {
     { title: 'Users', icon: Users, path: '/admin/users' },
     { title: 'Interviews', icon: Briefcase, path: '/admin/interviews' },
     { title: 'Question Bank', icon: BookOpen, path: '/admin/questions' },
+    { title: 'Mentors', icon: GraduationCap, path: '/admin/mentors' },
     { title: 'Results', icon: Award, path: '/admin/results' },
     { title: 'Logs', icon: FileText, path: '/admin/logs' },
     { title: 'Manage Admins', icon: Shield, path: '/admin/admins' },

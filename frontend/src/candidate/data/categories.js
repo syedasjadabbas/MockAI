@@ -3,8 +3,8 @@
 // categories and questions now come from the real Question Bank via
 // candidateApi.js's getCategories()/getQuestionsForCategory() (backed by
 // backend/routes/candidate_interview.py), not from a static file. See
-// GoalSelection.jsx's inferInterviewType() for how a fetched category gets
-// mapped to one of these three types for presentation.
+// GoalSelection.jsx: the chatbot asks the candidate for one of these
+// types, and the backend picks questions of that type (FR 08).
 export const INTERVIEW_TYPES = [
   {
     id: 'technical',

@@ -3,9 +3,8 @@ Media storage abstraction for interview response recordings (FR12/FR13's
 "stored for later analysis").
 
 Current implementation: LocalFilesystemMediaStorage, writing under
-backend/media/interviews/<interview_id>/<question_id>/response.<ext> on
-the backend's own disk. This is explicitly a development-scope choice for
-the current FYP environment, not a production design.
+backend/media/interviews/<interview_id>/<question_id>/response.<ext>.enc on
+the backend's own disk, encrypted at rest (see "Encryption at rest" below).
 
 Future production implementation: object storage such as S3 or another
 cloud storage service. That future class only needs to implement the same
@@ -94,24 +93,136 @@ class LocalFilesystemMediaStorage(MediaStorageService):
 
         target_dir = self._target_dir(interview_id, question_id)
         target_dir.mkdir(parents=True, exist_ok=True)
+        # A re-recorded answer replaces the previous take (any container).
+        for old in target_dir.glob("response*"):
+            old.unlink(missing_ok=True)
+        _drop_plain_cache(target_dir)
         target_path = target_dir / f"response.{extension}"
-        target_path.write_bytes(data)
+        if _encryption_enabled():
+            # FR 13-03 / FR 30-01 / NFR 7-01 - recordings are encrypted at rest.
+            (target_dir / f"response.{extension}{ENCRYPTED_SUFFIX}").write_bytes(_fernet().encrypt(data))
+        else:
+            target_path.write_bytes(data)
 
         # Opaque relative reference, not a filesystem path or public URL.
         return f"interviews/{interview_id}/{question_id}/response.{extension}"
 
-    def resolve_path(self, media_ref: str) -> Optional[Path]:
+    def _stored_path(self, media_ref: str) -> Optional[Path]:
         if not media_ref:
             return None
         candidate = (self.base_dir / media_ref).resolve()
         if self.base_dir not in candidate.parents and candidate != self.base_dir:
             return None  # refuses to resolve outside the storage root
+        return candidate
+
+    def resolve_path(self, media_ref: str) -> Optional[Path]:
+        candidate = self._stored_path(media_ref)
+        if candidate is None:
+            return None
+        encrypted = candidate.with_name(candidate.name + ENCRYPTED_SUFFIX)
+        if encrypted.is_file():
+            # Decrypted only into a private, short-lived cache for analysis.
+            return _plain_copy(encrypted, candidate.name)
         return candidate if candidate.is_file() else None
 
     def delete(self, media_ref: str) -> None:
-        path = self.resolve_path(media_ref)
-        if path:
+        candidate = self._stored_path(media_ref)
+        if candidate is None:
+            return
+        for path in (candidate, candidate.with_name(candidate.name + ENCRYPTED_SUFFIX)):
             path.unlink(missing_ok=True)
+        _drop_plain_cache(candidate.parent)
+        for extra in candidate.parent.glob(f"{candidate.stem}_normalized.*"):
+            extra.unlink(missing_ok=True)
+
+    def delete_interview(self, interview_id: str) -> int:
+        """Deletes every recording of one interview (candidate request or
+        retention expiry). Returns the number of files removed."""
+        interview_id = _sanitize_id_segment(interview_id, "interview_id")
+        root = (self.base_dir / "interviews" / interview_id).resolve()
+        if self.base_dir not in root.parents or not root.is_dir():
+            return 0
+        removed = 0
+        for path in sorted(root.rglob("*"), key=lambda x: len(x.parts), reverse=True):
+            if path.is_file():
+                _drop_plain_cache(path.parent)
+                path.unlink(missing_ok=True)
+                removed += 1
+            elif path.is_dir():
+                _drop_plain_cache(path)
+                path.rmdir()
+        root.rmdir()
+        return removed
+
+
+# ---------------------------------------------------------------------------
+# Encryption at rest (Fernet: AES-128-CBC + HMAC-SHA256). The key comes from
+# MEDIA_ENCRYPTION_KEY, or is derived from the server SECRET_KEY. Analysis
+# code reads a decrypted copy in a private temp cache that is removed after
+# a short time; recordings stored before encryption was added stay readable.
+# Set MEDIA_ENCRYPTION=off to store plain files (e.g. for debugging).
+# ---------------------------------------------------------------------------
+
+ENCRYPTED_SUFFIX = ".enc"
+PLAIN_CACHE_TTL_SECONDS = 30 * 60
+
+
+def _encryption_enabled() -> bool:
+    return (os.getenv("MEDIA_ENCRYPTION") or "on").strip().lower() not in ("off", "0", "false", "no")
+
+
+def _fernet():
+    import base64
+    import hashlib
+    from cryptography.fernet import Fernet
+
+    key = (os.getenv("MEDIA_ENCRYPTION_KEY") or "").strip()
+    if not key:
+        secret = os.getenv("SECRET_KEY") or ""
+        if not secret:
+            raise RuntimeError("Set MEDIA_ENCRYPTION_KEY or SECRET_KEY to store recordings encrypted")
+        key = base64.urlsafe_b64encode(hashlib.sha256(("mockai-media:" + secret).encode()).digest()).decode()
+    return Fernet(key.encode())
+
+
+def _cache_root() -> Path:
+    import tempfile
+    root = Path(tempfile.gettempdir()) / "mockai_media_plain"
+    root.mkdir(parents=True, exist_ok=True)
+    return root
+
+
+def _cache_dir_for(stored_dir: Path) -> Path:
+    import hashlib
+    return _cache_root() / hashlib.sha256(str(stored_dir.resolve()).encode()).hexdigest()[:24]
+
+
+def _drop_plain_cache(stored_dir: Path) -> None:
+    import shutil
+    shutil.rmtree(_cache_dir_for(stored_dir), ignore_errors=True)
+
+
+def _sweep_plain_cache() -> None:
+    import shutil
+    import time
+    now = time.time()
+    for d in _cache_root().iterdir():
+        try:
+            if d.is_dir() and now - d.stat().st_mtime > PLAIN_CACHE_TTL_SECONDS:
+                shutil.rmtree(d, ignore_errors=True)
+        except OSError:
+            pass
+
+
+def _plain_copy(encrypted: Path, plain_name: str) -> Path:
+    _sweep_plain_cache()
+    target_dir = _cache_dir_for(encrypted.parent)
+    target = target_dir / plain_name
+    if target.is_file() and target.stat().st_mtime >= encrypted.stat().st_mtime:
+        return target
+    target_dir.mkdir(parents=True, exist_ok=True)
+    target.write_bytes(_fernet().decrypt(encrypted.read_bytes()))
+    return target
 
 
 _storage_instance: Optional[MediaStorageService] = None

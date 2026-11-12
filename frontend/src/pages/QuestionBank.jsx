@@ -113,7 +113,8 @@ const QuestionBank = () => {
     type: 'Technical',
     expected_answer: '',
     tags: '',
-    status: 'active'
+    status: 'active',
+    priority: 50
   });
 
   // Form States - Category
@@ -224,7 +225,8 @@ const QuestionBank = () => {
       type: 'Technical',
       expected_answer: '',
       tags: '',
-      status: 'active'
+      status: 'active',
+      priority: 50
     });
     setFormError('');
     setShowQuestionModal(true);
@@ -239,7 +241,8 @@ const QuestionBank = () => {
       type: q.type || 'Technical',
       expected_answer: q.expected_answer || '',
       tags: Array.isArray(q.tags) ? q.tags.join(', ') : '',
-      status: q.status || 'active'
+      status: q.status || 'active',
+      priority: q.priority ?? 50
     });
     setFormError('');
     setShowQuestionModal(true);
@@ -295,7 +298,8 @@ const QuestionBank = () => {
       type: qFormData.type,
       expected_answer: qFormData.expected_answer.trim(),
       tags: cleanTags,
-      status: qFormData.status
+      status: qFormData.status,
+      priority: Math.min(100, Math.max(1, parseInt(qFormData.priority, 10) || 50))
     };
 
     setFormSubmitting(true);
@@ -1206,6 +1210,24 @@ const QuestionBank = () => {
                     ))}
                   </select>
                 </div>
+              </div>
+
+              {/* Interview selection priority (3.3.8) */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">
+                  Interview Priority (1 = asked first)
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={100}
+                  value={qFormData.priority}
+                  onChange={e => setQFormData({ ...qFormData, priority: e.target.value })}
+                  className="theme-input w-full px-4 py-2.5 rounded-xl text-sm border focus:outline-none focus:ring-2 focus:ring-orange-500/30"
+                />
+                <p className="text-[11px] text-[var(--text-muted)]">
+                  Each interview asks five active questions from the chosen domain, matching the interview type (technical, HR or situational), lowest priority number first.
+                </p>
               </div>
 
               {/* Expected Answer / Grading Rubric */}

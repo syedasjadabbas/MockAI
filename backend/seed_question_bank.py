@@ -168,6 +168,78 @@ DEFAULT_CATEGORIES_DATA = [
                 "tags": ["Prioritization", "Time Management", "Communication"],
                 "expected_answer": "Clarify core requirements by creating quick prototypes/specs, prioritize based on business value and effort (e.g. RICE or Eisenhower matrix), and proactively communicate trade-offs with stakeholders.",
                 "status": "active"
+            },
+            {
+                "question_text": "Tell me about yourself and why you are interested in this role.",
+                "difficulty": "Easy",
+                "type": "Behavioral",
+                "tags": ["Self-presentation", "Motivation", "Career Goals"],
+                "expected_answer": "A short present-past-future structure: current role or studies, the most relevant experience and skills with one concrete example, and a genuine reason for wanting this role and organisation that links back to those skills.",
+                "status": "active"
+            },
+            {
+                "question_text": "What is your greatest strength, and what is one weakness you are working to improve?",
+                "difficulty": "Easy",
+                "type": "Behavioral",
+                "tags": ["Self-awareness", "Strengths", "Growth Mindset"],
+                "expected_answer": "Names a specific strength relevant to the role and backs it with an example; names a real weakness (not a disguised strength), explains its impact honestly and describes concrete steps already taken to improve, with evidence of progress.",
+                "status": "active"
+            },
+            {
+                "question_text": "Describe a time you made a mistake at work or in your studies. What did you learn from it?",
+                "difficulty": "Medium",
+                "type": "Behavioral",
+                "tags": ["Accountability", "Learning", "Reflection"],
+                "expected_answer": "STAR method: describes the situation and the mistake clearly, takes ownership without blaming others, explains the actions taken to fix it and limit the damage, and states the lesson learned and how it has been applied since.",
+                "status": "active"
+            },
+            {
+                "question_text": "Tell me about a time you worked in a team to achieve a difficult goal. What was your role?",
+                "difficulty": "Medium",
+                "type": "Behavioral",
+                "tags": ["Teamwork", "Collaboration", "Contribution"],
+                "expected_answer": "STAR method: explains the goal and why it was difficult, states clearly what the candidate personally did, how the team communicated and handled disagreement, and the measurable result, while giving credit to the team.",
+                "status": "active"
+            },
+            {
+                "question_text": "If a teammate repeatedly missed deadlines that affected your work, what would you do?",
+                "difficulty": "Medium",
+                "type": "Situational",
+                "tags": ["Conflict Resolution", "Communication", "Professionalism"],
+                "expected_answer": "Talk to the teammate privately and respectfully to understand the cause, offer help or adjust the plan, agree clear expectations and dates, keep the shared goal in focus rather than blame, and escalate to the manager only if the problem continues.",
+                "status": "active"
+            },
+            {
+                "question_text": "What would you do if you were given a task you did not know how to complete and your manager was unavailable?",
+                "difficulty": "Easy",
+                "type": "Situational",
+                "tags": ["Problem Solving", "Initiative", "Resourcefulness"],
+                "expected_answer": "Clarify the goal of the task, break it into parts, use documentation and other resources, ask knowledgeable colleagues, make reasonable progress while noting assumptions, and update the manager as soon as possible, flagging any risk to the deadline early.",
+                "status": "active"
+            },
+            {
+                "question_text": "Imagine a customer or client is angry about a problem that was not your fault. How would you handle the conversation?",
+                "difficulty": "Medium",
+                "type": "Situational",
+                "tags": ["Customer Focus", "Empathy", "Composure"],
+                "expected_answer": "Stay calm, listen fully without interrupting, acknowledge the customer's frustration and apologise for their experience, avoid blaming colleagues, clarify the facts, offer a solution or clear next steps with a timeline, and follow up afterwards.",
+                "status": "active"
+            },
+            {
+                "question_text": "Suppose you notice a colleague doing something that breaks company policy or professional ethics. What would you do?",
+                "difficulty": "Hard",
+                "type": "Situational",
+                "tags": ["Ethics", "Integrity", "Judgement"],
+                "expected_answer": "Gather the facts first, judge how serious it is, speak to the colleague where that is appropriate and safe, report it through the proper channel such as a manager or compliance team, keep it confidential, and document what happened.",
+                "status": "active"
+            },
+            {
+                "question_text": "If two managers gave you urgent tasks due at the same time, how would you decide what to do first?",
+                "difficulty": "Medium",
+                "type": "Situational",
+                "tags": ["Prioritization", "Time Management", "Stakeholder Communication"],
+                "expected_answer": "Assess the impact and urgency of each task, tell both managers about the clash straight away, ask them to agree the priority or negotiate a new deadline, propose a clear plan, then deliver and keep both informed of progress.",
+                "status": "active"
             }
         ]
     },

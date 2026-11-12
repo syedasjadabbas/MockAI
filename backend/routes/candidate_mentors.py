@@ -14,14 +14,15 @@ Data collections:
 """
 
 import re
-from datetime import datetime
+import threading
+from datetime import date, datetime
 from typing import Optional, List, Dict, Any
 
 from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
-from database import mentors_collection, appointments_collection
+from database import mentors_collection, appointments_collection, users_collection
 from middleware.candidate_auth import verify_candidate
 
 router = APIRouter()
@@ -37,7 +38,10 @@ def _object_id_or_400(id_str: str, label: str = "ID") -> ObjectId:
 def _serialize_mentor(doc: dict, booked_slots: Optional[set] = None) -> dict:
     mentor_id = str(doc["_id"])
     slots = []
+    today = date.today().isoformat()
     for s in doc.get("available_slots", []):
+        if (s.get("date") or "") < today:
+            continue  # past slots can no longer be booked
         slot_key = f"{s.get('date')}_{s.get('start_time')}"
         is_booked = (slot_key in booked_slots) if booked_slots is not None else s.get("is_booked", False)
         slots.append({
@@ -81,11 +85,61 @@ def _serialize_appointment(doc: dict) -> dict:
         "start_time": doc.get("start_time", ""),
         "end_time": doc.get("end_time", ""),
         "notes": doc.get("notes", ""),
+        "meeting_link": doc.get("meeting_link", ""),
         "status": doc.get("status", "scheduled"),
         "created_at": doc.get("created_at").isoformat() if isinstance(doc.get("created_at"), datetime) else str(doc.get("created_at", "")),
         "cancelled_at": doc.get("cancelled_at").isoformat() if isinstance(doc.get("cancelled_at"), datetime) else None,
         "cancel_reason": doc.get("cancel_reason", ""),
     }
+
+
+# ---------------------------------------------------------------------------
+# Booking notifications (Objective 6): the candidate, and the mentor when an
+# e-mail address is on file, get an e-mail when a session is booked or
+# cancelled. Sent in the background; the result is stored on the booking.
+# ---------------------------------------------------------------------------
+
+def _notification_html(apt: dict, event: str, for_mentor: bool, candidate_name: str) -> str:
+    when = f"{apt.get('date')} at {apt.get('start_time')}" + (f" to {apt.get('end_time')}" if apt.get("end_time") else "")
+    who = f"with {candidate_name}" if for_mentor else f"with {apt.get('mentor_name')}"
+    link = apt.get("meeting_link")
+    if event == "booked":
+        link_line = (f'<p>Join here: <a href="{link}">{link}</a></p>' if link
+                     else "<p>The meeting link will be shared before the session.</p>")
+        return (f"<p>Your MockAI mentoring session {who} is booked for <strong>{when}</strong>.</p>"
+                f"{link_line}<p>You can see or cancel it under Mentors in MockAI.</p>")
+    return f"<p>The MockAI mentoring session {who} on <strong>{when}</strong> has been cancelled.</p>"
+
+
+def _send_notifications(apt_id, mentor: dict, event: str):
+    from utils.email import send_email
+    apt = appointments_collection.find_one({"_id": apt_id})
+    if not apt:
+        return
+    candidate = None
+    if ObjectId.is_valid(str(apt.get("candidate_id", ""))):
+        candidate = users_collection.find_one({"_id": ObjectId(apt["candidate_id"])}, {"email": 1, "name": 1})
+    candidate_name = (candidate or {}).get("name") or "a MockAI candidate"
+    subject = "Mentoring session booked" if event == "booked" else "Mentoring session cancelled"
+    sent, failed = [], []
+    targets = []
+    if candidate and candidate.get("email"):
+        targets.append((candidate["email"], False))
+    if mentor.get("email"):
+        targets.append((mentor["email"], True))
+    for address, for_mentor in targets:
+        try:
+            send_email(address, subject, _notification_html(apt, event, for_mentor, candidate_name))
+            sent.append("mentor" if for_mentor else "candidate")
+        except Exception:
+            failed.append("mentor" if for_mentor else "candidate")
+    status_text = (f"{event}: e-mailed {', '.join(sent)}" if sent else f"{event}: not e-mailed") + \
+        (f" (failed: {', '.join(failed)})" if failed else "")
+    appointments_collection.update_one({"_id": apt_id}, {"$set": {"notification_status": status_text}})
+
+
+def _notify_async(apt: dict, mentor: dict, event: str):
+    threading.Thread(target=_send_notifications, args=(apt["_id"], mentor, event), daemon=True).start()
 
 
 # ---------------------------------------------------------------------------
@@ -255,6 +309,16 @@ def book_appointment(
     if not clean_date or not clean_start_time:
         raise HTTPException(status_code=400, detail="Date and start_time are required")
 
+    # Only a time the mentor actually offers, and not in the past.
+    if clean_date < date.today().isoformat():
+        raise HTTPException(status_code=400, detail="This time slot is in the past. Please choose another slot.")
+    offered = any(
+        s.get("date") == clean_date and s.get("start_time") == clean_start_time
+        for s in mentor.get("available_slots", [])
+    )
+    if not offered:
+        raise HTTPException(status_code=400, detail="This mentor does not offer that time slot.")
+
     # Concurrency / Double-booking protection:
     # Check if this mentor already has an active appointment at this date and time
     existing_booking = appointments_collection.find_one({
@@ -304,6 +368,7 @@ def book_appointment(
         "start_time": clean_start_time,
         "end_time": end_time,
         "notes": (data.notes or "").strip(),
+        "meeting_link": mentor.get("meeting_link", ""),
         "status": "scheduled",
         "created_at": now,
         "updated_at": now,
@@ -311,6 +376,7 @@ def book_appointment(
 
     insert_result = appointments_collection.insert_one(appointment_doc)
     created = appointments_collection.find_one({"_id": insert_result.inserted_id})
+    _notify_async(created, mentor, "booked")
     return _serialize_appointment(created)
 
 
@@ -406,6 +472,10 @@ def cancel_appointment(
     )
 
     updated = appointments_collection.find_one({"_id": apt_obj_id})
+    mentor = None
+    if ObjectId.is_valid(str(apt.get("mentor_id", ""))):
+        mentor = mentors_collection.find_one({"_id": ObjectId(apt["mentor_id"])}, {"email": 1})
+    _notify_async(updated, mentor or {}, "cancelled")
     return {
         "success": True,
         "message": "Appointment cancelled successfully.",

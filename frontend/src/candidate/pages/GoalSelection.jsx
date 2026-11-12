@@ -87,16 +87,21 @@ function getCategoryDisplayIcon(cat) {
   return Briefcase;
 }
 
-function inferInterviewType(category) {
-  return /behav|leadership/i.test(category.name) ? 'behavioral' : 'technical';
+// Suggested interview type for a domain picked without one. Only a hint:
+// the chatbot always asks the candidate which kind of interview they want.
+function suggestInterviewType(category) {
+  return /behav|leadership/i.test(category?.name || '') ? 'behavioral' : 'technical';
 }
 
-function getCategoriesByType(categories, typeId) {
-  if (typeId === 'situational') {
-    return categories.filter((c) => inferInterviewType(c) === 'behavioral');
-  }
-  return categories.filter((c) => inferInterviewType(c) === typeId);
+function typeLabel(typeId) {
+  return INTERVIEW_TYPES.find((t) => t.id === typeId)?.label || 'Interview';
 }
+
+const TYPE_BLURB = {
+  technical: 'Domain expertise & role-specific skills',
+  behavioral: 'Communication, teamwork, ethics & leadership',
+  situational: 'Real workplace scenarios & decision-making',
+};
 
 function matchCategoryFromText(text, categories) {
   const t = (text || '').toLowerCase().trim();
@@ -109,36 +114,23 @@ function matchCategoryFromText(text, categories) {
   const subMatch = categories.find((c) => c.name.toLowerCase().includes(t) || t.includes(c.name.toLowerCase()));
   if (subMatch) return subMatch;
 
-  // 2. Comprehensive role synonyms for ALL professional careers
+  // 2. Role synonyms for every career domain
   const domainRules = [
-    // Healthcare & Medicine
     { keywords: ['doctor', 'physician', 'medicine', 'medical', 'clinical', 'hospital', 'surgeon', 'pediatrician', 'cardiolog', 'gp', 'resident'], test: (n) => /healthcare|medicine/i.test(n) },
-    // Nursing
     { keywords: ['nurse', 'nursing', 'patient care', 'triage', 'icu', 'rn', 'vital sign', 'caregiver', 'clinic nurse'], test: (n) => /nursing|patient care/i.test(n) },
-    // Education & Teaching
     { keywords: ['teacher', 'teaching', 'education', 'educator', 'instructor', 'professor', 'pedagogy', 'curriculum', 'school', 'tutor'], test: (n) => /education|teaching/i.test(n) },
-    // Accounting & Finance
     { keywords: ['accountant', 'accounting', 'auditor', 'audit', 'financial', 'finance', 'cpa', 'bookkeep', 'tax', 'balance sheet', 'gaap', 'ifrs'], test: (n) => /accounting|financial/i.test(n) },
-    // Law & Legal Practice
     { keywords: ['lawyer', 'attorney', 'legal', 'law', 'litigation', 'counsel', 'paralegal', 'barrister', 'juris', 'court', 'contract law'], test: (n) => /law|legal/i.test(n) },
-    // Marketing & Brand
     { keywords: ['marketing', 'brand', 'campaign', 'seo', 'growth', 'advertising', 'marketing manager', 'social media', 'content strategy', 'cmo'], test: (n) => /marketing/i.test(n) },
-    // HR & Talent
     { keywords: ['hr', 'human resources', 'talent', 'recruiter', 'recruiting', 'onboarding', 'hr manager', 'people ops', 'people operations'], test: (n) => /human resources|talent/i.test(n) },
-    // Graphic & Visual Design
     { keywords: ['graphic designer', 'graphic design', 'ui/ux', 'visual design', 'illustrator', 'photoshop', 'figma', 'designer', 'art director', 'creative director'], test: (n) => /graphic|design/i.test(n) },
-    // Civil Engineering
     { keywords: ['civil engineer', 'civil engineering', 'structural engineer', 'autocad', 'construction', 'concrete', 'infrastructure', 'bridge', 'site engineer'], test: (n) => /civil|structural/i.test(n) },
-    // Business Analysis & Strategy
     { keywords: ['business analyst', 'business analysis', 'requirements', 'stakeholder', 'product owner', 'user stories', 'process optimization', 'bpm'], test: (n) => /business analysis|strategy/i.test(n) },
-    // Sales Leadership
     { keywords: ['sales', 'sales manager', 'account executive', 'prospecting', 'quota', 'b2b sales', 'client acquisition', 'closer', 'sales director'], test: (n) => /sales/i.test(n) },
-    // IT / Software Tracks
     { keywords: ['frontend', 'front-end', 'react', 'css', 'javascript', 'vue', 'angular', 'web dev', 'web developer', 'html', 'typescript'], test: (n) => /frontend/i.test(n) },
     { keywords: ['backend', 'back-end', 'api', 'database', 'server', 'node', 'django', 'microservice', 'distributed', 'fastapi', 'golang', 'java'], test: (n) => /backend/i.test(n) },
     { keywords: ['machine learning', ' ai ', 'artificial intelligence', 'nlp', 'deep learning', 'model', 'data science', 'llm', 'computer vision'], test: (n) => /machine learning|artificial intelligence/i.test(n) },
     { keywords: ['data analyst', 'data analytics', 'sql', 'bi', 'tableau', 'powerbi', 'dashboard', 'reporting'], test: (n) => /data analytics|sql/i.test(n) },
-    // Behavioral & Leadership
     { keywords: ['behavioral', 'behaviour', 'leadership', 'situational', 'teamwork', 'manager', 'conflict', 'soft skill'], test: (n) => /behavioral|leadership/i.test(n) },
   ];
 
@@ -156,14 +148,20 @@ function matchCategoryFromText(text, categories) {
   return null;
 }
 
+// FR 07 / Objective 2 - a text chatbot that finds the candidate's domain and
+// asks which kind of interview they want (technical, HR/behavioral or
+// situational). The chosen type decides which questions are asked (FR 08).
 const GoalSelection = () => {
   const navigate = useNavigate();
   const [messages, setMessages] = useState([
-    { from: 'bot', text: 'What role or topic would you like to practice today?' },
+    { from: 'bot', text: 'Hi! What role or field are you preparing for? Type it below, or pick the kind of interview you want first.' },
   ]);
   const [input, setInput] = useState('');
-  const [stage, setStage] = useState('ask-goal'); // ask-goal -> ask-type -> confirm
+  // ask-goal -> pick-domain -> ask-interview-type -> confirm
+  const [stage, setStage] = useState('ask-goal');
   const [selectedType, setSelectedType] = useState(null);
+  const [typeChosen, setTypeChosen] = useState(false);
+  const [suggestedType, setSuggestedType] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [customRole, setCustomRole] = useState('');
   const [starting, setStarting] = useState(false);
@@ -174,7 +172,6 @@ const GoalSelection = () => {
   // Categories suggested by the semantic goal interpreter (ambiguous goals)
   const [suggestionIds, setSuggestionIds] = useState([]);
   const [interpreting, setInterpreting] = useState(false);
-  const [searchingFor, setSearchingFor] = useState('');
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -184,42 +181,53 @@ const GoalSelection = () => {
       .finally(() => setCategoriesLoading(false));
   }, []);
 
-  // Follow the conversation once the candidate has replied; on first load the
-  // page stays at the top so the question is visible on small screens.
+  // Follow the conversation once the candidate has replied.
   useEffect(() => {
     if (messages.length <= 1) return;
     scrollRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }, [messages, categoriesLoading]);
+  }, [messages, stage]);
 
   const pushBot = (text) => setMessages((m) => [...m, { from: 'bot', text }]);
   const pushUser = (text) => setMessages((m) => [...m, { from: 'user', text }]);
 
-  const chooseCategory = (category, customRoleName = null, typeOverride = null, echoUser = true) => {
-    const roleLabel = customRoleName || category.name;
-    if (echoUser) pushUser(roleLabel);
-    setSuggestionIds([]);
-    setSelectedCategory(category);
-    setSelectedType(typeOverride || inferInterviewType(category));
-    if (customRoleName) {
-      setCustomRole(customRoleName);
-    } else {
-      setCustomRole('');
-    }
-    pushBot(`${roleLabel} it is. Ready to set up your camera and start?`);
+  const roleLabelFor = (category, roleName) => roleName || category?.name || '';
+
+  const goToConfirm = (category, roleName, typeId) => {
+    pushBot(`A ${typeLabel(typeId).toLowerCase()} for ${roleLabelFor(category, roleName)}. Ready to set up your microphone and start?`);
     setStage('confirm');
   };
 
-  const chooseType = (typeId) => {
-    const type = INTERVIEW_TYPES.find((t) => t.id === typeId);
-    pushUser(type.label);
-    setSelectedType(typeId);
-    const options = getCategoriesByType(categories, typeId);
-    if (options.length === 1) {
-      chooseCategory(options[0]);
-    } else {
-      pushBot(`Which domain or career track within ${type.label.toLowerCase()} would you like to focus on?`);
-      setStage('ask-type');
+  const chooseCategory = (category, customRoleName = null, typeHint = null, echoUser = true) => {
+    const roleLabel = roleLabelFor(category, customRoleName);
+    if (echoUser) pushUser(roleLabel);
+    setSuggestionIds([]);
+    setSelectedCategory(category);
+    setCustomRole(customRoleName || '');
+    if (typeChosen && selectedType) {
+      goToConfirm(category, customRoleName, selectedType);
+      return;
     }
+    setSuggestedType(typeHint || suggestInterviewType(category));
+    pushBot(`${roleLabel} it is. What kind of interview would you like: technical, HR / behavioral, or situational?`);
+    setStage('ask-interview-type');
+  };
+
+  // Type picked first (before the domain).
+  const chooseTypeFirst = (typeId) => {
+    pushUser(typeLabel(typeId));
+    setSelectedType(typeId);
+    setTypeChosen(true);
+    pushBot('Great. Which field or role should the questions be about?');
+    setSuggestionIds([]);
+    setStage('pick-domain');
+  };
+
+  // Type picked after the domain.
+  const chooseInterviewType = (typeId) => {
+    pushUser(typeLabel(typeId));
+    setSelectedType(typeId);
+    setTypeChosen(true);
+    goToConfirm(selectedCategory, customRole, typeId);
   };
 
   const handleSend = async () => {
@@ -229,7 +237,6 @@ const GoalSelection = () => {
     setInput('');
 
     // 1. Semantic interpretation on the backend (FR07-02)
-    setSearchingFor(text);
     setInterpreting(true);
     let result = null;
     try {
@@ -244,18 +251,16 @@ const GoalSelection = () => {
       const byId = (id) => categories.find((c) => c.id === id);
       const best = result.best && byId(result.best.id);
       if (result.status === 'matched' && best) {
-        // FR07-03: confirm the interpreted goal before continuing. A short
-        // goal ("ICU nurse") becomes the role name; a full sentence does not.
+        // A short goal ("ICU nurse") becomes the role name; a sentence does not.
         const roleName = text.split(/\s+/).length <= 4 ? text : null;
         chooseCategory(best, roleName, result.interview_type, false);
         return;
       }
       const suggestions = (result.suggestions || []).map((m) => m.id).filter(byId);
       if (result.status === 'ambiguous' && suggestions.length) {
-        pushBot('That could fit a few tracks. Which one is closest?');
+        pushBot('That could fit a few fields. Which one is closest?');
         setSuggestionIds(suggestions);
-        setSelectedType(null);
-        setStage('ask-type');
+        setStage('pick-domain');
         return;
       }
     }
@@ -265,15 +270,14 @@ const GoalSelection = () => {
     if (matched) {
       chooseCategory(matched, text, null, false);
     } else {
-      pushBot("I didn't catch an exact track — pick one of the options below to get started.");
+      pushBot("I couldn't match that to a field yet. Pick the closest one below, or describe your role differently.");
       setSuggestionIds([]);
-      setSelectedType(null);
-      setStage('ask-type');
+      setStage('pick-domain');
     }
   };
 
   const handleBegin = async () => {
-    if (!selectedCategory) return;
+    if (!selectedCategory || !selectedType) return;
     setStarting(true);
     setStartError('');
     try {
@@ -290,23 +294,56 @@ const GoalSelection = () => {
     }
   };
 
-  const trail = messages.filter((m) => m.from === 'user').map((m) => m.text);
-  const currentPrompt = [...messages].reverse().find((m) => m.from === 'bot')?.text;
+  const renderTypeCards = (onPick, suggested = null) => (
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+      {INTERVIEW_TYPES.map((type) => {
+        const Icon = { Briefcase, Users, Compass, Code2 }[type.icon] || Briefcase;
+        const isSuggested = suggested === type.id;
+        return (
+          <button
+            key={type.id}
+            onClick={() => onPick(type.id)}
+            className="c-card c-card-hover rounded-lg p-5 text-left flex flex-col justify-between gap-4 transition-all group relative overflow-hidden"
+            style={{ background: 'var(--c-surface-card)', borderColor: isSuggested ? 'var(--c-accent)' : 'var(--c-border)' }}
+          >
+            <div className="flex items-center justify-between">
+              <div className="w-8 h-8 rounded flex items-center justify-center border transition-colors group-hover:border-orange-500/50"
+                style={{ background: 'var(--c-surface-muted)', borderColor: 'var(--c-border)', color: 'var(--c-text)' }}
+              >
+                <Icon className="w-4 h-4" />
+              </div>
+              {isSuggested && <span className="c-badge c-badge-accent text-[11px] font-semibold">Suggested</span>}
+            </div>
+            <div>
+              <span className="text-xs font-bold block group-hover:text-orange-500 transition-colors" style={{ color: 'var(--c-text)' }}>
+                {type.label}
+              </span>
+              <span className="text-[11px] block mt-0.5" style={{ color: 'var(--c-text-muted)' }}>
+                {TYPE_BLURB[type.id]}
+              </span>
+            </div>
+          </button>
+        );
+      })}
+    </div>
+  );
+
+  const domainOptions = suggestionIds.length
+    ? suggestionIds.map((sid) => categories.find((c) => c.id === sid)).filter(Boolean)
+    : categories;
 
   return (
     <InterviewFlowLayout step="goal">
-      <div className="py-6 sm:py-10 space-y-8">
-        
+      <div className="py-6 sm:py-10 space-y-6">
+
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
           <div className="lg:col-span-8">
             <h1 className="c-heading text-2xl sm:text-3xl font-bold" style={{ color: 'var(--c-text)' }}>
-              {currentPrompt}
+              Set up your practice interview
             </h1>
-            {stage !== 'confirm' && (
-              <p className="text-xs sm:text-sm mt-1" style={{ color: 'var(--c-text-secondary)' }}>
-                Choose a field and we'll pick five interview questions for it.
-              </p>
-            )}
+            <p className="text-xs sm:text-sm mt-1" style={{ color: 'var(--c-text-secondary)' }}>
+              Tell the assistant your goal. It picks five questions for your field and the kind of interview you choose.
+            </p>
           </div>
           <div className="hidden lg:block lg:col-span-4">
             <div className="relative rounded-lg overflow-hidden border aspect-video group"
@@ -318,15 +355,35 @@ const GoalSelection = () => {
           </div>
         </div>
 
-        {trail.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2">
-            {trail.map((t, i) => (
-              <span key={i} className="c-badge c-badge-muted font-semibold text-xs">
-                {t}
-              </span>
-            ))}
-          </div>
-        )}
+        {/* Chat thread (FR 7-01: text-based chatbot) */}
+        <div
+          className="rounded-lg border p-4 space-y-2.5 max-h-80 overflow-y-auto"
+          style={{ background: 'var(--c-surface-card)', borderColor: 'var(--c-border)' }}
+          role="log"
+          aria-live="polite"
+          aria-label="Interview setup assistant"
+        >
+          {messages.map((m, i) => (
+            <div key={i} className={`flex ${m.from === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div
+                className="max-w-[85%] rounded-lg px-3.5 py-2 text-xs sm:text-sm leading-relaxed"
+                style={m.from === 'user'
+                  ? { background: 'var(--c-accent)', color: '#fff' }
+                  : { background: 'var(--c-surface-muted)', color: 'var(--c-text)', border: '1px solid var(--c-border)' }}
+              >
+                {m.text}
+              </div>
+            </div>
+          ))}
+          {interpreting && (
+            <div className="flex justify-start">
+              <div className="rounded-lg px-3.5 py-2 text-xs flex items-center gap-2" style={{ background: 'var(--c-surface-muted)', color: 'var(--c-text-muted)', border: '1px solid var(--c-border)' }}>
+                <span className="w-3 h-3 border-2 rounded-full animate-spin" style={{ borderColor: 'var(--c-accent)', borderTopColor: 'transparent' }} />
+                Finding the best match…
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Content Area */}
         <div>
@@ -340,70 +397,15 @@ const GoalSelection = () => {
               <AlertCircle className="w-6 h-6 text-red-500" />
               <p className="text-sm font-medium" style={{ color: 'var(--c-text-secondary)' }}>{categoriesError}</p>
             </div>
-          ) : interpreting ? (
-            <div role="status" aria-live="polite" className="flex items-center gap-3 py-12">
-              <div className="w-5 h-5 border-2 rounded-full animate-spin shrink-0" style={{ borderColor: 'var(--c-accent)', borderTopColor: 'transparent' }} />
-              <div>
-                <p className="text-sm font-semibold" style={{ color: 'var(--c-text)' }}>
-                  Finding the best match for “{searchingFor}”…
-                </p>
-                <p className="text-xs mt-0.5" style={{ color: 'var(--c-text-muted)' }}>
-                  This usually takes a few seconds.
-                </p>
-              </div>
-            </div>
-          ) : (
+          ) : interpreting ? null : (
             <>
-              {/* LEVEL 3 — Standalone Selectable Track Cards */}
-              {stage === 'ask-goal' && (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-                  {INTERVIEW_TYPES.map((type) => {
-                    const Icon = { Briefcase, Users, Compass, Code2 }[type.icon] || Briefcase;
-                    return (
-                      <button
-                        key={type.id}
-                        onClick={() => chooseType(type.id)}
-                        className="c-card c-card-hover rounded-lg p-5 text-left flex flex-col justify-between gap-4 transition-all group relative overflow-hidden"
-                        style={{
-                          background: 'var(--c-surface-card)',
-                          borderColor: 'var(--c-border)',
-                        }}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="w-8 h-8 rounded flex items-center justify-center border transition-colors group-hover:border-orange-500/50"
-                            style={{
-                              background: 'var(--c-surface-muted)',
-                              borderColor: 'var(--c-border)',
-                              color: 'var(--c-text)',
-                            }}
-                          >
-                            <Icon className="w-4 h-4" />
-                          </div>
-                        </div>
-                        <div>
-                          <span className="text-xs font-bold block group-hover:text-orange-500 transition-colors" style={{ color: 'var(--c-text)' }}>
-                            {type.label}
-                          </span>
-                          <span className="text-[11px] block mt-0.5" style={{ color: 'var(--c-text-muted)' }}>
-                            {type.id === 'technical'
-                              ? 'Domain expertise & role-specific skills'
-                              : type.id === 'behavioral'
-                              ? 'Leadership, ethics & team collaboration'
-                              : 'Real workplace scenarios & decision-making'}
-                          </span>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
+              {stage === 'ask-goal' && renderTypeCards(chooseTypeFirst)}
 
-              {stage === 'ask-type' && (
+              {stage === 'ask-interview-type' && renderTypeCards(chooseInterviewType, suggestedType)}
+
+              {stage === 'pick-domain' && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {(suggestionIds.length
-                    ? suggestionIds.map((sid) => categories.find((c) => c.id === sid)).filter(Boolean)
-                    : selectedType ? getCategoriesByType(categories, selectedType) : categories
-                  ).map((cat) => {
+                  {domainOptions.map((cat) => {
                     const Icon = getCategoryDisplayIcon(cat);
                     const Schematic = getDomainSchematic(cat.name);
                     return (
@@ -411,18 +413,11 @@ const GoalSelection = () => {
                         key={cat.id}
                         onClick={() => chooseCategory(cat)}
                         className="c-card c-card-hover rounded-lg p-4 text-left flex items-center justify-between gap-3.5 transition-all group"
-                        style={{
-                          background: 'var(--c-surface-card)',
-                          borderColor: 'var(--c-border)',
-                        }}
+                        style={{ background: 'var(--c-surface-card)', borderColor: 'var(--c-border)' }}
                       >
                         <div className="flex items-center gap-3 min-w-0">
                           <div className="w-8 h-8 rounded flex items-center justify-center shrink-0 border transition-colors group-hover:border-orange-500/50"
-                            style={{
-                              background: 'var(--c-surface-muted)',
-                              borderColor: 'var(--c-border)',
-                              color: 'var(--c-text)',
-                            }}
+                            style={{ background: 'var(--c-surface-muted)', borderColor: 'var(--c-border)', color: 'var(--c-text)' }}
                           >
                             <Icon className="w-4 h-4" />
                           </div>
@@ -444,10 +439,7 @@ const GoalSelection = () => {
               {stage === 'confirm' && (
                 <div className="space-y-5 pt-2">
                   <div className="p-4 rounded-lg border flex items-center gap-3.5"
-                    style={{
-                      background: 'var(--c-surface-card)',
-                      borderColor: 'var(--c-border)',
-                    }}
+                    style={{ background: 'var(--c-surface-card)', borderColor: 'var(--c-border)' }}
                   >
                     <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
                     <div>
@@ -457,17 +449,27 @@ const GoalSelection = () => {
                           ? `${customRole} (${selectedCategory?.name})`
                           : selectedCategory?.name}
                       </p>
+                      <p className="text-xs mt-0.5" style={{ color: 'var(--c-text-secondary)' }}>{typeLabel(selectedType)}</p>
                     </div>
                   </div>
 
-                  <button
-                    onClick={handleBegin}
-                    disabled={starting}
-                    className="c-btn c-btn-primary px-6 py-3 text-xs font-bold rounded-md w-full sm:w-auto flex items-center justify-center gap-2"
-                  >
-                    <span>{starting ? 'Starting…' : 'Continue'}</span>
-                    {!starting && <ArrowRight className="w-3.5 h-3.5" />}
-                  </button>
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <button
+                      onClick={handleBegin}
+                      disabled={starting}
+                      className="c-btn c-btn-primary px-6 py-3 text-xs font-bold rounded-md w-full sm:w-auto flex items-center justify-center gap-2"
+                    >
+                      <span>{starting ? 'Starting…' : 'Continue'}</span>
+                      {!starting && <ArrowRight className="w-3.5 h-3.5" />}
+                    </button>
+                    <button
+                      onClick={() => { pushBot('Sure. Which kind of interview would you like instead?'); setStage('ask-interview-type'); }}
+                      disabled={starting}
+                      className="c-btn c-btn-secondary px-4 py-3 text-xs font-semibold rounded-md w-full sm:w-auto"
+                    >
+                      Change interview type
+                    </button>
+                  </div>
 
                   {startError && (
                     <p className="text-xs font-semibold flex items-center gap-1.5 text-red-500">
@@ -481,21 +483,22 @@ const GoalSelection = () => {
           )}
         </div>
 
-        {/* Search input bar */}
-        {!categoriesLoading && !categoriesError && stage !== 'confirm' && (
+        {/* Message input */}
+        {!categoriesLoading && !categoriesError && (stage === 'ask-goal' || stage === 'pick-domain') && (
           <div className="flex items-center gap-2 pt-2 border-t" style={{ borderColor: 'var(--c-border)' }}>
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-              placeholder="Or enter any role or domain — e.g., Doctor, Nurse, Teacher, Accountant, Lawyer, React..."
+              placeholder="Type your goal, e.g. 'I have a nursing interview next week' or 'React developer'"
               disabled={interpreting}
+              aria-label="Message the interview setup assistant"
               className="c-input flex-1 min-w-0 px-3.5 py-2.5 rounded-md text-xs disabled:opacity-60"
             />
             <button onClick={handleSend} disabled={interpreting} className="c-btn c-btn-secondary shrink-0 px-4 py-2.5 rounded-md text-xs font-semibold flex items-center gap-2">
               {interpreting && <span className="w-3 h-3 border-2 rounded-full animate-spin" style={{ borderColor: 'currentColor', borderTopColor: 'transparent' }} />}
-              {interpreting ? 'Searching…' : 'Go'}
+              {interpreting ? 'Searching…' : 'Send'}
             </button>
           </div>
         )}
@@ -505,5 +508,3 @@ const GoalSelection = () => {
 };
 
 export default GoalSelection;
-
-

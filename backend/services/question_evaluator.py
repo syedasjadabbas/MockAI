@@ -192,7 +192,7 @@ def evaluate_question_response(
     asr_data = {
         "status": asr_status or ("completed" if transcript else "empty"),
         "transcript": transcript,
-        "provider": asr_provider or ("google_speech" if transcript else None),
+        "provider": asr_provider or None,
         "error": None,
     }
     if is_typed:
@@ -208,7 +208,7 @@ def evaluate_question_response(
         "covered_concepts": nlp_result["covered_concepts"],
         "missing_concepts": nlp_result["missing_concepts"],
         "notes": nlp_result["notes"],
-        "model": nlp_result.get("model", "bert-distilbert-minilm-v2"),
+        "model": nlp_result.get("model", "unknown"),
         "error": nlp_result.get("error"),
         # FR16-01: language quality / grammar / tone (services/language_analyzer.py)
         "language_quality_score": language_result.get("language_quality_score"),

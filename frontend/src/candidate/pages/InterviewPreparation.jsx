@@ -15,7 +15,8 @@ import InterviewFlowLayout from '../layouts/InterviewFlowLayout';
 import CandidateEmptyState from '../components/CandidateEmptyState';
 import { getActiveInterview, recordConsent } from '../services/candidateApi';
 import { CANDIDATE_IMAGES } from '../assets/images';
-import { CornerReticles, OpticalLensReticle, LiveAudioWaveform } from '../components/TechnicalDoodles';
+import { CornerReticles, OpticalLensReticle } from '../components/TechnicalDoodles';
+import AudioLevelMeter from '../components/AudioLevelMeter';
 
 const InterviewPreparation = () => {
   const { id } = useParams();
@@ -28,8 +29,15 @@ const InterviewPreparation = () => {
   const [cameraStatus, setCameraStatus] = useState('idle');
   const [micStatus, setMicStatus] = useState('idle');
   const [permissionError, setPermissionError] = useState('');
-  // NFR 10 - explicit consent is required before the mic/webcam are activated
-  const [consentGiven, setConsentGiven] = useState(false);
+  // NFR 10 - explicit, separate consent for each device before it is
+  // activated. The microphone is needed for spoken answers; the camera is
+  // optional (without it the interview is voice-only).
+  const [micConsent, setMicConsent] = useState(false);
+  const [cameraConsent, setCameraConsent] = useState(false);
+  // NFR 11 - optional, separate permission to reuse recordings to improve
+  // MockAI's accuracy. Off by default; assessment works without it.
+  const [researchConsent, setResearchConsent] = useState(false);
+  const [mediaStream, setMediaStream] = useState(null);
   const [continuingTextOnly, setContinuingTextOnly] = useState(false);
   const [savingConsent, setSavingConsent] = useState(false);
 
@@ -62,21 +70,22 @@ const InterviewPreparation = () => {
 
   // Request real Camera & Microphone access via Web APIs
   const requestPermissions = async () => {
-    if (!consentGiven) {
-      setPermissionError('Please confirm your recording consent before enabling the camera and microphone.');
+    if (!micConsent) {
+      setPermissionError('Please confirm microphone consent before enabling your devices.');
       return;
     }
     setPermissionError('');
-    setCameraStatus('prompting');
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+    }
+    setCameraStatus(cameraConsent ? 'prompting' : 'idle');
     setMicStatus('prompting');
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-          facingMode: 'user',
-        },
+        video: cameraConsent
+          ? { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' }
+          : false,
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
@@ -85,13 +94,9 @@ const InterviewPreparation = () => {
       });
 
       streamRef.current = stream;
-      setCameraStatus('granted');
+      setMediaStream(stream);
+      setCameraStatus(cameraConsent ? 'granted' : 'idle');
       setMicStatus('granted');
-
-      // Attach video stream to live viewfinder
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
 
     } catch (err) {
       console.error('Media permission error:', err);
@@ -113,6 +118,15 @@ const InterviewPreparation = () => {
     }
   };
 
+  // The <video> element only exists once the camera is granted, so the
+  // stream is attached after that render (attaching it inside
+  // requestPermissions found no element and left the preview blank).
+  useEffect(() => {
+    if (cameraStatus === 'granted' && videoRef.current && mediaStream) {
+      videoRef.current.srcObject = mediaStream;
+    }
+  }, [cameraStatus, mediaStream]);
+
   // Clean up media streams on unmount
   useEffect(() => {
     return () => {
@@ -128,7 +142,7 @@ const InterviewPreparation = () => {
     setSavingConsent(true);
     setPermissionError('');
     try {
-      await recordConsent(id, { microphone: true, camera: true });
+      await recordConsent(id, { microphone: true, camera: cameraConsent, researchUse: researchConsent });
     } catch (e) {
       setPermissionError(e.message || 'Could not save your recording consent. Please try again.');
       setSavingConsent(false);
@@ -137,7 +151,7 @@ const InterviewPreparation = () => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
     }
-    navigate(`/interview/${id}/session`);
+    navigate(`/interview/${id}/session`, { state: { voiceOnly: !cameraConsent } });
   };
 
   // Objective 1 - answer by typing instead of speaking. No camera or
@@ -148,7 +162,7 @@ const InterviewPreparation = () => {
       streamRef.current.getTracks().forEach((track) => track.stop());
     }
     try {
-      await recordConsent(id, { microphone: false, camera: false });
+      await recordConsent(id, { microphone: false, camera: false, researchUse: researchConsent });
     } catch (e) {
       console.warn('Consent record notice:', e);
     }
@@ -171,7 +185,7 @@ const InterviewPreparation = () => {
   const questionCount = interview.questions?.length || 5;
   const minDuration = Math.round(questionCount * 1.5);
   const maxDuration = Math.round(questionCount * 2.5);
-  const readyToBegin = cameraStatus === 'granted' && micStatus === 'granted';
+  const readyToBegin = micStatus === 'granted' && (!cameraConsent || cameraStatus === 'granted');
 
   return (
     <InterviewFlowLayout step="prepare">
@@ -232,10 +246,12 @@ Check that your camera and microphone work and that your face is well lit, then 
                   </div>
                   <div className="relative z-10 space-y-0.5">
                     <p className="text-xs font-bold" style={{ color: 'var(--c-text)' }}>
-                      Camera and microphone are off
+                      {micStatus === 'granted' ? 'Voice-only interview' : 'Camera and microphone are off'}
                     </p>
                     <p className="text-[11px] max-w-xs" style={{ color: 'var(--c-text-muted)' }}>
-                      Turn them on below to check your framing and sound.
+                      {micStatus === 'granted'
+                        ? 'Your microphone is on. The camera stays off, so no video is recorded and facial analysis is skipped.'
+                        : 'Turn them on below to check your framing and sound.'}
                     </p>
                   </div>
                 </div>
@@ -253,8 +269,8 @@ Check that your camera and microphone work and that your face is well lit, then 
                 >
                   {cameraStatus === 'granted' ? 'Camera on' : 'Camera off'}
                 </span>
-                {cameraStatus === 'granted' && micStatus === 'granted' && (
-                  <LiveAudioWaveform bars={8} height={14} color="var(--c-accent)" />
+                {micStatus === 'granted' && (
+                  <AudioLevelMeter stream={mediaStream} bars={8} height={14} color="var(--c-accent)" />
                 )}
               </div>
 
@@ -265,7 +281,7 @@ Check that your camera and microphone work and that your face is well lit, then 
                     style={{ background: 'var(--c-surface-card)', borderColor: 'var(--c-border)', color: 'var(--c-text)' }}
                   >
                     <Mic className="w-3.5 h-3.5 text-[var(--c-text-muted)] shrink-0" />
-                    <LiveAudioWaveform bars={12} height={12} color="var(--c-accent)" />
+                    <AudioLevelMeter stream={mediaStream} bars={12} height={12} color="var(--c-accent)" />
                   </div>
                 </div>
               )}
@@ -309,6 +325,8 @@ Check that your camera and microphone work and that your face is well lit, then 
                       <span className="c-badge c-badge-danger flex items-center gap-1">
                         <AlertCircle className="w-3 h-3" /> Blocked
                       </span>
+                    ) : micStatus === 'granted' && !cameraConsent ? (
+                      <span className="c-badge c-badge-muted">Off (voice only)</span>
                     ) : (
                       <span className="c-badge c-badge-muted">Pending</span>
                     )}
@@ -359,31 +377,47 @@ Check that your camera and microphone work and that your face is well lit, then 
                 </div>
               )}
 
-              {/* NFR 10 - Consent-Based Recording */}
+              {/* NFR 10 - Consent-Based Recording: separate consent per device */}
               {!readyToBegin && (
-                <label
-                  className="flex items-start gap-3 rounded-md border p-3 text-xs cursor-pointer"
-                  style={{
-                    borderColor: consentGiven ? 'var(--c-accent)' : 'var(--c-border)',
-                    background: 'var(--c-surface-muted)',
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={consentGiven}
-                    onChange={(e) => {
-                      setConsentGiven(e.target.checked);
-                      if (e.target.checked) setPermissionError('');
-                    }}
-                    className="mt-0.5 h-4 w-4 shrink-0 accent-orange-500"
-                  />
-                  <span className="leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                    <strong style={{ color: 'var(--c-text)' }}>Recording consent.</strong>{' '}
-                    I agree that MockAI may record my microphone audio and webcam video while I am answering each
-                    question. Recordings are used only to assess this practice interview and are never used for
-                    hiring decisions. A red REC indicator is shown whenever recording is active.
-                  </span>
-                </label>
+                <div className="space-y-2">
+                  {[
+                    {
+                      key: 'mic', checked: micConsent, onChange: setMicConsent, required: true,
+                      title: 'Microphone consent (required to speak your answers).',
+                      text: 'MockAI may record my microphone audio while I am answering a question, to transcribe and assess my answer.',
+                    },
+                    {
+                      key: 'camera', checked: cameraConsent, onChange: setCameraConsent, required: false,
+                      title: 'Camera consent (optional).',
+                      text: 'MockAI may record my webcam video while I am answering, to give feedback on facial expression and camera presence. Leave this unticked for a voice-only interview.',
+                    },
+                    {
+                      key: 'research', checked: researchConsent, onChange: setResearchConsent, required: false,
+                      title: 'Help improve MockAI (optional).',
+                      text: 'My recordings and transcripts may also be used, without my name, to check and improve the accuracy of MockAI. Without this, they are used only to assess this interview.',
+                    },
+                  ].map((c) => (
+                    <label
+                      key={c.key}
+                      className="flex items-start gap-3 rounded-md border p-3 text-xs cursor-pointer"
+                      style={{ borderColor: c.checked ? 'var(--c-accent)' : 'var(--c-border)', background: 'var(--c-surface-muted)' }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={c.checked}
+                        onChange={(e) => { c.onChange(e.target.checked); if (e.target.checked) setPermissionError(''); }}
+                        className="mt-0.5 h-4 w-4 shrink-0 accent-orange-500"
+                        aria-required={c.required}
+                      />
+                      <span className="leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
+                        <strong style={{ color: 'var(--c-text)' }}>{c.title}</strong>{' '}{c.text}
+                      </span>
+                    </label>
+                  ))}
+                  <p className="text-[11px] leading-relaxed" style={{ color: 'var(--c-text-muted)' }}>
+                    A red REC indicator is shown whenever recording is active. Your results are practice feedback, never a hiring decision.
+                  </p>
+                </div>
               )}
 
               <div className="pt-2 space-y-2">
@@ -391,11 +425,11 @@ Check that your camera and microphone work and that your face is well lit, then 
                   <>
                     <button 
                       onClick={requestPermissions}
-                      disabled={!consentGiven}
+                      disabled={!micConsent}
                       className="c-btn c-btn-primary w-full py-3 text-xs font-bold rounded-md flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <RefreshCw className="w-3.5 h-3.5" />
-                      <span>Turn on camera and microphone</span>
+                      <span>{cameraConsent ? 'Turn on camera and microphone' : 'Turn on microphone (voice only)'}</span>
                     </button>
                     <button
                       onClick={handleTextOnly}
@@ -482,7 +516,7 @@ Check that your camera and microphone work and that your face is well lit, then 
                   <div>
                     <p className="font-bold" style={{ color: 'var(--c-text)' }}>Manual Capture</p>
                     <p className="text-[11px] leading-relaxed mt-0.5" style={{ color: 'var(--c-text-secondary)' }}>
-                      Recording is active only while answering each take.
+                      Audio and video are recorded only while you answer, for up to 3 minutes per answer.
                     </p>
                   </div>
                 </div>
@@ -496,7 +530,7 @@ Check that your camera and microphone work and that your face is well lit, then 
                 <span className="font-bold text-[11px]" style={{ color: 'var(--c-text)' }}>Your privacy</span>
               </div>
               <p className="text-[11px] leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                Recording only runs while you answer a question. Your recordings are used only to evaluate this interview.
+                Audio and video are recorded only while you answer a question. If your camera is on, the preview stays on between answers so we can warn you when you leave the frame; those still frames are checked instantly and never stored. Recordings are used only to evaluate this interview unless you tick the optional improvement box, and you can delete them from your results page at any time.
               </p>
             </div>
 

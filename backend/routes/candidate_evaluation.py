@@ -72,7 +72,8 @@ def start_evaluation(
         raise HTTPException(status_code=400, detail="The interview must be completed before evaluation can start")
 
     current_status = interview.get("evaluation_status", "pending_evaluation")
-    if current_status != "pending_evaluation":
+    # NFR 7-03 - a failed evaluation can be retried from the saved answers.
+    if current_status not in ("pending_evaluation", "failed"):
         raise HTTPException(status_code=400, detail=f"Evaluation cannot be started from its current state: {current_status}")
 
     now = datetime.utcnow()

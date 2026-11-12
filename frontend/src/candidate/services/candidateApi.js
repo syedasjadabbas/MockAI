@@ -52,7 +52,15 @@ function toFrontendInterview(doc) {
     questions: (doc.questions || []).map(toFrontendQuestion),
     responses: doc.responses || [],
     recordingConsent: doc.recording_consent || null,
+    hasRecordings: !!doc.has_recordings,
+    recordingsDeletedAt: doc.recordings_deleted_at || null,
   };
+}
+
+// NFR 11 - delete the audio/video of an evaluated interview. Scores,
+// transcripts and feedback are kept.
+export async function deleteRecordings(interviewId) {
+  return fetchCandidateApi(`/interviews/${interviewId}/recordings`, { method: 'DELETE' });
 }
 
 // ---------------------------------------------------------------------------
@@ -100,7 +108,11 @@ export async function getActiveInterview(id) {
 // instead of silently treating the response as saved.
 export async function submitResponse(interviewId, questionId, response) {
   const formData = new FormData();
-  formData.append('file', response.blob, 'response.webm');
+  // The extension follows the recorder's real container: Chrome/Firefox
+  // record WebM, Safari records MP4 (NFR 14).
+  const type = (response.blob.type || '').toLowerCase();
+  const ext = type.includes('mp4') ? 'mp4' : 'webm';
+  formData.append('file', response.blob, `response.${ext}`);
   if (response.durationSeconds != null) {
     formData.append('duration_seconds', String(response.durationSeconds));
   }
@@ -135,10 +147,10 @@ export async function checkCameraPresence(interviewId, frameBlob) {
 }
 
 // NFR 10 - stores the candidate's explicit recording consent decision.
-export async function recordConsent(interviewId, { microphone, camera }) {
+export async function recordConsent(interviewId, { microphone, camera, researchUse = false }) {
   const doc = await fetchCandidateApi(`/interviews/${interviewId}/consent`, {
     method: 'POST',
-    body: JSON.stringify({ microphone, camera }),
+    body: JSON.stringify({ microphone, camera, research_use: !!researchUse }),
   });
   return toFrontendInterview(doc);
 }

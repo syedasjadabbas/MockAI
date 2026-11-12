@@ -17,7 +17,8 @@ const Dashboard = () => {
     totalInterviews: cachedStats?.total_interviews || 0,
     totalResponses: cachedStats?.total_responses || 0,
     averageScore: cachedStats?.average_score || 0,
-    averageStress: cachedStats?.average_stress || 0
+    averageStress: cachedStats?.average_stress || 0,
+    averageConfidence: cachedStats?.average_confidence || 0
   }));
 
   const [recentInterviews, setRecentInterviews] = useState(() => {
@@ -38,7 +39,8 @@ const Dashboard = () => {
     scoreBuckets: cachedStats?.score_buckets || { high: 0, medium: 0, low: 0, none: 0 },
     statusBuckets: cachedStats?.status_buckets || { completed: 0, progress: 0, pending: 0 },
     insights: cachedStats?.insights || ["Overall candidate evaluation metrics are stable."],
-    participation: cachedStats?.participation || null
+    participation: cachedStats?.participation || null,
+    behavioral: cachedStats?.behavioral_summary || null
   }));
 
   const [loading, setLoading] = useState(!hasCached);
@@ -68,13 +70,15 @@ const Dashboard = () => {
             totalInterviews: statsData.total_interviews || 0,
             totalResponses: statsData.total_responses || 0,
             averageScore: statsData.average_score || 0,
-            averageStress: statsData.average_stress || 0
+            averageStress: statsData.average_stress || 0,
+            averageConfidence: statsData.average_confidence || 0
           });
           setChartsData({
             scoreBuckets: statsData.score_buckets || { high: 0, medium: 0, low: 0, none: 0 },
             statusBuckets: statsData.status_buckets || { completed: 0, progress: 0, pending: 0 },
             insights: statsData.insights || ["Overall candidate evaluation metrics are stable."],
-            participation: statsData.participation || null
+            participation: statsData.participation || null,
+            behavioral: statsData.behavioral_summary || null
           });
         }
 
@@ -106,7 +110,7 @@ const Dashboard = () => {
     };
   }, []);
 
-  const { totalUsers, totalInterviews, totalResponses, averageScore: avgPerformance, averageStress } = stats;
+  const { totalUsers, totalInterviews, totalResponses, averageScore: avgPerformance, averageStress, averageConfidence } = stats;
 
   if (loading) {
     return (
@@ -151,7 +155,7 @@ const Dashboard = () => {
           title="Avg. Performance" 
           value={`${avgPerformance}%`} 
           icon={TrendingUp} 
-          subtitle={`Avg. Stress: ${averageStress}%`}
+          subtitle={`Avg. Confidence: ${averageConfidence}% · Avg. Stress: ${averageStress}%`}
         />
       </div>
 
@@ -186,6 +190,11 @@ const Dashboard = () => {
           </ul>
         </div>
       </div>
+
+      {/* FR 36-02 - behavioural insights across candidates */}
+      {chartsData.behavioral && chartsData.behavioral.evaluated_interviews > 0 && (
+        <BehavioralSummaryPanel summary={chartsData.behavioral} />
+      )}
 
       {/* Participation Trends (FR 35) */}
       {chartsData.participation && <ParticipationTrendChart participation={chartsData.participation} />}
@@ -270,3 +279,63 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+
+const LevelBars = ({ title, levels, order }) => {
+  const total = order.reduce((sum, k) => sum + (levels?.[k] || 0), 0) || 1;
+  return (
+    <div className="space-y-2">
+      <p className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">{title}</p>
+      {order.map((k) => (
+        <div key={k} className="flex items-center gap-2 text-xs">
+          <span className="w-24 shrink-0 text-[var(--text-secondary)]">{k}</span>
+          <div className="flex-1 h-2 rounded-full bg-[var(--bg-table-header)] overflow-hidden">
+            <div className="h-full rounded-full bg-orange-500" style={{ width: `${Math.round(((levels?.[k] || 0) / total) * 100)}%` }} />
+          </div>
+          <span className="w-8 text-right font-mono text-[var(--text-primary)]">{levels?.[k] || 0}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const BehavioralSummaryPanel = ({ summary }) => {
+  const dims = summary.dimension_averages || {};
+  const counts = summary.dimension_counts || {};
+  const area = (label, key) => (
+    <div className="p-3 rounded-xl border border-[var(--border-table)] bg-[var(--bg-table-header)]">
+      <p className="text-xs text-[var(--text-muted)]">{label}</p>
+      <p className="text-lg font-bold text-[var(--text-primary)]">{dims[key] != null ? `${dims[key]}%` : '-'}</p>
+      <p className="text-[11px] text-[var(--text-muted)]">{counts[key] || 0} interviews measured</p>
+    </div>
+  );
+  return (
+    <div className="glass-card p-6 rounded-2xl space-y-5 hover:border-orange-500/30 transition-all duration-300">
+      <div>
+        <h3 className="text-base sm:text-lg font-bold text-[var(--text-primary)]">Behavioural Insights Across Candidates</h3>
+        <p className="text-xs text-[var(--text-muted)] mt-0.5">
+          From {summary.evaluated_interviews} evaluated interviews. Parts that could not be assessed are left out, not counted as zero.
+        </p>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {area('What candidates said', 'technical_content')}
+        {area('How they said it', 'communication_fluency')}
+        {area('On camera', 'behavioral_composure')}
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <LevelBars title="Confidence" levels={summary.confidence_levels} order={['High', 'Moderate', 'Developing', 'Low', 'Not Assessed']} />
+        <LevelBars title="Stress" levels={summary.stress_levels} order={['Low', 'Moderate', 'Elevated', 'Not Assessed']} />
+        <div className="space-y-2 text-xs">
+          <p className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">Speaking & expression</p>
+          <p className="text-[var(--text-secondary)]">Average pace: <span className="font-bold text-[var(--text-primary)]">{summary.average_wpm != null ? `${summary.average_wpm} WPM` : '-'}</span></p>
+          <p className="text-[var(--text-secondary)]">Average hesitation: <span className="font-bold text-[var(--text-primary)]">{summary.average_hesitation_rate != null ? `${summary.average_hesitation_rate}%` : '-'}</span></p>
+          <p className="text-[var(--text-secondary)]">
+            Most common expression:{' '}
+            <span className="font-bold text-[var(--text-primary)]">
+              {(summary.common_expressions || []).length ? summary.common_expressions.map(([e, n]) => `${e} (${n})`).join(', ') : '-'}
+            </span>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};

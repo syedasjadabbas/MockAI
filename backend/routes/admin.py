@@ -400,7 +400,13 @@ def get_admin_dashboard(token_payload: dict = Depends(verify_admin)):
     insights = insights[:3]
 
     participation = _participation_trends(days=30)
-    
+    behavioral_summary = _behavioral_summary()
+    if behavioral_summary["evaluated_interviews"]:
+        common_stress = max(behavioral_summary["stress_levels"].items(), key=lambda kv: kv[1])
+        if common_stress[1] and common_stress[0] != "Not Assessed":
+            insights.append(f"Most assessed candidates show {common_stress[0].lower()} stress.")
+        insights = insights[:4]
+
     result = {
         "participation": participation,
         "total_users": total_users,
@@ -411,10 +417,61 @@ def get_admin_dashboard(token_payload: dict = Depends(verify_admin)):
         "average_stress": average_stress,
         "score_buckets": score_buckets,
         "status_buckets": status_buckets,
-        "insights": insights
+        "insights": insights,
+        "behavioral_summary": behavioral_summary,
     }
     set_cached("dashboard_stats", result, ttl_seconds=15)
     return result
+
+
+def _behavioral_summary() -> dict:
+    """FR 36-02 - behavioural insights across all candidates: average score
+    per area, how confidence and stress are distributed, speaking habits and
+    the most common facial expression. Only assessed values are counted."""
+    projection = {
+        "evaluation.dimension_scores": 1, "evaluation.confidence_level": 1, "evaluation.stress_level": 1,
+        "evaluation.facial_summary.status": 1, "evaluation.facial_summary.dominant_expression": 1,
+        "evaluation.aggregate_analysis.compiled_metrics.communication": 1,
+    }
+    dims = {"technical_content": [], "communication_fluency": [], "behavioral_composure": []}
+    confidence = {"High": 0, "Moderate": 0, "Developing": 0, "Low": 0, "Not Assessed": 0}
+    stress = {"Low": 0, "Moderate": 0, "Elevated": 0, "Not Assessed": 0}
+    expressions: dict = {}
+    wpm, hesitation = [], []
+    count = 0
+    for doc in interviews_collection.find({"evaluation_status": "completed"}, projection):
+        ev = doc.get("evaluation") or {}
+        count += 1
+        ds = ev.get("dimension_scores") or {}
+        comm = ((ev.get("aggregate_analysis") or {}).get("compiled_metrics") or {}).get("communication") or {}
+        facial = ev.get("facial_summary") or {}
+        if ds.get("technical_content") is not None:
+            dims["technical_content"].append(float(ds["technical_content"]))
+        if comm.get("avg_wpm"):
+            dims["communication_fluency"].append(float(ds.get("communication_fluency") or 0))
+            wpm.append(float(comm["avg_wpm"]))
+            if comm.get("avg_hesitation_rate") is not None:
+                hesitation.append(float(comm["avg_hesitation_rate"]))
+        if facial.get("status") == "completed":
+            dims["behavioral_composure"].append(float(ds.get("behavioral_composure") or 0))
+            exp = facial.get("dominant_expression")
+            if exp and exp != "Not Observed":
+                expressions[exp] = expressions.get(exp, 0) + 1
+        c = ev.get("confidence_level") or "Not Assessed"
+        confidence[c if c in confidence else "Not Assessed"] += 1
+        s = ev.get("stress_level") or "Not Assessed"
+        stress[s if s in stress else "Not Assessed"] += 1
+    avg = lambda xs: round(sum(xs) / len(xs), 1) if xs else None
+    return {
+        "evaluated_interviews": count,
+        "dimension_averages": {k: avg(v) for k, v in dims.items()},
+        "dimension_counts": {k: len(v) for k, v in dims.items()},
+        "confidence_levels": confidence,
+        "stress_levels": stress,
+        "average_wpm": avg(wpm),
+        "average_hesitation_rate": avg(hesitation),
+        "common_expressions": sorted(expressions.items(), key=lambda kv: -kv[1])[:3],
+    }
 
 def _participation_trends(days: int = 30) -> dict:
     """
@@ -556,13 +613,84 @@ class UpdateUserRequest(BaseModel):
     name: str
     email: str
 
+
+class UserStatusRequest(BaseModel):
+    status: str  # "active" | "suspended"
+
+
+def _candidate_or_404(id: str) -> dict:
+    try:
+        obj_id = ObjectId(id)
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid user ID")
+    user = users_collection.find_one({"_id": obj_id})
+    if not user or user.get("role") != "user":
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Candidate not found")
+    return user
+
+
+def _acting_admin_email(token_payload: dict) -> str:
+    admin_user = admins_collection.find_one({"_id": ObjectId(token_payload.get("user_id"))})
+    return admin_user.get("email") if admin_user else "Unknown Admin"
+
+
 @router.put("/users/{id}")
 def update_user(id: str, user_data: UpdateUserRequest, token_payload: dict = Depends(verify_admin)):
-    raise HTTPException(status_code=403, detail="Modifying users is not allowed in this phase")
+    """Admin correction of a candidate's name or e-mail (audit logged)."""
+    from utils.validators import check_duplicate_email
+    user = _candidate_or_404(id)
+    name = (user_data.name or "").strip()
+    email = (user_data.email or "").strip().lower()
+    if len(name) < 2:
+        raise HTTPException(status_code=400, detail="Name must be at least 2 characters")
+    if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
+        raise HTTPException(status_code=400, detail="Invalid email address")
+    if email != user.get("email"):
+        check_duplicate_email(email, exclude_user_id=id)
+    users_collection.update_one({"_id": user["_id"]}, {"$set": {"name": name, "email": email, "updated_at": datetime.utcnow()}})
+    log_action("UPDATE_USER", _acting_admin_email(token_payload), f"User: {name} ({email})")
+    invalidate_cache("dashboard_stats")
+    updated = users_collection.find_one({"_id": user["_id"]}, {"password": 0})
+    updated["interview_count"] = interviews_collection.count_documents({"user_id": id})
+    return serialize_mongo(updated)
+
+
+@router.patch("/users/{id}/status")
+def set_user_status(id: str, data: UserStatusRequest, token_payload: dict = Depends(verify_admin)):
+    """Suspends or re-activates a candidate. A suspended candidate cannot sign
+    in and their existing sessions stop working (middleware/candidate_auth.py)."""
+    if data.status not in ("active", "suspended"):
+        raise HTTPException(status_code=400, detail="Status must be 'active' or 'suspended'")
+    user = _candidate_or_404(id)
+    users_collection.update_one({"_id": user["_id"]}, {"$set": {"status": data.status, "updated_at": datetime.utcnow()}})
+    action = "SUSPEND_USER" if data.status == "suspended" else "REACTIVATE_USER"
+    log_action(action, _acting_admin_email(token_payload), f"User: {user.get('name')} ({user.get('email')})", severity="warning" if data.status == "suspended" else "info")
+    updated = users_collection.find_one({"_id": user["_id"]}, {"password": 0})
+    updated["interview_count"] = interviews_collection.count_documents({"user_id": id})
+    return serialize_mongo(updated)
+
 
 @router.delete("/users/{id}")
 def delete_user(id: str, token_payload: dict = Depends(verify_admin)):
-    raise HTTPException(status_code=403, detail="Deleting users is not allowed in this phase")
+    """Deletes a candidate account and everything that belongs to it:
+    interviews, their recordings, survey answers and mentor bookings."""
+    from database import appointments_collection
+    from services.media_storage import get_media_storage
+    user = _candidate_or_404(id)
+    storage = get_media_storage()
+    interview_ids = [str(i["_id"]) for i in interviews_collection.find({"user_id": id}, {"_id": 1})]
+    for iid in interview_ids:
+        try:
+            storage.delete_interview(iid)
+        except Exception:
+            pass
+    interviews_collection.delete_many({"user_id": id})
+    surveys_collection.delete_many({"user_id": id})
+    appointments_collection.delete_many({"candidate_id": id})
+    users_collection.delete_one({"_id": user["_id"]})
+    log_action("DELETE_USER", _acting_admin_email(token_payload), f"User: {user.get('name')} ({user.get('email')}), {len(interview_ids)} interview(s)", severity="warning")
+    invalidate_cache("dashboard_stats")
+    return {"deleted": True, "interviews_deleted": len(interview_ids)}
 
 # Lightweight projection for list views (omits heavy transcript)
 INTERVIEW_LIST_PROJECTION = {
@@ -690,11 +818,32 @@ import random
 
 @router.patch("/interviews/{id}")
 def update_interview(id: str, data: UpdateInterviewRequest, token_payload: dict = Depends(verify_admin)):
-    raise HTTPException(status_code=403, detail="Modifying interviews is not allowed in this phase")
+    # NFR 17-02 - evaluation results cannot be modified by anyone, including
+    # administrators; a record can only be deleted as a whole.
+    raise HTTPException(status_code=403, detail="Interview results cannot be modified (NFR 17-02). An interview can only be deleted.")
 
 @router.delete("/interviews/{id}")
 def delete_interview(id: str, token_payload: dict = Depends(verify_admin)):
-    raise HTTPException(status_code=403, detail="Deleting interviews is not allowed in this phase")
+    """Deletes one interview record and its recordings (audit logged)."""
+    from services.media_storage import get_media_storage
+    try:
+        obj_id = ObjectId(id)
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid interview ID")
+    interview = interviews_collection.find_one({"_id": obj_id}, {"role": 1, "evaluation_status": 1, "user_id": 1})
+    if not interview:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Interview not found")
+    if interview.get("evaluation_status") == "processing":
+        raise HTTPException(status_code=409, detail="This interview is being evaluated. Try again in a minute.")
+    try:
+        get_media_storage().delete_interview(id)
+    except Exception:
+        pass
+    interviews_collection.delete_one({"_id": obj_id})
+    surveys_collection.delete_many({"interview_id": id})
+    log_action("DELETE_INTERVIEW", _acting_admin_email(token_payload), f"Interview {id} ({interview.get('role')})", severity="warning")
+    invalidate_cache("dashboard_stats")
+    return {"deleted": True}
 
 @router.get("/logs")
 def get_logs(token_payload: dict = Depends(verify_admin)):
@@ -702,18 +851,9 @@ def get_logs(token_payload: dict = Depends(verify_admin)):
     if cached is not None:
         return cached
 
+    # An empty audit trail is reported as empty - never padded with sample rows.
     logs = list(admin_logs_collection.find({}).sort("created_at", -1).limit(50))
-    if not logs:
-        # Provide dummy logs if empty
-        dummy_logs = [
-            {"action": "LOGIN", "admin_email": "admin@mockai.com", "target": "admin@mockai.com", "created_at": "2023-10-27T10:00:00Z"},
-            {"action": "UPDATE", "admin_email": "admin@mockai.com", "target": "Admin Password", "created_at": "2023-10-26T15:30:00Z"},
-            {"action": "DELETE_USER", "admin_email": "admin@mockai.com", "target": "John Doe", "created_at": "2023-10-25T09:15:00Z"},
-            {"action": "DELETE_INTERVIEW", "admin_email": "admin@mockai.com", "target": "INT-123456", "created_at": "2023-10-24T14:20:00Z"}
-        ]
-        res = [serialize_mongo(log) for log in dummy_logs]
-    else:
-        res = [serialize_mongo(log) for log in logs]
+    res = [serialize_mongo(log) for log in logs]
         
     set_cached("admin_logs_recent", res, ttl_seconds=20)
     return res
@@ -831,6 +971,9 @@ class CreateQuestionRequest(BaseModel):
     expected_answer: Optional[str] = ""
     tags: Optional[list[str]] = []
     status: Optional[str] = "active"
+    # Lower is asked first within its category and type (3.3.8: the
+    # administrator decides which questions an interview uses).
+    priority: Optional[int] = 50
 
 class UpdateQuestionRequest(BaseModel):
     category_id: Optional[str] = None
@@ -840,6 +983,7 @@ class UpdateQuestionRequest(BaseModel):
     expected_answer: Optional[str] = None
     tags: Optional[list[str]] = None
     status: Optional[str] = None
+    priority: Optional[int] = None
 
 class StatusToggleRequest(BaseModel):
     status: str
@@ -1148,6 +1292,7 @@ def create_question(data: CreateQuestionRequest, token_payload: dict = Depends(v
         "type": (data.type or "Technical").strip(),
         "expected_answer": (data.expected_answer or "").strip(),
         "tags": clean_tags,
+        "priority": max(1, min(100, int(data.priority if data.priority is not None else 50))),
         "status": status_val,
         "created_at": datetime.utcnow(),
         "updated_at": datetime.utcnow()
@@ -1204,6 +1349,8 @@ def update_question(id: str, data: UpdateQuestionRequest, token_payload: dict = 
         update_fields["expected_answer"] = data.expected_answer.strip()
     if data.tags is not None:
         update_fields["tags"] = [t.strip() for t in data.tags if isinstance(t, str) and t.strip()]
+    if data.priority is not None:
+        update_fields["priority"] = max(1, min(100, int(data.priority)))
     if data.status is not None and data.status.lower() in ["active", "archived"]:
         update_fields["status"] = data.status.lower()
         

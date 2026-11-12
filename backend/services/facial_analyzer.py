@@ -369,7 +369,7 @@ class FacialAnalyzer:
         elif candidate_mp4.is_file() and candidate_mp4.stat().st_size > 0 and candidate_mp4 != video_p:
             target_video_path = str(candidate_mp4)
             temp_normalized_path = None
-        elif is_ffmpeg_available() and target_video_path.lower().endswith(".webm"):
+        elif is_ffmpeg_available() and target_video_path.lower().endswith((".webm", ".mp4")):
             import tempfile
             try:
                 temp_fd, temp_normalized_path = tempfile.mkstemp(suffix=".mp4", prefix="mockai_norm_")

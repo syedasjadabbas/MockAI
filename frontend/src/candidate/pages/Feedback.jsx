@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { ThumbsUp, AlertTriangle, Lightbulb, History, RotateCcw, ArrowLeft, LayoutDashboard } from 'lucide-react';
+import { ThumbsUp, AlertTriangle, Lightbulb, History, RotateCcw, ArrowLeft, LayoutDashboard, Target, CalendarCheck, Info } from 'lucide-react';
 import InterviewFlowLayout from '../layouts/InterviewFlowLayout';
 import InterviewSurvey from '../components/InterviewSurvey';
 import { getInterviewById } from '../services/candidateApi';
@@ -62,12 +62,19 @@ const Feedback = () => {
             <FeedbackSection icon={ThumbsUp} tone="success" title="What you did well" items={interview.strengths} />
             <FeedbackSection icon={AlertTriangle} tone="warning" title="What to work on" items={interview.weaknesses} />
             <FeedbackSection icon={Lightbulb} tone="accent" title="Tips for your next interview" items={interview.suggestions} />
+            <PracticePlan items={interview.insights?.coaching_guidance} />
+            <FeedbackSection icon={CalendarCheck} tone="accent" title="Before your next interview" items={interview.insights?.preparation_strategies} />
           </div>
         ) : (
           <p className="text-sm" style={{ color: 'var(--c-text-secondary)' }}>
             {ready ? 'There is no written feedback for this interview.' : 'Your feedback is still being prepared. Check your results page in a minute.'}
           </p>
         )}
+
+        <p className="text-xs flex items-start gap-2 leading-relaxed" style={{ color: 'var(--c-text-muted)' }}>
+          <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+          This is practice feedback from an automated coach to help you improve. It is not a hiring decision or a prediction of any employer's decision.
+        </p>
 
         {ready && <InterviewSurvey interviewId={id} />}
 
@@ -86,6 +93,31 @@ const Feedback = () => {
         </div>
       </div>
     </InterviewFlowLayout>
+  );
+};
+
+// FR 27-02 - coaching guidance: what to practise, how, and the target.
+const PracticePlan = ({ items }) => {
+  if (!items?.length) return null;
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2 border-b pb-2" style={{ borderColor: 'var(--c-border)' }}>
+        <Target className="w-4 h-4" style={{ color: 'var(--c-accent)' }} />
+        <h2 className="c-heading text-base font-bold" style={{ color: 'var(--c-text)' }}>Your practice plan</h2>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        {items.map((g, i) => (
+          <div key={i} className="p-4 rounded-lg border space-y-1.5" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
+            <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--c-text-muted)' }}>{g.domain}</p>
+            <p className="text-sm font-bold" style={{ color: 'var(--c-text)' }}>{g.action}</p>
+            <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>{g.practice_strategy}</p>
+            {g.target_metric && (
+              <p className="text-[11px] font-semibold" style={{ color: 'var(--c-accent)' }}>Target: {g.target_metric}</p>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
   );
 };
 

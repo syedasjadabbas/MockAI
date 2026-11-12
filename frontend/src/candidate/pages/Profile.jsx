@@ -260,10 +260,57 @@ const Profile = () => {
                   <span className="c-serif-num text-xl font-bold" style={{ color: 'var(--c-text)' }}>{summary?.totalInterviews ?? '—'}</span>
                 </div>
                 <div className="flex items-baseline justify-between">
+                  <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--c-text-muted)' }}>Completed</span>
+                  <span className="c-serif-num text-xl font-bold" style={{ color: 'var(--c-text)' }}>{summary?.completedInterviews ?? '—'}</span>
+                </div>
+                <div className="flex items-baseline justify-between">
                   <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--c-text-muted)' }}>Average Score</span>
                   <span className="c-serif-num text-xl font-bold" style={{ color: 'var(--c-text)' }}>{summary?.averageScore != null ? `${Math.round(summary.averageScore)}%` : '—'}</span>
                 </div>
+                <div className="flex items-baseline justify-between">
+                  <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--c-text-muted)' }}>Best Score</span>
+                  <span className="c-serif-num text-xl font-bold" style={{ color: 'var(--c-text)' }}>{summary?.bestScore != null ? `${Math.round(summary.bestScore)}%` : '—'}</span>
+                </div>
               </div>
+
+              {/* FR 4-02 - structured interview activity summary */}
+              {summary && (summary.dimensionAverages || summary.recent?.length > 0) && (
+                <div className="border-t pt-4 space-y-3" style={{ borderColor: 'var(--c-border)' }}>
+                  <h4 className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--c-text-muted)' }}>Activity summary</h4>
+                  {summary.dimensionAverages && (
+                    <dl className="space-y-1.5 text-xs">
+                      {[
+                        ['What you said', summary.dimensionAverages.technical_content],
+                        ['How you said it', summary.dimensionAverages.communication_fluency],
+                        ['On camera', summary.dimensionAverages.behavioral_composure],
+                      ].map(([label, value]) => (
+                        <div key={label} className="flex items-center justify-between">
+                          <dt style={{ color: 'var(--c-text-secondary)' }}>{label}</dt>
+                          <dd className="font-mono font-bold" style={{ color: 'var(--c-text)' }}>{value != null ? `${Math.round(value)}%` : 'Not scored'}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  )}
+                  {summary.recent?.length > 0 && (
+                    <ul className="space-y-1.5 text-xs">
+                      {summary.recent.slice(0, 4).map((s) => (
+                        <li key={s.id}>
+                          <button
+                            type="button"
+                            onClick={() => navigate(s.status === 'Completed' ? `/interview/${s.id}/results` : `/interview/${s.id}/session`)}
+                            className="w-full flex items-center justify-between gap-2 text-left hover:underline"
+                          >
+                            <span className="truncate" style={{ color: 'var(--c-text-secondary)' }}>{s.role}</span>
+                            <span className="font-mono shrink-0" style={{ color: 'var(--c-text)' }}>
+                              {s.score != null ? `${Math.round(s.score)}%` : s.status}
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Forms Column (LEVEL 3 — Restrained form modules) */}

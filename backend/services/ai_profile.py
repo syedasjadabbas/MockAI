@@ -27,8 +27,8 @@ LITE_SENTENCE_MODEL = "all-MiniLM-L6-v2"
 
 
 def get_profile() -> str:
-    value = (os.getenv("AI_PROFILE") or LITE).strip().lower()
-    return REPORT if value == REPORT else LITE
+    value = (os.getenv("AI_PROFILE") or REPORT).strip().lower()
+    return LITE if value == LITE else REPORT
 
 
 def is_report_profile() -> bool:

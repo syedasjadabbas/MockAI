@@ -29,4 +29,16 @@ def verify_candidate(token: str = Depends(oauth2_scheme_candidate)):
     if payload.get("role") != "user":
         raise credentials_exception
 
+    # A deleted or suspended account loses access immediately, even with a
+    # token that has not expired yet.
+    from bson import ObjectId
+    from database import users_collection
+    user_id = payload.get("user_id")
+    if user_id and ObjectId.is_valid(user_id):
+        user = users_collection.find_one({"_id": ObjectId(user_id)}, {"status": 1})
+        if user is None:
+            raise credentials_exception
+        if user.get("status") == "suspended":
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="This account has been suspended. Please contact support.")
+
     return payload

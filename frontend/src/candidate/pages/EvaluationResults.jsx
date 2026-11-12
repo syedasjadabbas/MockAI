@@ -20,6 +20,9 @@ import {
   Eye,
   ShieldAlert,
   ChevronDown,
+  HelpCircle,
+  Info,
+  Trash2,
 } from 'lucide-react';
 import {
   Chart as ChartJS,
@@ -35,7 +38,7 @@ import { Bar } from 'react-chartjs-2';
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 import InterviewFlowLayout from '../layouts/InterviewFlowLayout';
-import { getActiveInterview, getRealEvaluation, startEvaluation, endInterview } from '../services/candidateApi';
+import { getActiveInterview, getRealEvaluation, startEvaluation, endInterview, deleteRecordings } from '../services/candidateApi';
 import { formatDate } from '../../utils/dateFormat';
 import { CANDIDATE_IMAGES } from '../assets/images';
 import { AssessmentDossierSeal } from '../components/TechnicalDoodles';
@@ -52,6 +55,13 @@ const EvaluationResults = () => {
   const [error, setError] = useState('');
   const [openQuestion, setOpenQuestion] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
+  // FR 24-03 - interactive score help
+  const [openWhy, setOpenWhy] = useState(null);
+  const [helpTopic, setHelpTopic] = useState(null);
+  // NFR 11 - delete recordings
+  const [confirmDeleteRec, setConfirmDeleteRec] = useState(false);
+  const [deletingRec, setDeletingRec] = useState(false);
+  const [recMessage, setRecMessage] = useState('');
 
   useEffect(() => {
     let isMounted = true;
@@ -143,6 +153,8 @@ const EvaluationResults = () => {
   const suggestions = evaluation?.suggestions ?? interview?.suggestions ?? [];
   const insights = evaluation?.insights ?? interview?.insights ?? null;
   const scoreRationale = insights?.score_explanation?.score_rationale ?? null;
+  const dimensionBreakdown = insights?.score_explanation?.dimension_breakdown ?? {};
+  const behavioralObservations = insights?.score_explanation?.behavioral_observations ?? [];
   const summaryReport = evaluation?.summary_report ?? interview?.summaryReport ?? null;
   const performanceRating = summaryReport?.performance_overview?.performance_rating || (overallScore >= 70 ? 'Proficient Performance' : (overallScore >= 55 ? 'Competent Performance' : 'Developing'));
   const dimensionScores = evaluation?.dimension_scores ?? interview?.dimensionScores ?? {
@@ -365,6 +377,7 @@ const EvaluationResults = () => {
   const areaRows = [
     {
       key: 'content',
+      why: dimensionBreakdown.technical,
       icon: FileText,
       label: 'What you said',
       score: dimensionScores?.technical_content,
@@ -373,6 +386,7 @@ const EvaluationResults = () => {
     },
     {
       key: 'speaking',
+      why: dimensionBreakdown.communication,
       icon: Mic,
       label: 'How you said it',
       score: dimensionScores?.communication_fluency,
@@ -381,6 +395,7 @@ const EvaluationResults = () => {
     },
     {
       key: 'camera',
+      why: dimensionBreakdown.behavioral,
       icon: Eye,
       label: 'On camera',
       score: dimensionScores?.behavioral_composure,
@@ -396,6 +411,55 @@ const EvaluationResults = () => {
   ];
   const topFixes = weaknesses.slice(0, 3);
   const topStrengths = strengths.slice(0, 2);
+
+  // FR 24 / 3.3.24 - the candidate asks about their score and the system
+  // answers from the evaluation itself (no generic text).
+  const notScoredParts = areaRows.filter((a) => !a.measured).map((a) => a.label.toLowerCase());
+  const helpTopics = [
+    {
+      id: 'overall',
+      question: 'How was my overall score worked out?',
+      answer: scoreRationale
+        ? [scoreRationale]
+        : ['Each answer is scored on what you said (50%), how you said it (30%) and how you came across on camera (20%). Harder questions count more in the overall score.'],
+    },
+    {
+      id: 'observed',
+      question: 'What did the system notice about how I answered?',
+      answer: behavioralObservations.length ? behavioralObservations : ['No delivery observations were recorded for this interview.'],
+    },
+    {
+      id: 'missing',
+      question: notScoredParts.length ? `Why was ${notScoredParts.join(' and ')} not scored?` : 'Were all parts of my answers scored?',
+      answer: notScoredParts.length
+        ? [
+            'A part is only scored when there is enough evidence for it. Answers typed instead of spoken have no speaking score, and interviews without a camera (or with your face out of frame) have no camera score.',
+            'When a part is missing, its weight is shared between the parts that were measured, so you are not marked down for it.',
+          ]
+        : ['Yes. Every part of your answers had enough evidence to be scored.'],
+    },
+    {
+      id: 'improve',
+      question: 'What would raise my score the most?',
+      answer: (weaknesses.length ? weaknesses.slice(0, 2) : ['Go deeper in your answers: mention trade-offs, standard practice and real examples.']),
+    },
+  ];
+  const showRecordings = isCompleted && (interview?.hasRecordings || interview?.recordingsDeletedAt);
+
+  const handleDeleteRecordings = async () => {
+    setDeletingRec(true);
+    setRecMessage('');
+    try {
+      const res = await deleteRecordings(id);
+      setInterview((prev) => ({ ...prev, hasRecordings: false, recordingsDeletedAt: res?.interview?.recordings_deleted_at || new Date().toISOString() }));
+      setRecMessage('Your recordings for this interview were deleted. Your scores, transcripts and feedback are still here.');
+    } catch (err) {
+      setRecMessage(err.message || 'Could not delete the recordings. Please try again.');
+    } finally {
+      setDeletingRec(false);
+      setConfirmDeleteRec(false);
+    }
+  };
 
   return (
     <InterviewFlowLayout step="results">
@@ -479,11 +543,15 @@ const EvaluationResults = () => {
                   {interpretation ||
                     `This score combines what you said, how you said it, and how you came across on camera, across ${answeredCount} answered questions.`}
                 </p>
+                <p className="text-[11px] mt-3 flex items-start gap-1.5" style={{ color: 'var(--c-text-muted)' }}>
+                  <Info className="w-3.5 h-3.5 shrink-0 mt-px" />
+                  Practice feedback from an automated coach, not a hiring decision.
+                </p>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {areaRows.map(({ key, icon: Icon, label, score, measured, help }) => (
+              {areaRows.map(({ key, icon: Icon, label, score, measured, help, why }) => (
                 <div key={key} className="p-4 rounded-lg border space-y-2.5" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
                   <div className="flex items-center justify-between gap-2">
                     <span className="flex items-center gap-2 text-sm font-semibold" style={{ color: 'var(--c-text)' }}>
@@ -503,8 +571,81 @@ const EvaluationResults = () => {
                     )}
                   </div>
                   <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>{help}</p>
+                  {why && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setOpenWhy(openWhy === key ? null : key)}
+                        aria-expanded={openWhy === key}
+                        className="text-[11px] font-semibold flex items-center gap-1 hover:underline"
+                        style={{ color: 'var(--c-accent)' }}
+                      >
+                        <HelpCircle className="w-3 h-3" /> {openWhy === key ? 'Hide explanation' : 'Why this score?'}
+                      </button>
+                      {openWhy === key && (
+                        <p className="text-xs leading-relaxed p-2.5 rounded-md border" style={{ color: 'var(--c-text)', background: 'var(--c-surface-muted)', borderColor: 'var(--c-border)' }}>
+                          {why}
+                        </p>
+                      )}
+                    </>
+                  )}
                 </div>
               ))}
+            </div>
+
+            {/* FR 24-03 / 3.3.24 - ask about your score */}
+            <div className="p-5 rounded-lg border space-y-3" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
+              <h2 className="c-heading text-base font-bold flex items-center gap-2" style={{ color: 'var(--c-text)' }}>
+                <HelpCircle className="w-4 h-4" style={{ color: 'var(--c-accent)' }} />
+                Ask about your score
+              </h2>
+              <div className="flex flex-wrap gap-2">
+                {helpTopics.map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setHelpTopic(helpTopic === t.id ? null : t.id)}
+                    aria-pressed={helpTopic === t.id}
+                    className="px-3 py-1.5 rounded-full border text-xs font-medium transition-colors"
+                    style={{
+                      borderColor: helpTopic === t.id ? 'var(--c-accent)' : 'var(--c-border)',
+                      background: helpTopic === t.id ? 'var(--c-badge-accent-bg)' : 'var(--c-surface-muted)',
+                      color: 'var(--c-text)',
+                    }}
+                  >
+                    {t.question}
+                  </button>
+                ))}
+              </div>
+              {helpTopic && (
+                <div className="p-3.5 rounded-md border space-y-1.5" role="status" aria-live="polite" style={{ background: 'var(--c-surface-muted)', borderColor: 'var(--c-border)' }}>
+                  {(helpTopics.find((t) => t.id === helpTopic)?.answer || []).map((line, i) => (
+                    <p key={i} className="text-xs leading-relaxed" style={{ color: 'var(--c-text)' }}>{line}</p>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* FR 29-01 - result graphs, always visible */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="p-4 rounded-lg border space-y-3" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
+                <div className="flex items-center justify-between border-b pb-2" style={{ borderColor: 'var(--c-border)' }}>
+                  <h3 className="c-heading text-xs font-bold" style={{ color: 'var(--c-text)' }}>Score by area</h3>
+                  <span className="text-[11px] font-mono text-neutral-400">Scale 0-100%</span>
+                </div>
+                <div className="h-44 w-full">
+                  <Bar data={dimensionChartData} options={dimensionChartOptions} />
+                </div>
+              </div>
+              <div className="p-4 rounded-lg border space-y-3" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
+                <div className="flex items-center justify-between border-b pb-2" style={{ borderColor: 'var(--c-border)' }}>
+                  <h3 className="c-heading text-xs font-bold" style={{ color: 'var(--c-text)' }}>Score by question</h3>
+                  <span className="text-[11px] text-neutral-400">{answeredCount} of {totalQuestions} answered</span>
+                </div>
+                <div className="h-44 w-full">
+                  <Bar data={trajectoryChartData} options={trajectoryChartOptions} />
+                </div>
+              </div>
             </div>
           </section>
         ) : isFailed ? (
@@ -514,6 +655,21 @@ const EvaluationResults = () => {
               <div>
                 <p className="font-bold">Feedback could not be prepared</p>
                 <p className="mt-0.5">{evaluation?.failed_reason || 'Something went wrong while scoring this interview.'}</p>
+                {/* NFR 7-03 - retry from the saved answers */}
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      await startEvaluation(id);
+                      window.location.reload();
+                    } catch (err) {
+                      setError(err.message || 'Could not restart the evaluation.');
+                    }
+                  }}
+                  className="c-btn c-btn-secondary mt-3 px-3.5 py-2 text-xs font-semibold rounded-md flex items-center gap-1.5"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" /> Try again
+                </button>
               </div>
             </div>
           </section>
@@ -756,71 +912,6 @@ const EvaluationResults = () => {
                       Charts and numbers behind your score.
                     </p>
                   </div>
-            {/* FR24: Score Interpretation & Behavioral Rationale */}
-            {scoreRationale && (
-              <div
-                className="mt-4 p-3.5 rounded-lg border text-xs leading-relaxed space-y-1.5"
-                style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}
-              >
-                <p className="text-xs font-semibold" style={{ color: 'var(--c-text)' }}>How this score was worked out</p>
-                <p style={{ color: 'var(--c-text-secondary)' }}>{scoreRationale}</p>
-              </div>
-            )}
-
-            {/* FR 29-01: Visual Performance Analytics Graphs */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6">
-              {/* Graph A: Performance Dimensions Breakdown */}
-              <div
-                className="p-4 rounded-lg border space-y-3"
-                style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}
-              >
-                <div className="flex items-center justify-between border-b pb-2" style={{ borderColor: 'var(--c-border)' }}>
-                  <div>
-                    <h3 className="c-heading text-xs font-bold" style={{ color: 'var(--c-text)' }}>Score by area</h3>
-                  </div>
-                  <span className="text-[11px] font-mono text-neutral-400">Scale 0-100%</span>
-                </div>
-                <div className="h-44 w-full">
-                  <Bar data={dimensionChartData} options={dimensionChartOptions} />
-                </div>
-                <div className="flex items-center justify-between text-[11px] font-mono text-neutral-400 pt-1 border-t" style={{ borderColor: 'var(--c-border)' }}>
-                  <span>Content: {Math.round(dimensionScores?.technical_content ?? 0)}%</span>
-                  <span>Speaking: {Math.round(dimensionScores?.communication_fluency ?? 0)}%</span>
-                  <span>Camera: {hasVisionSummary ? `${Math.round(dimensionScores?.behavioral_composure ?? 0)}%` : 'not measured'}</span>
-                </div>
-              </div>
-
-              {/* Graph B: Per-Question Performance Trajectory */}
-              <div
-                className="p-4 rounded-lg border space-y-3"
-                style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}
-              >
-                <div className="flex items-center justify-between border-b pb-2" style={{ borderColor: 'var(--c-border)' }}>
-                  <div>
-                    <h3 className="c-heading text-xs font-bold" style={{ color: 'var(--c-text)' }}>Score by question</h3>
-                  </div>
-                  <span className="text-[11px] text-neutral-400">{answeredCount} of {totalQuestions} answered</span>
-                </div>
-                <div className="h-44 w-full">
-                  <Bar data={trajectoryChartData} options={trajectoryChartOptions} />
-                </div>
-                <div className="flex items-center justify-between text-[11px] font-mono text-neutral-400 pt-1 border-t" style={{ borderColor: 'var(--c-border)' }}>
-                  <span className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-[#FF6B35]" />
-                    <span>Answered</span>
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-slate-500" />
-                    <span>Skipped</span>
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-red-500/70" />
-                    <span>Failed</span>
-                  </span>
-                </div>
-              </div>
-            </div>
-
             {/* FR 28-03: Structured Performance Overview (Audit Summary) */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-6">
               <div className="p-3 rounded-lg border space-y-1" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
@@ -1417,6 +1508,42 @@ const EvaluationResults = () => {
           </section>
         )}
 
+
+        {/* NFR 11 - the candidate controls their recordings */}
+        {showRecordings && (
+          <section aria-label="Your recordings" className="p-5 rounded-lg border space-y-3" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
+            <h2 className="c-heading text-base font-bold" style={{ color: 'var(--c-text)' }}>Your recordings</h2>
+            {interview?.hasRecordings ? (
+              <>
+                <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
+                  The audio{interview?.recordingConsent?.camera ? ' and video' : ''} of your answers is stored encrypted and used only for this
+                  assessment{interview?.recordingConsent?.research_use ? ', and to improve MockAI as you allowed' : ''}. You can delete it now; your
+                  scores, transcripts and feedback will stay.
+                </p>
+                {confirmDeleteRec ? (
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <span className="text-xs font-semibold" style={{ color: 'var(--c-text)' }}>Delete the recordings for this interview? This cannot be undone.</span>
+                    <button onClick={handleDeleteRecordings} disabled={deletingRec} className="c-btn px-3.5 py-2 text-xs font-bold rounded-md text-white" style={{ background: 'var(--c-danger)' }}>
+                      {deletingRec ? 'Deleting…' : 'Yes, delete'}
+                    </button>
+                    <button onClick={() => setConfirmDeleteRec(false)} disabled={deletingRec} className="c-btn c-btn-secondary px-3.5 py-2 text-xs font-semibold rounded-md">
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <button onClick={() => setConfirmDeleteRec(true)} className="c-btn c-btn-secondary px-3.5 py-2 text-xs font-semibold rounded-md flex items-center gap-1.5">
+                    <Trash2 className="w-3.5 h-3.5" /> Delete my recordings
+                  </button>
+                )}
+              </>
+            ) : (
+              <p className="text-xs" style={{ color: 'var(--c-text-secondary)' }}>
+                The recordings for this interview have been deleted. Your scores, transcripts and feedback are kept.
+              </p>
+            )}
+            {recMessage && <p className="text-xs font-semibold" style={{ color: 'var(--c-text)' }} role="status">{recMessage}</p>}
+          </section>
+        )}
 
         {/* ===================================================================
             6. ACTIONS BAR
