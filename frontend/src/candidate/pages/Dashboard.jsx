@@ -411,11 +411,13 @@ const Dashboard = () => {
       <footer className="border-t py-8 text-xs relative z-[1]" style={{ borderColor: 'var(--c-border)', color: 'var(--c-text-muted)', background: 'var(--c-bg-subtle)' }}>
         <div className="c-page flex flex-col sm:flex-row items-center justify-between gap-3">
           <p>© {new Date().getFullYear()} MockAI · Mock interview practice</p>
-          <nav className="flex items-center gap-4" aria-label="Footer">
+          <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2" aria-label="Footer">
             <Link to="/interview/goal" className="hover:text-[var(--c-text)] transition-colors">New interview</Link>
             <Link to="/history" className="hover:text-[var(--c-text)] transition-colors">History</Link>
             <Link to="/progress" className="hover:text-[var(--c-text)] transition-colors">Progress</Link>
             <Link to="/profile" className="hover:text-[var(--c-text)] transition-colors">Profile</Link>
+            <Link to="/terms" className="hover:text-[var(--c-text)] transition-colors">Terms</Link>
+            <Link to="/privacy" className="hover:text-[var(--c-text)] transition-colors">Privacy</Link>
           </nav>
         </div>
       </footer>

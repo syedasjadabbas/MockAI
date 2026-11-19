@@ -560,10 +560,12 @@ const LandingPage = () => {
               <span>·</span>
               <span>AI mock interview coach</span>
             </div>
-            <nav className="flex items-center gap-4" aria-label="Footer">
+            <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2" aria-label="Footer">
               <a href="#how-it-works" className="hover:text-[var(--c-text)] transition-colors">How it works</a>
               <Link to="/login" className="hover:text-[var(--c-text)] transition-colors">Sign in</Link>
               <Link to="/register" className="hover:text-[var(--c-text)] transition-colors">Create account</Link>
+              <Link to="/terms" className="hover:text-[var(--c-text)] transition-colors">Terms</Link>
+              <Link to="/privacy" className="hover:text-[var(--c-text)] transition-colors">Privacy</Link>
             </nav>
             <span>© {new Date().getFullYear()} MockAI</span>
           </div>
