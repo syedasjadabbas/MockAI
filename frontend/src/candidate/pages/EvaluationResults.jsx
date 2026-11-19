@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import InterviewFlowLayout from '../layouts/InterviewFlowLayout';
 import ScoreRing from '../components/ScoreRing';
+import FullAnalysis from '../components/FullAnalysis';
 import { getActiveInterview, getRealEvaluation, startEvaluation, endInterview, deleteRecordings } from '../services/candidateApi';
 import { formatDate } from '../../utils/dateFormat';
 
@@ -41,7 +42,6 @@ const EvaluationResults = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [openQuestion, setOpenQuestion] = useState(null);
-  const [showDetails, setShowDetails] = useState(false);
   // FR 24-03 - interactive score help
   const [openWhy, setOpenWhy] = useState(null);
   const [helpTopic, setHelpTopic] = useState(null);
@@ -742,6 +742,9 @@ const EvaluationResults = () => {
                 )}
               </aside>
             </div>
+
+            {/* 4. Full analysis - technical detail, collapsed by default */}
+            <FullAnalysis interview={interview} evaluation={evaluation} perQuestion={perQuestionEval} overallScore={overallScore} />
           </>
         )}
 
