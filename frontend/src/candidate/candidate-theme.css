@@ -5,6 +5,16 @@
  * Exclusively Dark Theme: Charcoal (#111111) base with one accent, orange (#FF6B35). Amber (#FF9F1C) is only the warning colour.
  */
 
+/* ─── HOMEPAGE BANDS ───
+ * Alternate homepage sections sit on a slightly lighter charcoal with a thin
+ * orange line on top, so sections read as separate without leaving the dark
+ * theme. Small panels inside get a darker fill so they still stand out. */
+.candidate-app .c-section-band {
+  --c-surface-muted: #141414;
+  background: #1B1B1B;
+  border-top: 2px solid var(--c-accent);
+}
+
 /* ─── DARK THEME (Exclusively Supported) ─── */
 .candidate-app,
 html.dark .candidate-app,

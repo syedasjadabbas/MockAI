@@ -32,6 +32,7 @@ import {
   ChevronDown,
   PlayCircle,
   X,
+  ArrowUp,
 } from 'lucide-react';
 import PublicNav from '../components/PublicNav';
 import AnimatedBackground3D from '../components/AnimatedBackground3D';
@@ -333,7 +334,16 @@ const LandingPage = () => {
   const [fields, setFields] = useState([]);
   const [fieldCount, setFieldCount] = useState(16);
   const [demoOpen, setDemoOpen] = useState(false);
+  const [showTop, setShowTop] = useState(false);
   const smallScreen = useIsSmallScreen();
+
+  // Show the back-to-top button once the visitor is past the hero.
+  useEffect(() => {
+    const onScroll = () => setShowTop(window.scrollY > 700);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -357,7 +367,7 @@ const LandingPage = () => {
 
   return (
     <div
-      className="candidate-app min-h-screen flex flex-col font-sans relative selection:bg-[#FF6B35]/30 selection:text-[#FFFFFF] overflow-x-hidden"
+      className="candidate-app min-h-screen flex flex-col font-sans relative selection:bg-[#FF6B35]/30 selection:text-[#FFFFFF] overflow-x-clip"
       style={{ background: 'var(--c-bg)' }}
     >
       <AnimatedBackground3D />
@@ -426,7 +436,7 @@ const LandingPage = () => {
         </section>
 
         {/* How it works */}
-        <section id="how-it-works" className="border-b py-16 sm:py-24" style={{ borderColor: 'var(--c-border)' }}>
+        <section id="how-it-works" className="c-section-band py-16 sm:py-24">
           <div className="c-page">
             <SectionIntro eyebrow="How it works" title="Three steps, about five minutes" text="No setup and no scheduling. Practise whenever you have a few minutes." />
             <ol className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -453,7 +463,7 @@ const LandingPage = () => {
         </section>
 
         {/* What you get feedback on */}
-        <section id="evaluation" className="border-b py-16 sm:py-24" style={{ borderColor: 'var(--c-border)' }}>
+        <section id="evaluation" className="py-16 sm:py-24">
           <div className="c-page">
             <SectionIntro
               eyebrow="Your feedback"
@@ -480,7 +490,7 @@ const LandingPage = () => {
         </section>
 
         {/* Fields */}
-        <section id="tracks" aria-label="Career fields" className="border-b py-16 sm:py-24" style={{ borderColor: 'var(--c-border)' }}>
+        <section id="tracks" aria-label="Career fields" className="c-section-band py-16 sm:py-24">
           <div className="c-page">
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
               <SectionIntro eyebrow="For every career" title={`${fieldCount} career fields, not just tech`} text="Questions are written for real jobs, from software and data to healthcare, teaching, law, accounting and sales." />
@@ -504,7 +514,7 @@ const LandingPage = () => {
         </section>
 
         {/* Why MockAI */}
-        <section id="why-mockai" className="border-b py-16 sm:py-24" style={{ borderColor: 'var(--c-border)' }}>
+        <section id="why-mockai" className="py-16 sm:py-24">
           <div className="c-page">
             <SectionIntro eyebrow="Why MockAI" title="The closest thing to the real interview" text="Reading tips is not enough. Answering out loud, and seeing what you missed, is how you get better." />
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
@@ -528,7 +538,7 @@ const LandingPage = () => {
         </section>
 
         {/* FAQ */}
-        <section id="faq" aria-label="Frequently asked questions" className="border-b py-16 sm:py-24" style={{ borderColor: 'var(--c-border)' }}>
+        <section id="faq" aria-label="Frequently asked questions" className="c-section-band py-16 sm:py-24">
           <div className="c-page">
             <SectionIntro eyebrow="Questions" title="Before you start" text="The things people usually ask first." />
             <Faq />
@@ -584,6 +594,21 @@ const LandingPage = () => {
             Start practising <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
+      )}
+
+      {/* Back to top: appears after scrolling down; sits above the phone start bar */}
+      {!demoOpen && (
+        <button
+          type="button"
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          aria-label="Back to top"
+          title="Back to top"
+          tabIndex={showTop ? 0 : -1}
+          className={`fixed right-4 sm:right-6 bottom-24 sm:bottom-6 z-40 w-11 h-11 rounded-full border flex items-center justify-center shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:border-orange-500/70 hover:text-orange-500 ${showTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3 pointer-events-none'}`}
+          style={{ background: 'rgba(32, 32, 32, 0.9)', borderColor: 'var(--c-border-strong)', color: 'var(--c-text)', backdropFilter: 'blur(8px)' }}
+        >
+          <ArrowUp className="w-5 h-5" />
+        </button>
       )}
 
       {demoOpen && <DemoModal onClose={() => setDemoOpen(false)} />}
