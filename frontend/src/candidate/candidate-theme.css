@@ -11,8 +11,26 @@
  * theme. Small panels inside get a darker fill so they still stand out. */
 .candidate-app .c-section-band {
   --c-surface-muted: #141414;
+  position: relative;
   background: #1B1B1B;
-  border-top: 2px solid var(--c-accent);
+}
+/* The orange line draws from left to right when the band scrolls into view
+   (class added by useDrawBandLines). */
+.candidate-app .c-section-band::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 2px;
+  background: var(--c-accent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.candidate-app .c-section-band.is-drawn::before { transform: scaleX(1); }
+@media (prefers-reduced-motion: reduce) {
+  .candidate-app .c-section-band::before { transform: scaleX(1); transition: none; }
 }
 
 /* ─── DARK THEME (Exclusively Supported) ─── */

@@ -40,6 +40,7 @@ import ScoreRing from '../components/ScoreRing';
 import { CANDIDATE_IMAGES } from '../assets/images';
 import { CornerReticles, LiveAudioWaveform, LiveVideoIndicator } from '../components/TechnicalDoodles';
 import { isAuthenticated } from '../services/candidateAuth';
+import { Reveal, HeadlineReveal, useDrawBandLines, AnimatedSampleResult, StepsStory, CountUp } from '../components/LandingMotion';
 import { getCategories, getSampleQuestion } from '../services/candidateApi';
 
 const HeroScene3D = lazy(() => import('../components/HeroScene3D'));
@@ -129,44 +130,6 @@ const FieldPickerPreview = () => (
           <span className="text-[11px] font-medium truncate" style={{ color: 'var(--c-text-secondary)' }}>{t}</span>
         </div>
       ))}
-    </div>
-  </div>
-);
-
-// A sample of the results page, in plain words (no code).
-const SampleResult = () => (
-  <div className="rounded-2xl border p-6 space-y-5 shadow-2xl" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }} aria-label="Example result">
-    <div className="flex items-center justify-between">
-      <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--c-text-muted)' }}>Example result</p>
-      <span className="text-xs" style={{ color: 'var(--c-text-muted)' }}>Nursing interview</span>
-    </div>
-    <div className="flex items-center gap-5">
-      <ScoreRing value={78} suffix="%" size={104} strokeWidth={9} tone="accent" />
-      <div>
-        <p className="text-2xl font-bold" style={{ color: 'var(--c-text)' }}>Strong</p>
-        <p className="text-sm mt-1" style={{ color: 'var(--c-text-secondary)' }}>Clear answers with good examples. Add more on patient safety.</p>
-      </div>
-    </div>
-    <div className="space-y-3">
-      {[
-        ['What you said', 74],
-        ['How you said it', 85],
-        ['How you came across', 80],
-      ].map(([label, value]) => (
-        <div key={label} className="space-y-1">
-          <div className="flex justify-between text-xs">
-            <span style={{ color: 'var(--c-text-secondary)' }}>{label}</span>
-            <span className="font-semibold" style={{ color: 'var(--c-text)' }}>{value}%</span>
-          </div>
-          <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--c-surface-muted)' }}>
-            <div className="h-full rounded-full" style={{ width: `${value}%`, background: 'var(--c-accent)' }} />
-          </div>
-        </div>
-      ))}
-    </div>
-    <div className="pt-4 border-t space-y-2 text-sm" style={{ borderColor: 'var(--c-border)', color: 'var(--c-text-secondary)' }}>
-      <p className="flex items-start gap-2"><Check className="w-4 h-4 mt-0.5 shrink-0" style={{ color: 'var(--c-accent)' }} /> Kept a steady pace with few filler words.</p>
-      <p className="flex items-start gap-2"><ArrowRight className="w-4 h-4 mt-0.5 shrink-0" style={{ color: 'var(--c-text-muted)' }} /> Next time, mention how you would check the patient's ID.</p>
     </div>
   </div>
 );
@@ -321,11 +284,11 @@ const Faq = () => {
 };
 
 const SectionIntro = ({ eyebrow, title, text }) => (
-  <div className="max-w-2xl mb-10 sm:mb-12 space-y-3">
+  <Reveal className="max-w-2xl mb-10 sm:mb-12 space-y-3">
     {eyebrow && <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--c-accent)' }}>{eyebrow}</p>}
     <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight" style={{ color: 'var(--c-text)' }}>{title}</h2>
     {text && <p className="text-sm sm:text-base leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>{text}</p>}
-  </div>
+  </Reveal>
 );
 
 const LandingPage = () => {
@@ -336,6 +299,7 @@ const LandingPage = () => {
   const [demoOpen, setDemoOpen] = useState(false);
   const [showTop, setShowTop] = useState(false);
   const smallScreen = useIsSmallScreen();
+  useDrawBandLines();
 
   // Show the back-to-top button once the visitor is past the hero.
   useEffect(() => {
@@ -391,16 +355,17 @@ const LandingPage = () => {
                     <LiveVideoIndicator />
                   </span>
                 </div>
-                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.08]" style={{ color: 'var(--c-text)' }}>
-                  Practice your interview <br className="hidden sm:block" />
-                  <span style={{ color: 'var(--c-accent)' }}>before it matters.</span>
-                </h1>
-                <p className="text-base sm:text-lg leading-relaxed max-w-xl" style={{ color: 'var(--c-text-secondary)' }}>
+                <HeadlineReveal
+                  className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.08]"
+                  style={{ color: 'var(--c-text)' }}
+                  lines={[{ text: 'Practice your interview' }, { text: 'before it matters.', accent: true }]}
+                />
+                <Reveal as="p" delay={0.55} y={16} className="text-base sm:text-lg leading-relaxed max-w-xl" style={{ color: 'var(--c-text-secondary)' }}>
                   MockAI asks you real interview questions for your job, listens to your answers, and tells you exactly what to improve:
                   what you said, how you said it, and how you came across.
-                </p>
-                <TryQuestion ctaDestination={ctaDestination} />
-                <div className="flex flex-wrap items-center gap-3 pt-1">
+                </Reveal>
+                <Reveal delay={0.7} y={16}><TryQuestion ctaDestination={ctaDestination} /></Reveal>
+                <Reveal delay={0.85} y={16} className="flex flex-wrap items-center gap-3 pt-1">
                   <Link to={ctaDestination} className="c-btn c-btn-primary px-6 py-3.5 font-semibold text-sm rounded-xl flex items-center gap-2 select-none group">
                     <span>Start a free practice interview</span>
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
@@ -409,14 +374,14 @@ const LandingPage = () => {
                     <PlayCircle className="w-4 h-4" style={{ color: 'var(--c-accent)' }} />
                     <span>Watch a 30-second demo</span>
                   </button>
-                </div>
-                <ul className="pt-2 grid grid-cols-2 sm:flex sm:flex-wrap gap-x-6 gap-y-2 text-sm" style={{ color: 'var(--c-text-secondary)' }}>
+                </Reveal>
+                <Reveal as="ul" delay={1} y={12} className="pt-2 grid grid-cols-2 sm:flex sm:flex-wrap gap-x-6 gap-y-2 text-sm" style={{ color: 'var(--c-text-secondary)' }}>
                   {['Free to use', `${fieldCount} career fields`, 'About 5 minutes', 'Feedback in a minute'].map((t) => (
                     <li key={t} className="flex items-center gap-2">
                       <Check className="w-4 h-4 shrink-0" style={{ color: 'var(--c-accent)' }} /> {t}
                     </li>
                   ))}
-                </ul>
+                </Reveal>
               </div>
 
               <div className="lg:col-span-5 relative flex items-center justify-center w-full max-w-lg lg:max-w-none mx-auto">
@@ -439,26 +404,41 @@ const LandingPage = () => {
         <section id="how-it-works" className="c-section-band py-16 sm:py-24">
           <div className="c-page">
             <SectionIntro eyebrow="How it works" title="Three steps, about five minutes" text="No setup and no scheduling. Practise whenever you have a few minutes." />
-            <ol className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {STEPS.map((step, i) => (
-                <li key={step.title} className="space-y-4 group">
+            <StepsStory
+              steps={STEPS}
+              fallback={(
+              <ol className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {STEPS.map((step, i) => (
+                  <Reveal as="li" key={step.title} delay={i * 0.12} className="space-y-4 group">
+                    {step.image ? (
+                      <div className="relative aspect-video rounded-lg overflow-hidden border" style={{ borderColor: 'var(--c-border)' }}>
+                        <img src={CANDIDATE_IMAGES[step.image]} alt="" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                      </div>
+                    ) : (
+                      <FieldPickerPreview />
+                    )}
+                    <div className="flex items-start gap-3">
+                      <span className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0" style={{ background: 'var(--c-accent)', color: '#fff' }}>{i + 1}</span>
+                      <div className="space-y-1">
+                        <h3 className="text-base font-bold" style={{ color: 'var(--c-text)' }}>{step.title}</h3>
+                        <p className="text-sm leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>{step.body}</p>
+                      </div>
+                    </div>
+                  </Reveal>
+                ))}
+              </ol>
+              )}
+              renderVisual={(step) => (
+                <div className="w-full h-full rounded-2xl overflow-hidden border shadow-2xl relative" style={{ borderColor: 'var(--c-border)', background: 'var(--c-surface)' }}>
+                  <CornerReticles size={12} color="var(--c-accent)" />
                   {step.image ? (
-                    <div className="relative aspect-video rounded-lg overflow-hidden border" style={{ borderColor: 'var(--c-border)' }}>
-                      <img src={CANDIDATE_IMAGES[step.image]} alt="" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-                    </div>
+                    <img src={CANDIDATE_IMAGES[step.image]} alt="" className="w-full h-full object-cover" />
                   ) : (
-                    <FieldPickerPreview />
+                    <div className="w-full h-full flex items-center p-6"><div className="w-full"><FieldPickerPreview /></div></div>
                   )}
-                  <div className="flex items-start gap-3">
-                    <span className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0" style={{ background: 'var(--c-accent)', color: '#fff' }}>{i + 1}</span>
-                    <div className="space-y-1">
-                      <h3 className="text-base font-bold" style={{ color: 'var(--c-text)' }}>{step.title}</h3>
-                      <p className="text-sm leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>{step.body}</p>
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ol>
+                </div>
+              )}
+            />
           </div>
         </section>
 
@@ -472,18 +452,18 @@ const LandingPage = () => {
             />
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-start">
               <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-x-10">
-                {DIMENSIONS.map(({ icon: Icon, title, body }) => (
-                  <div key={title} className="flex gap-3.5 items-start py-5 border-t" style={{ borderColor: 'var(--c-border)' }}>
+                {DIMENSIONS.map(({ icon: Icon, title, body }, i) => (
+                  <Reveal key={title} delay={i * 0.07} className="flex gap-3.5 items-start py-5 border-t" style={{ borderColor: 'var(--c-border)' }}>
                     <Icon className="w-5 h-5 shrink-0 mt-0.5" style={{ color: 'var(--c-accent)' }} />
                     <div className="space-y-1">
                       <h3 className="text-sm font-bold" style={{ color: 'var(--c-text)' }}>{title}</h3>
                       <p className="text-sm leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>{body}</p>
                     </div>
-                  </div>
+                  </Reveal>
                 ))}
               </div>
               <div className="lg:col-span-5">
-                <SampleResult />
+                <Reveal delay={0.15}><AnimatedSampleResult /></Reveal>
               </div>
             </div>
           </div>
@@ -493,20 +473,23 @@ const LandingPage = () => {
         <section id="tracks" aria-label="Career fields" className="c-section-band py-16 sm:py-24">
           <div className="c-page">
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-              <SectionIntro eyebrow="For every career" title={`${fieldCount} career fields, not just tech`} text="Questions are written for real jobs, from software and data to healthcare, teaching, law, accounting and sales." />
+              <SectionIntro eyebrow="For every career" title={<><CountUp to={fieldCount} /> career fields, not just tech</>} text="Questions are written for real jobs, from software and data to healthcare, teaching, law, accounting and sales." />
               <Link to={ctaDestination} className="text-sm font-semibold flex items-center gap-1 hover:underline shrink-0 mb-10 sm:mb-12" style={{ color: 'var(--c-accent)' }}>
                 Your job not here? Describe it <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 border-t" style={{ borderColor: 'var(--c-border)' }}>
-              {displayFields.map((cat) => {
+              {displayFields.map((cat, i) => {
                 const Icon = getCategoryIcon(cat.name);
                 return (
-                  <Link key={cat.id || cat.name} to={ctaDestination} className="flex items-center gap-3 py-4 border-b group" style={{ borderColor: 'var(--c-border)' }}>
-                    <Icon className="w-5 h-5 shrink-0" style={{ color: 'var(--c-text-muted)' }} />
-                    <span className="flex-1 min-w-0 text-sm font-semibold truncate group-hover:text-orange-500 transition-colors" style={{ color: 'var(--c-text)' }}>{cat.name}</span>
-                    <ChevronRight className="w-4 h-4 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: 'var(--c-accent)' }} />
-                  </Link>
+                  // Fields ripple in one by one, row by row.
+                  <Reveal key={cat.id || cat.name} delay={i * 0.05} y={14}>
+                    <Link to={ctaDestination} className="flex items-center gap-3 py-4 border-b group transition-transform duration-300 hover:translate-x-1" style={{ borderColor: 'var(--c-border)' }}>
+                      <Icon className="w-5 h-5 shrink-0 transition-colors duration-300 text-[var(--c-text-muted)] group-hover:text-orange-500" />
+                      <span className="flex-1 min-w-0 text-sm font-semibold truncate group-hover:text-orange-500 transition-colors" style={{ color: 'var(--c-text)' }}>{cat.name}</span>
+                      <ChevronRight className="w-4 h-4 shrink-0 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" style={{ color: 'var(--c-accent)' }} />
+                    </Link>
+                  </Reveal>
                 );
               })}
             </div>
@@ -519,20 +502,20 @@ const LandingPage = () => {
             <SectionIntro eyebrow="Why MockAI" title="The closest thing to the real interview" text="Reading tips is not enough. Answering out loud, and seeing what you missed, is how you get better." />
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
               <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-x-10">
-                {VALUES.map(({ icon: Icon, title, body }) => (
-                  <div key={title} className="py-5 border-t space-y-2" style={{ borderColor: 'var(--c-border)' }}>
+                {VALUES.map(({ icon: Icon, title, body }, i) => (
+                  <Reveal key={title} delay={i * 0.08} className="py-5 border-t space-y-2" style={{ borderColor: 'var(--c-border)' }}>
                     <Icon className="w-5 h-5" style={{ color: 'var(--c-accent)' }} />
                     <h3 className="text-base font-bold" style={{ color: 'var(--c-text)' }}>{title}</h3>
                     <p className="text-sm leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>{body}</p>
-                  </div>
+                  </Reveal>
                 ))}
               </div>
-              <div className="lg:col-span-5">
+              <Reveal delay={0.15} y={32} className="lg:col-span-5">
                 <div className="rounded-2xl overflow-hidden border shadow-2xl relative" style={{ borderColor: 'var(--c-border)', background: 'var(--c-surface)' }}>
                   <CornerReticles size={10} color="var(--c-accent)" />
                   <img src={CANDIDATE_IMAGES.completionSeal} alt="" className="w-full aspect-[4/3] object-cover" />
                 </div>
-              </div>
+              </Reveal>
             </div>
           </div>
         </section>
@@ -541,7 +524,7 @@ const LandingPage = () => {
         <section id="faq" aria-label="Frequently asked questions" className="c-section-band py-16 sm:py-24">
           <div className="c-page">
             <SectionIntro eyebrow="Questions" title="Before you start" text="The things people usually ask first." />
-            <Faq />
+            <Reveal><Faq /></Reveal>
           </div>
         </section>
 
@@ -553,7 +536,7 @@ const LandingPage = () => {
             <div className="absolute inset-x-0 top-0 h-24" style={{ background: 'linear-gradient(to bottom, var(--c-bg), transparent)' }} />
             <div className="absolute inset-x-0 bottom-0 h-24" style={{ background: 'linear-gradient(to top, var(--c-bg), transparent)' }} />
           </div>
-          <div className="relative z-10 c-page space-y-6 text-center">
+          <Reveal y={32} className="relative z-10 c-page space-y-6 text-center">
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight" style={{ color: '#FFFFFF' }}>
               Your next interview <br />
               starts with practice.
@@ -567,7 +550,7 @@ const LandingPage = () => {
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
               </Link>
             </div>
-          </div>
+          </Reveal>
         </section>
 
         <footer className="border-t pt-8 pb-24 sm:pb-8 mt-auto" style={{ borderColor: 'var(--c-border)', background: 'var(--c-bg)' }}>

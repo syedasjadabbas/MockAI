@@ -553,19 +553,29 @@ const HeroScene3D = () => {
     // --- Mouse Parallax Tracking ---
     const mouse = { x: 0, y: 0, targetX: 0, targetY: 0 };
     const handleMouseMove = (e) => {
-      const rect = container.getBoundingClientRect();
-      const nx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-      const ny = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
+      const nx = (e.clientX / window.innerWidth) * 2 - 1;
+      const ny = -((e.clientY / window.innerHeight) * 2 - 1);
       mouse.targetX = nx * 0.28;
       mouse.targetY = ny * 0.20;
     };
-    container.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
 
     const handleMouseLeave = () => {
       mouse.targetX = 0;
       mouse.targetY = 0;
     };
-    container.addEventListener('mouseleave', handleMouseLeave);
+    document.addEventListener('mouseleave', handleMouseLeave);
+
+    // Scrolling down pulls the camera back and turns the microphone, like a
+    // camera moving away from the scene (0 at the top, 1 one screen down).
+    let scrollTarget = 0;
+    let scrollT = 0;
+    const handleScroll = () => {
+      scrollTarget = Math.min(1, Math.max(0, window.scrollY / (window.innerHeight * 0.9)));
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+    let baseZ = initialZ;
 
     // --- Resize Handling ---
     const handleResize = () => {
@@ -573,7 +583,8 @@ const HeroScene3D = () => {
       const w = container.clientWidth || 600;
       const h = container.clientHeight || 450;
       camera.aspect = w / h;
-      camera.position.z = w < 480 ? 10.4 : (w < 768 ? 10.0 : 9.6);
+      baseZ = w < 480 ? 10.4 : (w < 768 ? 10.0 : 9.6);
+      camera.position.z = baseZ;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
       renderer.domElement.style.width = '100%';
@@ -615,13 +626,16 @@ const HeroScene3D = () => {
       mouse.x += (mouse.targetX - mouse.x) * 0.05;
       mouse.y += (mouse.targetY - mouse.y) * 0.05;
 
+      scrollT += (scrollTarget - scrollT) * 0.08;
+      const pull = reducedMotion ? 0 : scrollT;
       camera.position.x = mouse.x * 0.6;
-      camera.position.y = 1.15 + mouse.y * 0.35;
-      camera.lookAt(0, 0.45, 0);
+      camera.position.y = 1.15 + mouse.y * 0.35 + pull * 0.9;
+      camera.position.z = baseZ + pull * 2.4;
+      camera.lookAt(0, 0.45 - pull * 0.25, 0);
 
       if (!reducedMotion) {
         // Microphone continuous gentle rotation
-        micGroup.rotation.y = elapsed * 0.22;
+        micGroup.rotation.y = elapsed * 0.22 + scrollT * 1.6;
 
         // Orange point light gentle breathe
         orangePointLight.intensity = 3.0 + Math.sin(elapsed * 2.5) * 0.8;
@@ -679,8 +693,9 @@ const HeroScene3D = () => {
       observer.disconnect();
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('resize', handleResize);
-      container.removeEventListener('mousemove', handleMouseMove);
-      container.removeEventListener('mouseleave', handleMouseLeave);
+      window.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseleave', handleMouseLeave);
+      window.removeEventListener('scroll', handleScroll);
 
       scene.traverse((obj) => {
         if (obj.geometry) obj.geometry.dispose();
