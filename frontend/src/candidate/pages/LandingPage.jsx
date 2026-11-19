@@ -34,7 +34,7 @@ import PublicNav from '../components/PublicNav';
 import AnimatedBackground3D from '../components/AnimatedBackground3D';
 import ScoreRing from '../components/ScoreRing';
 import { CANDIDATE_IMAGES } from '../assets/images';
-import { CornerReticles } from '../components/TechnicalDoodles';
+import { CornerReticles, LiveAudioWaveform, LiveVideoIndicator } from '../components/TechnicalDoodles';
 import { isAuthenticated } from '../services/candidateAuth';
 import { getCategories } from '../services/candidateApi';
 
@@ -216,10 +216,17 @@ const LandingPage = () => {
           <div className="c-page py-12 sm:py-20 lg:py-24">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
               <div className="lg:col-span-7 space-y-6">
-                <span className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold" style={{ borderColor: 'var(--c-border)', color: 'var(--c-text-secondary)', background: 'var(--c-surface)' }}>
-                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--c-accent)' }} />
-                  AI mock interview coach
-                </span>
+                <div className="flex flex-wrap items-center gap-4">
+                  <span className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold" style={{ borderColor: 'var(--c-border)', color: 'var(--c-text-secondary)', background: 'var(--c-surface)' }}>
+                    <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: 'var(--c-accent)' }} />
+                    AI mock interview coach
+                  </span>
+                  {/* Small live touches: a moving voice wave and a camera indicator */}
+                  <span className="inline-flex items-center gap-4" aria-hidden="true">
+                    <LiveAudioWaveform bars={12} height={16} color="var(--c-accent)" />
+                    <LiveVideoIndicator />
+                  </span>
+                </div>
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.08]" style={{ color: 'var(--c-text)' }}>
                   Practice your interview <br className="hidden sm:block" />
                   <span style={{ color: 'var(--c-accent)' }}>before it matters.</span>
