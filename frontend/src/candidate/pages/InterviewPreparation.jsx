@@ -14,8 +14,6 @@ import {
 import InterviewFlowLayout from '../layouts/InterviewFlowLayout';
 import CandidateEmptyState from '../components/CandidateEmptyState';
 import { getActiveInterview, recordConsent } from '../services/candidateApi';
-import { CANDIDATE_IMAGES } from '../assets/images';
-import { CornerReticles, OpticalLensReticle } from '../components/TechnicalDoodles';
 import AudioLevelMeter from '../components/AudioLevelMeter';
 
 const InterviewPreparation = () => {
@@ -37,12 +35,21 @@ const InterviewPreparation = () => {
   // NFR 11 - optional, separate permission to reuse recordings to improve
   // MockAI's accuracy. Off by default; assessment works without it.
   const [researchConsent, setResearchConsent] = useState(false);
+  // Objective 1 - text, voice or video: 'camera' | 'voice' | 'text'
+  const [mode, setMode] = useState('camera');
   const [mediaStream, setMediaStream] = useState(null);
   const [continuingTextOnly, setContinuingTextOnly] = useState(false);
   const [savingConsent, setSavingConsent] = useState(false);
 
   const videoRef = useRef(null);
   const streamRef = useRef(null);
+  const startStepRef = useRef(null);
+
+  // Once the devices work, bring the last step (and its Start button) into view.
+  const devicesReady = micStatus === 'granted' && (mode !== 'camera' || cameraStatus === 'granted');
+  useEffect(() => {
+    if (devicesReady) startStepRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [devicesReady]);
 
   // Load interview metadata
   useEffect(() => {
@@ -70,20 +77,21 @@ const InterviewPreparation = () => {
 
   // Request real Camera & Microphone access via Web APIs
   const requestPermissions = async () => {
-    if (!micConsent) {
-      setPermissionError('Please confirm microphone consent before enabling your devices.');
+    const useCamera = mode === 'camera';
+    if (!micConsent || (useCamera && !cameraConsent)) {
+      setPermissionError('Please tick the consent for each device before turning it on.');
       return;
     }
     setPermissionError('');
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
     }
-    setCameraStatus(cameraConsent ? 'prompting' : 'idle');
+    setCameraStatus(useCamera ? 'prompting' : 'idle');
     setMicStatus('prompting');
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: cameraConsent
+        video: useCamera
           ? { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' }
           : false,
         audio: {
@@ -95,7 +103,7 @@ const InterviewPreparation = () => {
 
       streamRef.current = stream;
       setMediaStream(stream);
-      setCameraStatus(cameraConsent ? 'granted' : 'idle');
+      setCameraStatus(useCamera ? 'granted' : 'idle');
       setMicStatus('granted');
 
     } catch (err) {
@@ -104,12 +112,12 @@ const InterviewPreparation = () => {
         setCameraStatus('denied');
         setMicStatus('denied');
         setPermissionError(
-          'Camera and microphone permissions were blocked. Please allow device access in your browser address bar to proceed.'
+          'Your browser blocked the camera or microphone.'
         );
       } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
         setCameraStatus('denied');
         setMicStatus('denied');
-        setPermissionError('No camera or microphone devices were detected on your system.');
+        setPermissionError(useCamera ? 'No camera or microphone was found. Connect one, or choose another way to answer.' : 'No microphone was found. Connect one, or choose to type your answers.');
       } else {
         setCameraStatus('denied');
         setMicStatus('denied');
@@ -142,7 +150,7 @@ const InterviewPreparation = () => {
     setSavingConsent(true);
     setPermissionError('');
     try {
-      await recordConsent(id, { microphone: true, camera: cameraConsent, researchUse: researchConsent });
+      await recordConsent(id, { microphone: true, camera: mode === 'camera' && cameraConsent, researchUse: researchConsent });
     } catch (e) {
       setPermissionError(e.message || 'Could not save your recording consent. Please try again.');
       setSavingConsent(false);
@@ -151,7 +159,23 @@ const InterviewPreparation = () => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
     }
-    navigate(`/interview/${id}/session`, { state: { voiceOnly: !cameraConsent } });
+    navigate(`/interview/${id}/session`, { state: { voiceOnly: mode !== 'camera' } });
+  };
+
+  // Changing the answer mode turns off any devices already switched on, so
+  // only the devices the new mode needs (and has consent for) are used.
+  const chooseMode = (next) => {
+    if (next === mode) return;
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+    setMediaStream(null);
+    setCameraStatus('idle');
+    setMicStatus('idle');
+    setPermissionError('');
+    if (next !== 'camera') setCameraConsent(false);
+    setMode(next);
   };
 
   // Objective 1 - answer by typing instead of speaking. No camera or
@@ -174,7 +198,7 @@ const InterviewPreparation = () => {
       <InterviewFlowLayout step="prepare">
         <div className="flex flex-col items-center justify-center py-20 gap-3">
           <div className="w-6 h-6 border-2 rounded-full animate-spin" style={{ borderColor: 'var(--c-accent)', borderTopColor: 'transparent' }} />
-          <p className="text-xs font-medium" style={{ color: 'var(--c-text-muted)' }}>Preparing studio…</p>
+          <p className="text-xs font-medium" style={{ color: 'var(--c-text-muted)' }}>Loading…</p>
         </div>
       </InterviewFlowLayout>
     );
@@ -182,358 +206,293 @@ const InterviewPreparation = () => {
 
   if (!interview) return null;
 
-  const questionCount = interview.questions?.length || 5;
-  const minDuration = Math.round(questionCount * 1.5);
+  const questionCount = interview.questions?.length || 3;
+  const minDuration = Math.max(3, Math.round(questionCount * 1.5));
   const maxDuration = Math.round(questionCount * 2.5);
-  const readyToBegin = micStatus === 'granted' && (!cameraConsent || cameraStatus === 'granted');
+  const wantsCamera = mode === 'camera';
+  const consentGiven = mode === 'text' || (micConsent && (!wantsCamera || cameraConsent));
+  const devicesOn = micStatus === 'granted' && (!wantsCamera || cameraStatus === 'granted');
+  const blocked = micStatus === 'denied' || cameraStatus === 'denied';
+  const typeName = { technical: 'Technical', behavioral: 'HR & Behavioral', situational: 'Situational' }[interview.type] || 'Technical';
+
+  const MODES = [
+    { id: 'camera', Icon: Camera, title: 'Camera and microphone', text: 'Recommended. Feedback on what you say, how you say it and how you come across.' },
+    { id: 'voice', Icon: Mic, title: 'Microphone only', text: 'Voice-only. Feedback on what you say and how you say it.' },
+    { id: 'text', Icon: Keyboard, title: 'Type my answers', text: 'No camera or microphone. Feedback on what you write.' },
+  ];
+
+  const consents = [
+    {
+      key: 'mic', show: mode !== 'text', checked: micConsent, onChange: setMicConsent,
+      title: 'Record my microphone',
+      text: 'MockAI may record my voice while I answer a question, to transcribe and assess my answer.',
+    },
+    {
+      key: 'camera', show: wantsCamera, checked: cameraConsent, onChange: setCameraConsent,
+      title: 'Record my camera',
+      text: 'MockAI may record my webcam while I answer, to give feedback on facial expression and camera presence.',
+    },
+  ];
+
+  const StepTitle = ({ n, done, children }) => (
+    <div className="flex items-center gap-2.5">
+      <span
+        className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+        style={{
+          background: done ? 'var(--c-success)' : 'var(--c-accent)',
+          color: '#fff',
+        }}
+      >
+        {done ? <Check className="w-3.5 h-3.5" /> : n}
+      </span>
+      <h2 className="text-sm font-bold" style={{ color: 'var(--c-text)' }}>{children}</h2>
+    </div>
+  );
+
+  const DeviceStatus = ({ Icon, label, status, off }) => (
+    <div className="flex items-center justify-between gap-3 py-2">
+      <span className="flex items-center gap-2 text-xs font-semibold" style={{ color: 'var(--c-text)' }}>
+        <Icon className="w-4 h-4" style={{ color: status === 'granted' ? 'var(--c-success)' : 'var(--c-text-muted)' }} />
+        {label}
+      </span>
+      {off ? (
+        <span className="c-badge c-badge-muted text-[11px]">Not used</span>
+      ) : status === 'granted' ? (
+        <span className="c-badge c-badge-success text-[11px] flex items-center gap-1"><Check className="w-3 h-3" /> Working</span>
+      ) : status === 'denied' ? (
+        <span className="c-badge c-badge-danger text-[11px] flex items-center gap-1"><AlertCircle className="w-3 h-3" /> Blocked</span>
+      ) : status === 'prompting' ? (
+        <span className="c-badge c-badge-muted text-[11px]">Waiting for permission…</span>
+      ) : (
+        <span className="c-badge c-badge-muted text-[11px]">Off</span>
+      )}
+    </div>
+  );
 
   return (
     <InterviewFlowLayout step="prepare">
-      <div className="space-y-8 py-4 sm:py-6">
-        
-        {/* Header directly on page */}
-        <div className="border-b pb-6" style={{ borderColor: 'var(--c-border)' }}>
-          <div className="flex items-center gap-2 text-xs mb-1.5" style={{ color: 'var(--c-text-muted)' }}>
-            <span className="font-semibold" style={{ color: 'var(--c-text)' }}>Practice interview</span>
-            <span>/</span>
-            <span className="capitalize">{interview.type || 'Technical'} Track</span>
+      <div className="py-6 sm:py-8 space-y-6">
+
+        <div className="space-y-2.5">
+          <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--c-text-muted)' }}>Get ready</p>
+          <h1 className="c-heading text-2xl sm:text-3xl font-bold" style={{ color: 'var(--c-text)' }}>{interview.role}</h1>
+          <div className="flex flex-wrap gap-2">
+            {[typeName + ' interview', `${questionCount} easy questions`, `About ${minDuration}–${maxDuration} minutes`].map((t) => (
+              <span key={t} className="rounded-full border px-3 py-1 text-xs font-medium"
+                style={{ borderColor: 'var(--c-border)', color: 'var(--c-text-secondary)', background: 'var(--c-surface)' }}>
+                {t}
+              </span>
+            ))}
           </div>
-          <h1 className="c-heading text-2xl sm:text-3xl font-bold" style={{ color: 'var(--c-text)' }}>
-            {interview.role}
-          </h1>
-          <p className="text-xs sm:text-sm mt-1 max-w-2xl leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-Check that your camera and microphone work and that your face is well lit, then start when you're ready.
-          </p>
         </div>
 
-        {/* Two-Column Studio Calibration Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          
-          {/* Left Column: Live Video Monitor & Sensor Auth (7 cols) */}
-          <div className="lg:col-span-7 space-y-6">
-            
-            {/* LEVEL 3 — Camera Viewfinder (Standalone interactive video monitor) */}
-            <div 
-              className="overflow-hidden relative flex flex-col justify-between rounded-lg border shadow-sm group"
-              style={{ 
-                aspectRatio: '16/10',
-                background: 'var(--c-surface-card)',
-                borderColor: cameraStatus === 'granted' ? 'var(--c-accent)' : 'var(--c-border)',
-              }}
-            >
-              <CornerReticles size={12} color={cameraStatus === 'granted' ? 'var(--c-accent)' : 'var(--c-border)'} />
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
 
+          {/* Live preview */}
+          <div className="lg:col-span-6 space-y-3 lg:sticky lg:top-6">
+            <div
+              className="overflow-hidden relative rounded-xl border"
+              style={{ aspectRatio: '4/3', background: 'var(--c-surface-card)', borderColor: cameraStatus === 'granted' ? 'var(--c-success)' : 'var(--c-border)' }}
+            >
               {cameraStatus === 'granted' ? (
-                <video 
-                  ref={videoRef} 
-                  autoPlay 
-                  muted 
-                  playsInline 
-                  className="w-full h-full object-cover" 
-                />
+                <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover" style={{ transform: 'scaleX(-1)' }} />
               ) : (
-                <div className="flex-1 flex flex-col items-center justify-center p-6 text-center gap-3 relative">
-                  <div className="absolute inset-0 overflow-hidden rounded-lg">
-                    <img
-                      src={CANDIDATE_IMAGES.studioMic}
-                      alt=""
-                      className="w-full h-full object-cover opacity-25"
-                    />
-                    <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, var(--c-surface-card) 20%, transparent 80%)' }} />
+                <div className="w-full h-full flex flex-col items-center justify-center gap-3 p-6 text-center">
+                  <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: 'var(--c-badge-accent-bg)', color: 'var(--c-accent)' }}>
+                    {mode === 'text' ? <Keyboard className="w-6 h-6" /> : micStatus === 'granted' ? <Mic className="w-6 h-6" /> : wantsCamera ? <VideoOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
                   </div>
-                  <div className="relative z-10 text-slate-400 dark:text-slate-600 opacity-60 mb-1">
-                    <OpticalLensReticle size={56} />
-                  </div>
-                  <div className="relative z-10 space-y-0.5">
-                    <p className="text-xs font-bold" style={{ color: 'var(--c-text)' }}>
-                      {micStatus === 'granted' ? 'Voice-only interview' : 'Camera and microphone are off'}
+                  <div className="space-y-1">
+                    <p className="text-sm font-bold" style={{ color: 'var(--c-text)' }}>
+                      {mode === 'text'
+                        ? 'Typed answers'
+                        : micStatus === 'granted'
+                        ? 'Microphone is on'
+                        : wantsCamera ? 'Your camera preview appears here' : 'Voice-only interview'}
                     </p>
-                    <p className="text-[11px] max-w-xs" style={{ color: 'var(--c-text-muted)' }}>
-                      {micStatus === 'granted'
-                        ? 'Your microphone is on. The camera stays off, so no video is recorded and facial analysis is skipped.'
-                        : 'Turn them on below to check your framing and sound.'}
+                    <p className="text-xs max-w-xs" style={{ color: 'var(--c-text-muted)' }}>
+                      {mode === 'text'
+                        ? 'Nothing is recorded. You type each answer.'
+                        : micStatus === 'granted'
+                        ? 'Say a few words. The bars below should move.'
+                        : 'Turn on your devices to check how you look and sound.'}
                     </p>
                   </div>
                 </div>
               )}
-
-              {/* Viewfinder Top Bar Overlay */}
-              <div className="absolute top-3 inset-x-3 flex items-center justify-between pointer-events-none">
-                <span 
-                  className="px-2 py-0.5 rounded text-[11px] font-semibold border"
-                  style={{
-                    background: cameraStatus === 'granted' ? 'var(--c-badge-success-bg)' : 'var(--c-badge-muted-bg)',
-                    color: cameraStatus === 'granted' ? 'var(--c-badge-success-text)' : 'var(--c-badge-muted-text)',
-                    borderColor: 'var(--c-border)'
-                  }}
-                >
-                  {cameraStatus === 'granted' ? 'Camera on' : 'Camera off'}
-                </span>
-                {micStatus === 'granted' && (
-                  <AudioLevelMeter stream={mediaStream} bars={8} height={14} color="var(--c-accent)" />
-                )}
-              </div>
 
               {cameraStatus === 'granted' && (
-                <div className="absolute bottom-3 inset-x-3 pointer-events-none" aria-hidden="true">
-                  <div
-                    className="px-3 py-1.5 rounded-md border flex items-center justify-between gap-2.5"
-                    style={{ background: 'var(--c-surface-card)', borderColor: 'var(--c-border)', color: 'var(--c-text)' }}
-                  >
-                    <Mic className="w-3.5 h-3.5 text-[var(--c-text-muted)] shrink-0" />
-                    <AudioLevelMeter stream={mediaStream} bars={12} height={12} color="var(--c-accent)" />
+                <>
+                  {/* Framing guide: keep your face inside the oval */}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none" aria-hidden="true">
+                    <div className="rounded-[50%] border-2 border-dashed" style={{ width: '38%', height: '62%', borderColor: 'rgba(255,255,255,0.45)' }} />
                   </div>
-                </div>
+                  <span className="absolute top-3 left-3 px-2 py-1 rounded-md text-[11px] font-semibold pointer-events-none" style={{ background: 'rgba(10,16,32,0.75)', color: '#fff' }}>
+                    Keep your face inside the oval
+                  </span>
+                </>
               )}
 
+              {micStatus === 'granted' && (
+                <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between gap-2 px-3 py-1.5 rounded-md pointer-events-none" style={{ background: 'rgba(10,16,32,0.75)' }}>
+                  <span className="flex items-center gap-1.5 text-[11px] font-semibold text-white"><Mic className="w-3.5 h-3.5" /> Microphone level</span>
+                  <AudioLevelMeter stream={mediaStream} bars={14} height={14} color="var(--c-accent)" />
+                </div>
+              )}
             </div>
 
-            {/* LEVEL 2 — Equipment Verification Rows (No nested box container) */}
-            <div className="space-y-3">
-              <h3 className="text-sm font-bold" style={{ color: 'var(--c-text)' }}>
-                Your devices
-              </h3>
+            <p className="flex items-start gap-1.5 text-[11px] leading-relaxed" style={{ color: 'var(--c-text-muted)' }}>
+              <ShieldCheck className="w-3.5 h-3.5 shrink-0 mt-px" style={{ color: 'var(--c-success)' }} />
+              Recording happens only while you answer a question, with a red REC sign on screen. You can delete your recordings from the results page.
+              Your results are practice feedback, never a hiring decision.
+            </p>
+          </div>
 
-              <div className="divide-y text-xs border-t border-b" style={{ borderColor: 'var(--c-border)' }}>
-                {/* Camera Row */}
-                <div className="py-3 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div 
-                      className="w-7 h-7 rounded flex items-center justify-center border"
-                      style={{ 
-                        background: 'var(--c-surface-muted)', 
-                        borderColor: 'var(--c-border)',
-                        color: cameraStatus === 'granted' ? 'var(--c-success)' : 'var(--c-text-muted)'
-                      }}
+          {/* Setup steps */}
+          <div className="lg:col-span-6 space-y-4">
+
+            {/* 1. How will you answer? */}
+            <section className="rounded-xl border p-5 space-y-4" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
+              <StepTitle n={1} done={consentGiven}>How will you answer?</StepTitle>
+
+              <div className="grid gap-2" role="radiogroup" aria-label="Answer mode">
+                {MODES.map(({ id: modeId, Icon, title, text }) => {
+                  const active = mode === modeId;
+                  return (
+                    <button
+                      key={modeId}
+                      role="radio"
+                      aria-checked={active}
+                      onClick={() => chooseMode(modeId)}
+                      disabled={savingConsent || continuingTextOnly}
+                      className="rounded-lg border p-3 text-left flex items-start gap-3 transition-colors"
+                      style={{ background: active ? 'var(--c-badge-accent-bg)' : 'var(--c-surface-muted)', borderColor: active ? 'var(--c-accent)' : 'var(--c-border)' }}
                     >
-                      <Camera className="w-3.5 h-3.5" />
-                    </div>
-                    <div>
-                      <p className="font-bold" style={{ color: 'var(--c-text)' }}>Camera</p>
-                      <p className="text-[11px]" style={{ color: 'var(--c-text-muted)' }}>
-                        Response video recording
-                      </p>
-                    </div>
-                  </div>
-
-                  <div>
-                    {cameraStatus === 'granted' ? (
-                      <span className="c-badge c-badge-success flex items-center gap-1">
-                        <Check className="w-3 h-3" /> Connected
+                      <span className="w-4 h-4 mt-0.5 rounded-full border-2 flex items-center justify-center shrink-0" style={{ borderColor: active ? 'var(--c-accent)' : 'var(--c-text-muted)' }}>
+                        {active && <span className="w-2 h-2 rounded-full" style={{ background: 'var(--c-accent)' }} />}
                       </span>
-                    ) : cameraStatus === 'denied' ? (
-                      <span className="c-badge c-badge-danger flex items-center gap-1">
-                        <AlertCircle className="w-3 h-3" /> Blocked
+                      <Icon className="w-4 h-4 mt-0.5 shrink-0" style={{ color: active ? 'var(--c-accent)' : 'var(--c-text-muted)' }} />
+                      <span className="min-w-0">
+                        <span className="block text-sm font-semibold" style={{ color: 'var(--c-text)' }}>{title}</span>
+                        <span className="block text-xs leading-relaxed" style={{ color: 'var(--c-text-muted)' }}>{text}</span>
                       </span>
-                    ) : micStatus === 'granted' && !cameraConsent ? (
-                      <span className="c-badge c-badge-muted">Off (voice only)</span>
-                    ) : (
-                      <span className="c-badge c-badge-muted">Pending</span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Microphone Row */}
-                <div className="py-3 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div 
-                      className="w-7 h-7 rounded flex items-center justify-center border"
-                      style={{ 
-                        background: 'var(--c-surface-muted)', 
-                        borderColor: 'var(--c-border)',
-                        color: micStatus === 'granted' ? 'var(--c-success)' : 'var(--c-text-muted)'
-                      }}
-                    >
-                      <Mic className="w-3.5 h-3.5" />
-                    </div>
-                    <div>
-                      <p className="font-bold" style={{ color: 'var(--c-text)' }}>Microphone Input</p>
-                      <p className="text-[11px]" style={{ color: 'var(--c-text-muted)' }}>
-                        Spoken speech transcription
-                      </p>
-                    </div>
-                  </div>
-
-                  <div>
-                    {micStatus === 'granted' ? (
-                      <span className="c-badge c-badge-success flex items-center gap-1">
-                        <Check className="w-3 h-3" /> Connected
-                      </span>
-                    ) : micStatus === 'denied' ? (
-                      <span className="c-badge c-badge-danger flex items-center gap-1">
-                        <AlertCircle className="w-3 h-3" /> Blocked
-                      </span>
-                    ) : (
-                      <span className="c-badge c-badge-muted">Pending</span>
-                    )}
-                  </div>
-                </div>
+                    </button>
+                  );
+                })}
               </div>
 
-              {permissionError && (
-                <div className="c-badge-danger rounded-md p-3 flex items-start gap-2 text-xs">
-                  <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                  <p>{permissionError}</p>
-                </div>
-              )}
-
-              {/* NFR 10 - Consent-Based Recording: separate consent per device */}
-              {!readyToBegin && (
+              {/* NFR 10 - a separate consent for each device that will be used */}
+              {mode !== 'text' && (
                 <div className="space-y-2">
-                  {[
-                    {
-                      key: 'mic', checked: micConsent, onChange: setMicConsent, required: true,
-                      title: 'Microphone consent (required to speak your answers).',
-                      text: 'MockAI may record my microphone audio while I am answering a question, to transcribe and assess my answer.',
-                    },
-                    {
-                      key: 'camera', checked: cameraConsent, onChange: setCameraConsent, required: false,
-                      title: 'Camera consent (optional).',
-                      text: 'MockAI may record my webcam video while I am answering, to give feedback on facial expression and camera presence. Leave this unticked for a voice-only interview.',
-                    },
-                    {
-                      key: 'research', checked: researchConsent, onChange: setResearchConsent, required: false,
-                      title: 'Help improve MockAI (optional).',
-                      text: 'My recordings and transcripts may also be used, without my name, to check and improve the accuracy of MockAI. Without this, they are used only to assess this interview.',
-                    },
-                  ].map((c) => (
-                    <label
-                      key={c.key}
-                      className="flex items-start gap-3 rounded-md border p-3 text-xs cursor-pointer"
-                      style={{ borderColor: c.checked ? 'var(--c-accent)' : 'var(--c-border)', background: 'var(--c-surface-muted)' }}
-                    >
+                  {consents.filter((c) => c.show).map((c) => (
+                    <label key={c.key} className="flex items-start gap-3 rounded-lg border p-3 text-xs cursor-pointer"
+                      style={{ borderColor: c.checked ? 'var(--c-success)' : 'var(--c-border)', background: 'var(--c-surface-muted)' }}>
                       <input
                         type="checkbox"
                         checked={c.checked}
                         onChange={(e) => { c.onChange(e.target.checked); if (e.target.checked) setPermissionError(''); }}
+                        disabled={devicesOn}
                         className="mt-0.5 h-4 w-4 shrink-0 accent-orange-500"
-                        aria-required={c.required}
+                        aria-required="true"
                       />
                       <span className="leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                        <strong style={{ color: 'var(--c-text)' }}>{c.title}</strong>{' '}{c.text}
+                        <strong style={{ color: 'var(--c-text)' }}>{c.title}.</strong> {c.text}
                       </span>
                     </label>
                   ))}
-                  <p className="text-[11px] leading-relaxed" style={{ color: 'var(--c-text-muted)' }}>
-                    A red REC indicator is shown whenever recording is active. Your results are practice feedback, never a hiring decision.
-                  </p>
                 </div>
               )}
 
-              <div className="pt-2 space-y-2">
-                {!readyToBegin ? (
-                  <>
-                    <button 
-                      onClick={requestPermissions}
-                      disabled={!micConsent}
-                      className="c-btn c-btn-primary w-full py-3 text-xs font-bold rounded-md flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <RefreshCw className="w-3.5 h-3.5" />
-                      <span>{cameraConsent ? 'Turn on camera and microphone' : 'Turn on microphone (voice only)'}</span>
-                    </button>
+              {/* NFR 11 - optional research use, off by default */}
+              <label className="flex items-start gap-3 text-xs cursor-pointer px-1">
+                <input
+                  type="checkbox"
+                  checked={researchConsent}
+                  onChange={(e) => setResearchConsent(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 shrink-0 accent-orange-500"
+                />
+                <span className="leading-relaxed" style={{ color: 'var(--c-text-muted)' }}>
+                  <strong style={{ color: 'var(--c-text-secondary)' }}>Optional: help improve MockAI.</strong> My answers may also be used, without my name, to check and improve MockAI's accuracy.
+                </span>
+              </label>
+            </section>
+
+            {mode === 'text' ? (
+              <section className="rounded-xl border p-5 space-y-3" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
+                <StepTitle n={2} done={false}>Start when you are ready</StepTitle>
+                <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
+                  Write each answer as you would say it. Aim for a few clear sentences with one example.
+                </p>
+                <button
+                  onClick={handleTextOnly}
+                  disabled={continuingTextOnly}
+                  className="c-btn c-btn-primary w-full py-3.5 text-sm font-bold rounded-md flex items-center justify-center gap-2 disabled:opacity-60"
+                >
+                  <span>{continuingTextOnly ? 'Starting…' : 'Start interview'}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </section>
+            ) : (
+              <>
+                {/* 2. Turn on devices */}
+                <section className="rounded-xl border p-5 space-y-3" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)', opacity: consentGiven ? 1 : 0.55 }}>
+                  <StepTitle n={2} done={devicesOn}>Turn on your {wantsCamera ? 'camera and microphone' : 'microphone'}</StepTitle>
+                  <div className="divide-y" style={{ borderColor: 'var(--c-border)' }}>
+                    <DeviceStatus Icon={Camera} label="Camera" status={cameraStatus} off={!wantsCamera} />
+                    <DeviceStatus Icon={Mic} label="Microphone" status={micStatus} />
+                  </div>
+
+                  {permissionError && (
+                    <div className="c-badge-danger rounded-md p-3 flex items-start gap-2 text-xs" role="alert">
+                      <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                      <div className="space-y-1">
+                        <p>{permissionError}</p>
+                        {blocked && <p>Click the camera icon in your browser's address bar, choose Allow, then press the button again.</p>}
+                      </div>
+                    </div>
+                  )}
+
+                  {!devicesOn && (
                     <button
-                      onClick={handleTextOnly}
-                      disabled={continuingTextOnly}
-                      className="c-btn c-btn-secondary w-full py-2.5 text-xs font-semibold rounded-md flex items-center justify-center gap-2 !whitespace-normal text-center"
+                      onClick={requestPermissions}
+                      disabled={!consentGiven || micStatus === 'prompting'}
+                      className="c-btn c-btn-primary w-full py-3 text-sm font-bold rounded-md flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <Keyboard className="w-3.5 h-3.5" />
-                      <span>Continue with typed answers only (no camera or mic)</span>
+                      {blocked ? <RefreshCw className="w-4 h-4" /> : wantsCamera ? <Camera className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                      <span>
+                        {!consentGiven
+                          ? 'Tick the consent above first'
+                          : blocked ? 'Try again' : wantsCamera ? 'Turn on camera and microphone' : 'Turn on microphone'}
+                      </span>
                     </button>
-                  </>
-                ) : (
-                  <button 
+                  )}
+                </section>
+
+                {/* 3. Quick check and start */}
+                <section ref={startStepRef} className="rounded-xl border p-5 space-y-3" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)', opacity: devicesOn ? 1 : 0.55 }}>
+                  <StepTitle n={3} done={false}>Quick check, then start</StepTitle>
+                  <ul className="space-y-1.5 text-xs" style={{ color: 'var(--c-text-secondary)' }}>
+                    {[
+                      wantsCamera && 'Your face is inside the oval and well lit.',
+                      'You are in a quiet place.',
+                      'The microphone bars move when you speak.',
+                    ].filter(Boolean).map((t) => (
+                      <li key={t} className="flex items-start gap-2">
+                        <Check className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: devicesOn ? 'var(--c-success)' : 'var(--c-text-muted)' }} />
+                        {t}
+                      </li>
+                    ))}
+                  </ul>
+                  <button
                     onClick={handleBegin}
-                    disabled={savingConsent}
-                    className="c-btn c-btn-primary w-full py-3 text-xs font-bold rounded-md flex items-center justify-center gap-2 disabled:opacity-60"
+                    disabled={!devicesOn || savingConsent}
+                    className="c-btn c-btn-primary w-full py-3.5 text-sm font-bold rounded-md flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <span>{savingConsent ? 'Saving consent…' : 'Begin Interview Session'}</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
+                    <span>{savingConsent ? 'Starting…' : 'Start interview'}</span>
+                    <ArrowRight className="w-4 h-4" />
                   </button>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Right Column: Session Ledger & Protocol (5 cols) — Open editorial layout */}
-          <div className="lg:col-span-5 space-y-6">
-            
-            {/* Session Specifications Ledger */}
-            <div className="space-y-3">
-              <div className="border-b pb-2" style={{ borderColor: 'var(--c-border)' }}>
-                <h2 className="c-heading text-base font-bold" style={{ color: 'var(--c-text)' }}>Session Overview</h2>
-              </div>
-
-              <dl className="divide-y text-xs" style={{ borderColor: 'var(--c-border)' }}>
-                <div className="py-2.5 flex items-center justify-between">
-                  <dt style={{ color: 'var(--c-text-secondary)' }}>Role</dt>
-                  <dd className="font-bold text-right" style={{ color: 'var(--c-text)' }}>{interview.role}</dd>
-                </div>
-
-                <div className="py-2.5 flex items-center justify-between">
-                  <dt style={{ color: 'var(--c-text-secondary)' }}>Track</dt>
-                  <dd className="font-bold text-right capitalize" style={{ color: 'var(--c-text)' }}>{interview.type || 'Technical'}</dd>
-                </div>
-
-                <div className="py-2.5 flex items-center justify-between">
-                  <dt style={{ color: 'var(--c-text-secondary)' }}>Questions</dt>
-                  <dd className="font-bold text-right font-mono" style={{ color: 'var(--c-text)' }}>{questionCount} questions</dd>
-                </div>
-
-                <div className="py-2.5 flex items-center justify-between">
-                  <dt style={{ color: 'var(--c-text-secondary)' }}>Estimated time</dt>
-                  <dd className="font-bold text-right font-mono" style={{ color: 'var(--c-text)' }}>~{minDuration}–{maxDuration} min</dd>
-                </div>
-              </dl>
-            </div>
-
-            {/* Structured Protocol */}
-            <div className="space-y-3">
-              <div className="border-b pb-2" style={{ borderColor: 'var(--c-border)' }}>
-                <h2 className="c-heading text-base font-bold" style={{ color: 'var(--c-text)' }}>Before you start</h2>
-              </div>
-
-              <div className="space-y-3 text-xs">
-                <div className="flex items-start gap-3">
-                  <span className="font-mono text-[11px] font-bold px-1.5 py-0.5 rounded border shrink-0"
-                    style={{ borderColor: 'var(--c-border)', color: 'var(--c-text-secondary)', background: 'var(--c-surface-muted)' }}
-                  >
-                    01
-                  </span>
-                  <div>
-                    <p className="font-bold" style={{ color: 'var(--c-text)' }}>Sequential Questions</p>
-                    <p className="text-[11px] leading-relaxed mt-0.5" style={{ color: 'var(--c-text-secondary)' }}>
-                      Formulate your response before initiating recording.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <span className="font-mono text-[11px] font-bold px-1.5 py-0.5 rounded border shrink-0"
-                    style={{ borderColor: 'var(--c-border)', color: 'var(--c-text-secondary)', background: 'var(--c-surface-muted)' }}
-                  >
-                    02
-                  </span>
-                  <div>
-                    <p className="font-bold" style={{ color: 'var(--c-text)' }}>Manual Capture</p>
-                    <p className="text-[11px] leading-relaxed mt-0.5" style={{ color: 'var(--c-text-secondary)' }}>
-                      Audio and video are recorded only while you answer, for up to 3 minutes per answer.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Privacy Guarantee Note */}
-            <div className="pt-2 border-t" style={{ borderColor: 'var(--c-border)' }}>
-              <div className="flex items-center gap-2 mb-1">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-                <span className="font-bold text-[11px]" style={{ color: 'var(--c-text)' }}>Your privacy</span>
-              </div>
-              <p className="text-[11px] leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                Audio and video are recorded only while you answer a question. If your camera is on, the preview stays on between answers so we can warn you when you leave the frame; those still frames are checked instantly and never stored. Recordings are used only to evaluate this interview unless you tick the optional improvement box, and you can delete them from your results page at any time.
-              </p>
-            </div>
-
+                </section>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -542,5 +501,3 @@ Check that your camera and microphone work and that your face is well lit, then 
 };
 
 export default InterviewPreparation;
-
-

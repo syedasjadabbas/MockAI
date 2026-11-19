@@ -1,4 +1,6 @@
 from datetime import datetime
+import json
+import os
 import re
 from database import categories_collection, questions_collection
 
@@ -800,6 +802,225 @@ DEFAULT_CATEGORIES_DATA = [
     }
 ]
 
+# ---------------------------------------------------------------------------
+# Easy questions (pre-evaluation feedback, Nov 2026): every domain has at
+# least three easy questions of the type a technical interview asks, and the
+# general category has at least three easy behavioral and three easy
+# situational questions, so a three-question interview can be all easy.
+# ---------------------------------------------------------------------------
+def _easy(text, qtype, tags, answer):
+    return {"question_text": text, "difficulty": "Easy", "type": qtype, "tags": tags,
+            "expected_answer": answer, "status": "active"}
+
+
+EASY_QUESTIONS = {
+    "Frontend Development": [
+        _easy("What is the difference between HTML, CSS and JavaScript in a web page?", "Conceptual",
+              ["HTML", "CSS", "JavaScript", "Structure", "Styling"],
+              "HTML gives the page its structure and content, such as headings, text, images and forms. CSS controls how it looks: colours, fonts, spacing and layout. JavaScript adds behaviour, such as responding to clicks, changing content and fetching data."),
+        _easy("What is a React component, and what are props?", "Technical",
+              ["React", "Component", "Props", "Reusable UI"],
+              "A component is a reusable piece of the user interface, written as a function that returns what to show. Props are the inputs passed to a component from its parent, such as a title or a click handler, and the component reads them but does not change them."),
+    ],
+    "Backend & Distributed Systems": [
+        _easy("What is an API, and why do applications use them?", "Conceptual",
+              ["API", "Client", "Server", "Request", "Response"],
+              "An API is a defined way for one program to ask another for data or actions. A client sends a request and the server sends back a response, usually as JSON. APIs let the frontend, mobile apps and other services use the same backend without knowing how it works inside."),
+        _easy("What is the difference between the GET and POST HTTP methods?", "Technical",
+              ["HTTP", "GET", "POST", "Request"],
+              "GET asks the server for data and should not change anything; its parameters go in the URL. POST sends data to the server, for example a form, to create or change something; the data goes in the request body."),
+        _easy("What is a database, and why does a web application need one?", "Conceptual",
+              ["Database", "Storage", "Tables", "Queries"],
+              "A database stores the application's data permanently and in an organised way, such as users, orders and posts, so it is not lost when the server restarts. It lets the application save, search, update and delete data quickly with queries."),
+    ],
+    "AI & Machine Learning": [
+        _easy("What is the difference between artificial intelligence and machine learning?", "Conceptual",
+              ["Artificial Intelligence", "Machine Learning", "Data", "Patterns"],
+              "Artificial intelligence is the broad goal of making computers do tasks that need human-like intelligence. Machine learning is one way to achieve it: instead of writing rules by hand, the computer learns patterns from example data and uses them to make predictions."),
+        _easy("Why do we split data into a training set and a test set?", "Technical",
+              ["Training Set", "Test Set", "Evaluation", "Overfitting"],
+              "The model learns from the training set, and the test set is kept aside to check how well it works on data it has never seen. This shows whether the model really learned general patterns or only memorised the training data, which is called overfitting."),
+    ],
+    "Data Analytics & SQL": [
+        _easy("What does a data analyst do in a company?", "Conceptual",
+              ["Data Analysis", "Reports", "Insights", "Decisions"],
+              "A data analyst collects and cleans data, analyses it to find trends and patterns, and presents the results in reports, charts and dashboards. This helps managers make decisions based on evidence rather than guesses."),
+        _easy("What does the SQL SELECT statement do, and what is the WHERE clause used for?", "Technical",
+              ["SQL", "SELECT", "WHERE", "Filter", "Query"],
+              "SELECT reads data from a table and chooses which columns to return. WHERE filters the rows so that only the ones matching a condition are returned, for example customers from one city."),
+        _easy("What is the difference between a bar chart and a line chart, and when would you use each?", "Conceptual",
+              ["Bar Chart", "Line Chart", "Visualisation", "Trend", "Comparison"],
+              "A bar chart compares values across separate categories, such as sales by region. A line chart shows how a value changes over time, such as monthly sales, so it is used to show trends."),
+    ],
+    "Healthcare & Medicine": [
+        _easy("Why is hand hygiene so important in a hospital?", "Conceptual",
+              ["Hand Hygiene", "Infection Control", "Patient Safety"],
+              "Hands are the most common way germs spread between patients and staff. Washing or sanitising hands before and after touching a patient prevents hospital infections and protects both patients and staff."),
+        _easy("What are the normal vital signs you check in an adult patient?", "Technical",
+              ["Vital Signs", "Temperature", "Pulse", "Blood Pressure", "Respiratory Rate"],
+              "The main vital signs are temperature, pulse or heart rate, respiratory rate, blood pressure and oxygen saturation. Normal adult values are about 37 degrees Celsius, 60 to 100 beats per minute, 12 to 20 breaths per minute, around 120 over 80 blood pressure and oxygen saturation of 95 percent or more."),
+        _easy("Why is patient confidentiality important?", "Conceptual",
+              ["Confidentiality", "Privacy", "Trust", "Ethics"],
+              "Patients share personal and medical information because they trust it will stay private. Keeping it confidential protects their privacy and dignity, builds trust so they share honest information, and is a legal and ethical duty."),
+    ],
+    "Nursing & Patient Care": [
+        _easy("How do you make a new patient feel comfortable when they are admitted to the ward?", "Conceptual",
+              ["Patient Comfort", "Communication", "Orientation", "Empathy"],
+              "Greet the patient by name, introduce yourself, explain what will happen and show them the room and call bell. Listen to their worries, answer questions in simple words and make sure they are physically comfortable."),
+        _easy("Why is accurate documentation important in nursing?", "Conceptual",
+              ["Documentation", "Records", "Continuity of Care", "Patient Safety"],
+              "Accurate notes tell the next nurse and the doctors exactly what was done and how the patient is, so care continues safely without mistakes or repeated doses. Records are also a legal document of the care given."),
+    ],
+    "Education & Teaching": [
+        _easy("How do you keep students engaged during a lesson?", "Conceptual",
+              ["Engagement", "Active Learning", "Questions", "Activities"],
+              "Start with something interesting, ask questions, and mix short explanations with activities such as group work, discussions and examples from real life. Give students a chance to participate and praise their effort."),
+        _easy("How do you handle a student who is disturbing the class?", "Conceptual",
+              ["Classroom Management", "Behaviour", "Rules", "Communication"],
+              "Stay calm, remind the student of the class rules quietly, and give a small consequence if the behaviour continues. Later, talk to the student privately to understand the reason and involve parents if needed."),
+    ],
+    "Law & Legal Practice": [
+        _easy("What is the difference between civil law and criminal law?", "Conceptual",
+              ["Civil Law", "Criminal Law", "Disputes", "Punishment"],
+              "Civil law deals with disputes between people or organisations, such as contracts or property, and usually ends in compensation. Criminal law deals with offences against society, such as theft, where the state prosecutes and the result can be a fine or prison."),
+        _easy("What is a contract, and what makes it valid?", "Technical",
+              ["Contract", "Offer", "Acceptance", "Consideration", "Agreement"],
+              "A contract is a legally binding agreement between parties. It is valid when there is an offer, acceptance of that offer, something of value exchanged (consideration), an intention to create legal relations, and parties who are legally able to agree."),
+        _easy("Why is client confidentiality important for a lawyer?", "Conceptual",
+              ["Confidentiality", "Client Trust", "Ethics", "Privilege"],
+              "Clients must be able to tell their lawyer everything honestly to get good advice. Keeping their information confidential builds that trust, and it is a professional and legal duty of every lawyer."),
+    ],
+    "Human Resources & Talent Management": [
+        _easy("What are the main responsibilities of an HR department?", "Conceptual",
+              ["Recruitment", "Onboarding", "Payroll", "Employee Relations", "Training"],
+              "HR hires new staff, welcomes and trains them, manages pay and benefits, keeps employee records, handles complaints and relations between staff, and makes sure the company follows employment laws."),
+        _easy("How do you make a new employee feel welcome on their first day?", "Conceptual",
+              ["Onboarding", "Orientation", "Welcome", "Buddy"],
+              "Prepare their desk, equipment and accounts before they arrive, greet them, introduce them to the team and give them a short orientation of the office and policies. Assigning a buddy and checking in at the end of the day helps them settle in."),
+        _easy("What makes a good job advertisement?", "Technical",
+              ["Job Advertisement", "Job Description", "Requirements", "Recruitment"],
+              "A clear job title, a short description of the company, the main duties, the required skills and experience, the location and salary range if possible, and simple instructions on how to apply."),
+    ],
+    "Graphic & Visual Design": [
+        _easy("What is the difference between RGB and CMYK colour modes?", "Technical",
+              ["RGB", "CMYK", "Colour Modes", "Print", "Screen"],
+              "RGB mixes red, green and blue light and is used for screens. CMYK mixes cyan, magenta, yellow and black ink and is used for printing, so print designs are prepared in CMYK."),
+        _easy("What is the difference between a vector image and a raster image?", "Conceptual",
+              ["Vector", "Raster", "Pixels", "Scalability", "Logo"],
+              "A raster image is made of pixels, like a photo, and becomes blurry when enlarged. A vector image is made of shapes defined by maths, so it can be resized to any size without losing quality, which is why logos are made as vectors."),
+        _easy("Why is white space important in a design?", "Conceptual",
+              ["White Space", "Layout", "Readability", "Focus"],
+              "White space is the empty area around elements. It makes a design look clean, separates groups of content, improves readability and guides the viewer's eye to the most important parts."),
+    ],
+    "Accounting & Financial Analysis": [
+        _easy("What is the difference between assets and liabilities?", "Conceptual",
+              ["Assets", "Liabilities", "Balance Sheet", "Equity"],
+              "Assets are what a business owns or is owed, such as cash, stock and equipment. Liabilities are what it owes to others, such as loans and unpaid bills. Assets minus liabilities equals the owner's equity."),
+        _easy("What are the three main financial statements?", "Technical",
+              ["Income Statement", "Balance Sheet", "Cash Flow Statement"],
+              "The income statement shows revenue, expenses and profit over a period. The balance sheet shows assets, liabilities and equity on a date. The cash flow statement shows how cash came in and went out from operations, investing and financing."),
+        _easy("What is double-entry bookkeeping?", "Conceptual",
+              ["Double Entry", "Debit", "Credit", "Ledger"],
+              "Every transaction is recorded in two accounts, one as a debit and one as a credit of the same amount. This keeps the books balanced and makes errors easier to find."),
+    ],
+    "Marketing & Brand Management": [
+        _easy("What are the 4 Ps of marketing?", "Conceptual",
+              ["Product", "Price", "Place", "Promotion", "Marketing Mix"],
+              "The 4 Ps are Product (what you sell), Price (what customers pay), Place (where and how it is sold) and Promotion (how customers hear about it, such as advertising and social media)."),
+        _easy("What is a target audience, and why is it important?", "Conceptual",
+              ["Target Audience", "Customers", "Segmentation", "Messaging"],
+              "A target audience is the specific group of people most likely to buy a product, described by age, interests, location or needs. Knowing it helps a company choose the right message, channels and budget instead of trying to reach everyone."),
+        _easy("How can social media help a business grow?", "Technical",
+              ["Social Media", "Engagement", "Brand Awareness", "Content"],
+              "Social media lets a business reach many people at low cost, build brand awareness, share useful content, talk directly with customers and answer their questions, and run targeted ads that bring visitors and sales."),
+    ],
+    "Civil & Structural Engineering": [
+        _easy("What is the difference between a dead load and a live load?", "Conceptual",
+              ["Dead Load", "Live Load", "Structural Loads"],
+              "A dead load is the permanent weight of the structure itself, such as walls, floors and the roof. A live load is temporary and changes, such as people, furniture, vehicles and stored goods."),
+        _easy("Why is concrete reinforced with steel bars?", "Technical",
+              ["Reinforced Concrete", "Steel", "Tension", "Compression"],
+              "Concrete is strong in compression but weak in tension and cracks easily when pulled or bent. Steel bars are strong in tension, so together they make beams and slabs that can carry bending loads safely."),
+        _easy("Why is safety important on a construction site, and how do you ensure it?", "Conceptual",
+              ["Site Safety", "PPE", "Hazards", "Training"],
+              "Construction sites have many hazards such as falls, heavy machinery and falling objects. Safety is ensured by wearing helmets and other protective equipment, safety training and toolbox talks, barriers and signs, and regular inspections."),
+    ],
+    "Business Analysis & Strategy": [
+        _easy("What does a business analyst do?", "Conceptual",
+              ["Business Analyst", "Requirements", "Stakeholders", "Solutions"],
+              "A business analyst talks to stakeholders to understand their problems and needs, writes them down as clear requirements, and works with the development team to make sure the solution meets those needs."),
+        _easy("What is a SWOT analysis?", "Technical",
+              ["SWOT", "Strengths", "Weaknesses", "Opportunities", "Threats"],
+              "SWOT is a simple planning tool that lists a company's internal Strengths and Weaknesses and its external Opportunities and Threats, to help decide on a strategy."),
+        _easy("What is the difference between a functional and a non-functional requirement?", "Conceptual",
+              ["Functional Requirement", "Non-functional Requirement", "Performance", "Usability"],
+              "A functional requirement says what the system must do, such as letting a user log in. A non-functional requirement says how well it must do it, such as speed, security or ease of use."),
+    ],
+    "Sales Leadership & Client Acquisition": [
+        _easy("How do you prepare before meeting a new client?", "Conceptual",
+              ["Preparation", "Research", "Client Needs", "Questions"],
+              "Research the client's company and needs, understand how our product can help them, prepare a few questions and a short pitch, and set a clear goal for the meeting."),
+        _easy("What makes a good salesperson?", "Conceptual",
+              ["Listening", "Communication", "Product Knowledge", "Persistence"],
+              "A good salesperson listens more than they talk, understands the customer's needs, knows the product well, communicates clearly and honestly, stays positive after rejection and follows up on time."),
+        _easy("How would you follow up with a customer after a sale?", "Technical",
+              ["Follow-up", "Customer Satisfaction", "Relationship", "Repeat Business"],
+              "Thank the customer, check that the product was delivered and is working well, answer any questions and keep in touch from time to time. This builds a relationship, brings repeat sales and referrals."),
+    ],
+    "Behavioral & Leadership": [
+        _easy("Why do you want to work for our company?", "Behavioral",
+              ["Motivation", "Company Research", "Career Goals"],
+              "Show that you researched the company: mention what it does, its values or a product you like, and connect them to your own skills and goals, explaining how you can contribute."),
+        _easy("What would you do if you made a mistake at work?", "Situational",
+              ["Accountability", "Honesty", "Problem Solving", "Learning"],
+              "Admit the mistake honestly and early, tell the manager, fix it or reduce its effect as soon as possible, and learn from it so it does not happen again."),
+        _easy("What would you do if a teammate was not doing their share of the work?", "Situational",
+              ["Teamwork", "Communication", "Conflict", "Support"],
+              "First talk to the teammate privately and politely to understand the reason and offer help. Agree clearly on who does what and by when. If the problem continues, inform the team lead so the work is not delayed."),
+    ],
+}
+
+# Questions that were labelled Easy but are not easy for a first interview.
+DIFFICULTY_CORRECTIONS = {
+    "What is the difference between synchronous HTTP communication and asynchronous message queues like Kafka or RabbitMQ?": "Medium",
+    "How do you detect and handle outliers in a dataset prior to training predictive statistical models?": "Medium",
+    "How do you align HR initiatives (compensation, talent development, succession planning) with overall strategic company business objectives?": "Medium",
+    "How do you handle ambiguous requirements and competing deadlines from multiple stakeholders?": "Medium",
+}
+DIFFICULTY_CORRECTION_PREFIXES = {
+    "Describe the legal fiduciary duties of care and loyalty owed by corporate directors": "Medium",
+    "What principles guide your decisions when pairing contrasting typefaces": "Medium",
+}
+
+
+def _corrected_difficulty(text: str, current: str) -> str:
+    if text in DIFFICULTY_CORRECTIONS:
+        return DIFFICULTY_CORRECTIONS[text]
+    for prefix, level in DIFFICULTY_CORRECTION_PREFIXES.items():
+        if text.startswith(prefix):
+            return level
+    return current
+
+
+# More easy questions so that every domain has at least 15 and questions can
+# rotate between a candidate's interviews (question_bank_more.json, shaped
+# {"<category name>": [{question_text, type, tags, expected_answer}, ...]}).
+_MORE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "question_bank_more.json")
+MORE_EASY_QUESTIONS = {}
+if os.path.exists(_MORE_PATH):
+    with open(_MORE_PATH, encoding="utf-8") as _f:
+        MORE_EASY_QUESTIONS = {
+            name: [_easy(q["question_text"], q["type"], q["tags"], q["expected_answer"]) for q in items]
+            for name, items in json.load(_f).items()
+        }
+
+for _cat in DEFAULT_CATEGORIES_DATA:
+    for _q in _cat["questions"]:
+        _q["difficulty"] = _corrected_difficulty(_q["question_text"], _q.get("difficulty", "Medium"))
+    _cat["questions"].extend(EASY_QUESTIONS.get(_cat["name"], []))
+    _cat["questions"].extend(MORE_EASY_QUESTIONS.get(_cat["name"], []))
+
+
 def seed_question_bank(force: bool = False) -> dict:
     """
     Seeds default categories and questions.
@@ -869,6 +1090,12 @@ def seed_question_bank(force: bool = False) -> dict:
                 }
                 questions_collection.insert_one(q_doc)
                 created_questions += 1
+            elif existing_q.get("difficulty") == "Easy" and q.get("difficulty") != "Easy":
+                # Applies DIFFICULTY_CORRECTIONS to a bank seeded earlier.
+                questions_collection.update_one(
+                    {"_id": existing_q["_id"]},
+                    {"$set": {"difficulty": q["difficulty"], "updated_at": datetime.utcnow()}},
+                )
 
     total_cats = categories_collection.count_documents({})
     total_qs = questions_collection.count_documents({})

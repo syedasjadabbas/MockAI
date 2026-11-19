@@ -38,10 +38,9 @@ import { Bar } from 'react-chartjs-2';
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 import InterviewFlowLayout from '../layouts/InterviewFlowLayout';
+import ScoreRing from '../components/ScoreRing';
 import { getActiveInterview, getRealEvaluation, startEvaluation, endInterview, deleteRecordings } from '../services/candidateApi';
 import { formatDate } from '../../utils/dateFormat';
-import { CANDIDATE_IMAGES } from '../assets/images';
-import { AssessmentDossierSeal } from '../components/TechnicalDoodles';
 import { LanguageSummarySection, QuestionLanguageNotes } from '../components/LanguageAnalysis';
 
 // FR17-FR23 - Real Multimodal Evaluation Results (Assessment Report Layout)
@@ -374,6 +373,7 @@ const EvaluationResults = () => {
     return (match ? match[0] : (text || '')).trim();
   };
   const cameraAreaMeasured = hasVisionSummary || offCameraAnswers.length > 0;
+  const spokenCount = (interview?.responses || []).filter((r) => (r.response_mode || r.responseMode) !== 'text').length;
   const areaRows = [
     {
       key: 'content',
@@ -390,8 +390,12 @@ const EvaluationResults = () => {
       icon: Mic,
       label: 'How you said it',
       score: dimensionScores?.communication_fluency,
-      measured: true,
-      help: 'Your speaking pace, pauses, and filler words like "um".',
+      // Typed answers have no speech to measure, so an all-typed interview
+      // shows Not scored instead of 0%.
+      measured: spokenCount > 0,
+      help: spokenCount > 0
+        ? 'Your speaking pace, pauses, and filler words like "um".'
+        : 'All answers were typed, so speaking was not scored.',
     },
     {
       key: 'camera',
@@ -465,49 +469,33 @@ const EvaluationResults = () => {
     <InterviewFlowLayout step="results">
       <div className="space-y-12 py-6 sm:py-10">
 
-        {/* ===================================================================
-        {/* ===================================================================
-            1. ASSESSMENT HEADER (Candidate / Role / Date / REF)
-           =================================================================== */}
-        <section aria-label="Assessment Metadata" className="border-b pb-8" style={{ borderColor: 'var(--c-border)' }}>
-          <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-            <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--c-text-muted)' }}>
-              <span className="font-semibold" style={{ color: 'var(--c-text)' }}>Interview feedback</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <AssessmentDossierSeal size={28} />
-              {isCompleted && (
-                <span className="c-badge c-badge-success text-xs font-bold">
-                  Feedback ready
-                </span>
-              )}
-              {isProcessing && (
-                <span className="c-badge c-badge-accent text-xs font-bold flex items-center gap-1.5">
-                  <div className="w-2 h-2 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                  <span>Preparing feedback</span>
-                </span>
-              )}
-              {isFailed && (
-                <span className="c-badge c-badge-danger text-xs font-bold">
-                  Feedback failed
-                </span>
-              )}
-            </div>
+        {/* 1. Header: which interview this is */}
+        <section aria-label="Interview" className="space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--c-text-muted)' }}>Your results</p>
+            {isCompleted && <span className="c-badge c-badge-success text-[11px] font-bold">Ready</span>}
+            {isProcessing && (
+              <span className="c-badge c-badge-accent text-[11px] font-bold flex items-center gap-1.5">
+                <span className="w-2 h-2 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                Preparing
+              </span>
+            )}
+            {isFailed && <span className="c-badge c-badge-danger text-[11px] font-bold">Could not be prepared</span>}
           </div>
-
-          <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-3">
-            <div>
-              <h1 className="c-heading text-3xl sm:text-4xl font-bold tracking-tight" style={{ color: 'var(--c-text)' }}>
-                {interview?.role || 'Technical Interview'}
-              </h1>
-              <p className="text-xs sm:text-sm mt-1" style={{ color: 'var(--c-text-secondary)' }}>
-                Track: <span className="capitalize font-semibold" style={{ color: 'var(--c-text)' }}>{interview?.type || 'Technical'}</span> • Completed on {formatDate(interview?.completedAt || interview?.createdAt)}
-              </p>
-            </div>
-
-            <div className="text-xs" style={{ color: 'var(--c-text-muted)' }}>
-              {answeredCount} of {totalQuestions} questions answered
-            </div>
+          <h1 className="c-heading text-3xl sm:text-4xl font-bold tracking-tight" style={{ color: 'var(--c-text)' }}>
+            {interview?.role || 'Interview'}
+          </h1>
+          <div className="flex flex-wrap gap-2">
+            {[
+              `${{ technical: 'Technical', behavioral: 'HR & Behavioral', situational: 'Situational' }[interview?.type] || 'Technical'} interview`,
+              `${answeredCount} of ${totalQuestions} questions answered`,
+              formatDate(interview?.completedAt || interview?.createdAt),
+            ].map((t) => (
+              <span key={t} className="rounded-full border px-3 py-1 text-xs font-medium"
+                style={{ borderColor: 'var(--c-border)', color: 'var(--c-text-secondary)', background: 'var(--c-surface)' }}>
+                {t}
+              </span>
+            ))}
           </div>
         </section>
 
@@ -516,34 +504,29 @@ const EvaluationResults = () => {
            =================================================================== */}
         {isCompleted ? (
           <section aria-label="Your result" className="space-y-6">
-            <div className="relative rounded-lg overflow-hidden border group" style={{ borderColor: 'var(--c-border)' }}>
-              <img
-                src={CANDIDATE_IMAGES.evalChart}
-                alt=""
-                className="absolute inset-0 w-full h-full object-cover opacity-60 transition-transform duration-700 group-hover:scale-105"
-              />
-              <div className="absolute inset-0" style={{ background: 'linear-gradient(to right, var(--c-bg) 15%, rgba(17,17,17,0.75) 55%, var(--c-bg) 100%)' }} />
-              <div className="relative p-6 sm:p-10 max-w-2xl">
-                <p className="text-sm font-medium" style={{ color: 'var(--c-text-secondary)' }}>Your score</p>
-                <div className="flex items-baseline gap-3 mt-1">
-                  <span className="c-serif-num text-6xl sm:text-7xl font-bold tracking-tight" style={{ color: 'var(--c-text)' }}>
-                    {Math.round(overallScore)}%
-                  </span>
-                  <span className="text-lg sm:text-xl font-semibold" style={{ color: 'var(--c-accent)' }}>
+            <div className="rounded-xl border p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center gap-6 sm:gap-8"
+              style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
+              <div className="shrink-0 self-center">
+                <ScoreRing
+                  value={Math.round(overallScore)}
+                  suffix="%"
+                  size={148}
+                  strokeWidth={12}
+                  tone={overallScore >= 75 ? 'success' : overallScore >= 35 ? 'accent' : 'warning'}
+                />
+              </div>
+              <div className="space-y-3 min-w-0">
+                <div>
+                  <p className="text-sm font-medium" style={{ color: 'var(--c-text-secondary)' }}>Your score</p>
+                  <p className="c-heading text-2xl sm:text-3xl font-bold" style={{ color: 'var(--c-text)' }}>
                     {verdictFor(overallScore)}
-                  </span>
+                  </p>
                 </div>
-                <div className="w-40 bg-slate-500/20 h-1.5 rounded-full overflow-hidden mt-3">
-                  <div
-                    className="h-full rounded-full transition-all duration-1000"
-                    style={{ width: `${Math.min(100, Math.max(0, overallScore))}%`, background: 'var(--c-accent)' }}
-                  />
-                </div>
-                <p className="text-sm sm:text-base mt-5 leading-relaxed" style={{ color: 'var(--c-text)' }}>
+                <p className="text-sm sm:text-base leading-relaxed" style={{ color: 'var(--c-text)' }}>
                   {interpretation ||
                     `This score combines what you said, how you said it, and how you came across on camera, across ${answeredCount} answered questions.`}
                 </p>
-                <p className="text-[11px] mt-3 flex items-start gap-1.5" style={{ color: 'var(--c-text-muted)' }}>
+                <p className="text-[11px] flex items-start gap-1.5" style={{ color: 'var(--c-text-muted)' }}>
                   <Info className="w-3.5 h-3.5 shrink-0 mt-px" />
                   Practice feedback from an automated coach, not a hiring decision.
                 </p>
@@ -552,7 +535,7 @@ const EvaluationResults = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {areaRows.map(({ key, icon: Icon, label, score, measured, help, why }) => (
-                <div key={key} className="p-4 rounded-lg border space-y-2.5" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
+                <div key={key} className="p-4 rounded-xl border space-y-2.5" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
                   <div className="flex items-center justify-between gap-2">
                     <span className="flex items-center gap-2 text-sm font-semibold" style={{ color: 'var(--c-text)' }}>
                       <Icon className="w-4 h-4 text-[var(--c-text-muted)]" />
@@ -626,25 +609,14 @@ const EvaluationResults = () => {
               )}
             </div>
 
-            {/* FR 29-01 - result graphs, always visible */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="p-4 rounded-lg border space-y-3" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
-                <div className="flex items-center justify-between border-b pb-2" style={{ borderColor: 'var(--c-border)' }}>
-                  <h3 className="c-heading text-xs font-bold" style={{ color: 'var(--c-text)' }}>Score by area</h3>
-                  <span className="text-[11px] font-mono text-neutral-400">Scale 0-100%</span>
-                </div>
-                <div className="h-44 w-full">
-                  <Bar data={dimensionChartData} options={dimensionChartOptions} />
-                </div>
+            {/* FR 29-01 - result graph, always visible (the area cards above show each area's bar) */}
+            <div className="p-5 rounded-xl border space-y-3" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
+              <div className="flex items-center justify-between">
+                <h3 className="c-heading text-sm font-bold" style={{ color: 'var(--c-text)' }}>Score for each question</h3>
+                <span className="text-[11px]" style={{ color: 'var(--c-text-muted)' }}>{answeredCount} of {totalQuestions} answered</span>
               </div>
-              <div className="p-4 rounded-lg border space-y-3" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
-                <div className="flex items-center justify-between border-b pb-2" style={{ borderColor: 'var(--c-border)' }}>
-                  <h3 className="c-heading text-xs font-bold" style={{ color: 'var(--c-text)' }}>Score by question</h3>
-                  <span className="text-[11px] text-neutral-400">{answeredCount} of {totalQuestions} answered</span>
-                </div>
-                <div className="h-44 w-full">
-                  <Bar data={trajectoryChartData} options={trajectoryChartOptions} />
-                </div>
+              <div className="h-44 w-full">
+                <Bar data={trajectoryChartData} options={trajectoryChartOptions} />
               </div>
             </div>
           </section>
@@ -689,22 +661,6 @@ const EvaluationResults = () => {
            =================================================================== */}
         {isCompleted && (topFixes.length > 0 || topStrengths.length > 0) && (
           <section aria-label="What to work on" className={`grid grid-cols-1 gap-4 ${topFixes.length > 0 && topStrengths.length > 0 ? 'md:grid-cols-2' : ''}`}>
-            {topFixes.length > 0 && (
-              <div className="p-5 rounded-lg border space-y-3" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
-                <h2 className="c-heading text-base font-bold flex items-center gap-2" style={{ color: 'var(--c-text)' }}>
-                  <AlertCircle className="w-4 h-4" style={{ color: 'var(--c-warning)' }} />
-                  What to work on
-                </h2>
-                <ol className="space-y-2.5 text-sm">
-                  {topFixes.map((fix, i) => (
-                    <li key={i} className="flex items-start gap-3 leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                      <span className="font-mono text-xs font-bold mt-0.5 shrink-0" style={{ color: 'var(--c-text-muted)' }}>{i + 1}.</span>
-                      <span>{fix}</span>
-                    </li>
-                  ))}
-                </ol>
-              </div>
-            )}
             {topStrengths.length > 0 && (
               <div className="p-5 rounded-lg border space-y-3" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
                 <h2 className="c-heading text-base font-bold flex items-center gap-2" style={{ color: 'var(--c-text)' }}>
@@ -719,6 +675,22 @@ const EvaluationResults = () => {
                     </li>
                   ))}
                 </ul>
+              </div>
+            )}
+            {topFixes.length > 0 && (
+              <div className="p-5 rounded-lg border space-y-3" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
+                <h2 className="c-heading text-base font-bold flex items-center gap-2" style={{ color: 'var(--c-text)' }}>
+                  <AlertCircle className="w-4 h-4" style={{ color: 'var(--c-warning)' }} />
+                  What to work on
+                </h2>
+                <ol className="space-y-2.5 text-sm">
+                  {topFixes.map((fix, i) => (
+                    <li key={i} className="flex items-start gap-3 leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
+                      <span className="font-mono text-xs font-bold mt-0.5 shrink-0" style={{ color: 'var(--c-text-muted)' }}>{i + 1}.</span>
+                      <span>{fix}</span>
+                    </li>
+                  ))}
+                </ol>
               </div>
             )}
           </section>
@@ -1569,9 +1541,9 @@ const EvaluationResults = () => {
           {isCompleted ? (
             <Link
               to={`/interview/${id}/feedback`}
-              className="c-btn c-btn-primary px-5 py-3 sm:py-2.5 text-xs font-bold rounded-md flex items-center justify-center gap-1.5"
+              className="c-btn c-btn-primary px-6 py-3 text-sm font-bold rounded-md flex items-center justify-center gap-1.5"
             >
-              <span>Continue to feedback</span>
+              <span>See your feedback and practice plan</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           ) : (

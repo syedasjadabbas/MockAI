@@ -1,0 +1,1394 @@
+{
+  "Frontend Development": [
+    {
+      "question_text": "What is responsive web design, and why is it important?",
+      "type": "Conceptual",
+      "tags": [
+        "Responsive Web Design",
+        "Screen Sizes",
+        "Media Queries",
+        "Mobile"
+      ],
+      "expected_answer": "Responsive web design means a website adjusts its layout to fit different screen sizes, such as phones, tablets and desktops. It uses flexible layouts, relative units and CSS media queries. It is important because many users browse on mobile, and a good experience on every device keeps them on the site."
+    },
+    {
+      "question_text": "What is the difference between let, const and var in JavaScript?",
+      "type": "Technical",
+      "tags": [
+        "Let",
+        "Const",
+        "Var",
+        "Scope",
+        "Reassign"
+      ],
+      "expected_answer": "var is function scoped and can be redeclared, which can cause bugs. let and const are block scoped, meaning they only exist inside the curly braces where they are declared. let can be reassigned later, while const cannot be reassigned after it is set."
+    },
+    {
+      "question_text": "What is the DOM in a web browser?",
+      "type": "Conceptual",
+      "tags": [
+        "DOM",
+        "Tree",
+        "Elements",
+        "JavaScript"
+      ],
+      "expected_answer": "The DOM, or Document Object Model, is the browser's representation of an HTML page as a tree of objects, where each tag is an element node. JavaScript uses the DOM to read and change elements, for example updating text, adding classes or responding to clicks, without reloading the page."
+    },
+    {
+      "question_text": "What is state in React, and how is it different from props?",
+      "type": "Technical",
+      "tags": [
+        "State",
+        "Props",
+        "useState",
+        "Re-render"
+      ],
+      "expected_answer": "State is data that a component owns and can change over time, usually managed with the useState hook. When state changes, React re-renders the component to show the new value. Props are passed in from a parent and are read-only inside the child, while state is managed by the component itself."
+    },
+    {
+      "question_text": "What is the CSS box model?",
+      "type": "Conceptual",
+      "tags": [
+        "Box Model",
+        "Content",
+        "Padding",
+        "Border",
+        "Margin"
+      ],
+      "expected_answer": "The CSS box model says every element is a rectangular box made of four layers. The content is in the centre, padding is the space around the content, the border wraps the padding, and the margin is the space outside the border that separates the element from others."
+    },
+    {
+      "question_text": "Why did you choose frontend development as a career?",
+      "type": "Behavioral",
+      "tags": [
+        "Motivation",
+        "User Interface",
+        "Project",
+        "Learning"
+      ],
+      "expected_answer": "A good answer explains a genuine motivation, such as enjoying building user interfaces that people see and use directly. It mentions a project or experience that sparked the interest, the skills learned so far like HTML, CSS, JavaScript or React, and a wish to keep learning and grow in the field."
+    },
+    {
+      "question_text": "What would you do if a page you built looks broken on mobile but fine on desktop?",
+      "type": "Situational",
+      "tags": [
+        "Developer Tools",
+        "Mobile",
+        "Media Queries",
+        "Test",
+        "Layout"
+      ],
+      "expected_answer": "I would open the browser developer tools and use the device mode to reproduce the problem on a mobile screen size. Then I would check for fixed widths, overflowing elements or missing media queries and fix the layout with flexible units. Finally I would test again on real phones and different browsers."
+    },
+    {
+      "question_text": "What is the difference between an id and a class in CSS?",
+      "type": "Technical",
+      "tags": [
+        "Id",
+        "Class",
+        "Selector",
+        "Unique",
+        "Reuse"
+      ],
+      "expected_answer": "An id selects one unique element on the page and is written with a hash, like #header. A class can be reused on many elements and is written with a dot, like .button. Classes are used for shared styles, and an id has higher priority than a class when both style the same element."
+    }
+  ],
+  "Backend & Distributed Systems": [
+    {
+      "question_text": "What is the difference between a client and a server?",
+      "type": "Conceptual",
+      "tags": [
+        "Client",
+        "Server",
+        "Request",
+        "Response"
+      ],
+      "expected_answer": "A client is the program that asks for data or a service, such as a web browser or mobile app. A server is the computer or program that receives the request, processes it and sends back a response, for example a web page or JSON data. Many clients can talk to one server."
+    },
+    {
+      "question_text": "What are HTTP status codes, and what do 200, 404 and 500 mean?",
+      "type": "Technical",
+      "tags": [
+        "HTTP Status Codes",
+        "200 OK",
+        "404 Not Found",
+        "500 Internal Server Error"
+      ],
+      "expected_answer": "HTTP status codes are numbers the server returns to tell the client the result of a request. 200 OK means the request succeeded. 404 Not Found means the requested resource does not exist. 500 Internal Server Error means something went wrong on the server while handling the request."
+    },
+    {
+      "question_text": "What is REST, and what makes an API RESTful?",
+      "type": "Conceptual",
+      "tags": [
+        "REST",
+        "Resources",
+        "HTTP Methods",
+        "Stateless",
+        "URL"
+      ],
+      "expected_answer": "REST is a common style for designing web APIs. A RESTful API treats data as resources identified by URLs, uses HTTP methods such as GET, POST, PUT and DELETE to act on them, and is stateless, meaning each request carries all the information the server needs. Responses are usually in JSON."
+    },
+    {
+      "question_text": "What is the difference between authentication and authorization?",
+      "type": "Conceptual",
+      "tags": [
+        "Authentication",
+        "Authorization",
+        "Identity",
+        "Permissions"
+      ],
+      "expected_answer": "Authentication checks who you are, for example by verifying a username and password to confirm your identity. Authorization checks what you are allowed to do after you are logged in, such as whether a user can open the admin page. Authentication comes first, then authorization decides your permissions."
+    },
+    {
+      "question_text": "Why should passwords be hashed before storing them in a database?",
+      "type": "Technical",
+      "tags": [
+        "Hashing",
+        "Security",
+        "Salt",
+        "Bcrypt",
+        "Database"
+      ],
+      "expected_answer": "Passwords should never be stored as plain text, because if the database is leaked attackers could read them directly. Hashing turns a password into a fixed string that cannot easily be reversed, which improves security. A salt is added so equal passwords get different hashes, and slow algorithms such as bcrypt make guessing harder."
+    },
+    {
+      "question_text": "Why are you interested in becoming a backend developer?",
+      "type": "Behavioral",
+      "tags": [
+        "Motivation",
+        "Server Logic",
+        "Databases",
+        "APIs",
+        "Learning"
+      ],
+      "expected_answer": "A good answer shows real motivation and interest in how applications work behind the scenes, such as server logic, databases and APIs. It mentions a project where the candidate built an API or worked with a database, the problem solving they enjoyed, and their plan to keep learning backend skills."
+    },
+    {
+      "question_text": "What would you do if an API endpoint you wrote suddenly became very slow?",
+      "type": "Situational",
+      "tags": [
+        "Logs",
+        "Performance",
+        "Database Query",
+        "Index",
+        "Caching"
+      ],
+      "expected_answer": "I would first check the logs and measure performance to see which part of the request takes the most time. Often the cause is a slow database query, so I would look for a missing index or fetching too much data. Then I would fix the bottleneck, consider caching repeated results, and test the response time again."
+    }
+  ],
+  "AI & Machine Learning": [
+    {
+      "question_text": "What is overfitting in machine learning, and how can you reduce it?",
+      "type": "Conceptual",
+      "tags": [
+        "Overfitting",
+        "Training Data",
+        "New Data",
+        "Regularization",
+        "More Data"
+      ],
+      "expected_answer": "Overfitting happens when a model learns the training data too closely, including its noise, so it performs well on training data but poorly on new data. It can be reduced by using more data, a simpler model, regularization, dropout or early stopping, and by checking performance on a validation set."
+    },
+    {
+      "question_text": "What is the difference between classification and regression?",
+      "type": "Conceptual",
+      "tags": [
+        "Classification",
+        "Regression",
+        "Category",
+        "Numeric Value"
+      ],
+      "expected_answer": "Both are supervised learning tasks. Classification predicts a category or label, such as spam or not spam. Regression predicts a continuous numeric value, such as the price of a house. The type of output you need decides which one you use."
+    },
+    {
+      "question_text": "What are features and labels in a machine learning dataset?",
+      "type": "Technical",
+      "tags": [
+        "Features",
+        "Labels",
+        "Input",
+        "Output",
+        "Target"
+      ],
+      "expected_answer": "Features are the input columns the model uses to make a prediction, such as the size and location of a house. The label, or target, is the output the model is trying to predict, such as the house price. In supervised learning the model learns the relationship between features and labels."
+    },
+    {
+      "question_text": "What is a neural network, in simple terms?",
+      "type": "Conceptual",
+      "tags": [
+        "Neural Network",
+        "Neurons",
+        "Layers",
+        "Weights",
+        "Training"
+      ],
+      "expected_answer": "A neural network is a model inspired by the brain, made of layers of connected neurons: an input layer, hidden layers and an output layer. Each connection has a weight. During training the weights are adjusted so the network's outputs get closer to the correct answers."
+    },
+    {
+      "question_text": "What is accuracy as a model metric, and when can it be misleading?",
+      "type": "Technical",
+      "tags": [
+        "Accuracy",
+        "Correct Predictions",
+        "Imbalanced Data",
+        "Metric"
+      ],
+      "expected_answer": "Accuracy is the percentage of correct predictions out of all predictions. It can be a misleading metric on imbalanced data: if 95 percent of emails are not spam, a model that always says not spam is 95 percent accurate but useless. In that case precision and recall are better."
+    },
+    {
+      "question_text": "Why is data cleaning important before training a machine learning model?",
+      "type": "Technical",
+      "tags": [
+        "Data Cleaning",
+        "Missing Values",
+        "Duplicates",
+        "Data Quality"
+      ],
+      "expected_answer": "A model can only be as good as its data, so poor data quality leads to wrong predictions. Data cleaning handles missing values, removes duplicates, fixes wrong or inconsistent entries and deals with outliers. Clean data helps the model learn real patterns instead of noise."
+    },
+    {
+      "question_text": "What is the difference between a model's training phase and its prediction phase?",
+      "type": "Conceptual",
+      "tags": [
+        "Training",
+        "Prediction",
+        "Inference",
+        "Patterns"
+      ],
+      "expected_answer": "In the training phase the model learns patterns from labelled data by adjusting its parameters to reduce errors. In the prediction phase, also called inference, the trained model is given new data it has not seen and uses the learned patterns to produce an output, such as a label or a number."
+    },
+    {
+      "question_text": "Why did you choose to pursue a career in AI and machine learning?",
+      "type": "Behavioral",
+      "tags": [
+        "Motivation",
+        "Projects",
+        "Problem Solving",
+        "Learning"
+      ],
+      "expected_answer": "A good answer explains a genuine motivation, such as being excited by how machines can learn from data and help with problem solving in real life. It mentions a course or projects, for example building a simple classifier, skills gained like Python and data handling, and a commitment to keep learning in this fast-moving field."
+    },
+    {
+      "question_text": "What would you do if your model scores high in training but poorly on the test set?",
+      "type": "Situational",
+      "tags": [
+        "Overfitting",
+        "Test Set",
+        "Simpler Model",
+        "More Data",
+        "Data Leakage"
+      ],
+      "expected_answer": "This usually means the model is overfitting. I would check for problems such as data leakage or a different distribution in the test set. Then I would try a simpler model, regularization, more data or fewer features, and use cross-validation to confirm the improvement."
+    }
+  ],
+  "Data Analytics & SQL": [
+    {
+      "question_text": "What is a primary key in a database table?",
+      "type": "Technical",
+      "tags": [
+        "Primary Key",
+        "Unique",
+        "Not Null",
+        "Row"
+      ],
+      "expected_answer": "A primary key is a column, or set of columns, that uniquely identifies each row in a table, such as a customer ID. Its values must be unique and not null. It lets you find a specific row reliably and is used to link tables together."
+    },
+    {
+      "question_text": "What is a foreign key, and why is it used?",
+      "type": "Technical",
+      "tags": [
+        "Foreign Key",
+        "Primary Key",
+        "Relationship",
+        "Tables"
+      ],
+      "expected_answer": "A foreign key is a column in one table that refers to the primary key of another table, such as customer_id in an orders table. It creates a relationship between the two tables and keeps the data consistent, because it prevents linking to records that do not exist."
+    },
+    {
+      "question_text": "What is the difference between an INNER JOIN and a LEFT JOIN?",
+      "type": "Technical",
+      "tags": [
+        "INNER JOIN",
+        "LEFT JOIN",
+        "Matching Rows",
+        "NULL"
+      ],
+      "expected_answer": "An INNER JOIN returns only the matching rows that exist in both tables. A LEFT JOIN returns all rows from the left table plus the matching rows from the right table; when there is no match, the right table's columns are filled with NULL."
+    },
+    {
+      "question_text": "What does GROUP BY do in SQL, and how is it used with COUNT or SUM?",
+      "type": "Technical",
+      "tags": [
+        "GROUP BY",
+        "Aggregate Functions",
+        "COUNT",
+        "SUM"
+      ],
+      "expected_answer": "GROUP BY groups rows that have the same value in a column, such as region. Aggregate functions like COUNT, SUM or AVG are then calculated for each group, for example the total SUM of sales per region or the COUNT of orders per customer."
+    },
+    {
+      "question_text": "What is the difference between WHERE and HAVING in SQL?",
+      "type": "Technical",
+      "tags": [
+        "WHERE",
+        "HAVING",
+        "GROUP BY",
+        "Filter",
+        "Aggregate"
+      ],
+      "expected_answer": "WHERE is used to filter individual rows before they are grouped. HAVING filters groups after GROUP BY has been applied, so it can use an aggregate function, for example HAVING SUM(sales) > 1000. WHERE cannot use aggregate functions."
+    },
+    {
+      "question_text": "What is data cleaning, and what are common problems you fix?",
+      "type": "Conceptual",
+      "tags": [
+        "Data Cleaning",
+        "Missing Values",
+        "Duplicates",
+        "Inconsistent Formats"
+      ],
+      "expected_answer": "Data cleaning is fixing or removing incorrect, incomplete or messy data before analysis so the results are reliable. Common problems include missing values, duplicates, inconsistent formats such as different date styles, spelling mistakes and wrong data types."
+    },
+    {
+      "question_text": "What is the difference between mean, median and mode?",
+      "type": "Conceptual",
+      "tags": [
+        "Mean",
+        "Median",
+        "Mode",
+        "Average",
+        "Outliers"
+      ],
+      "expected_answer": "The mean is the average, found by adding all values and dividing by how many there are. The median is the middle value when the data is sorted, and it is less affected by outliers than the mean. The mode is the value that appears most often."
+    },
+    {
+      "question_text": "What is a dashboard, and what makes a good one?",
+      "type": "Conceptual",
+      "tags": [
+        "Dashboard",
+        "KPIs",
+        "Charts",
+        "Audience",
+        "Clarity"
+      ],
+      "expected_answer": "A dashboard is a single screen of charts and key numbers that shows how a business or process is performing. A good dashboard focuses on a few important KPIs for its audience, uses simple charts with clarity, is easy to read at a glance, and stays up to date."
+    },
+    {
+      "question_text": "Why did you choose data analytics as a career?",
+      "type": "Behavioral",
+      "tags": [
+        "Motivation",
+        "Insights",
+        "Decisions",
+        "Projects",
+        "Learning"
+      ],
+      "expected_answer": "A good answer shows real motivation, such as enjoying finding patterns and insights in data that help people make better decisions. It mentions a course or projects, such as analysing a dataset in Excel, SQL or Python, the satisfaction of solving that problem, and a plan to keep learning analytics skills."
+    },
+    {
+      "question_text": "What would you do if two reports showed different numbers for the same metric?",
+      "type": "Situational",
+      "tags": [
+        "Data Sources",
+        "Definitions",
+        "Filters",
+        "Validation",
+        "Communication"
+      ],
+      "expected_answer": "I would compare the data sources, the metric definitions, the date ranges and the filters used in each report, because differences usually come from one of these. This validation finds the cause. Then I would agree on one correct definition with stakeholders, fix the wrong report, and use clear communication to explain the difference."
+    }
+  ],
+  "Graphic & Visual Design": [
+    {
+      "question_text": "What is visual hierarchy in design?",
+      "type": "Conceptual",
+      "tags": [
+        "Visual Hierarchy",
+        "Size",
+        "Colour",
+        "Contrast",
+        "Importance"
+      ],
+      "expected_answer": "Visual hierarchy is arranging elements so the viewer sees the most important things first, in order of importance. Designers create it using size, colour, contrast, position and spacing; for example, a large bold headline is noticed before small body text. It guides the eye through the design."
+    },
+    {
+      "question_text": "What is the difference between serif and sans-serif fonts?",
+      "type": "Technical",
+      "tags": [
+        "Serif",
+        "Sans-serif",
+        "Typography",
+        "Readability"
+      ],
+      "expected_answer": "In typography, serif fonts have small strokes or feet at the ends of letters, like Times New Roman, and often feel traditional and formal. Sans-serif fonts have no such strokes, like Arial or Helvetica, and look clean and modern. Sans-serif is commonly used on screens for readability."
+    },
+    {
+      "question_text": "What is contrast in design, and why does it matter?",
+      "type": "Conceptual",
+      "tags": [
+        "Contrast",
+        "Colour",
+        "Readability",
+        "Attention"
+      ],
+      "expected_answer": "Contrast is the difference between elements, such as light and dark colour, large and small sizes, or bold and thin text. It improves readability, helps important elements stand out and draws attention. Low contrast between text and background makes a design hard to read."
+    },
+    {
+      "question_text": "What file formats would you use for a logo, a photo and a print document?",
+      "type": "Technical",
+      "tags": [
+        "SVG",
+        "PNG",
+        "JPEG",
+        "PDF",
+        "File Formats"
+      ],
+      "expected_answer": "Choosing file formats depends on use. A logo is best saved as a vector such as SVG, AI or EPS so it scales without losing quality, or PNG when a transparent background is needed. Photos are usually saved as JPEG for small file sizes, and print documents are sent as high-resolution PDF files."
+    },
+    {
+      "question_text": "What is a colour palette, and how do you choose one for a brand?",
+      "type": "Conceptual",
+      "tags": [
+        "Colour Palette",
+        "Brand",
+        "Emotions",
+        "Consistency"
+      ],
+      "expected_answer": "A colour palette is a small, fixed set of colours used across a design or brand. To choose one, think about the brand's personality and audience, because colours create emotions, then pick a main colour plus a few supporting and neutral colours. Consistency in using it makes the brand recognisable."
+    },
+    {
+      "question_text": "What made you choose graphic design as a career?",
+      "type": "Behavioral",
+      "tags": [
+        "Motivation",
+        "Creativity",
+        "Portfolio",
+        "Tools",
+        "Learning"
+      ],
+      "expected_answer": "A good answer explains a genuine motivation, such as a passion for creativity and communicating ideas visually. It mentions how the interest started, projects in the candidate's portfolio, tools they have learned such as Photoshop, Illustrator or Figma, and their wish to keep learning and improving."
+    },
+    {
+      "question_text": "What would you do if a client did not like the first design you showed them?",
+      "type": "Situational",
+      "tags": [
+        "Client Feedback",
+        "Listening",
+        "Questions",
+        "Revisions",
+        "Professionalism"
+      ],
+      "expected_answer": "I would show professionalism, stay calm and focus on listening to understand the client feedback and what they do not like. I would ask specific questions about colours, layout or style, and look at references together. Then I would make revisions based on the feedback and explain my design choices clearly."
+    }
+  ],
+  "Healthcare & Medicine": [
+    {
+      "question_text": "Why did you choose a career in healthcare?",
+      "type": "Behavioral",
+      "tags": [
+        "Motivation",
+        "Help People",
+        "Learning",
+        "Teamwork"
+      ],
+      "expected_answer": "A good answer explains a genuine motivation, such as wanting to help people and make a real difference in their health. It mentions an interest in science and continuous learning, and enjoying teamwork with doctors, nurses and other staff to care for patients."
+    },
+    {
+      "question_text": "What would you do if a patient seemed very scared before a simple procedure?",
+      "type": "Situational",
+      "tags": [
+        "Reassurance",
+        "Explanation",
+        "Questions",
+        "Empathy"
+      ],
+      "expected_answer": "Stay calm and show empathy by listening to the patient's fears. Give a clear explanation of the procedure in simple words, what they will feel and how long it takes, answer their questions, and offer reassurance and comfort before starting."
+    },
+    {
+      "question_text": "What is the difference between a sign and a symptom?",
+      "type": "Conceptual",
+      "tags": [
+        "Sign",
+        "Symptom",
+        "Examination",
+        "Patient"
+      ],
+      "expected_answer": "A symptom is something the patient feels and reports, such as pain, nausea or tiredness. A sign is something the doctor can observe or measure during examination, such as a fever, a rash or high blood pressure."
+    },
+    {
+      "question_text": "What is the difference between an acute and a chronic disease?",
+      "type": "Conceptual",
+      "tags": [
+        "Acute Disease",
+        "Chronic Disease",
+        "Duration",
+        "Long-Term Management"
+      ],
+      "expected_answer": "An acute disease starts suddenly and lasts a short duration, such as flu or appendicitis. A chronic disease develops slowly and lasts a long time, often for life, such as diabetes or high blood pressure, and needs long-term management."
+    },
+    {
+      "question_text": "What does BMI measure, and how is it calculated?",
+      "type": "Technical",
+      "tags": [
+        "BMI",
+        "Weight",
+        "Height",
+        "Healthy Range"
+      ],
+      "expected_answer": "BMI, or body mass index, is a simple measure of whether a person's weight is healthy for their height. It is calculated as weight in kilograms divided by height in metres squared, and for adults a BMI of about 18.5 to 24.9 is the healthy range."
+    },
+    {
+      "question_text": "How do vaccines protect people from disease?",
+      "type": "Conceptual",
+      "tags": [
+        "Vaccines",
+        "Immune System",
+        "Antibodies",
+        "Herd Immunity"
+      ],
+      "expected_answer": "Vaccines contain a weakened, killed or partial form of a germ that cannot cause the disease. They train the immune system to make antibodies and memory cells, so the body fights the real infection quickly, and when many people are vaccinated it also creates herd immunity."
+    },
+    {
+      "question_text": "What are the basic steps of CPR for an adult?",
+      "type": "Technical",
+      "tags": [
+        "CPR",
+        "Chest Compressions",
+        "Rescue Breaths",
+        "Call for Help"
+      ],
+      "expected_answer": "Check the scene is safe and the person is unresponsive and not breathing normally, then call for help and ask for a defibrillator. Start CPR with chest compressions in the centre of the chest at 100 to 120 per minute, about 5 to 6 centimetres deep, with 30 compressions to 2 rescue breaths if trained."
+    }
+  ],
+  "Nursing & Patient Care": [
+    {
+      "question_text": "Why did you choose nursing as a career?",
+      "type": "Behavioral",
+      "tags": [
+        "Care",
+        "Patients",
+        "Compassion",
+        "Healthcare Team"
+      ],
+      "expected_answer": "A good answer shows a real wish to care for patients and support them when they are most vulnerable. It mentions compassion, enjoying working closely with people, interest in health science, and being part of a healthcare team that makes a difference every day."
+    },
+    {
+      "question_text": "What would you do if a patient refused to take their prescribed medicine?",
+      "type": "Situational",
+      "tags": [
+        "Refusal",
+        "Reasons",
+        "Patient Rights",
+        "Inform the Doctor",
+        "Documentation"
+      ],
+      "expected_answer": "Calmly ask the patient about their reasons, such as side effects, fear or confusion, and explain why the medicine is needed in simple words. Respect patient rights and never force it, inform the doctor or nurse in charge, and record the refusal in the documentation."
+    },
+    {
+      "question_text": "How do you help prevent patients from falling in the hospital?",
+      "type": "Technical",
+      "tags": [
+        "Fall Risk",
+        "Call Bell",
+        "Bed Rails",
+        "Non-Slip Footwear"
+      ],
+      "expected_answer": "Assess each patient's fall risk on admission. Keep the bed low with brakes on, use bed rails when appropriate, keep the call bell and personal items within reach, ensure good lighting and dry floors, encourage non-slip footwear, and help high-risk patients when walking."
+    },
+    {
+      "question_text": "How do you correctly check a patient's radial pulse?",
+      "type": "Technical",
+      "tags": [
+        "Radial Pulse",
+        "Wrist",
+        "Rate",
+        "Rhythm",
+        "Full Minute"
+      ],
+      "expected_answer": "Place two fingers, not the thumb, on the thumb side of the inner wrist to feel the radial pulse. Count the beats for one full minute, or 30 seconds and double it if regular, and note the rate, rhythm and strength; a normal adult rate is 60 to 100 beats per minute."
+    },
+    {
+      "question_text": "What is personal protective equipment, and why do nurses use it?",
+      "type": "Conceptual",
+      "tags": [
+        "Personal Protective Equipment",
+        "Gloves",
+        "Masks",
+        "Infection"
+      ],
+      "expected_answer": "Personal protective equipment, or PPE, includes gloves, masks, gowns, aprons and eye protection. Nurses use it to create a barrier against blood, body fluids and germs, protecting themselves and stopping the spread of infection between patients."
+    },
+    {
+      "question_text": "What does it mean for a nurse to be a patient advocate?",
+      "type": "Conceptual",
+      "tags": [
+        "Patient Advocate",
+        "Rights",
+        "Speaks Up",
+        "Wishes"
+      ],
+      "expected_answer": "Being a patient advocate means protecting the patient's rights, safety and best interests. The nurse makes sure the patient understands their care, respects their wishes, and speaks up to the doctor or team when something seems wrong or the patient's concerns are not being heard."
+    },
+    {
+      "question_text": "What is the difference between clean technique and sterile technique?",
+      "type": "Conceptual",
+      "tags": [
+        "Clean Technique",
+        "Sterile Technique",
+        "Microorganisms",
+        "Procedures"
+      ],
+      "expected_answer": "Clean technique reduces the number of microorganisms using hand washing, clean gloves and clean equipment, and is used for routine care. Sterile technique removes all microorganisms using sterile gloves, sterile equipment and a sterile field, and is used for invasive procedures such as inserting a urinary catheter."
+    },
+    {
+      "question_text": "What signs of dehydration would you look for in a patient?",
+      "type": "Technical",
+      "tags": [
+        "Dehydration",
+        "Dry Mouth",
+        "Dark Yellow Urine",
+        "Fast Pulse"
+      ],
+      "expected_answer": "Common signs of dehydration include thirst, dry mouth and lips, dark yellow urine or passing little urine, tiredness, dizziness and headache. Other signs are a fast pulse, low blood pressure, sunken eyes and confusion, especially in elderly patients."
+    }
+  ],
+  "Education & Teaching": [
+    {
+      "question_text": "Why do you want to become a teacher?",
+      "type": "Behavioral",
+      "tags": [
+        "Passion",
+        "Helping Students",
+        "Subject",
+        "Impact"
+      ],
+      "expected_answer": "A good answer shows passion for the subject and for helping students learn and grow. It may mention a teacher who inspired them, enjoying explaining ideas, and wanting to have a positive impact on young people's confidence and future."
+    },
+    {
+      "question_text": "What would you do if many students still did not understand a topic after your explanation?",
+      "type": "Situational",
+      "tags": [
+        "Re-teach",
+        "Different Method",
+        "Examples",
+        "Check Understanding"
+      ],
+      "expected_answer": "Stay patient and find out where the confusion is by asking questions. Re-teach the topic using a different method, such as simpler examples, pictures or a hands-on activity, and check understanding again before moving on."
+    },
+    {
+      "question_text": "What is a lesson plan, and what should it include?",
+      "type": "Technical",
+      "tags": [
+        "Lesson Plan",
+        "Learning Objectives",
+        "Activities",
+        "Assessment",
+        "Resources"
+      ],
+      "expected_answer": "A lesson plan is a teacher's guide for what will be taught and how. It should include learning objectives, the materials and resources needed, the main teaching steps and student activities, timing, and a way of assessment to check what students learned."
+    },
+    {
+      "question_text": "Why are clear learning objectives important in a lesson?",
+      "type": "Conceptual",
+      "tags": [
+        "Learning Objectives",
+        "Focus",
+        "Measure Progress",
+        "Students"
+      ],
+      "expected_answer": "Learning objectives state what students should know or be able to do by the end of the lesson. They give the lesson a clear focus, help the teacher choose suitable activities, let students know what is expected, and make it easy to measure progress."
+    },
+    {
+      "question_text": "How do you give helpful feedback to students on their work?",
+      "type": "Technical",
+      "tags": [
+        "Feedback",
+        "Specific",
+        "Strengths",
+        "Improvement",
+        "Timely"
+      ],
+      "expected_answer": "Good feedback is specific, timely and kind. Point out the strengths in the work, clearly explain one or two areas for improvement, and give practical next steps so the student knows exactly how to do better next time."
+    },
+    {
+      "question_text": "What is the difference between teacher-centred and student-centred learning?",
+      "type": "Conceptual",
+      "tags": [
+        "Teacher-Centred",
+        "Student-Centred",
+        "Lecture",
+        "Active Participation"
+      ],
+      "expected_answer": "In teacher-centred learning the teacher mainly talks and explains through lecture, while students listen and take notes. In student-centred learning students take an active participation role through discussions, group work and projects, and the teacher acts as a guide."
+    },
+    {
+      "question_text": "How can technology be used to support learning in the classroom?",
+      "type": "Technical",
+      "tags": [
+        "Technology",
+        "Videos",
+        "Online Quizzes",
+        "Engagement"
+      ],
+      "expected_answer": "Technology such as projectors, videos, educational apps and online quizzes can make lessons more interesting and easier to understand. It increases engagement, gives quick feedback, supports different learners, and should be used with a clear purpose rather than just for entertainment."
+    },
+    {
+      "question_text": "Why is a positive relationship between teachers and students important?",
+      "type": "Conceptual",
+      "tags": [
+        "Positive Relationship",
+        "Trust",
+        "Motivation",
+        "Respect"
+      ],
+      "expected_answer": "A positive relationship builds trust and respect, so students feel safe to ask questions and make mistakes. It increases their motivation and participation, reduces behaviour problems, and helps the teacher understand each student's needs."
+    }
+  ],
+  "Law & Legal Practice": [
+    {
+      "question_text": "Why did you choose to study law?",
+      "type": "Behavioral",
+      "tags": [
+        "Justice",
+        "Interest",
+        "Problem Solving",
+        "Helping People"
+      ],
+      "expected_answer": "A good answer shows a genuine interest in justice and how laws shape society. It mentions enjoying reading, reasoning and problem solving, and wanting to use legal knowledge for helping people protect their rights and solve disputes fairly."
+    },
+    {
+      "question_text": "What would you do if a client asked you to hide evidence that harms their case?",
+      "type": "Situational",
+      "tags": [
+        "Refuse",
+        "Professional Ethics",
+        "Duty to the Court",
+        "Honesty"
+      ],
+      "expected_answer": "Politely but firmly refuse, because hiding or destroying evidence is illegal and breaks professional ethics. Explain to the client that a lawyer has a duty to the court as well as to the client, and that honesty protects them from more serious consequences; inform a senior lawyer if needed."
+    },
+    {
+      "question_text": "What does 'innocent until proven guilty' mean?",
+      "type": "Conceptual",
+      "tags": [
+        "Presumption of Innocence",
+        "Burden of Proof",
+        "Prosecution",
+        "Reasonable Doubt"
+      ],
+      "expected_answer": "It is the presumption of innocence: a person accused of a crime is treated as innocent until the court finds them guilty. The burden of proof is on the prosecution, which must prove guilt beyond reasonable doubt, not on the accused to prove innocence."
+    },
+    {
+      "question_text": "What is the difference between a plaintiff and a defendant?",
+      "type": "Conceptual",
+      "tags": [
+        "Plaintiff",
+        "Defendant",
+        "Lawsuit",
+        "Claim"
+      ],
+      "expected_answer": "The plaintiff is the person or organisation who starts a lawsuit by bringing a claim to court. The defendant is the person or organisation the claim is made against, who must respond and defend themselves."
+    },
+    {
+      "question_text": "What is meant by the rule of law?",
+      "type": "Conceptual",
+      "tags": [
+        "Rule of Law",
+        "Equality",
+        "Government",
+        "Fair Courts"
+      ],
+      "expected_answer": "The rule of law means everyone, including the government and powerful people, must follow the same laws. Laws should be clear and public, applied with equality to all, and enforced by independent and fair courts."
+    },
+    {
+      "question_text": "What is a tort, and can you give a simple example?",
+      "type": "Technical",
+      "tags": [
+        "Tort",
+        "Civil Wrong",
+        "Negligence",
+        "Compensation"
+      ],
+      "expected_answer": "A tort is a civil wrong that causes harm or loss to another person, for which the injured person can claim compensation. A common example is negligence, such as a driver carelessly hitting a pedestrian, or a shop not cleaning a wet floor that causes someone to fall."
+    },
+    {
+      "question_text": "What is legal precedent, and why do courts follow it?",
+      "type": "Technical",
+      "tags": [
+        "Precedent",
+        "Previous Decisions",
+        "Consistency",
+        "Higher Courts"
+      ],
+      "expected_answer": "Precedent means that courts follow the previous decisions of higher courts in cases with similar facts. It gives consistency and fairness, because similar cases are decided in the same way, and makes the law more predictable for people and lawyers."
+    }
+  ],
+  "Human Resources & Talent Management": [
+    {
+      "question_text": "Why do you want to build a career in human resources?",
+      "type": "Behavioral",
+      "tags": [
+        "People",
+        "Communication",
+        "Employee Growth",
+        "Workplace"
+      ],
+      "expected_answer": "A good answer shows enjoyment of working with people and strong communication skills. It mentions wanting to support employee growth, help solve problems fairly, and build a positive workplace where staff feel valued."
+    },
+    {
+      "question_text": "What would you do if two employees in a team kept arguing with each other?",
+      "type": "Situational",
+      "tags": [
+        "Conflict",
+        "Listen",
+        "Private Meeting",
+        "Solution",
+        "Follow Up"
+      ],
+      "expected_answer": "Meet each employee separately to listen to their side and understand the cause of the conflict. Then hold a private meeting with both, stay neutral, focus on the work issue rather than personalities, agree on a solution together, and follow up later to check things have improved."
+    },
+    {
+      "question_text": "What is the difference between recruitment and selection?",
+      "type": "Conceptual",
+      "tags": [
+        "Recruitment",
+        "Selection",
+        "Candidates",
+        "Interviews"
+      ],
+      "expected_answer": "Recruitment is the process of attracting as many suitable candidates as possible to apply, for example through job adverts. Selection is choosing the best person from those applicants using screening, tests and interviews."
+    },
+    {
+      "question_text": "What is a performance appraisal, and why do companies do it?",
+      "type": "Conceptual",
+      "tags": [
+        "Performance Appraisal",
+        "Feedback",
+        "Goals",
+        "Training Needs"
+      ],
+      "expected_answer": "A performance appraisal is a regular review of how well an employee is doing their job against agreed goals. It gives feedback, recognises good work, identifies training needs, and helps decide promotions and pay increases."
+    },
+    {
+      "question_text": "What is the difference between training and development?",
+      "type": "Conceptual",
+      "tags": [
+        "Training",
+        "Development",
+        "Current Job",
+        "Future Career"
+      ],
+      "expected_answer": "Training teaches specific skills an employee needs for their current job and is usually short-term. Development is long-term growth that prepares the employee for future career roles, such as leadership skills or further education."
+    },
+    {
+      "question_text": "What do you look for when screening a CV?",
+      "type": "Technical",
+      "tags": [
+        "CV Screening",
+        "Job Requirements",
+        "Skills",
+        "Experience",
+        "Gaps"
+      ],
+      "expected_answer": "During CV screening, compare the CV with the job requirements and check for the needed education, skills and experience. Also look for clear achievements, career progress and unexplained gaps, and judge every candidate fairly against the same criteria."
+    },
+    {
+      "question_text": "What is usually included in an employee's compensation and benefits?",
+      "type": "Technical",
+      "tags": [
+        "Compensation",
+        "Salary",
+        "Benefits",
+        "Paid Leave"
+      ],
+      "expected_answer": "Compensation is the money an employee earns, such as basic salary, overtime pay and bonuses. Benefits are extra rewards like health insurance, paid leave, retirement or pension plans and allowances, which help attract and keep good employees."
+    }
+  ],
+  "Accounting & Financial Analysis": [
+    {
+      "question_text": "What is the difference between revenue and profit?",
+      "type": "Conceptual",
+      "tags": [
+        "Revenue",
+        "Profit",
+        "Expenses",
+        "Income"
+      ],
+      "expected_answer": "Revenue is the total income a business earns from selling its goods or services before any costs are taken out. Profit is what remains after all expenses, such as cost of goods, salaries, rent and taxes, are subtracted from revenue. A business can have high revenue but still make a loss if expenses are higher."
+    },
+    {
+      "question_text": "What is depreciation, and why do companies record it?",
+      "type": "Technical",
+      "tags": [
+        "Depreciation",
+        "Fixed Asset",
+        "Useful Life",
+        "Matching Principle"
+      ],
+      "expected_answer": "Depreciation spreads the cost of a fixed asset, like a machine or vehicle, over its useful life instead of expensing it all at once. Companies record it to follow the matching principle, so the expense appears in the same periods the asset helps earn revenue. It also shows the asset's falling value on the balance sheet."
+    },
+    {
+      "question_text": "What is the difference between cash basis and accrual basis accounting?",
+      "type": "Conceptual",
+      "tags": [
+        "Cash Basis",
+        "Accrual Basis",
+        "Revenue",
+        "Expenses"
+      ],
+      "expected_answer": "Under cash basis accounting, revenue and expenses are recorded only when cash is actually received or paid. Under accrual basis accounting, revenue is recorded when it is earned and expenses when they are incurred, even if cash moves later. Accrual basis gives a more accurate picture of performance and is used by most companies."
+    },
+    {
+      "question_text": "What is the difference between accounts receivable and accounts payable?",
+      "type": "Conceptual",
+      "tags": [
+        "Accounts Receivable",
+        "Accounts Payable",
+        "Current Asset",
+        "Current Liability"
+      ],
+      "expected_answer": "Accounts receivable is money customers owe the business for goods or services sold on credit, so it is a current asset. Accounts payable is money the business owes its suppliers for purchases made on credit, so it is a current liability. Managing both well helps the business keep healthy cash flow."
+    },
+    {
+      "question_text": "What is a bank reconciliation, and why is it done?",
+      "type": "Technical",
+      "tags": [
+        "Bank Reconciliation",
+        "Bank Statement",
+        "Cash Book",
+        "Errors"
+      ],
+      "expected_answer": "A bank reconciliation compares the company's own cash book records with the bank statement to make sure the balances agree. Differences can come from outstanding cheques, deposits in transit, bank charges or errors. It is done regularly to find mistakes, detect fraud and keep cash records accurate."
+    },
+    {
+      "question_text": "Why did you choose a career in accounting?",
+      "type": "Behavioral",
+      "tags": [
+        "Numbers",
+        "Attention To Detail",
+        "Career Growth",
+        "Business Decisions"
+      ],
+      "expected_answer": "A good answer shows genuine interest in numbers and in how businesses work, and mentions strengths like attention to detail and analytical thinking. The candidate can explain that accounting helps managers make better business decisions and offers steady career growth, and may mention a course, internship or project that confirmed this interest."
+    },
+    {
+      "question_text": "What would you do if you found a small error in a report you already submitted to your manager?",
+      "type": "Situational",
+      "tags": [
+        "Honesty",
+        "Inform Manager",
+        "Correct The Error",
+        "Accuracy"
+      ],
+      "expected_answer": "I would inform my manager quickly and with honesty about the error rather than hiding it, even if it is small. I would correct the error, send the updated report, and explain what changed. Then I would review my checking process so the same mistake does not happen again, because accuracy and trust are important in accounting."
+    }
+  ],
+  "Marketing & Brand Management": [
+    {
+      "question_text": "What is a brand, and why is brand image important?",
+      "type": "Conceptual",
+      "tags": [
+        "Brand",
+        "Brand Image",
+        "Customer Trust",
+        "Loyalty"
+      ],
+      "expected_answer": "A brand is the identity of a company or product, including its name, logo, message and the feelings customers have about it. Brand image is how customers see the brand in their minds. A positive brand image builds customer trust and loyalty, helps the business stand out from competitors, and lets it charge better prices."
+    },
+    {
+      "question_text": "What is market segmentation?",
+      "type": "Technical",
+      "tags": [
+        "Market Segmentation",
+        "Demographic",
+        "Geographic",
+        "Behavioral"
+      ],
+      "expected_answer": "Market segmentation is dividing a large market into smaller groups of customers with similar needs or characteristics. Common bases are demographic (age, income), geographic (location), psychographic (lifestyle, values) and behavioral (buying habits). It helps a company target the right customers with messages and products that suit them."
+    },
+    {
+      "question_text": "What is SEO, and why does it matter for a business website?",
+      "type": "Technical",
+      "tags": [
+        "SEO",
+        "Search Engine",
+        "Keywords",
+        "Organic Traffic"
+      ],
+      "expected_answer": "SEO, or search engine optimization, is improving a website so it ranks higher in search engine results for relevant keywords. It involves useful content, good keywords, fast pages and links from other sites. Higher rankings bring more free organic traffic, which means more potential customers without paying for ads."
+    },
+    {
+      "question_text": "What is a unique selling proposition (USP)?",
+      "type": "Conceptual",
+      "tags": [
+        "Unique Selling Proposition",
+        "Competitors",
+        "Benefit",
+        "Different"
+      ],
+      "expected_answer": "A unique selling proposition is the main thing that makes a product different from and better than its competitors. It clearly states a benefit the customer gets, such as lower price, better quality or faster delivery. A strong USP gives customers a reason to choose the brand and guides all marketing messages."
+    },
+    {
+      "question_text": "What is the difference between digital marketing and traditional marketing?",
+      "type": "Conceptual",
+      "tags": [
+        "Digital Marketing",
+        "Traditional Marketing",
+        "Measure",
+        "Targeting"
+      ],
+      "expected_answer": "Traditional marketing uses offline channels such as TV, radio, newspapers and billboards. Digital marketing uses online channels such as social media, search engines, email and websites. Digital marketing is usually cheaper, allows precise targeting, and its results are easier to measure, while traditional marketing can reach broad local audiences."
+    },
+    {
+      "question_text": "Why are you interested in a career in marketing?",
+      "type": "Behavioral",
+      "tags": [
+        "Creativity",
+        "Understanding Customers",
+        "Data",
+        "Communication"
+      ],
+      "expected_answer": "A good answer shows interest in both creativity and understanding customers, and explains enjoying communication, storytelling or working with data to see what works. The candidate should connect this to real experience, such as a university project, social media page or internship, and show eagerness to learn how marketing drives business growth."
+    },
+    {
+      "question_text": "What would you do if your manager asked you to market a product to an audience you know little about?",
+      "type": "Situational",
+      "tags": [
+        "Research",
+        "Target Audience",
+        "Competitors",
+        "Test And Learn"
+      ],
+      "expected_answer": "I would start with research to understand the target audience, such as their age, needs, habits and which channels they use. I would talk to existing customers or colleagues, study competitors, and then plan a small campaign. I would test and learn from the results and adjust the message based on what works."
+    }
+  ],
+  "Civil & Structural Engineering": [
+    {
+      "question_text": "What is the difference between a beam and a column?",
+      "type": "Conceptual",
+      "tags": [
+        "Beam",
+        "Column",
+        "Bending",
+        "Compression"
+      ],
+      "expected_answer": "A beam is a horizontal structural member that carries loads mainly by bending and transfers them to its supports. A column is a vertical member that carries loads mainly in compression and transfers them down to the foundation. Together beams and columns form the frame of many buildings."
+    },
+    {
+      "question_text": "What is the purpose of a foundation in a building?",
+      "type": "Technical",
+      "tags": [
+        "Foundation",
+        "Loads",
+        "Soil",
+        "Settlement"
+      ],
+      "expected_answer": "A foundation transfers the loads of the building safely to the soil below. It spreads the weight over a large enough area so the soil is not overstressed. A good foundation keeps the building stable, prevents excessive or uneven settlement, and protects the structure from cracking or tilting."
+    },
+    {
+      "question_text": "What are the main ingredients of concrete?",
+      "type": "Technical",
+      "tags": [
+        "Cement",
+        "Sand",
+        "Aggregate",
+        "Water",
+        "Water-Cement Ratio"
+      ],
+      "expected_answer": "Concrete is made of cement, sand as fine aggregate, gravel or crushed stone as coarse aggregate, and water. Cement and water react to form a paste that binds the aggregates together and hardens. The water-cement ratio is important because too much water reduces the strength of the concrete."
+    },
+    {
+      "question_text": "What is the difference between compressive strength and tensile strength?",
+      "type": "Conceptual",
+      "tags": [
+        "Compressive Strength",
+        "Tensile Strength",
+        "Concrete",
+        "Steel"
+      ],
+      "expected_answer": "Compressive strength is a material's ability to resist being pushed or squeezed together, while tensile strength is its ability to resist being pulled apart. Concrete has high compressive strength but low tensile strength. Steel is strong in tension, which is why the two are combined in reinforced concrete."
+    },
+    {
+      "question_text": "What is surveying, and why is it done before construction starts?",
+      "type": "Technical",
+      "tags": [
+        "Surveying",
+        "Measurements",
+        "Levels",
+        "Site Layout"
+      ],
+      "expected_answer": "Surveying is taking accurate measurements of land to find distances, angles, levels and boundaries. It is done before construction to understand the site's shape and ground levels, plan the design, and mark the correct site layout. Good surveying prevents costly mistakes such as building in the wrong position or at the wrong height."
+    },
+    {
+      "question_text": "Why did you choose civil engineering as your field?",
+      "type": "Behavioral",
+      "tags": [
+        "Infrastructure",
+        "Problem Solving",
+        "Community",
+        "Practical Work"
+      ],
+      "expected_answer": "A good answer shows interest in building infrastructure such as roads, bridges and buildings that serve the community. The candidate can mention enjoying problem solving, mathematics and practical work on site, and give an example such as a project, site visit or internship that strengthened this choice."
+    },
+    {
+      "question_text": "What would you do if the materials delivered to site did not match the specifications?",
+      "type": "Situational",
+      "tags": [
+        "Specifications",
+        "Reject",
+        "Inform Supervisor",
+        "Quality"
+      ],
+      "expected_answer": "I would stop those materials from being used and check them carefully against the specifications and the order. I would inform my supervisor or site engineer, document the problem with photos, and contact the supplier to reject or replace the materials. Using wrong materials can affect quality and safety, so it must be fixed first."
+    }
+  ],
+  "Business Analysis & Strategy": [
+    {
+      "question_text": "Who is a stakeholder in a project?",
+      "type": "Conceptual",
+      "tags": [
+        "Stakeholder",
+        "Project",
+        "Interest",
+        "Requirements"
+      ],
+      "expected_answer": "A stakeholder is any person or group who has an interest in a project or is affected by its outcome. Examples include customers, managers, employees, sponsors, users and suppliers. A business analyst identifies stakeholders early and talks to them to understand their needs and requirements."
+    },
+    {
+      "question_text": "What is a use case?",
+      "type": "Technical",
+      "tags": [
+        "Use Case",
+        "Actor",
+        "System",
+        "Goal"
+      ],
+      "expected_answer": "A use case describes how a user, called an actor, interacts with a system to achieve a specific goal. It lists the steps of the main flow and possible alternative flows, such as errors. Use cases help everyone understand what the system must do from the user's point of view."
+    },
+    {
+      "question_text": "What is a KPI? Give a simple example.",
+      "type": "Technical",
+      "tags": [
+        "KPI",
+        "Key Performance Indicator",
+        "Measurable",
+        "Goals"
+      ],
+      "expected_answer": "A KPI, or key performance indicator, is a measurable value that shows how well a business or team is achieving its goals. Examples include monthly sales revenue, customer satisfaction score, or number of new customers. Good KPIs are clear, measurable and linked to important business goals."
+    },
+    {
+      "question_text": "What is a feasibility study?",
+      "type": "Conceptual",
+      "tags": [
+        "Feasibility Study",
+        "Technical Feasibility",
+        "Financial Feasibility",
+        "Operational Feasibility"
+      ],
+      "expected_answer": "A feasibility study checks whether a proposed project or idea is practical and worth doing before investing in it. It looks at technical feasibility, financial feasibility such as costs and benefits, and operational feasibility, meaning whether the organization can run it. The result helps managers decide whether to go ahead."
+    },
+    {
+      "question_text": "What is competitor analysis, and why is it useful?",
+      "type": "Conceptual",
+      "tags": [
+        "Competitor Analysis",
+        "Strengths",
+        "Weaknesses",
+        "Opportunities"
+      ],
+      "expected_answer": "Competitor analysis means studying other businesses that offer similar products or services, including their prices, products, strengths and weaknesses. It helps a company understand its own position in the market, find opportunities and gaps, and plan a strategy to stand out and win customers."
+    },
+    {
+      "question_text": "Why do you want to become a business analyst?",
+      "type": "Behavioral",
+      "tags": [
+        "Problem Solving",
+        "Communication",
+        "Business And Technology",
+        "Analytical Skills"
+      ],
+      "expected_answer": "A good answer explains enjoying problem solving and acting as a bridge between business and technology teams. The candidate should mention strengths such as communication and analytical skills, and give an example like a university project where they gathered requirements or analyzed data to improve a process."
+    },
+    {
+      "question_text": "What would you do if you found errors in your data just before presenting your analysis?",
+      "type": "Situational",
+      "tags": [
+        "Data Accuracy",
+        "Fix The Errors",
+        "Inform Manager",
+        "Transparent"
+      ],
+      "expected_answer": "I would first check how serious the errors are and whether they change the conclusions. If time allows, I would fix the errors and update the analysis; if not, I would inform my manager and be transparent with the audience about which results are not final. Data accuracy matters more than presenting on time."
+    }
+  ],
+  "Sales Leadership & Client Acquisition": [
+    {
+      "question_text": "What is a sales funnel?",
+      "type": "Conceptual",
+      "tags": [
+        "Sales Funnel",
+        "Awareness",
+        "Interest",
+        "Decision",
+        "Conversion"
+      ],
+      "expected_answer": "A sales funnel shows the stages a customer goes through from first hearing about a product to buying it, such as awareness, interest, decision and purchase. Many people enter at the top but fewer reach the bottom. It helps salespeople track prospects and improve conversion at each stage."
+    },
+    {
+      "question_text": "What is the difference between a lead and a prospect?",
+      "type": "Technical",
+      "tags": [
+        "Lead",
+        "Prospect",
+        "Qualified",
+        "Budget"
+      ],
+      "expected_answer": "A lead is any person or company that may be interested in a product, for example someone who filled in a form, but has not yet been checked. A prospect is a lead that has been qualified, meaning they have a real need, budget and ability to buy. Salespeople focus their time on prospects."
+    },
+    {
+      "question_text": "What is a CRM system, and why do sales teams use it?",
+      "type": "Technical",
+      "tags": [
+        "CRM",
+        "Customer Information",
+        "Follow-Ups",
+        "Sales Pipeline"
+      ],
+      "expected_answer": "A CRM, or customer relationship management system, is software that stores customer information, contact history and deal details in one place. Sales teams use it to track the sales pipeline, schedule follow-ups, avoid losing leads, and share information with the team. It also helps managers see performance and forecast sales."
+    },
+    {
+      "question_text": "Why is keeping existing customers as important as finding new ones?",
+      "type": "Conceptual",
+      "tags": [
+        "Customer Retention",
+        "Costs Less",
+        "Repeat Sales",
+        "Referrals"
+      ],
+      "expected_answer": "Customer retention is important because keeping an existing customer usually costs less than winning a new one. Loyal customers make repeat sales, often buy more over time, and give referrals to friends and other businesses. Good service and regular contact keep customers happy and build long-term revenue."
+    },
+    {
+      "question_text": "What is cold calling, and how would you start a cold call?",
+      "type": "Technical",
+      "tags": [
+        "Cold Calling",
+        "Introduction",
+        "Benefit",
+        "Needs"
+      ],
+      "expected_answer": "Cold calling is contacting a potential customer who has not shown interest or had contact with you before. I would start with a short, polite introduction of myself and the company, quickly mention the value or benefit for them, and ask a simple question to understand their needs instead of pushing a sale immediately."
+    },
+    {
+      "question_text": "Why do you want to work in sales?",
+      "type": "Behavioral",
+      "tags": [
+        "Talking To People",
+        "Relationships",
+        "Targets",
+        "Resilience"
+      ],
+      "expected_answer": "A good answer shows enjoyment of talking to people, building relationships and solving customer problems. The candidate can mention being motivated by targets and the rewards of achieving them, along with confidence and resilience after rejection, and give an example such as a part-time job, event or society role."
+    },
+    {
+      "question_text": "What would you do if it was near the end of the month and you were far from your sales target?",
+      "type": "Situational",
+      "tags": [
+        "Pipeline",
+        "Prioritize Leads",
+        "Follow Up",
+        "Referrals"
+      ],
+      "expected_answer": "I would review my pipeline and prioritize the leads most likely to close soon, then follow up with them quickly. I would also contact past customers for repeat orders or referrals, and ask my manager for advice or help. Afterwards, I would plan better so my pipeline stays full throughout the month."
+    }
+  ],
+  "Behavioral & Leadership": [
+    {
+      "question_text": "How do you manage your time when you have several tasks at once?",
+      "type": "Behavioral",
+      "tags": [
+        "Prioritize",
+        "Deadline",
+        "To-Do List",
+        "Focus"
+      ],
+      "expected_answer": "I list all my tasks in a to-do list and prioritize them by deadline and importance. I break big tasks into smaller steps, focus on one task at a time, and set time blocks for each. If something cannot be done on time, I tell my manager early and agree on new priorities."
+    },
+    {
+      "question_text": "How do you handle stress or pressure?",
+      "type": "Behavioral",
+      "tags": [
+        "Stay Calm",
+        "Plan",
+        "Smaller Parts",
+        "Ask For Help"
+      ],
+      "expected_answer": "I try to stay calm and make a clear plan instead of panicking. I break tasks into smaller parts, focus on what I can control, and ask for help when needed. Outside work, I manage stress with rest, exercise or hobbies, and I give an example of meeting a tough deadline calmly."
+    },
+    {
+      "question_text": "Tell me about a time you had to learn something new quickly.",
+      "type": "Behavioral",
+      "tags": [
+        "Learned Quickly",
+        "Resources",
+        "Practice",
+        "Adaptability"
+      ],
+      "expected_answer": "A good answer describes a real situation, such as a new tool, subject or task with a short deadline. The candidate explains how they learned quickly using resources like online tutorials, documentation or asking experienced people, practiced it, and shares the positive result and what it shows about their adaptability."
+    },
+    {
+      "question_text": "Where do you see yourself in five years?",
+      "type": "Behavioral",
+      "tags": [
+        "Career Goals",
+        "Skills",
+        "Grow",
+        "Responsibility"
+      ],
+      "expected_answer": "A good answer shows realistic career goals that match the role, such as becoming skilled and trusted in the field and taking on more responsibility. The candidate should mention wanting to keep improving skills, possibly through certifications, and show they want to grow with the company rather than leave quickly."
+    },
+    {
+      "question_text": "What would you do if you disagreed with your manager's decision?",
+      "type": "Situational",
+      "tags": [
+        "Respect",
+        "Private Discussion",
+        "Facts",
+        "Accept The Decision"
+      ],
+      "expected_answer": "I would respect my manager's authority and first try to understand the reasons behind the decision. Then I would politely share my view in a private discussion, using facts and examples. If the manager still keeps the decision, I would accept the decision and support it fully, unless it is unethical."
+    },
+    {
+      "question_text": "What would you do if you realized you could not finish a task by its deadline?",
+      "type": "Situational",
+      "tags": [
+        "Inform Early",
+        "Progress",
+        "New Deadline",
+        "Ask For Help"
+      ],
+      "expected_answer": "I would inform my manager early, not at the last minute, and explain my progress and the reason for the delay. I would suggest options, such as a new deadline, delivering part of the work first, or asking for help. Then I would work hard to finish within the agreed time."
+    },
+    {
+      "question_text": "What would you do if you received negative feedback on your work?",
+      "type": "Situational",
+      "tags": [
+        "Listen",
+        "Stay Professional",
+        "Improve",
+        "Learning Opportunity"
+      ],
+      "expected_answer": "I would listen carefully, stay professional and not take it personally. I would ask questions to understand exactly what needs to change, thank the person, and make a plan to improve. I see feedback as a learning opportunity, and I would later check whether my changes met expectations."
+    },
+    {
+      "question_text": "What would you do if a new team member was struggling to settle in?",
+      "type": "Situational",
+      "tags": [
+        "Welcome",
+        "Offer Help",
+        "Processes",
+        "Teamwork"
+      ],
+      "expected_answer": "I would welcome them, introduce them to the team, and offer help with any questions. I would explain our processes and tools, share useful resources, and check in on them regularly. Supporting new colleagues builds good teamwork and helps them become productive faster."
+    }
+  ]
+}

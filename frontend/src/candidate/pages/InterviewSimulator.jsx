@@ -8,17 +8,13 @@ import {
   Check,
   AlertCircle,
   Clock,
-  Video,
   ShieldCheck,
-  HelpCircle,
-  Sparkles,
-  PhoneOff,
+  Lightbulb,
   CheckCircle2,
   Keyboard,
   Save,
 } from 'lucide-react';
 import InterviewFlowLayout from '../layouts/InterviewFlowLayout';
-import { CornerReticles } from '../components/TechnicalDoodles';
 import AudioLevelMeter from '../components/AudioLevelMeter';
 import {
   getActiveInterview,
@@ -486,7 +482,7 @@ const InterviewSimulator = () => {
       <InterviewFlowLayout step="session">
         <div className="flex flex-col items-center justify-center py-20 gap-3">
           <div className="w-6 h-6 border-2 rounded-full animate-spin" style={{ borderColor: 'var(--c-accent)', borderTopColor: 'transparent' }} />
-          <p className="text-xs font-medium" style={{ color: 'var(--c-text-muted)' }}>Loading simulation studio…</p>
+          <p className="text-xs font-medium" style={{ color: 'var(--c-text-muted)' }}>Loading your interview…</p>
         </div>
       </InterviewFlowLayout>
     );
@@ -499,7 +495,6 @@ const InterviewSimulator = () => {
   const answeredCount = Object.keys(responses).length;
   const answeredCurrent = !!responses[question?.id];
   const isFinalQuestion = index === total - 1;
-  const questionNumStr = (index + 1).toString().padStart(2, '0');
   const isTextMode = answerMode === 'text';
   const currentDraft = typedDrafts[question?.id] || '';
   const draftWordCount = currentDraft.trim() ? currentDraft.trim().split(/\s+/).length : 0;
@@ -508,115 +503,105 @@ const InterviewSimulator = () => {
   return (
     <InterviewFlowLayout step="session" onExit={handleLeave}>
       <div className="space-y-6 py-2">
-        
-        {/* Step Progress Tracker Strip */}
-        <div className="grid grid-cols-5 gap-2">
-          {interview.questions.map((q, i) => {
-            const isDone = !!responses[q.id];
-            const isCurrent = i === index;
-            return (
-              <button
-                key={q.id}
-                onClick={() => jumpToQuestion(i)}
-                disabled={isRecording || saving}
-                aria-label={`Go to question ${i + 1}`}
-                className="h-8 py-[13px] bg-clip-content rounded-sm transition-all"
-                style={{
-                  backgroundColor: isCurrent
-                    ? 'var(--c-accent)'
-                    : isDone
-                    ? 'var(--c-success)'
-                    : 'var(--c-surface-muted)',
-                }}
-                title={`Question ${i + 1}: ${q.question_text.slice(0, 30)}...`}
-              />
-            );
-          })}
+
+        {/* Question header: where am I, and a step bar to move between questions */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--c-text-muted)' }}>
+              {answeredCount} of {total} answered
+            </p>
+            <h2 className="c-heading text-lg sm:text-xl font-bold" style={{ color: 'var(--c-text)' }}>
+              Question {index + 1} of {total}
+            </h2>
+          </div>
+
+          <ol className="flex items-center gap-2" aria-label="Questions">
+            {interview.questions.map((q, i) => {
+              const isDone = !!responses[q.id];
+              const isCurrent = i === index;
+              return (
+                <li key={q.id} className="flex items-center gap-2">
+                  {i > 0 && (
+                    <span
+                      className="w-6 sm:w-10 h-0.5 rounded"
+                      style={{ background: responses[interview.questions[i - 1].id] ? 'var(--c-success)' : 'var(--c-border)' }}
+                    />
+                  )}
+                  <button
+                    onClick={() => jumpToQuestion(i)}
+                    disabled={isRecording || saving}
+                    aria-label={`Question ${i + 1}${isDone ? ', answered' : ''}${isCurrent ? ', current' : ''}`}
+                    aria-current={isCurrent ? 'step' : undefined}
+                    title={q.question_text}
+                    className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-colors disabled:cursor-not-allowed"
+                    style={{
+                      background: isDone ? 'var(--c-success)' : isCurrent ? 'var(--c-accent)' : 'transparent',
+                      borderColor: isDone ? 'var(--c-success)' : isCurrent ? 'var(--c-accent)' : 'var(--c-border)',
+                      color: isDone || isCurrent ? '#FFFFFF' : 'var(--c-text-muted)',
+                    }}
+                  >
+                    {isDone && !isCurrent ? <Check className="w-4 h-4" /> : i + 1}
+                  </button>
+                </li>
+              );
+            })}
+          </ol>
         </div>
 
-        {/* Main Stage Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          
-          {/* Main Prompter Stage (7 cols) */}
-          <div className="lg:col-span-7 space-y-5">
-            
-            {/* Unified Prompter Canvas & Response Stage */}
-            <div 
-              className="c-card p-6 sm:p-8 space-y-6 rounded-lg border shadow-sm relative group"
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+
+          {/* Question and answer */}
+          <div className="lg:col-span-7">
+            <div
+              className="c-card p-6 sm:p-8 space-y-6 rounded-xl border shadow-sm"
               style={{
                 background: 'var(--c-surface)',
                 borderColor: isRecording ? 'var(--c-danger)' : 'var(--c-border)',
               }}
             >
-              <CornerReticles size={12} color={isRecording ? 'var(--c-danger)' : 'var(--c-border)'} />
-
-              {/* Question Metadata Header */}
-              <div className="flex items-center justify-between gap-3 border-b pb-3.5" style={{ borderColor: 'var(--c-border)' }}>
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-base font-bold" style={{ color: 'var(--c-text)' }}>
-                    {questionNumStr}
-                  </span>
-                  <span className="text-[11px] uppercase tracking-wider font-bold" style={{ color: 'var(--c-text-muted)' }}>
-                    INTERVIEW PROMPT
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-1.5">
-                  <span className="c-badge c-badge-muted text-[11px]">
-                    {question.difficulty || 'Medium'}
-                  </span>
-                  <span className="c-badge c-badge-accent text-[11px]">
-                    {question.type || 'Technical'}
-                  </span>
-                </div>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="c-badge c-badge-accent text-[11px]">{question.type || 'Technical'}</span>
+                <span className="c-badge c-badge-muted text-[11px]">{question.difficulty || 'Medium'}</span>
               </div>
 
-              {/* Dominant Question Typography */}
-              <div className="min-h-[120px] flex items-center">
-                <h1 className="c-heading text-xl sm:text-2xl font-bold leading-relaxed" style={{ color: 'var(--c-text)' }}>
-                  {question.question_text}
-                </h1>
-              </div>
+              <h1 className="c-heading text-xl sm:text-2xl font-bold leading-snug" style={{ color: 'var(--c-text)' }}>
+                {question.question_text}
+              </h1>
 
-              {/* Status & Guidance Bar */}
-              <div className="border-t pt-3 flex items-center justify-between gap-4 text-xs" style={{ borderColor: 'var(--c-border)', color: 'var(--c-text-secondary)' }}>
-                <p className="text-[11px]">
-                  {isTextMode ? (
-                    <>Type your answer below, then click <strong className="font-semibold" style={{ color: 'var(--c-text)' }}>Save Typed Answer</strong>.</>
-                  ) : (
-                    <>Formulate your response, then click <strong className="font-semibold" style={{ color: 'var(--c-text)' }}>Start Answering</strong>.</>
-                  )}
+              {!answeredCurrent && !isRecording && !saving && (
+                <p className="text-sm leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
+                  {isTextMode
+                    ? 'Type your answer as you would say it, then save it.'
+                    : 'Take a few seconds to think, then press Start answering. Aim for about 30 to 90 seconds.'}
                 </p>
-                {answeredCurrent && (
-                  <span className="shrink-0 c-badge c-badge-success flex items-center gap-1 font-semibold text-[11px]">
-                    <CheckCircle2 className="w-3 h-3" />
-                    {savedMode === 'text' ? 'Saved (typed)' : `Saved (${responses[question.id]?.durationSeconds || 0}s)`}
-                  </span>
-                )}
-              </div>
+              )}
 
-              {/* Answer mode: speak (audio + video) or type (Objective 1) */}
+              {/* Answer by speaking (audio + video) or by typing (Objective 1) */}
               {!textOnly && (
-                <div className="flex items-center gap-1 p-1 rounded-md border w-fit" style={{ borderColor: 'var(--c-border)', background: 'var(--c-surface-muted)' }}>
-                  {[
-                    { id: 'spoken', label: 'Speak', Icon: Mic },
-                    { id: 'text', label: 'Type', Icon: Keyboard },
-                  ].map(({ id: modeId, label, Icon }) => (
-                    <button
-                      key={modeId}
-                      onClick={() => { setAnswerMode(modeId); setSaveError(''); }}
-                      disabled={isRecording || saving}
-                      className="px-3 py-2.5 sm:py-1.5 rounded text-xs sm:text-[11px] font-semibold flex items-center gap-1.5 transition-colors"
-                      style={{
-                        background: answerMode === modeId ? 'var(--c-surface)' : 'transparent',
-                        color: answerMode === modeId ? 'var(--c-text)' : 'var(--c-text-muted)',
-                        boxShadow: answerMode === modeId ? '0 1px 2px rgba(0,0,0,0.25)' : 'none',
-                      }}
-                    >
-                      <Icon className="w-3.5 h-3.5" />
-                      {label}
-                    </button>
-                  ))}
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-semibold" style={{ color: 'var(--c-text-muted)' }}>Answer by</span>
+                  <div className="flex items-center gap-1 p-1 rounded-md border" style={{ borderColor: 'var(--c-border)', background: 'var(--c-surface-muted)' }}>
+                    {[
+                      { id: 'spoken', label: 'Speaking', Icon: Mic },
+                      { id: 'text', label: 'Typing', Icon: Keyboard },
+                    ].map(({ id: modeId, label, Icon }) => (
+                      <button
+                        key={modeId}
+                        onClick={() => { setAnswerMode(modeId); setSaveError(''); }}
+                        disabled={isRecording || saving}
+                        aria-pressed={answerMode === modeId}
+                        className="px-3 py-2 sm:py-1.5 rounded text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                        style={{
+                          background: answerMode === modeId ? 'var(--c-surface)' : 'transparent',
+                          color: answerMode === modeId ? 'var(--c-text)' : 'var(--c-text-muted)',
+                          boxShadow: answerMode === modeId ? '0 1px 2px rgba(0,0,0,0.25)' : 'none',
+                        }}
+                      >
+                        <Icon className="w-3.5 h-3.5" />
+                        {label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
 
@@ -626,85 +611,92 @@ const InterviewSimulator = () => {
                     value={currentDraft}
                     onChange={(e) => handleTypedChange(question.id, e.target.value)}
                     disabled={saving}
-                    rows={7}
+                    rows={6}
                     maxLength={5000}
-                    placeholder="Type your answer here. Write it as you would say it in the interview."
+                    aria-label="Your answer"
+                    placeholder="Type your answer here."
                     className="w-full rounded-md border p-3 text-sm leading-relaxed resize-y focus:outline-none"
                     style={{ background: 'var(--c-surface-muted)', borderColor: 'var(--c-border)', color: 'var(--c-text)' }}
                   />
                   <div className="flex items-center justify-between text-[11px]" style={{ color: 'var(--c-text-muted)' }}>
-                    <span>Typed answers are scored on content, grammar and tone. Speech and facial analysis are not applied.</span>
+                    <span>Typed answers are scored on content, grammar and tone only.</span>
                     <span className="font-mono shrink-0 pl-2">{draftWordCount} words</span>
                   </div>
                 </div>
               )}
 
-              {/* Active Recording State Bar */}
+              {/* Recording in progress */}
               {isRecording && (
-                <div 
-                  className="rounded-md p-3.5 flex items-center justify-between gap-3 border"
-                  style={{
-                    background: 'var(--c-badge-danger-bg)',
-                    borderColor: 'var(--c-badge-danger-border)',
-                    color: 'var(--c-badge-danger-text)'
-                  }}
+                <div
+                  className="rounded-lg p-4 flex items-center justify-between gap-3 border"
+                  style={{ background: 'var(--c-badge-danger-bg)', borderColor: 'var(--c-badge-danger-border)' }}
+                  role="status"
+                  aria-live="polite"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse shrink-0" />
+                    <span className="w-3 h-3 rounded-full bg-red-500 animate-pulse shrink-0" />
                     <div>
                       <p className="text-xs font-semibold text-red-500">
                         {elapsed >= ANSWER_WARNING_SECONDS
-                          ? `Recording - stops automatically in ${Math.max(0, MAX_ANSWER_SECONDS - elapsed)}s`
-                          : 'Recording'}
+                          ? `Recording stops by itself in ${Math.max(0, MAX_ANSWER_SECONDS - elapsed)}s`
+                          : 'Recording your answer'}
                       </p>
-                      <p className="font-mono text-xl font-bold" style={{ color: 'var(--c-text)' }}>
+                      <p className="font-mono text-2xl font-bold" style={{ color: 'var(--c-text)' }}>
                         {formatTime(elapsed)} <span className="text-xs font-medium" style={{ color: 'var(--c-text-muted)' }}>/ {formatTime(MAX_ANSWER_SECONDS)}</span>
                       </p>
                     </div>
                   </div>
-
-                  <AudioLevelMeter stream={mediaStream} bars={16} height={20} color="var(--c-danger)" />
-
+                  <AudioLevelMeter stream={mediaStream} bars={16} height={22} color="var(--c-danger)" />
                 </div>
               )}
 
-              {/* Uploading State Bar */}
+              {/* Saving */}
               {!isRecording && saving && (
-                <div 
-                  className="rounded-md p-3.5 flex items-center justify-between gap-3 border"
-                  style={{
-                    background: 'var(--c-badge-accent-bg)',
-                    borderColor: 'var(--c-badge-accent-border)',
-                    color: 'var(--c-badge-accent-text)'
-                  }}
+                <div
+                  className="rounded-lg p-4 flex items-center gap-3 border"
+                  style={{ background: 'var(--c-badge-accent-bg)', borderColor: 'var(--c-badge-accent-border)' }}
+                  role="status"
                 >
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-4 h-4 border-2 rounded-full animate-spin shrink-0" style={{ borderColor: 'var(--c-accent)', borderTopColor: 'transparent' }} />
-                    <div>
-                      <p className="text-xs font-semibold" style={{ color: 'var(--c-text)' }}>Saving your answer…</p>
-                      <p className="text-xs" style={{ color: 'var(--c-text-secondary)' }}>This only takes a moment.</p>
-                    </div>
+                  <div className="w-4 h-4 border-2 rounded-full animate-spin shrink-0" style={{ borderColor: 'var(--c-accent)', borderTopColor: 'transparent' }} />
+                  <p className="text-sm font-semibold" style={{ color: 'var(--c-text)' }}>Saving your answer…</p>
+                </div>
+              )}
+
+              {/* Saved */}
+              {answeredCurrent && !isRecording && !saving && (
+                <div
+                  className="rounded-lg p-4 flex items-center gap-3 border"
+                  style={{ background: 'var(--c-badge-success-bg)', borderColor: 'var(--c-badge-success-border, var(--c-border))' }}
+                  role="status"
+                >
+                  <CheckCircle2 className="w-5 h-5 shrink-0" style={{ color: 'var(--c-success)' }} />
+                  <div>
+                    <p className="text-sm font-semibold" style={{ color: 'var(--c-text)' }}>
+                      {savedMode === 'text' ? 'Typed answer saved' : `Answer saved (${responses[question.id]?.durationSeconds || 0} seconds)`}
+                    </p>
+                    <p className="text-xs" style={{ color: 'var(--c-text-secondary)' }}>
+                      {isFinalQuestion ? 'That was the last question. Finish when you are ready.' : 'Move on to the next question, or answer this one again.'}
+                    </p>
                   </div>
                 </div>
               )}
 
-              {/* Error Notice & Retry */}
               {saveError && (
-                <div className="c-badge-danger rounded-md p-3 flex items-start justify-between gap-3 text-xs leading-relaxed">
+                <div className="c-badge-danger rounded-md p-3 flex items-start justify-between gap-3 text-xs leading-relaxed" role="alert">
                   <div className="flex items-start gap-2">
                     <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-bold">Upload Failed</p>
+                      <p className="font-bold">Your answer was not saved</p>
                       <p>{saveError}</p>
                     </div>
                   </div>
                   {pendingRecording && !saving && (
-                    <button 
+                    <button
                       onClick={handleRetryUpload}
                       className="c-btn shrink-0 px-2.5 py-1 text-xs rounded font-bold"
                       style={{ background: 'var(--c-danger)', color: '#fff' }}
                     >
-                      Retry
+                      Try again
                     </button>
                   )}
                 </div>
@@ -715,7 +707,7 @@ const InterviewSimulator = () => {
                   <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                   <p>
                     <strong>We can't see your face.</strong> Move back in front of the camera.
-                    {isRecording ? ' Time spent out of frame lowers your score for this answer.' : ''}
+                    {isRecording ? ' Time out of frame lowers the score for this answer.' : ''}
                   </p>
                 </div>
               )}
@@ -728,157 +720,162 @@ const InterviewSimulator = () => {
               )}
 
               {streamError && !isTextMode && (
-                <div className="c-badge-danger rounded-md p-3 flex items-start gap-2 text-xs">
+                <div className="c-badge-danger rounded-md p-3 flex items-start gap-2 text-xs" role="alert">
                   <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                   <p>{streamError}</p>
                 </div>
               )}
 
               {endError && (
-                <div className="c-badge-danger rounded-md p-2.5 flex items-start gap-2 text-xs">
+                <div className="c-badge-danger rounded-md p-2.5 flex items-start gap-2 text-xs" role="alert">
                   <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                   <p>{endError}</p>
                 </div>
               )}
 
-              {/* Primary Action Controls */}
-              <div className="space-y-3 pt-2">
-                {isTextMode && !isRecording ? (
-                  <button
-                    onClick={saveTypedAnswer}
-                    disabled={saving || draftWordCount === 0}
-                    className="c-btn c-btn-primary w-full py-3.5 text-xs font-bold flex items-center justify-center gap-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {saving ? (
-                      <div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                    ) : (
-                      <Save className="w-4 h-4" />
-                    )}
-                    <span>{saving ? 'Saving Answer…' : savedMode === 'text' ? 'Update Typed Answer' : 'Save Typed Answer'}</span>
-                  </button>
-                ) : isRecording ? (
+              {/* Main action: one clear next step at a time */}
+              <div className="space-y-2.5 pt-1">
+                {isRecording ? (
                   <button
                     onClick={handleStopAndSave}
-                    className="c-btn c-btn-danger w-full py-3.5 text-xs font-bold flex items-center justify-center gap-2 rounded-md"
+                    className="c-btn c-btn-danger w-full py-3.5 text-sm font-bold flex items-center justify-center gap-2 rounded-md"
                   >
                     <Square className="w-3.5 h-3.5 fill-current" />
-                    <span>Stop & Upload Response</span>
+                    <span>Stop and save answer</span>
                   </button>
                 ) : saving ? (
-                  <button
-                    disabled
-                    className="c-btn c-btn-primary w-full py-3.5 text-xs font-bold flex items-center justify-center gap-2 opacity-75 cursor-not-allowed rounded-md"
-                  >
+                  <button disabled className="c-btn c-btn-primary w-full py-3.5 text-sm font-bold flex items-center justify-center gap-2 opacity-75 cursor-not-allowed rounded-md">
                     <div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
                     <span>Saving…</span>
+                  </button>
+                ) : answeredCurrent ? (
+                  <>
+                    {isFinalQuestion ? (
+                      <button
+                        onClick={() => setConfirmEnd(true)}
+                        className="c-btn w-full py-3.5 text-sm font-bold flex items-center justify-center gap-2 rounded-md text-white"
+                        style={{ background: 'var(--c-success)' }}
+                      >
+                        <Check className="w-4 h-4" />
+                        <span>Finish interview</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={goNext}
+                        className="c-btn c-btn-primary w-full py-3.5 text-sm font-bold flex items-center justify-center gap-2 rounded-md"
+                      >
+                        <span>Next question</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </button>
+                    )}
+                    {isTextMode ? (
+                      <button
+                        onClick={saveTypedAnswer}
+                        disabled={draftWordCount === 0}
+                        className="c-btn c-btn-secondary w-full py-2.5 text-xs font-semibold flex items-center justify-center gap-1.5 rounded-md disabled:opacity-50"
+                      >
+                        <Save className="w-3.5 h-3.5" />
+                        <span>Save changes to my answer</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={startRecording}
+                        disabled={!streamReady}
+                        className="c-btn c-btn-secondary w-full py-2.5 text-xs font-semibold flex items-center justify-center gap-1.5 rounded-md"
+                      >
+                        <Mic className="w-3.5 h-3.5" />
+                        <span>Answer again</span>
+                      </button>
+                    )}
+                  </>
+                ) : isTextMode ? (
+                  <button
+                    onClick={saveTypedAnswer}
+                    disabled={draftWordCount === 0}
+                    className="c-btn c-btn-primary w-full py-3.5 text-sm font-bold flex items-center justify-center gap-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Save className="w-4 h-4" />
+                    <span>Save answer</span>
                   </button>
                 ) : (
                   <button
                     onClick={startRecording}
                     disabled={!streamReady}
-                    className="c-btn c-btn-primary w-full py-3.5 text-xs font-bold flex items-center justify-center gap-2 rounded-md"
+                    className="c-btn c-btn-primary w-full py-3.5 text-sm font-bold flex items-center justify-center gap-2 rounded-md"
                   >
                     {!streamReady ? (
                       <div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
                     ) : (
                       <Mic className="w-4 h-4" />
                     )}
-                    <span>
-                      {!streamReady 
-                        ? 'Calibrating Sensors…' 
-                        : answeredCurrent 
-                        ? 'Re-record Take' 
-                        : 'Start Answering'}
-                    </span>
+                    <span>{!streamReady ? (voiceOnly ? 'Connecting microphone…' : 'Connecting camera…') : 'Start answering'}</span>
                   </button>
                 )}
 
-                {/* Step Forward / Backward Navigation Actions */}
-                <div className="flex items-center gap-2.5 pt-1">
+                <div className="flex items-center justify-between pt-1">
                   <button
                     onClick={goPrev}
                     disabled={index === 0 || isRecording || saving}
-                    className="c-btn c-btn-secondary flex-1 py-2.5 text-xs flex items-center justify-center gap-1.5 rounded-md font-semibold"
+                    className="text-xs font-semibold flex items-center gap-1 py-2 disabled:opacity-40 disabled:cursor-not-allowed"
+                    style={{ color: 'var(--c-text-secondary)' }}
                   >
-                    <ArrowLeft className="w-3 h-3" />
-                    <span>Previous</span>
+                    <ArrowLeft className="w-3.5 h-3.5" />
+                    Previous question
                   </button>
-
-                  {!isFinalQuestion ? (
+                  {!answeredCurrent && !isFinalQuestion && (
                     <button
                       onClick={goNext}
                       disabled={isRecording || saving}
-                      className="c-btn c-btn-secondary flex-1 py-2.5 text-xs flex items-center justify-center gap-1.5 rounded-md font-semibold"
+                      className="text-xs font-semibold flex items-center gap-1 py-2 disabled:opacity-40"
+                      style={{ color: 'var(--c-text-secondary)' }}
                     >
-                      <span>Next Prompt</span>
-                      <ArrowRight className="w-3 h-3" />
+                      Skip for now
+                      <ArrowRight className="w-3.5 h-3.5" />
                     </button>
-                  ) : (
+                  )}
+                  {(answeredCurrent || isFinalQuestion) && !(answeredCurrent && isFinalQuestion) && (
                     <button
                       onClick={() => setConfirmEnd(true)}
                       disabled={isRecording || saving}
-                      className="c-btn flex-1 py-2.5 text-xs font-bold flex items-center justify-center gap-1.5 rounded-md text-white"
-                      style={{ background: 'var(--c-success)' }}
+                      className="text-xs font-semibold py-2 hover:underline underline-offset-2 disabled:opacity-40"
+                      style={{ color: 'var(--c-text-muted)' }}
                     >
-                      <span>Complete Interview</span>
-                      <Check className="w-3 h-3" />
+                      Finish interview
                     </button>
                   )}
                 </div>
-                {!isFinalQuestion && (
-                  <button
-                    onClick={() => setConfirmEnd(true)}
-                    disabled={isRecording || saving}
-                    className="w-full text-center text-[11px] font-semibold underline-offset-2 hover:underline disabled:opacity-50"
-                    style={{ color: 'var(--c-text-muted)' }}
-                  >
-                    End interview now
-                  </button>
-                )}
               </div>
-
             </div>
-
           </div>
 
-          {/* Right Stage: Live Camera Feed & Question Navigator (5 cols) */}
-          <div className="lg:col-span-5 space-y-6">
-            
-            {/* Live Camera Viewfinder Monitor */}
-            <div 
-              className="overflow-hidden relative flex flex-col justify-between rounded-lg border shadow-sm group"
+          {/* Camera and tips */}
+          <div className="lg:col-span-5 space-y-5">
+            <div
+              className="overflow-hidden relative rounded-xl border shadow-sm"
               style={{
-                aspectRatio: '16/10',
+                aspectRatio: '4/3',
                 background: 'var(--c-surface-card)',
                 borderColor: isRecording ? 'var(--c-danger)' : 'var(--c-border)',
               }}
             >
-              <CornerReticles size={10} color={isRecording ? 'var(--c-danger)' : 'var(--c-border)'} />
-
               {textOnly ? (
                 <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-center p-6">
                   <Keyboard className="w-8 h-8" style={{ color: 'var(--c-text-muted)' }} />
-                  <p className="text-xs font-bold" style={{ color: 'var(--c-text)' }}>Typed answer mode</p>
-                  <p className="text-[11px] max-w-xs" style={{ color: 'var(--c-text-muted)' }}>
-                    Camera and microphone are off. Nothing is being recorded.
+                  <p className="text-sm font-bold" style={{ color: 'var(--c-text)' }}>Typed answers</p>
+                  <p className="text-xs max-w-xs" style={{ color: 'var(--c-text-muted)' }}>
+                    Camera and microphone are off. Nothing is recorded.
                   </p>
                 </div>
               ) : voiceOnly ? (
                 <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-center p-6">
                   <Mic className="w-8 h-8" style={{ color: isRecording ? 'var(--c-danger)' : 'var(--c-accent)' }} />
-                  <p className="text-xs font-bold" style={{ color: 'var(--c-text)' }}>Voice-only interview</p>
-                  <p className="text-[11px] max-w-xs" style={{ color: 'var(--c-text-muted)' }}>
-                    Only your voice is recorded while you answer. The camera is off, so facial analysis is skipped.
+                  <p className="text-sm font-bold" style={{ color: 'var(--c-text)' }}>Voice-only interview</p>
+                  <p className="text-xs max-w-xs" style={{ color: 'var(--c-text-muted)' }}>
+                    Only your voice is recorded while you answer. The camera is off.
                   </p>
                 </div>
               ) : (
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  muted
-                  playsInline
-                  className="w-full h-full object-cover"
-                />
+                <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover" style={{ transform: 'scaleX(-1)' }} />
               )}
 
               {!textOnly && !voiceOnly && presence === 'away' && (
@@ -890,110 +887,55 @@ const InterviewSimulator = () => {
                 </div>
               )}
 
-              {/* Viewfinder Top Bar Overlay */}
-              <div className="absolute top-2.5 inset-x-2.5 flex items-center justify-between pointer-events-none">
-                <span 
-                  className="px-2 py-0.5 rounded text-[11px] font-semibold border"
+              <div className="absolute top-3 left-3 pointer-events-none">
+                <span
+                  className="px-2 py-1 rounded-md text-[11px] font-semibold"
                   style={{
-                    background: isRecording 
-                      ? 'var(--c-danger)' 
-                      : streamReady 
-                      ? 'var(--c-badge-success-bg)' 
-                      : 'var(--c-badge-muted-bg)',
-                    color: isRecording ? '#FFFFFF' : streamReady ? 'var(--c-badge-success-text)' : 'var(--c-badge-muted-text)',
-                    borderColor: 'var(--c-border)'
+                    background: isRecording ? 'var(--c-danger)' : 'rgba(10, 16, 32, 0.75)',
+                    color: '#FFFFFF',
                   }}
                 >
-                  {isRecording ? `● Recording ${formatTime(elapsed)}` : textOnly || voiceOnly ? (voiceOnly && streamReady ? 'Microphone on' : 'Camera off') : streamReady ? 'Camera on' : 'Camera not connected'}
+                  {isRecording
+                    ? `● Recording ${formatTime(elapsed)}`
+                    : textOnly
+                    ? 'Camera off'
+                    : voiceOnly
+                    ? (streamReady ? 'Microphone on' : 'Connecting microphone…')
+                    : streamReady
+                    ? 'Camera on'
+                    : 'Connecting camera…'}
                 </span>
               </div>
 
-              <div className={`absolute bottom-2.5 inset-x-2.5 pointer-events-none ${textOnly ? 'hidden' : ''}`} aria-hidden="true">
-                <div
-                  className="px-2.5 py-1 rounded-md border flex items-center justify-between gap-2 backdrop-blur-sm"
-                  style={{ background: 'rgba(10, 16, 32, 0.75)', borderColor: 'var(--c-border)', color: 'var(--c-text)' }}
-                >
-                  <Mic className="w-3 h-3 shrink-0" style={{ color: isRecording ? 'var(--c-danger)' : 'var(--c-accent)' }} />
-                  <AudioLevelMeter stream={mediaStream} bars={12} height={12} color={isRecording ? 'var(--c-danger)' : 'var(--c-accent)'} />
+              {!textOnly && (
+                <div className="absolute bottom-3 left-3 pointer-events-none" aria-hidden="true">
+                  <div className="px-2.5 py-1 rounded-md flex items-center gap-2" style={{ background: 'rgba(10, 16, 32, 0.75)' }}>
+                    <Mic className="w-3 h-3 shrink-0" style={{ color: isRecording ? 'var(--c-danger)' : '#FFFFFF' }} />
+                    <AudioLevelMeter stream={mediaStream} bars={10} height={12} color={isRecording ? 'var(--c-danger)' : 'var(--c-accent)'} />
+                  </div>
                 </div>
-              </div>
-
+              )}
             </div>
 
-            {/* Question Bank Navigator Ledger */}
-            <div className="space-y-2.5">
-              <div className="border-b pb-2 flex items-center justify-between" style={{ borderColor: 'var(--c-border)' }}>
-                <div>
-                  <h3 className="c-heading text-sm font-bold" style={{ color: 'var(--c-text)' }}>Questions</h3>
-                </div>
-                <span className="text-xs font-mono font-bold" style={{ color: 'var(--c-text-secondary)' }}>
-                  {answeredCount} of {total} answered
-                </span>
+            <div className="rounded-xl border p-5 space-y-3" style={{ borderColor: 'var(--c-border)', background: 'var(--c-surface)' }}>
+              <div className="flex items-center gap-2">
+                <Lightbulb className="w-4 h-4" style={{ color: 'var(--c-accent)' }} />
+                <h3 className="text-sm font-bold" style={{ color: 'var(--c-text)' }}>Tips for a good answer</h3>
               </div>
-
-              <div className="divide-y text-xs border-b" style={{ borderColor: 'var(--c-border)' }}>
-                {interview.questions.map((q, i) => {
-                  const isCurrent = i === index;
-                  const isSaved = !!responses[q.id];
-                  return (
-                    <button
-                      key={q.id}
-                      onClick={() => jumpToQuestion(i)}
-                      disabled={isRecording || saving}
-                      className="w-full py-2.5 px-2 flex items-center justify-between text-left rounded transition-colors group hover:bg-slate-500/[0.05]"
-                      style={{
-                        background: isCurrent ? 'var(--c-surface-muted)' : 'transparent',
-                      }}
-                    >
-                      <div className="flex items-center gap-2 min-w-0 pr-2">
-                        <span 
-                          className="font-mono text-xs font-bold w-4 shrink-0"
-                          style={{ color: isCurrent ? 'var(--c-text)' : 'var(--c-text-muted)' }}
-                        >
-                          {(i + 1).toString().padStart(2, '0')}
-                        </span>
-                        <p 
-                          className="truncate text-xs font-medium"
-                          style={{ color: isCurrent ? 'var(--c-text)' : 'var(--c-text-secondary)' }}
-                        >
-                          {q.question_text}
-                        </p>
-                      </div>
-
-                      <div className="shrink-0">
-                        {isSaved ? (
-                          <span className="c-badge c-badge-success text-[11px] py-0.5 px-1.5 font-bold">
-                            Saved
-                          </span>
-                        ) : isCurrent ? (
-                          <span className="c-badge c-badge-accent text-[11px] py-0.5 px-1.5 font-bold">
-                            Active
-                          </span>
-                        ) : (
-                          <span className="c-badge c-badge-muted text-[11px] py-0.5 px-1.5">
-                            Pending
-                          </span>
-                        )}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
+              <ul className="space-y-2 text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
+                <li className="flex gap-2"><span style={{ color: 'var(--c-accent)' }}>•</span>Start with a direct answer, then give one example.</li>
+                {!textOnly && !voiceOnly && <li className="flex gap-2"><span style={{ color: 'var(--c-accent)' }}>•</span>Look at the camera and keep your face in the frame.</li>}
+                {!textOnly && <li className="flex gap-2"><span style={{ color: 'var(--c-accent)' }}>•</span>Speak clearly and at a steady pace. Short pauses are fine.</li>}
+                <li className="flex gap-2"><span style={{ color: 'var(--c-accent)' }}>•</span>You can answer a question again before you finish.</li>
+              </ul>
+              {!textOnly && (
+                <p className="flex items-start gap-1.5 text-[11px] pt-2 border-t" style={{ color: 'var(--c-text-muted)', borderColor: 'var(--c-border)' }}>
+                  <ShieldCheck className="w-3.5 h-3.5 shrink-0 mt-px" style={{ color: 'var(--c-success)' }} />
+                  Recording runs only while you answer and stops by itself after 3 minutes.
+                </p>
+              )}
             </div>
-
-            {/* Controlled Data Capture Note */}
-            <div className="pt-1">
-              <div className="flex items-center gap-1.5 mb-0.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-                <span className="text-[11px] font-bold" style={{ color: 'var(--c-text)' }}>Controlled Capture</span>
-              </div>
-              <p className="text-[11px] leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                Recording starts when you click Start Answering and stops when you click Stop, or after 3 minutes.
-              </p>
-            </div>
-
           </div>
-
         </div>
       </div>
 
@@ -1033,13 +975,13 @@ const InterviewSimulator = () => {
             style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}
           >
             <div className="space-y-1">
-              <h3 className="c-heading text-lg font-bold" style={{ color: 'var(--c-text)' }}>End the interview?</h3>
+              <h3 className="c-heading text-lg font-bold" style={{ color: 'var(--c-text)' }}>Finish the interview?</h3>
             </div>
 
             <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
               {answeredCount < total
-                ? `You have answered ${answeredCount} of ${total} questions. Unanswered questions score zero. Concluding now submits your saved answers for evaluation.`
-                : 'All prompts have been recorded. Concluding will finalize your session and proceed to evaluation processing.'}
+                ? `You have answered ${answeredCount} of ${total} questions. Questions you skip score zero. Your saved answers will be analysed and you will see your results.`
+                : 'All questions are answered. Your answers will be analysed and you will see your results.'}
             </p>
 
             <div className="flex items-center gap-2.5 pt-1">
@@ -1048,7 +990,7 @@ const InterviewSimulator = () => {
                 disabled={ending}
                 className="c-btn c-btn-secondary flex-1 py-2 text-xs font-semibold rounded-md"
               >
-                Return
+                Keep answering
               </button>
               <button 
                 onClick={handleEnd} 
@@ -1058,12 +1000,12 @@ const InterviewSimulator = () => {
                 {ending ? (
                   <>
                     <div className="w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                    <span>Finalizing…</span>
+                    <span>Finishing…</span>
                   </>
                 ) : (
                   <>
-                    <PhoneOff className="w-3.5 h-3.5" />
-                    <span>Submit & Conclude</span>
+                    <Check className="w-3.5 h-3.5" />
+                    <span>Finish and see results</span>
                   </>
                 )}
               </button>

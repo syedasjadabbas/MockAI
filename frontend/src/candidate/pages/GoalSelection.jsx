@@ -20,30 +20,16 @@ import {
   HardHat,
   Briefcase,
   TrendingUp,
+  Bot,
+  SendHorizontal,
+  RotateCcw,
+  Clock,
+  ListChecks,
+  Sparkles,
 } from 'lucide-react';
 import InterviewFlowLayout from '../layouts/InterviewFlowLayout';
 import { INTERVIEW_TYPES } from '../data/categories';
 import { getCategories, startInterview, interpretGoal } from '../services/candidateApi';
-import { CANDIDATE_IMAGES } from '../assets/images';
-import {
-  CornerReticles,
-  FrontendLayoutSchematic,
-  BackendClusterSchematic,
-  NeuralNodesDiagram,
-  BehavioralDialogueSchematic,
-  SqlMatrixSchematic,
-} from '../components/TechnicalDoodles';
-
-// Map domain tracks to small line drawings
-function getDomainSchematic(categoryName = '') {
-  const str = categoryName.toLowerCase();
-  if (str.includes('front') || str.includes('web') || str.includes('react') || str.includes('ui')) return FrontendLayoutSchematic;
-  if (str.includes('back') || str.includes('node') || str.includes('server') || str.includes('distribut')) return BackendClusterSchematic;
-  if (str.includes('ai') || str.includes('ml') || str.includes('learning') || str.includes('neural')) return NeuralNodesDiagram;
-  if (str.includes('behav') || str.includes('leader') || str.includes('culture') || str.includes('hr')) return BehavioralDialogueSchematic;
-  if (str.includes('data') || str.includes('sql') || str.includes('db') || str.includes('analyt')) return SqlMatrixSchematic;
-  return null;
-}
 
 const CATEGORY_ICONS = {
   Code: Code2,
@@ -96,6 +82,9 @@ function suggestInterviewType(category) {
 function typeLabel(typeId) {
   return INTERVIEW_TYPES.find((t) => t.id === typeId)?.label || 'Interview';
 }
+
+// Quick-start examples shown under the message box.
+const QUICK_GOALS = ['Frontend developer', 'Nurse', 'Teacher', 'Accountant', 'Data analyst', 'Marketing'];
 
 const TYPE_BLURB = {
   technical: 'Domain expertise & role-specific skills',
@@ -230,8 +219,8 @@ const GoalSelection = () => {
     goToConfirm(selectedCategory, customRole, typeId);
   };
 
-  const handleSend = async () => {
-    const text = input.trim();
+  const handleSend = async (preset) => {
+    const text = (typeof preset === 'string' ? preset : input).trim();
     if (!text || interpreting) return;
     pushUser(text);
     setInput('');
@@ -294,8 +283,21 @@ const GoalSelection = () => {
     }
   };
 
+  const startOver = () => {
+    setMessages([{ from: 'bot', text: 'Sure, let us start again. What role or field are you preparing for?' }]);
+    setStage('ask-goal');
+    setSelectedType(null);
+    setTypeChosen(false);
+    setSuggestedType(null);
+    setSelectedCategory(null);
+    setCustomRole('');
+    setSuggestionIds([]);
+    setStartError('');
+    setInput('');
+  };
+
   const renderTypeCards = (onPick, suggested = null) => (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
       {INTERVIEW_TYPES.map((type) => {
         const Icon = { Briefcase, Users, Compass, Code2 }[type.icon] || Briefcase;
         const isSuggested = suggested === type.id;
@@ -303,22 +305,26 @@ const GoalSelection = () => {
           <button
             key={type.id}
             onClick={() => onPick(type.id)}
-            className="c-card c-card-hover rounded-lg p-5 text-left flex flex-col justify-between gap-4 transition-all group relative overflow-hidden"
-            style={{ background: 'var(--c-surface-card)', borderColor: isSuggested ? 'var(--c-accent)' : 'var(--c-border)' }}
+            className="rounded-lg border p-4 text-left flex sm:flex-col items-start gap-3 transition-all group hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2"
+            style={{
+              background: isSuggested ? 'var(--c-badge-accent-bg)' : 'var(--c-surface-muted)',
+              borderColor: isSuggested ? 'var(--c-accent)' : 'var(--c-border)',
+            }}
           >
-            <div className="flex items-center justify-between">
-              <div className="w-8 h-8 rounded flex items-center justify-center border transition-colors group-hover:border-orange-500/50"
-                style={{ background: 'var(--c-surface-muted)', borderColor: 'var(--c-border)', color: 'var(--c-text)' }}
-              >
-                <Icon className="w-4 h-4" />
-              </div>
-              {isSuggested && <span className="c-badge c-badge-accent text-[11px] font-semibold">Suggested</span>}
+            <div
+              className="w-9 h-9 rounded-md flex items-center justify-center shrink-0"
+              style={{ background: 'var(--c-badge-accent-bg)', color: 'var(--c-accent)' }}
+            >
+              <Icon className="w-4 h-4" />
             </div>
-            <div>
-              <span className="text-xs font-bold block group-hover:text-orange-500 transition-colors" style={{ color: 'var(--c-text)' }}>
-                {type.label}
+            <div className="min-w-0 flex-1">
+              <span className="flex flex-wrap items-center gap-2">
+                <span className="text-sm font-bold group-hover:text-orange-500 transition-colors" style={{ color: 'var(--c-text)' }}>
+                  {type.label.replace(' Interview', '')}
+                </span>
+                {isSuggested && <span className="c-badge c-badge-accent text-[11px] font-semibold">Suggested</span>}
               </span>
-              <span className="text-[11px] block mt-0.5" style={{ color: 'var(--c-text-muted)' }}>
+              <span className="text-xs block mt-0.5 leading-relaxed" style={{ color: 'var(--c-text-muted)' }}>
                 {TYPE_BLURB[type.id]}
               </span>
             </div>
@@ -332,176 +338,228 @@ const GoalSelection = () => {
     ? suggestionIds.map((sid) => categories.find((c) => c.id === sid)).filter(Boolean)
     : categories;
 
+  const showInput = !categoriesLoading && !categoriesError && (stage === 'ask-goal' || stage === 'pick-domain');
+  const roleTitle = customRole && customRole.toLowerCase() !== selectedCategory?.name?.toLowerCase()
+    ? customRole
+    : selectedCategory?.name;
+
   return (
     <InterviewFlowLayout step="goal">
-      <div className="py-6 sm:py-10 space-y-6">
+      <div className="py-6 sm:py-10 max-w-4xl mx-auto space-y-6">
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-          <div className="lg:col-span-8">
-            <h1 className="c-heading text-2xl sm:text-3xl font-bold" style={{ color: 'var(--c-text)' }}>
-              Set up your practice interview
-            </h1>
-            <p className="text-xs sm:text-sm mt-1" style={{ color: 'var(--c-text-secondary)' }}>
-              Tell the assistant your goal. It picks five questions for your field and the kind of interview you choose.
-            </p>
-          </div>
-          <div className="hidden lg:block lg:col-span-4">
-            <div className="relative rounded-lg overflow-hidden border aspect-video group"
-              style={{ borderColor: 'var(--c-border)', background: 'var(--c-surface)' }}
-            >
-              <CornerReticles size={8} color="var(--c-accent)" />
-              <img src={CANDIDATE_IMAGES.neuralSphere} alt="" className="w-full h-full object-cover opacity-90 transition-transform duration-700 group-hover:scale-105" />
-            </div>
-          </div>
-        </div>
-
-        {/* Chat thread (FR 7-01: text-based chatbot) */}
-        <div
-          className="rounded-lg border p-4 space-y-2.5 max-h-80 overflow-y-auto"
-          style={{ background: 'var(--c-surface-card)', borderColor: 'var(--c-border)' }}
-          role="log"
-          aria-live="polite"
-          aria-label="Interview setup assistant"
-        >
-          {messages.map((m, i) => (
-            <div key={i} className={`flex ${m.from === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div
-                className="max-w-[85%] rounded-lg px-3.5 py-2 text-xs sm:text-sm leading-relaxed"
-                style={m.from === 'user'
-                  ? { background: 'var(--c-accent)', color: '#fff' }
-                  : { background: 'var(--c-surface-muted)', color: 'var(--c-text)', border: '1px solid var(--c-border)' }}
+        <div className="space-y-3">
+          <h1 className="c-heading text-2xl sm:text-3xl font-bold" style={{ color: 'var(--c-text)' }}>
+            Set up your practice interview
+          </h1>
+          <p className="text-sm" style={{ color: 'var(--c-text-secondary)' }}>
+            Tell the assistant which job you are preparing for and choose the kind of interview.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { Icon: ListChecks, text: '3 easy questions' },
+              { Icon: Clock, text: 'About 5 minutes' },
+              { Icon: Sparkles, text: 'Feedback on every answer' },
+            ].map(({ Icon, text }) => (
+              <span
+                key={text}
+                className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium"
+                style={{ borderColor: 'var(--c-border)', color: 'var(--c-text-secondary)', background: 'var(--c-surface)' }}
               >
-                {m.text}
-              </div>
-            </div>
-          ))}
-          {interpreting && (
-            <div className="flex justify-start">
-              <div className="rounded-lg px-3.5 py-2 text-xs flex items-center gap-2" style={{ background: 'var(--c-surface-muted)', color: 'var(--c-text-muted)', border: '1px solid var(--c-border)' }}>
-                <span className="w-3 h-3 border-2 rounded-full animate-spin" style={{ borderColor: 'var(--c-accent)', borderTopColor: 'transparent' }} />
-                Finding the best match…
-              </div>
-            </div>
-          )}
+                <Icon className="w-3.5 h-3.5" style={{ color: 'var(--c-accent)' }} />
+                {text}
+              </span>
+            ))}
+          </div>
         </div>
 
-        {/* Content Area */}
-        <div>
-          {categoriesLoading ? (
-            <div className="flex flex-col items-center justify-center py-12 gap-3">
-              <div className="w-6 h-6 border-2 rounded-full animate-spin" style={{ borderColor: 'var(--c-accent)', borderTopColor: 'transparent' }} />
-              <p className="text-xs font-medium" style={{ color: 'var(--c-text-muted)' }}>Loading tracks...</p>
+        {/* FR 7-01: the setup assistant is a text chatbot. Messages, the choices for
+            the current step and the message box all live in one panel. */}
+        <div className="rounded-xl border overflow-hidden" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
+          <div className="flex items-center justify-between gap-3 px-4 sm:px-5 py-3 border-b" style={{ borderColor: 'var(--c-border)' }}>
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: 'var(--c-badge-accent-bg)', color: 'var(--c-accent)' }}>
+                <Bot className="w-4 h-4" />
+              </div>
+              <div>
+                <p className="text-sm font-bold leading-tight" style={{ color: 'var(--c-text)' }}>Interview assistant</p>
+                <p className="text-[11px] leading-tight" style={{ color: 'var(--c-text-muted)' }}>Finds your field and sets up the questions</p>
+              </div>
             </div>
-          ) : categoriesError ? (
-            <div className="flex flex-col items-start gap-3 py-10">
-              <AlertCircle className="w-6 h-6 text-red-500" />
-              <p className="text-sm font-medium" style={{ color: 'var(--c-text-secondary)' }}>{categoriesError}</p>
-            </div>
-          ) : interpreting ? null : (
-            <>
-              {stage === 'ask-goal' && renderTypeCards(chooseTypeFirst)}
+            {stage !== 'ask-goal' && (
+              <button
+                onClick={startOver}
+                disabled={starting || interpreting}
+                className="shrink-0 whitespace-nowrap text-xs font-semibold flex items-center gap-1 px-2 py-1 rounded-md hover:underline underline-offset-2 disabled:opacity-40"
+                style={{ color: 'var(--c-text-muted)' }}
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                Start over
+              </button>
+            )}
+          </div>
 
-              {stage === 'ask-interview-type' && renderTypeCards(chooseInterviewType, suggestedType)}
-
-              {stage === 'pick-domain' && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {domainOptions.map((cat) => {
-                    const Icon = getCategoryDisplayIcon(cat);
-                    const Schematic = getDomainSchematic(cat.name);
-                    return (
-                      <button
-                        key={cat.id}
-                        onClick={() => chooseCategory(cat)}
-                        className="c-card c-card-hover rounded-lg p-4 text-left flex items-center justify-between gap-3.5 transition-all group"
-                        style={{ background: 'var(--c-surface-card)', borderColor: 'var(--c-border)' }}
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-8 h-8 rounded flex items-center justify-center shrink-0 border transition-colors group-hover:border-orange-500/50"
-                            style={{ background: 'var(--c-surface-muted)', borderColor: 'var(--c-border)', color: 'var(--c-text)' }}
-                          >
-                            <Icon className="w-4 h-4" />
-                          </div>
-                          <span className="text-xs font-bold truncate group-hover:text-orange-500 transition-colors" style={{ color: 'var(--c-text)' }}>
-                            {cat.name}
-                          </span>
-                        </div>
-                        {Schematic && (
-                          <div className="opacity-30 group-hover:opacity-100 transition-opacity shrink-0" style={{ color: 'var(--c-text-muted)' }}>
-                            <Schematic size={20} />
-                          </div>
-                        )}
-                      </button>
-                    );
-                  })}
+          <div className="px-4 sm:px-5 py-5 space-y-3" role="log" aria-live="polite" aria-label="Interview setup assistant">
+            {messages.map((m, i) => (
+              <div key={i} className={`flex items-end gap-2 ${m.from === 'user' ? 'justify-end' : 'justify-start'}`}>
+                {m.from === 'bot' && (
+                  <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0" style={{ background: 'var(--c-badge-accent-bg)', color: 'var(--c-accent)' }}>
+                    <Bot className="w-3.5 h-3.5" />
+                  </div>
+                )}
+                <div
+                  className={`max-w-[85%] px-3.5 py-2.5 text-sm leading-relaxed ${m.from === 'user' ? 'rounded-2xl rounded-br-sm' : 'rounded-2xl rounded-bl-sm'}`}
+                  style={m.from === 'user'
+                    ? { background: 'var(--c-accent)', color: '#fff' }
+                    : { background: 'var(--c-surface-muted)', color: 'var(--c-text)' }}
+                >
+                  {m.text}
                 </div>
-              )}
+              </div>
+            ))}
+            {interpreting && (
+              <div className="flex items-end gap-2">
+                <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0" style={{ background: 'var(--c-badge-accent-bg)', color: 'var(--c-accent)' }}>
+                  <Bot className="w-3.5 h-3.5" />
+                </div>
+                <div className="rounded-2xl rounded-bl-sm px-3.5 py-2.5 text-sm flex items-center gap-2" style={{ background: 'var(--c-surface-muted)', color: 'var(--c-text-muted)' }}>
+                  <span className="w-3 h-3 border-2 rounded-full animate-spin" style={{ borderColor: 'var(--c-accent)', borderTopColor: 'transparent' }} />
+                  Finding the best match…
+                </div>
+              </div>
+            )}
 
-              {stage === 'confirm' && (
-                <div className="space-y-5 pt-2">
-                  <div className="p-4 rounded-lg border flex items-center gap-3.5"
-                    style={{ background: 'var(--c-surface-card)', borderColor: 'var(--c-border)' }}
-                  >
-                    <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
-                    <div>
-                      <p className="text-xs" style={{ color: 'var(--c-text-muted)' }}>Your interview</p>
-                      <p className="text-base font-bold" style={{ color: 'var(--c-text)' }}>
-                        {customRole && customRole.toLowerCase() !== selectedCategory?.name?.toLowerCase()
-                          ? `${customRole} (${selectedCategory?.name})`
-                          : selectedCategory?.name}
-                      </p>
-                      <p className="text-xs mt-0.5" style={{ color: 'var(--c-text-secondary)' }}>{typeLabel(selectedType)}</p>
+            {/* Choices for the current step */}
+            <div className="pt-2">
+              {categoriesLoading ? (
+                <div className="flex items-center gap-2 py-4 text-xs" style={{ color: 'var(--c-text-muted)' }}>
+                  <span className="w-4 h-4 border-2 rounded-full animate-spin" style={{ borderColor: 'var(--c-accent)', borderTopColor: 'transparent' }} />
+                  Loading fields…
+                </div>
+              ) : categoriesError ? (
+                <p className="text-sm flex items-center gap-2 text-red-500"><AlertCircle className="w-4 h-4 shrink-0" /> {categoriesError}</p>
+              ) : interpreting ? null : (
+                <>
+                  {stage === 'ask-goal' && (
+                    <div className="space-y-2">
+                      <p className="text-xs font-semibold" style={{ color: 'var(--c-text-muted)' }}>Or choose the kind of interview first:</p>
+                      {renderTypeCards(chooseTypeFirst)}
                     </div>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-2.5">
-                    <button
-                      onClick={handleBegin}
-                      disabled={starting}
-                      className="c-btn c-btn-primary px-6 py-3 text-xs font-bold rounded-md w-full sm:w-auto flex items-center justify-center gap-2"
-                    >
-                      <span>{starting ? 'Starting…' : 'Continue'}</span>
-                      {!starting && <ArrowRight className="w-3.5 h-3.5" />}
-                    </button>
-                    <button
-                      onClick={() => { pushBot('Sure. Which kind of interview would you like instead?'); setStage('ask-interview-type'); }}
-                      disabled={starting}
-                      className="c-btn c-btn-secondary px-4 py-3 text-xs font-semibold rounded-md w-full sm:w-auto"
-                    >
-                      Change interview type
-                    </button>
-                  </div>
-
-                  {startError && (
-                    <p className="text-xs font-semibold flex items-center gap-1.5 text-red-500">
-                      <AlertCircle className="w-3.5 h-3.5 shrink-0" /> {startError}
-                    </p>
                   )}
-                </div>
+
+                  {stage === 'ask-interview-type' && renderTypeCards(chooseInterviewType, suggestedType)}
+
+                  {stage === 'pick-domain' && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                      {domainOptions.map((cat) => {
+                        const Icon = getCategoryDisplayIcon(cat);
+                        return (
+                          <button
+                            key={cat.id}
+                            onClick={() => chooseCategory(cat)}
+                            className="rounded-lg border px-3 py-2.5 text-left flex items-center gap-2.5 transition-colors group hover:border-orange-500/60"
+                            style={{ background: 'var(--c-surface-muted)', borderColor: 'var(--c-border)' }}
+                          >
+                            <Icon className="w-4 h-4 shrink-0" style={{ color: 'var(--c-accent)' }} />
+                            <span className="text-xs font-semibold truncate group-hover:text-orange-500 transition-colors" style={{ color: 'var(--c-text)' }}>
+                              {cat.name}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {stage === 'confirm' && (
+                    <div className="rounded-lg border p-4 sm:p-5 space-y-4" style={{ background: 'var(--c-surface-muted)', borderColor: 'var(--c-border)' }}>
+                      <div className="flex items-start gap-3">
+                        <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
+                        <div className="min-w-0">
+                          <p className="text-base font-bold" style={{ color: 'var(--c-text)' }}>{roleTitle}</p>
+                          <p className="text-xs mt-0.5" style={{ color: 'var(--c-text-secondary)' }}>
+                            {typeLabel(selectedType)}
+                            {roleTitle !== selectedCategory?.name ? ` · ${selectedCategory?.name}` : ''}
+                          </p>
+                          <p className="text-xs mt-2" style={{ color: 'var(--c-text-muted)' }}>
+                            3 easy questions · about 5 minutes · next you check your camera and microphone
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <button
+                          onClick={handleBegin}
+                          disabled={starting}
+                          className="c-btn c-btn-primary px-6 py-3 text-sm font-bold rounded-md flex items-center justify-center gap-2"
+                        >
+                          <span>{starting ? 'Setting up…' : 'Continue'}</span>
+                          {!starting && <ArrowRight className="w-4 h-4" />}
+                        </button>
+                        <button
+                          onClick={() => { pushBot('Sure. Which kind of interview would you like instead?'); setStage('ask-interview-type'); }}
+                          disabled={starting}
+                          className="c-btn c-btn-secondary px-4 py-3 text-xs font-semibold rounded-md"
+                        >
+                          Change interview type
+                        </button>
+                      </div>
+                      {startError && (
+                        <p className="text-xs font-semibold flex items-center gap-1.5 text-red-500">
+                          <AlertCircle className="w-3.5 h-3.5 shrink-0" /> {startError}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </>
               )}
               <div ref={scrollRef} />
-            </>
+            </div>
+          </div>
+
+          {showInput && (
+            <div className="px-4 sm:px-5 py-4 border-t space-y-3" style={{ borderColor: 'var(--c-border)', background: 'var(--c-surface-card)' }}>
+              {stage === 'ask-goal' && (
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-[11px] font-semibold mr-1" style={{ color: 'var(--c-text-muted)' }}>Try:</span>
+                  {QUICK_GOALS.map((g) => (
+                    <button
+                      key={g}
+                      onClick={() => handleSend(g)}
+                      disabled={interpreting}
+                      className="rounded-full border px-3 py-1 text-xs font-medium transition-colors hover:border-orange-500/60 disabled:opacity-50"
+                      style={{ borderColor: 'var(--c-border)', color: 'var(--c-text-secondary)' }}
+                    >
+                      {g}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <form
+                className="flex items-center gap-2"
+                onSubmit={(e) => { e.preventDefault(); handleSend(); }}
+              >
+                <input
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder={stage === 'pick-domain' ? 'Or describe your role in your own words' : 'e.g. I have a nursing interview next week'}
+                  disabled={interpreting}
+                  aria-label="Message the interview setup assistant"
+                  className="c-input flex-1 min-w-0 px-4 py-3 rounded-lg text-sm disabled:opacity-60"
+                />
+                <button
+                  type="submit"
+                  disabled={interpreting || !input.trim()}
+                  aria-label="Send"
+                  className="c-btn c-btn-primary shrink-0 h-11 px-4 rounded-lg text-sm font-semibold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {interpreting
+                    ? <span className="w-4 h-4 border-2 rounded-full animate-spin" style={{ borderColor: 'currentColor', borderTopColor: 'transparent' }} />
+                    : <SendHorizontal className="w-4 h-4" />}
+                  <span className="hidden sm:inline">Send</span>
+                </button>
+              </form>
+            </div>
           )}
         </div>
-
-        {/* Message input */}
-        {!categoriesLoading && !categoriesError && (stage === 'ask-goal' || stage === 'pick-domain') && (
-          <div className="flex items-center gap-2 pt-2 border-t" style={{ borderColor: 'var(--c-border)' }}>
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-              placeholder="Type your goal, e.g. 'I have a nursing interview next week' or 'React developer'"
-              disabled={interpreting}
-              aria-label="Message the interview setup assistant"
-              className="c-input flex-1 min-w-0 px-3.5 py-2.5 rounded-md text-xs disabled:opacity-60"
-            />
-            <button onClick={handleSend} disabled={interpreting} className="c-btn c-btn-secondary shrink-0 px-4 py-2.5 rounded-md text-xs font-semibold flex items-center gap-2">
-              {interpreting && <span className="w-3 h-3 border-2 rounded-full animate-spin" style={{ borderColor: 'currentColor', borderTopColor: 'transparent' }} />}
-              {interpreting ? 'Searching…' : 'Send'}
-            </button>
-          </div>
-        )}
       </div>
     </InterviewFlowLayout>
   );

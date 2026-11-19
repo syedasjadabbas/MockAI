@@ -1226,7 +1226,7 @@ const QuestionBank = () => {
                   className="theme-input w-full px-4 py-2.5 rounded-xl text-sm border focus:outline-none focus:ring-2 focus:ring-orange-500/30"
                 />
                 <p className="text-[11px] text-[var(--text-muted)]">
-                  Each interview asks five active questions from the chosen domain, matching the interview type (technical, HR or situational), lowest priority number first.
+                  Each interview asks three active questions from the chosen domain, matching the interview type (technical, HR or situational): easy questions first, then the lowest priority number.
                 </p>
               </div>
 

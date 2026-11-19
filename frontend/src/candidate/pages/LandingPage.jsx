@@ -154,7 +154,7 @@ const STEPS = [
     image: null,
     code: 'STEP1_CODE_LINES',
     title: 'Pick a field',
-    body: 'Choose the interview track that matches the job you are preparing for. Each session has five questions.',
+    body: 'Choose the interview track that matches the job you are preparing for. Each session has three short questions.',
   },
   {
     image: 'studioMic',

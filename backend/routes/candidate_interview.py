@@ -45,11 +45,10 @@ from services.media_storage import get_media_storage
 
 router = APIRouter()
 
-# How many active questions make up one interview session. Not defined by
-# the report or the existing Question Bank (which has no per-interview
-# question count concept) - kept consistent with the number the frontend
-# has used since the Candidate Panel frontend phase.
-QUESTIONS_PER_INTERVIEW = 5
+# How many active questions make up one interview session. Three short,
+# easy questions keep a practice session to a few minutes (pre-evaluation
+# feedback, Nov 2026).
+QUESTIONS_PER_INTERVIEW = 3
 
 
 def _object_id_or_400(id_str: str, label: str = "ID") -> ObjectId:
@@ -109,47 +108,80 @@ INTERVIEW_TYPE_QUESTION_TYPES = {
     "behavioral": ("Behavioral",),
     "situational": ("Situational",),
 }
-# HR and situational questions that apply to any profession; used to top up
-# a domain that has fewer than five questions of the chosen type.
+# HR and situational questions that apply to any profession; they are also
+# asked in a domain's HR or situational interview.
 GENERAL_HR_CATEGORY_NAME = "Behavioral & Leadership"
 DEFAULT_QUESTION_PRIORITY = 50
+# Easy questions are asked first, then medium, then hard.
+DIFFICULTY_RANK = {"easy": 0, "medium": 1, "hard": 2}
+
+
+def _difficulty_rank(q: dict) -> int:
+    return DIFFICULTY_RANK.get(str(q.get("difficulty", "Medium")).strip().lower(), 1)
 
 
 def _question_order(q: dict):
-    # Administrators set a question's priority in the Question Bank
-    # (lower = asked first); ties keep creation order.
-    return (q.get("priority", DEFAULT_QUESTION_PRIORITY), q["_id"])
+    # Easiest first; within a difficulty the administrator's priority from
+    # the Question Bank decides (lower = asked first); ties keep creation order.
+    return (_difficulty_rank(q), q.get("priority", DEFAULT_QUESTION_PRIORITY), q["_id"])
 
 
-def _load_active_questions(category_id: str, limit: int = QUESTIONS_PER_INTERVIEW, interview_type: Optional[str] = None) -> list:
+def _times_asked(user_id: Optional[str]) -> dict:
+    """How often each question was already asked to this candidate, counted
+    from the question snapshots of their earlier interviews."""
+    counts: dict = {}
+    if not user_id:
+        return counts
+    for iv in interviews_collection.find({"user_id": user_id}, {"questions.question_id": 1}):
+        for q in iv.get("questions") or []:
+            qid = q.get("question_id")
+            if qid:
+                counts[qid] = counts.get(qid, 0) + 1
+    return counts
+
+
+def _load_active_questions(category_id: str, limit: int = QUESTIONS_PER_INTERVIEW,
+                           interview_type: Optional[str] = None, user_id: Optional[str] = None) -> list:
     """
-    Deterministic (FR 8-02 asks for consistent, predefined sets, not a
-    shuffled quiz): questions are ordered by the administrator's priority,
-    then creation order.
+    Picks the questions for a new interview. No randomness (FR 8-02 asks for
+    consistent, predefined sets): the order depends only on the Question
+    Bank and on the candidate's own history.
 
-    With an interview type (FR 8-01), questions of that type come first;
-    for HR/behavioral and situational interviews a domain that has too few
-    is topped up with general questions of the same type, and only then with
-    the domain's other questions, so the set always has `limit` questions.
+    1. Rotation: questions this candidate has been asked least often come
+       first, so each new interview in the same domain brings new questions
+       until all have been asked, and then the cycle starts again.
+    2. Easy questions before medium and hard ones.
+    3. The administrator's priority, then creation order.
+
+    With an interview type (FR 8-01), only questions of that type are used
+    first. For HR/behavioral and situational interviews the domain's
+    questions of that type are pooled with the general ones. A set that is
+    still short is filled with the domain's other questions, so it always has
+    `limit` questions.
     """
-    in_category = sorted(questions_collection.find({"category_id": category_id, "status": "active"}), key=_question_order)
+    asked = _times_asked(user_id)
+
+    def order(q: dict, source: int = 0):
+        return (asked.get(str(q["_id"]), 0), _difficulty_rank(q), source) + _question_order(q)[1:]
+
+    in_category = sorted(questions_collection.find({"category_id": category_id, "status": "active"}), key=order)
     wanted = INTERVIEW_TYPE_QUESTION_TYPES.get((interview_type or "").strip().lower())
     if not wanted:
         return in_category[:limit]
 
-    picked = [q for q in in_category if q.get("type") in wanted][:limit]
-    if len(picked) < limit and wanted != INTERVIEW_TYPE_QUESTION_TYPES["technical"]:
+    pool = [(q, 0) for q in in_category if q.get("type") in wanted]
+    if wanted != INTERVIEW_TYPE_QUESTION_TYPES["technical"]:
         general = categories_collection.find_one({"name": GENERAL_HR_CATEGORY_NAME, "status": "active"})
         if general and str(general["_id"]) != category_id:
-            extra = sorted(
-                questions_collection.find({"category_id": str(general["_id"]), "status": "active", "type": {"$in": list(wanted)}}),
-                key=_question_order,
-            )
-            picked += extra[: limit - len(picked)]
+            pool += [(q, 1) for q in questions_collection.find(
+                {"category_id": str(general["_id"]), "status": "active", "type": {"$in": list(wanted)}})]
+    pool.sort(key=lambda item: order(*item))
+    picked = [q for q, _ in pool][:limit]
     if len(picked) < limit:
         chosen = {q["_id"] for q in picked}
         picked += [q for q in in_category if q["_id"] not in chosen][: limit - len(picked)]
-    return picked[:limit]
+    # Within the interview, easier questions come first.
+    return sorted(picked[:limit], key=_difficulty_rank)
 
 
 @router.get("/categories/{category_id}/questions")
@@ -219,7 +251,8 @@ def start_interview(data: StartInterviewRequest, token_payload: dict = Depends(v
     if category.get("status") != "active":
         raise HTTPException(status_code=400, detail="This category is not currently available for interviews")
 
-    questions = _load_active_questions(data.category_id, interview_type=data.type)
+    questions = _load_active_questions(data.category_id, interview_type=data.type,
+                                       user_id=token_payload.get("user_id"))
     if not questions:
         raise HTTPException(status_code=400, detail="No active questions are available for this category yet")
 

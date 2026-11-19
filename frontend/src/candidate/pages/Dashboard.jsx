@@ -197,7 +197,7 @@ const Dashboard = () => {
                 className="text-sm sm:text-base leading-relaxed max-w-xl"
                 style={{ color: 'var(--c-text-secondary)' }}
               >
-                Pick a field, answer five questions on camera, and get feedback on every answer.
+                Pick a field, answer three short questions on camera, and get feedback on every answer.
               </p>
 
               <div className="flex flex-wrap items-center gap-3 pt-2">
