@@ -29,6 +29,9 @@ import {
   Timer,
   Check,
   Sparkles,
+  ChevronDown,
+  PlayCircle,
+  X,
 } from 'lucide-react';
 import PublicNav from '../components/PublicNav';
 import AnimatedBackground3D from '../components/AnimatedBackground3D';
@@ -36,7 +39,7 @@ import ScoreRing from '../components/ScoreRing';
 import { CANDIDATE_IMAGES } from '../assets/images';
 import { CornerReticles, LiveAudioWaveform, LiveVideoIndicator } from '../components/TechnicalDoodles';
 import { isAuthenticated } from '../services/candidateAuth';
-import { getCategories } from '../services/candidateApi';
+import { getCategories, getSampleQuestion } from '../services/candidateApi';
 
 const HeroScene3D = lazy(() => import('../components/HeroScene3D'));
 
@@ -167,6 +170,155 @@ const SampleResult = () => (
   </div>
 );
 
+// Small screens get the static hero picture instead of the 3D scene, so the
+// page loads fast on phones.
+function useIsSmallScreen() {
+  const query = '(max-width: 767px)';
+  const [small, setSmall] = useState(() => typeof window !== 'undefined' && window.matchMedia(query).matches);
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    const onChange = () => setSmall(mq.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+  return small;
+}
+
+const TRY_EXAMPLES = ['Nurse', 'Teacher', 'Accountant', 'Web developer'];
+
+// "Try it" box: a visitor types a job and sees one real easy question for it.
+const TryQuestion = ({ ctaDestination }) => {
+  const [job, setJob] = useState('');
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const ask = async (text) => {
+    const goal = (text ?? job).trim();
+    if (!goal) { setError('Type a job first'); return; }
+    setError('');
+    setLoading(true);
+    try {
+      setResult(await getSampleQuestion(goal));
+    } catch (err) {
+      setResult(null);
+      setError(err?.status === 429 ? err.message : 'Could not load a question right now. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="rounded-2xl border p-4 sm:p-5 max-w-xl" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
+      <p className="text-sm font-semibold mb-3" style={{ color: 'var(--c-text)' }}>Try it: what job are you preparing for?</p>
+      <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); ask(); }}>
+        <input
+          type="text"
+          value={job}
+          onChange={(e) => { setJob(e.target.value); if (error) setError(''); }}
+          placeholder="e.g. Nurse"
+          maxLength={120}
+          aria-label="Your job"
+          className="c-input flex-1 min-w-0 px-3.5 py-2.5 rounded-lg text-sm"
+        />
+        <button type="submit" disabled={loading} className="c-btn c-btn-primary shrink-0 px-4 py-2.5 rounded-lg text-sm font-semibold disabled:opacity-60">
+          {loading ? 'Finding…' : 'Show me a question'}
+        </button>
+      </form>
+      <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
+        {TRY_EXAMPLES.map((ex) => (
+          <button key={ex} type="button" onClick={() => { setJob(ex); ask(ex); }} disabled={loading}
+            className="rounded-full border px-2.5 py-0.5 text-xs transition-colors hover:border-orange-500/60"
+            style={{ borderColor: 'var(--c-border)', color: 'var(--c-text-secondary)' }}>
+            {ex}
+          </button>
+        ))}
+      </div>
+      {error && <p className="text-xs mt-2" style={{ color: 'var(--c-danger)' }} role="alert">{error}</p>}
+      {result && !error && (
+        <div className="mt-4 pl-3 border-l-2" style={{ borderColor: 'var(--c-accent)' }} aria-live="polite">
+          <p className="text-xs" style={{ color: 'var(--c-text-muted)' }}>
+            Easy question for {result.field}{result.matched ? '' : ' (the closest field we have)'}
+          </p>
+          <p className="text-base font-semibold mt-1 leading-snug" style={{ color: 'var(--c-text)' }}>{result.question}</p>
+          <Link to={ctaDestination} className="inline-flex items-center gap-1 text-sm font-semibold mt-2 hover:underline" style={{ color: 'var(--c-accent)' }}>
+            Answer it now <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// 30-second walkthrough recorded from the real app.
+const DemoModal = ({ onClose }) => {
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { window.removeEventListener('keydown', onKey); document.body.style.overflow = prev; };
+  }, [onClose]);
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75" role="dialog" aria-modal="true" aria-label="MockAI demo video" onClick={onClose}>
+      <div className="w-full max-w-4xl rounded-2xl border p-3 sm:p-4" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }} onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-sm font-semibold" style={{ color: 'var(--c-text)' }}>MockAI in 30 seconds</p>
+          <button type="button" onClick={onClose} aria-label="Close video" className="w-8 h-8 rounded-md flex items-center justify-center hover:bg-white/5" style={{ color: 'var(--c-text-secondary)' }}>
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <video
+          src="/demo/mockai-demo.mp4"
+          poster="/demo/mockai-demo-poster.jpg"
+          controls
+          autoPlay
+          muted
+          playsInline
+          className="w-full rounded-lg bg-black aspect-[16/10]"
+        />
+        <ol className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3 text-xs" style={{ color: 'var(--c-text-secondary)' }}>
+          {['Tell it the job', 'Choose how to answer', 'Answer each question', 'See your results'].map((s, i) => (
+            <li key={s} className="flex items-center gap-1.5">
+              <span className="w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0" style={{ background: 'var(--c-accent)' }}>{i + 1}</span>{s}
+            </li>
+          ))}
+        </ol>
+      </div>
+    </div>
+  );
+};
+
+const FAQS = [
+  { q: 'Is it free?', a: 'Yes. Create an account and practise as often as you like.' },
+  { q: 'Do I need a camera?', a: 'No. You can answer with your camera and microphone, with your voice only, or by typing. Without a camera, that part is simply not scored.' },
+  { q: 'Is my video stored?', a: 'Only while you answer a question, and only after you agree. Recordings are encrypted, used only to assess your interview unless you allow otherwise, and you can delete them from your results page at any time.' },
+  { q: 'Which jobs are covered?', a: 'Sixteen fields, including software, data, healthcare, nursing, teaching, law, accounting, marketing, HR, design, engineering, business analysis and sales. If yours is not listed, describe it and MockAI picks the closest field.' },
+  { q: 'How long does it take?', a: 'About five minutes for three questions, and around a minute more for your feedback.' },
+  { q: 'Is this a hiring decision?', a: 'No. MockAI is a practice coach. Its scores help you improve; they are not a hiring decision or a prediction of any employer\'s decision.' },
+];
+
+const Faq = () => {
+  const [open, setOpen] = useState(0);
+  return (
+    <div className="border-t" style={{ borderColor: 'var(--c-border)' }}>
+      {FAQS.map((f, i) => {
+        const isOpen = open === i;
+        return (
+          <div key={f.q} className="border-b" style={{ borderColor: 'var(--c-border)' }}>
+            <button type="button" onClick={() => setOpen(isOpen ? -1 : i)} aria-expanded={isOpen}
+              className="w-full flex items-center justify-between gap-4 py-4 text-left text-base font-semibold" style={{ color: 'var(--c-text)' }}>
+              {f.q}
+              <ChevronDown className={`w-5 h-5 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} style={{ color: 'var(--c-text-muted)' }} />
+            </button>
+            {isOpen && <p className="pb-4 text-sm leading-relaxed max-w-3xl" style={{ color: 'var(--c-text-secondary)' }}>{f.a}</p>}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 const SectionIntro = ({ eyebrow, title, text }) => (
   <div className="max-w-2xl mb-10 sm:mb-12 space-y-3">
     {eyebrow && <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--c-accent)' }}>{eyebrow}</p>}
@@ -180,6 +332,8 @@ const LandingPage = () => {
   const ctaDestination = authed ? '/interview/goal' : '/register';
   const [fields, setFields] = useState([]);
   const [fieldCount, setFieldCount] = useState(16);
+  const [demoOpen, setDemoOpen] = useState(false);
+  const smallScreen = useIsSmallScreen();
 
   useEffect(() => {
     let isMounted = true;
@@ -235,15 +389,16 @@ const LandingPage = () => {
                   MockAI asks you real interview questions for your job, listens to your answers, and tells you exactly what to improve:
                   what you said, how you said it, and how you came across.
                 </p>
+                <TryQuestion ctaDestination={ctaDestination} />
                 <div className="flex flex-wrap items-center gap-3 pt-1">
                   <Link to={ctaDestination} className="c-btn c-btn-primary px-6 py-3.5 font-semibold text-sm rounded-xl flex items-center gap-2 select-none group">
                     <span>Start a free practice interview</span>
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                   </Link>
-                  <a href="#how-it-works" className="c-btn c-btn-secondary px-5 py-3.5 font-medium text-sm rounded-xl flex items-center gap-2 group">
-                    <span>See how it works</span>
-                    <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" style={{ color: 'var(--c-text-muted)' }} />
-                  </a>
+                  <button type="button" onClick={() => setDemoOpen(true)} className="c-btn c-btn-secondary px-5 py-3.5 font-medium text-sm rounded-xl flex items-center gap-2">
+                    <PlayCircle className="w-4 h-4" style={{ color: 'var(--c-accent)' }} />
+                    <span>Watch a 30-second demo</span>
+                  </button>
                 </div>
                 <ul className="pt-2 grid grid-cols-2 sm:flex sm:flex-wrap gap-x-6 gap-y-2 text-sm" style={{ color: 'var(--c-text-secondary)' }}>
                   {['Free to use', `${fieldCount} career fields`, 'About 5 minutes', 'Feedback in a minute'].map((t) => (
@@ -257,9 +412,13 @@ const LandingPage = () => {
               <div className="lg:col-span-5 relative flex items-center justify-center w-full max-w-lg lg:max-w-none mx-auto">
                 <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden border shadow-2xl" style={{ borderColor: 'var(--c-border)', background: 'var(--c-surface)', isolation: 'isolate' }}>
                   <CornerReticles size={12} color="var(--c-accent)" />
-                  <Suspense fallback={<img src={CANDIDATE_IMAGES.dashboardHero} alt="MockAI" className="w-full h-full object-cover" />}>
-                    <HeroScene3D />
-                  </Suspense>
+                  {smallScreen ? (
+                    <img src={CANDIDATE_IMAGES.dashboardHero} alt="MockAI" className="w-full h-full object-cover" />
+                  ) : (
+                    <Suspense fallback={<img src={CANDIDATE_IMAGES.dashboardHero} alt="MockAI" className="w-full h-full object-cover" />}>
+                      <HeroScene3D />
+                    </Suspense>
+                  )}
                 </div>
               </div>
             </div>
@@ -368,6 +527,14 @@ const LandingPage = () => {
           </div>
         </section>
 
+        {/* FAQ */}
+        <section id="faq" aria-label="Frequently asked questions" className="border-b py-16 sm:py-24" style={{ borderColor: 'var(--c-border)' }}>
+          <div className="c-page">
+            <SectionIntro eyebrow="Questions" title="Before you start" text="The things people usually ask first." />
+            <Faq />
+          </div>
+        </section>
+
         {/* Final call to action */}
         <section className="relative py-24 sm:py-32 overflow-hidden" style={{ background: 'var(--c-bg)' }}>
           <div className="absolute inset-0 select-none pointer-events-none overflow-hidden">
@@ -393,7 +560,7 @@ const LandingPage = () => {
           </div>
         </section>
 
-        <footer className="border-t py-8 mt-auto" style={{ borderColor: 'var(--c-border)', background: 'var(--c-bg)' }}>
+        <footer className="border-t pt-8 pb-24 sm:pb-8 mt-auto" style={{ borderColor: 'var(--c-border)', background: 'var(--c-bg)' }}>
           <div className="c-page flex flex-col sm:flex-row items-center justify-between gap-4 text-xs" style={{ color: 'var(--c-text-muted)' }}>
             <div className="flex items-center gap-2">
               <span className="font-bold" style={{ color: 'var(--c-text)' }}>MockAI</span>
@@ -409,6 +576,17 @@ const LandingPage = () => {
           </div>
         </footer>
       </div>
+
+      {/* Phones: the start button stays in reach while scrolling */}
+      {!demoOpen && (
+        <div className="sm:hidden fixed bottom-0 inset-x-0 z-40 p-3 border-t" style={{ background: 'var(--c-bg)', borderColor: 'var(--c-border)' }}>
+          <Link to={ctaDestination} className="c-btn c-btn-primary w-full py-3.5 text-sm font-semibold rounded-xl flex items-center justify-center gap-2">
+            Start practising <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+      )}
+
+      {demoOpen && <DemoModal onClose={() => setDemoOpen(false)} />}
     </div>
   );
 };

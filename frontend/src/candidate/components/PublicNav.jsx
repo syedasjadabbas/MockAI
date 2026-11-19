@@ -9,6 +9,7 @@ const PUBLIC_NAV_LINKS = [
   { label: 'Fields', href: '#tracks' },
   { label: 'Feedback', href: '#evaluation' },
   { label: 'Why MockAI', href: '#why-mockai' },
+  { label: 'FAQ', href: '#faq' },
 ];
 
 const PublicNav = () => {

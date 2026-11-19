@@ -16,11 +16,12 @@ real Question Bank.
 
 Mounted at prefix /candidate in main.py.
 """
+import random
 import re
 import time
 from typing import Dict, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from database import categories_collection, questions_collection
@@ -114,6 +115,66 @@ def _infer_type(text: str, best_category: Optional[Dict], analyzer: BertSemantic
     best = max(range(len(types)), key=lambda i: sims[i])
     # Only override the default when the signal is clear.
     return types[best] if sims[best] - sorted(sims)[-2] > 0.05 else "technical"
+
+
+def _match_profile(text: str, profiles: List[Dict], analyzer: BertSemanticAnalyzer):
+    """Closest category profile for a free-text goal and its calibrated score."""
+    lower = text.lower()
+    exact = next((p for p in profiles if p["name"].lower() == lower), None)
+    if exact:
+        return exact, 1.0
+    sims = _profile_similarities(text, profiles, analyzer)
+    best_i = max(range(len(profiles)), key=lambda i: sims[i])
+    return profiles[best_i], sims[best_i]
+
+
+# Homepage "try it" box: a visitor who is not signed in types a job and sees
+# one easy question for it. Only the question text is returned (never the
+# model answer), and requests are rate-limited per IP.
+_SAMPLE_LIMIT = 20            # requests
+_SAMPLE_WINDOW = 600          # per 10 minutes
+_sample_hits: Dict[str, List[float]] = {}
+
+
+def _check_sample_rate_limit(ip: str) -> None:
+    now = time.time()
+    hits = [t for t in _sample_hits.get(ip, []) if now - t < _SAMPLE_WINDOW]
+    if len(hits) >= _SAMPLE_LIMIT:
+        raise HTTPException(status_code=429, detail="Too many tries. Please wait a few minutes.")
+    hits.append(now)
+    _sample_hits[ip] = hits
+    if len(_sample_hits) > 5000:   # keep memory bounded
+        for key in list(_sample_hits)[:1000]:
+            _sample_hits.pop(key, None)
+
+
+@router.post("/goal/sample-question")
+def sample_question(data: GoalRequest, request: Request):
+    _check_sample_rate_limit(request.client.host if request.client else "unknown")
+    text = data.text.strip()
+    profiles = [p for p in _category_profiles() if not re.search(r"behav|leadership", p["name"], re.I)]
+    if not profiles:
+        raise HTTPException(status_code=404, detail="No interview fields are available yet.")
+    analyzer = BertSemanticAnalyzer()
+    if analyzer.get_model() is None:
+        raise HTTPException(status_code=503, detail="Please try again in a moment.")
+
+    best, score = _match_profile(text, profiles, analyzer)
+    easy = list(questions_collection.find(
+        {"category_id": best["id"], "status": "active", "difficulty": "Easy",
+         "type": {"$in": ["Technical", "Conceptual"]}},
+        {"question_text": 1},
+    ))
+    if not easy:
+        easy = list(questions_collection.find({"category_id": best["id"], "status": "active"}, {"question_text": 1}))
+    if not easy:
+        raise HTTPException(status_code=404, detail="No questions are available for that field yet.")
+    question = random.choice(easy)
+    return {
+        "field": best["name"],
+        "matched": score >= MATCH_THRESHOLD,
+        "question": question.get("question_text", ""),
+    }
 
 
 @router.post("/goal/interpret")

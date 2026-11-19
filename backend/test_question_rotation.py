@@ -103,6 +103,22 @@ def test_rotation():
     expect(not {qid(q) for q in hr} & {qid(q) for q in hr2}, "Two HR interviews in a row ask different questions")
 
 
+def test_public_sample_question():
+    print("\n--- Homepage 'try it' box (no sign-in) ---")
+    from routes import candidate_goal
+    candidate_goal._sample_hits.clear()
+    r = client.post("/candidate/goal/sample-question", json={"text": "Nurse"})
+    body = r.json()
+    expect(r.status_code == 200, "Works without signing in")
+    expect(body["field"] == "Nursing & Patient Care" and body["matched"], "A job is matched to its field")
+    q = questions_collection.find_one({"question_text": body["question"]})
+    expect(q is not None and q.get("difficulty") == "Easy", "Returns an easy question from the bank")
+    expect(set(body) == {"field", "matched", "question"}, "Never returns the model answer")
+    codes = [client.post("/candidate/goal/sample-question", json={"text": "Teacher"}).status_code for _ in range(25)]
+    expect(429 in codes, "Too many requests from one visitor are refused (HTTP 429)")
+    candidate_goal._sample_hits.clear()
+
+
 def cleanup():
     for iid in created_interviews:
         from bson import ObjectId
@@ -116,6 +132,7 @@ if __name__ == "__main__":
     try:
         test_bank_size()
         test_rotation()
+        test_public_sample_question()
         print("\nALL QUESTION ROTATION TESTS PASSED SUCCESSFULLY!")
     finally:
         cleanup()
