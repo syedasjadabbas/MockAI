@@ -6,7 +6,7 @@ import logo from '../../assets/logo.png';
 
 const PUBLIC_NAV_LINKS = [
   { label: 'How it works', href: '#how-it-works' },
-  { label: 'Tracks', href: '#tracks' },
+  { label: 'Fields', href: '#tracks' },
   { label: 'Feedback', href: '#evaluation' },
   { label: 'Why MockAI', href: '#why-mockai' },
 ];
