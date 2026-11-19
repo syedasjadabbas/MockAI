@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import {
   RotateCcw,
@@ -24,24 +24,10 @@ import {
   Info,
   Trash2,
 } from 'lucide-react';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-} from 'chart.js';
-import { Bar } from 'react-chartjs-2';
-
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
-
 import InterviewFlowLayout from '../layouts/InterviewFlowLayout';
 import ScoreRing from '../components/ScoreRing';
 import { getActiveInterview, getRealEvaluation, startEvaluation, endInterview, deleteRecordings } from '../services/candidateApi';
 import { formatDate } from '../../utils/dateFormat';
-import { LanguageSummarySection, QuestionLanguageNotes } from '../components/LanguageAnalysis';
 
 // FR17-FR23 - Real Multimodal Evaluation Results (Assessment Report Layout)
 const EvaluationResults = () => {
@@ -173,161 +159,6 @@ const EvaluationResults = () => {
 
   const answeredCount = (interview?.responses || []).length;
   const totalQuestions = (interview?.questions || []).length;
-
-  // FR29-01: Performance Dimensions Breakdown Chart
-  const dimensionChartData = useMemo(() => ({
-    labels: ['Domain & Technical Content', 'Communication Fluency', 'Behavioral Composure'],
-    datasets: [
-      {
-        label: 'Score (%)',
-        data: [
-          Math.min(100, Math.max(0, Math.round(dimensionScores?.technical_content ?? 0))),
-          Math.min(100, Math.max(0, Math.round(dimensionScores?.communication_fluency ?? 0))),
-          Math.min(100, Math.max(0, Math.round(dimensionScores?.behavioral_composure ?? 0))),
-        ],
-        backgroundColor: [
-          'rgba(255, 107, 53, 0.85)',
-          'rgba(255, 107, 53, 0.85)',
-          hasVisionSummary ? 'rgba(148, 163, 184, 0.75)' : 'rgba(71, 85, 105, 0.35)',
-        ],
-        borderColor: [
-          '#FF6B35',
-          '#FF6B35',
-          hasVisionSummary ? '#94A3B8' : '#475569',
-        ],
-        borderWidth: 1.5,
-        borderRadius: 4,
-      },
-    ],
-  }), [dimensionScores, hasVisionSummary]);
-
-  const dimensionChartOptions = useMemo(() => ({
-    indexAxis: 'y',
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        callbacks: {
-          label: (context) => {
-            const val = context.raw;
-            if (context.dataIndex === 2 && !hasVisionSummary && offCameraAnswers.length > 0) {
-              return `Behavioral Composure: ${val}% (scored on camera presence - you were out of frame)`;
-            }
-            if (context.dataIndex === 2 && !hasVisionSummary) {
-              return facialSummary?.status === 'no_face_detected'
-                ? 'Behavioral Composure: Not Observed (No Face Detected)'
-                : 'Behavioral Composure: Unassessed (Vision Offline)';
-            }
-            return `${context.label}: ${val}%`;
-          },
-        },
-      },
-    },
-    scales: {
-      x: {
-        min: 0,
-        max: 100,
-        ticks: {
-          stepSize: 25,
-          callback: (value) => `${value}%`,
-          color: '#94A3B8',
-          font: { size: 10 },
-        },
-        grid: { color: 'rgba(255, 255, 255, 0.05)' },
-      },
-      y: {
-        ticks: {
-          color: '#E2E8F0',
-          font: { size: 11, weight: '500' },
-        },
-        grid: { display: false },
-      },
-    },
-  }), [hasVisionSummary]);
-
-  // FR29-01: Per-Question Performance Trajectory Chart
-  const trajectoryChartData = useMemo(() => {
-    const questionLabels = (interview?.questions || []).map((_, i) => `Q${(i + 1).toString().padStart(2, '0')}`);
-    const questionScores = (interview?.questions || []).map((q) => {
-      const resp = (interview?.responses || []).find((r) => (r.question_id || r.questionId) === q.id);
-      const qEval = perQuestionEval.find((item) => (item.question_id || item.questionId) === q.id);
-      if (!resp) return 0;
-      if (qEval?.status === 'failed') return 0;
-      return Math.min(100, Math.max(0, Math.round(qEval?.multimodal?.score ?? qEval?.score ?? 0)));
-    });
-
-    const questionColors = (interview?.questions || []).map((q) => {
-      const resp = (interview?.responses || []).find((r) => (r.question_id || r.questionId) === q.id);
-      const qEval = perQuestionEval.find((item) => (item.question_id || item.questionId) === q.id);
-      if (!resp) return 'rgba(100, 116, 139, 0.35)'; // Skipped
-      if (qEval?.status === 'failed') return 'rgba(239, 68, 68, 0.7)'; // Failed
-      return 'rgba(255, 107, 53, 0.85)'; // Evaluated
-    });
-
-    const questionBorderColors = (interview?.questions || []).map((q) => {
-      const resp = (interview?.responses || []).find((r) => (r.question_id || r.questionId) === q.id);
-      const qEval = perQuestionEval.find((item) => (item.question_id || item.questionId) === q.id);
-      if (!resp) return '#64748B';
-      if (qEval?.status === 'failed') return '#EF4444';
-      return '#FF6B35';
-    });
-
-    return {
-      labels: questionLabels,
-      datasets: [
-        {
-          label: 'Question Score (%)',
-          data: questionScores,
-          backgroundColor: questionColors,
-          borderColor: questionBorderColors,
-          borderWidth: 1.5,
-          borderRadius: 4,
-        },
-      ],
-    };
-  }, [interview?.questions, interview?.responses, perQuestionEval]);
-
-  const trajectoryChartOptions = useMemo(() => ({
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        callbacks: {
-          label: (context) => {
-            const idx = context.dataIndex;
-            const q = (interview?.questions || [])[idx];
-            const resp = (interview?.responses || []).find((r) => (r.question_id || r.questionId) === q?.id);
-            const qEval = perQuestionEval.find((item) => (item.question_id || item.questionId) === q?.id);
-            if (!resp) return `Prompt ${(idx + 1).toString().padStart(2, '0')}: Skipped (0%)`;
-            if (qEval?.status === 'failed') return `Prompt ${(idx + 1).toString().padStart(2, '0')}: Processing Failed`;
-            return `Prompt ${(idx + 1).toString().padStart(2, '0')}: ${context.raw}%`;
-          },
-        },
-      },
-    },
-    scales: {
-      y: {
-        min: 0,
-        max: 100,
-        ticks: {
-          stepSize: 25,
-          callback: (value) => `${value}%`,
-          color: '#94A3B8',
-          font: { size: 10 },
-        },
-        grid: { color: 'rgba(255, 255, 255, 0.05)' },
-      },
-      x: {
-        ticks: {
-          color: '#E2E8F0',
-          font: { size: 11, weight: '600' },
-        },
-        grid: { display: false },
-      },
-    },
-  }), [interview?.questions, interview?.responses, perQuestionEval]);
 
   if (loading) {
     return (
@@ -465,19 +296,44 @@ const EvaluationResults = () => {
     }
   };
 
+  // ---------------------------------------------------------------------
+  // Plain-language helpers for a non-technical reader
+  // ---------------------------------------------------------------------
+  const toneFor = (score) => (
+    score >= 75 ? 'success' : score >= 55 ? 'accent' : score >= 35 ? 'warning' : 'danger'
+  );
+  const colorFor = (score) => `var(--c-${toneFor(score)})`;
+  const paceWords = (pacing, wpm) => {
+    const p = String(pacing || '').toLowerCase();
+    if (p.includes('fast') || (wpm && wpm > 170)) return 'a little fast';
+    if (p.includes('slow') || (wpm && wpm < 100)) return 'a little slow';
+    return 'a good pace';
+  };
+  const levelTone = {
+    High: 'success', Moderate: 'accent', Developing: 'warning', Low: 'warning',
+  };
+  const stressTone = { Low: 'success', Moderate: 'warning', Elevated: 'danger', High: 'danger' };
+  const confidenceAssessed = confidenceScore != null && confidenceLevel && confidenceLevel !== 'Not Assessed';
+  const stressAssessed = stressScore != null && stressLevel && stressLevel !== 'Not Assessed';
+  const typeName = { technical: 'Technical', behavioral: 'HR & Behavioral', situational: 'Situational' }[interview?.type] || 'Technical';
+  const summaryText = (() => {
+    const text = (interpretation || '').replace(/^[A-Za-z ]+:\s*you scored \d+%\.\s*/i, '').trim();
+    return text || `This score combines what you said, how you said it, and how you came across, across ${answeredCount} answered questions.`;
+  })();
+  const languageReady = languageSummary?.status === 'completed';
+  const corrections = (languageSummary?.issue_examples || []).slice(0, 3);
+
   return (
     <InterviewFlowLayout step="results">
-      <div className="space-y-12 py-6 sm:py-10">
+      <div className="max-w-5xl mx-auto py-6 sm:py-10 space-y-6">
 
-        {/* 1. Header: which interview this is */}
-        <section aria-label="Interview" className="space-y-3">
+        {/* 1. Which interview */}
+        <header className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--c-text-muted)' }}>Your results</p>
-            {isCompleted && <span className="c-badge c-badge-success text-[11px] font-bold">Ready</span>}
             {isProcessing && (
               <span className="c-badge c-badge-accent text-[11px] font-bold flex items-center gap-1.5">
-                <span className="w-2 h-2 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                Preparing
+                <span className="w-2 h-2 border-2 border-current border-t-transparent rounded-full animate-spin" /> Preparing
               </span>
             )}
             {isFailed && <span className="c-badge c-badge-danger text-[11px] font-bold">Could not be prepared</span>}
@@ -486,147 +342,22 @@ const EvaluationResults = () => {
             {interview?.role || 'Interview'}
           </h1>
           <div className="flex flex-wrap gap-2">
-            {[
-              `${{ technical: 'Technical', behavioral: 'HR & Behavioral', situational: 'Situational' }[interview?.type] || 'Technical'} interview`,
-              `${answeredCount} of ${totalQuestions} questions answered`,
-              formatDate(interview?.completedAt || interview?.createdAt),
-            ].map((t) => (
+            {[`${typeName} interview`, `${answeredCount} of ${totalQuestions} questions answered`, formatDate(interview?.completedAt || interview?.createdAt)].map((t) => (
               <span key={t} className="rounded-full border px-3 py-1 text-xs font-medium"
-                style={{ borderColor: 'var(--c-border)', color: 'var(--c-text-secondary)', background: 'var(--c-surface)' }}>
-                {t}
-              </span>
+                style={{ borderColor: 'var(--c-border)', color: 'var(--c-text-secondary)', background: 'var(--c-surface)' }}>{t}</span>
             ))}
           </div>
-        </section>
+        </header>
 
-        {/* ===================================================================
-            2. HOW DID I DO? Score, one plain sentence, three simple areas
-           =================================================================== */}
-        {isCompleted ? (
-          <section aria-label="Your result" className="space-y-6">
-            <div className="rounded-xl border p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center gap-6 sm:gap-8"
-              style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
-              <div className="shrink-0 self-center">
-                <ScoreRing
-                  value={Math.round(overallScore)}
-                  suffix="%"
-                  size={148}
-                  strokeWidth={12}
-                  tone={overallScore >= 75 ? 'success' : overallScore >= 35 ? 'accent' : 'warning'}
-                />
-              </div>
-              <div className="space-y-3 min-w-0">
-                <div>
-                  <p className="text-sm font-medium" style={{ color: 'var(--c-text-secondary)' }}>Your score</p>
-                  <p className="c-heading text-2xl sm:text-3xl font-bold" style={{ color: 'var(--c-text)' }}>
-                    {verdictFor(overallScore)}
-                  </p>
-                </div>
-                <p className="text-sm sm:text-base leading-relaxed" style={{ color: 'var(--c-text)' }}>
-                  {interpretation ||
-                    `This score combines what you said, how you said it, and how you came across on camera, across ${answeredCount} answered questions.`}
+        {isFailed && (
+          <Card>
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" style={{ color: 'var(--c-danger)' }} />
+              <div className="space-y-2">
+                <p className="text-base font-bold" style={{ color: 'var(--c-text)' }}>We could not prepare your results</p>
+                <p className="text-sm" style={{ color: 'var(--c-text-secondary)' }}>
+                  {evaluation?.failed_reason || 'Something went wrong while scoring this interview.'} Your answers are saved.
                 </p>
-                <p className="text-[11px] flex items-start gap-1.5" style={{ color: 'var(--c-text-muted)' }}>
-                  <Info className="w-3.5 h-3.5 shrink-0 mt-px" />
-                  Practice feedback from an automated coach, not a hiring decision.
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {areaRows.map(({ key, icon: Icon, label, score, measured, help, why }) => (
-                <div key={key} className="p-4 rounded-xl border space-y-2.5" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="flex items-center gap-2 text-sm font-semibold" style={{ color: 'var(--c-text)' }}>
-                      <Icon className="w-4 h-4 text-[var(--c-text-muted)]" />
-                      {label}
-                    </span>
-                    <span className="font-mono text-sm font-bold" style={{ color: measured ? 'var(--c-text)' : 'var(--c-text-muted)' }}>
-                      {measured ? `${Math.round(score ?? 0)}%` : 'Not scored'}
-                    </span>
-                  </div>
-                  <div className="h-1.5 w-full rounded-full bg-slate-500/20 overflow-hidden">
-                    {measured && (
-                      <div
-                        className="h-full rounded-full transition-all duration-1000"
-                        style={{ width: `${Math.min(100, Math.max(0, score ?? 0))}%`, background: 'var(--c-accent)' }}
-                      />
-                    )}
-                  </div>
-                  <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>{help}</p>
-                  {why && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => setOpenWhy(openWhy === key ? null : key)}
-                        aria-expanded={openWhy === key}
-                        className="text-[11px] font-semibold flex items-center gap-1 hover:underline"
-                        style={{ color: 'var(--c-accent)' }}
-                      >
-                        <HelpCircle className="w-3 h-3" /> {openWhy === key ? 'Hide explanation' : 'Why this score?'}
-                      </button>
-                      {openWhy === key && (
-                        <p className="text-xs leading-relaxed p-2.5 rounded-md border" style={{ color: 'var(--c-text)', background: 'var(--c-surface-muted)', borderColor: 'var(--c-border)' }}>
-                          {why}
-                        </p>
-                      )}
-                    </>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {/* FR 24-03 / 3.3.24 - ask about your score */}
-            <div className="p-5 rounded-lg border space-y-3" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
-              <h2 className="c-heading text-base font-bold flex items-center gap-2" style={{ color: 'var(--c-text)' }}>
-                <HelpCircle className="w-4 h-4" style={{ color: 'var(--c-accent)' }} />
-                Ask about your score
-              </h2>
-              <div className="flex flex-wrap gap-2">
-                {helpTopics.map((t) => (
-                  <button
-                    key={t.id}
-                    type="button"
-                    onClick={() => setHelpTopic(helpTopic === t.id ? null : t.id)}
-                    aria-pressed={helpTopic === t.id}
-                    className="px-3 py-1.5 rounded-full border text-xs font-medium transition-colors"
-                    style={{
-                      borderColor: helpTopic === t.id ? 'var(--c-accent)' : 'var(--c-border)',
-                      background: helpTopic === t.id ? 'var(--c-badge-accent-bg)' : 'var(--c-surface-muted)',
-                      color: 'var(--c-text)',
-                    }}
-                  >
-                    {t.question}
-                  </button>
-                ))}
-              </div>
-              {helpTopic && (
-                <div className="p-3.5 rounded-md border space-y-1.5" role="status" aria-live="polite" style={{ background: 'var(--c-surface-muted)', borderColor: 'var(--c-border)' }}>
-                  {(helpTopics.find((t) => t.id === helpTopic)?.answer || []).map((line, i) => (
-                    <p key={i} className="text-xs leading-relaxed" style={{ color: 'var(--c-text)' }}>{line}</p>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* FR 29-01 - result graph, always visible (the area cards above show each area's bar) */}
-            <div className="p-5 rounded-xl border space-y-3" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
-              <div className="flex items-center justify-between">
-                <h3 className="c-heading text-sm font-bold" style={{ color: 'var(--c-text)' }}>Score for each question</h3>
-                <span className="text-[11px]" style={{ color: 'var(--c-text-muted)' }}>{answeredCount} of {totalQuestions} answered</span>
-              </div>
-              <div className="h-44 w-full">
-                <Bar data={trajectoryChartData} options={trajectoryChartOptions} />
-              </div>
-            </div>
-          </section>
-        ) : isFailed ? (
-          <section aria-label="Evaluation Failure" className="border-b pb-8" style={{ borderColor: 'var(--c-border)' }}>
-            <div className="c-badge-danger p-4 rounded-md flex items-start gap-3 text-xs">
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-500" />
-              <div>
-                <p className="font-bold">Feedback could not be prepared</p>
-                <p className="mt-0.5">{evaluation?.failed_reason || 'Something went wrong while scoring this interview.'}</p>
                 {/* NFR 7-03 - retry from the saved answers */}
                 <button
                   type="button"
@@ -638,928 +369,424 @@ const EvaluationResults = () => {
                       setError(err.message || 'Could not restart the evaluation.');
                     }
                   }}
-                  className="c-btn c-btn-secondary mt-3 px-3.5 py-2 text-xs font-semibold rounded-md flex items-center gap-1.5"
+                  className="c-btn c-btn-primary px-5 py-2.5 text-sm font-bold rounded-md inline-flex items-center gap-1.5"
                 >
-                  <RotateCcw className="w-3.5 h-3.5" /> Try again
+                  <RotateCcw className="w-4 h-4" /> Try again
                 </button>
               </div>
             </div>
-          </section>
-        ) : (
-          <section aria-label="Evaluation In Progress" className="border-b pb-8" style={{ borderColor: 'var(--c-border)' }}>
-            <div className="p-4 rounded-md border text-xs" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
-              <p className="font-bold mb-1" style={{ color: 'var(--c-text)' }}>Preparing your feedback</p>
-              <p style={{ color: 'var(--c-text-secondary)' }}>
-                Your answers are saved. Your scores and feedback will appear here in a minute or two.
-              </p>
-            </div>
-          </section>
+          </Card>
         )}
 
-        {/* ===================================================================
-            3. WHAT SHOULD I FIX? Top fixes and strengths, in plain words
-           =================================================================== */}
-        {isCompleted && (topFixes.length > 0 || topStrengths.length > 0) && (
-          <section aria-label="What to work on" className={`grid grid-cols-1 gap-4 ${topFixes.length > 0 && topStrengths.length > 0 ? 'md:grid-cols-2' : ''}`}>
-            {topStrengths.length > 0 && (
-              <div className="p-5 rounded-lg border space-y-3" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
-                <h2 className="c-heading text-base font-bold flex items-center gap-2" style={{ color: 'var(--c-text)' }}>
-                  <ThumbsUp className="w-4 h-4 text-emerald-500" />
-                  What you did well
-                </h2>
-                <ul className="space-y-2.5 text-sm">
-                  {topStrengths.map((st, i) => (
-                    <li key={i} className="flex items-start gap-3 leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                      <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-emerald-500" />
-                      <span>{st}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {topFixes.length > 0 && (
-              <div className="p-5 rounded-lg border space-y-3" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
-                <h2 className="c-heading text-base font-bold flex items-center gap-2" style={{ color: 'var(--c-text)' }}>
-                  <AlertCircle className="w-4 h-4" style={{ color: 'var(--c-warning)' }} />
-                  What to work on
-                </h2>
-                <ol className="space-y-2.5 text-sm">
-                  {topFixes.map((fix, i) => (
-                    <li key={i} className="flex items-start gap-3 leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                      <span className="font-mono text-xs font-bold mt-0.5 shrink-0" style={{ color: 'var(--c-text-muted)' }}>{i + 1}.</span>
-                      <span>{fix}</span>
-                    </li>
-                  ))}
-                </ol>
-              </div>
-            )}
-          </section>
+        {!isCompleted && !isFailed && (
+          <Card className="text-center">
+            <div className="w-12 h-12 mx-auto rounded-full border-4 animate-spin mb-4" style={{ borderColor: 'var(--c-border)', borderTopColor: 'var(--c-accent)' }} />
+            <p className="text-lg font-bold" style={{ color: 'var(--c-text)' }}>Preparing your results…</p>
+            <p className="text-sm mt-1" style={{ color: 'var(--c-text-secondary)' }}>Your answers are saved. This page updates by itself in a minute or two.</p>
+          </Card>
         )}
 
-        {/* ===================================================================
-            4. HOW DID EACH ANSWER GO? One row per question, tap to open
-           =================================================================== */}
-        <section aria-label="Your answers" className="space-y-4">
-          <div className="flex items-baseline justify-between gap-3">
-            <h2 className="c-heading text-xl font-bold" style={{ color: 'var(--c-text)' }}>Your answers</h2>
-            <span className="text-xs font-semibold" style={{ color: 'var(--c-text-muted)' }}>
-              {answeredCount} of {totalQuestions} answered
-            </span>
-          </div>
-
-          {hasCameraIssues && (
-            <div className="c-badge-warning rounded-md p-3.5 flex items-start gap-2.5 text-xs" role="note">
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-              <div className="space-y-1">
-                <p className="font-semibold">Camera check for this interview</p>
-                {offCameraAnswers.length > 0 && (
-                  <p>
-                    You were away from the camera for most of answer{offCameraAnswers.length > 1 ? 's' : ''}{' '}
-                    {offCameraAnswers.join(', ')}. That lowered the score for {offCameraAnswers.length > 1 ? 'those answers' : 'that answer'}.
-                  </p>
-                )}
-                {flaggedAnswers.length > 0 && (
-                  <p>
-                    Your face conduct was flagged in answer{flaggedAnswers.length > 1 ? 's' : ''} {flaggedAnswers.join(', ')}{' '}
-                    (pulled or hostile-looking faces, mouth open while not speaking, or looking away). The analysis measures what your face did, not why, so review the notes under each answer.
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-
-          <div className="rounded-lg border divide-y overflow-hidden" style={{ borderColor: 'var(--c-border)', background: 'var(--c-surface)' }}>
-            {(interview?.questions || []).map((q, idx) => {
-              const resp = (interview?.responses || []).find((r) => (r.question_id || r.questionId) === q.id);
-              const qEval = perQuestionEval.find((item) => (item.question_id || item.questionId) === q.id);
-              const isRecorded = !!resp;
-              const duration = resp?.duration_seconds || resp?.durationSeconds;
-              const transcript = qEval?.asr?.transcript;
-              const questionScore = qEval?.multimodal?.score ?? qEval?.score;
-              const wpm = qEval?.delivery?.words_per_minute;
-              const pacing = qEval?.delivery?.pacing;
-              const feedback = qEval?.feedback || qEval?.nlp?.feedback;
-
-              // NLP real metrics
-              const textAnalysis = qEval?.text_analysis;
-              const coveredConcepts = textAnalysis?.covered_concepts || [];
-              const missingConcepts = textAnalysis?.missing_concepts || qEval?.missing_concepts || [];
-              const contentScore = textAnalysis?.content_score;
-              const semanticSimScore = textAnalysis?.semantic_similarity_score;
-              const nlpModel = textAnalysis?.model;
-
-              // Delivery real metrics
-              const delivery = qEval?.delivery;
-              const fillerCount = delivery?.filler_count ?? delivery?.filler_words_count;
-              const fluencyIndicator = delivery?.fluency_indicator;
-
-              // Facial real metrics
-              const facial = qEval?.facial_analysis;
-              const hasRealVision = facial && facial.status === 'completed';
-              const camera = qEval?.camera_conduct;
-              const cameraMeasured = camera?.status === 'measured';
-              const offCamera = !!camera?.mostly_off_camera;
-              const cameraNotes = camera?.notes || [];
-              const visionContribution = qEval?.multimodal?.vision_contribution;
-              // The camera notes are also appended to `feedback` by the backend;
-              // show them once, in the camera callout.
-              const feedbackText = cameraNotes.reduce((txt, note) => txt.replace(note, ''), feedback || '').trim();
-              const isOpen = openQuestion === q.id;
-              const failed = qEval?.status === 'failed';
-              const summaryLine = !isRecorded
-                ? 'You skipped this question.'
-                : failed
-                ? 'This answer could not be processed.'
-                : firstSentence(feedbackText) || (questionScore != null ? `${verdictFor(questionScore)} answer.` : 'Being scored.');
-
-              return (
-                <div key={q.id} style={{ borderColor: 'var(--c-border)' }}>
-                  <button
-                    type="button"
-                    onClick={() => setOpenQuestion(isOpen ? null : q.id)}
-                    aria-expanded={isOpen}
-                    className="w-full text-left px-4 sm:px-5 py-4 flex items-start gap-3 sm:gap-4 transition-colors hover:bg-white/[0.03]"
-                  >
-                    <span className="font-mono text-xs font-bold mt-1 shrink-0" style={{ color: 'var(--c-text-muted)' }}>
-                      Q{idx + 1}
-                    </span>
-                    <span className="flex-1 min-w-0 space-y-1">
-                      <span className="block text-sm font-semibold leading-snug" style={{ color: 'var(--c-text)' }}>
-                        {q.question_text}
-                      </span>
-                      <span className="block text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                        {summaryLine}
-                      </span>
-                    </span>
-                    <span className="shrink-0 flex items-center gap-2 mt-0.5">
-                      {!isRecorded ? (
-                        <span className="c-badge c-badge-muted text-[11px] py-0.5 px-1.5">Skipped</span>
-                      ) : failed ? (
-                        <span className="c-badge c-badge-danger text-[11px] py-0.5 px-1.5 font-bold">Failed</span>
-                      ) : questionScore != null ? (
-                        <span className="font-mono text-sm font-bold" style={{ color: 'var(--c-text)' }}>{Math.round(questionScore)}%</span>
-                      ) : null}
-                      <ChevronDown
-                        className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
-                        style={{ color: 'var(--c-text-muted)' }}
-                      />
-                    </span>
-                  </button>
-
-                  {isOpen && (
-                    <div className="px-4 sm:px-5 pb-5 sm:pl-14 space-y-3">
-                      {failed && (
-                        <div className="p-2.5 rounded border text-xs bg-rose-500/10 border-rose-500/20 text-rose-300">
-                          {qEval?.failed_reason || 'The recording for this answer could not be read.'}
-                        </div>
-                      )}
-                      {!isRecorded && (
-                        <p className="text-xs" style={{ color: 'var(--c-text-muted)' }}>No answer was recorded for this question.</p>
-                      )}
-                      {transcript && (
-                        <div className="p-3 rounded-md border text-xs leading-relaxed"
-                          style={{ background: 'var(--c-surface-muted)', borderColor: 'var(--c-border)', color: 'var(--c-text)' }}
-                        >
-                          <span className="font-semibold text-xs block mb-1" style={{ color: 'var(--c-text-muted)' }}>
-                            {resp?.response_mode === 'text' ? 'Your typed answer' : 'What you said'}
-                          </span>
-                          "{transcript}"
-                        </div>
-                      )}
-                      {feedbackText && (
-                        <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                          <strong className="font-semibold" style={{ color: 'var(--c-text)' }}>Feedback:</strong> {feedbackText}
-                        </p>
-                      )}
-                      {cameraNotes.length > 0 && (
-                        <div className="c-badge-warning rounded-md p-3 flex items-start gap-2 text-xs">
-                          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                          <div className="space-y-1">
-                            <p className="font-semibold">Camera check</p>
-                            {cameraNotes.map((note, i) => (
-                              <p key={i}>{note}</p>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      <QuestionLanguageNotes textAnalysis={qEval?.text_analysis} />
-                      {isRecorded && (
-                        <p className="text-[11px] font-mono" style={{ color: 'var(--c-text-muted)' }}>
-                          {[
-                            duration != null ? `${duration}s long` : null,
-                            wpm ? `${Math.round(wpm)} words per minute` : null,
-                            fillerCount ? `${fillerCount} filler word${fillerCount > 1 ? 's' : ''}` : null,
-                          ].filter(Boolean).join(' · ')}
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* ===================================================================
-            5. FULL ANALYSIS - every detailed chart, metric and panel, on request
-           =================================================================== */}
         {isCompleted && (
-          <section aria-label="Full analysis" className="space-y-10">
-            <button
-              type="button"
-              onClick={() => setShowDetails((v) => !v)}
-              aria-expanded={showDetails}
-              className="c-btn c-btn-secondary w-full sm:w-auto px-5 py-3 text-sm font-semibold rounded-md flex items-center justify-center gap-2"
-            >
-              <span>{showDetails ? 'Hide full analysis' : 'See full analysis'}</span>
-              <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showDetails ? 'rotate-180' : ''}`} />
-            </button>
-
-            {showDetails && (
-              <div className="space-y-12">
-                <div className="space-y-6">
+          <>
+            {/* 2. The answer to "how did I do?" */}
+            <Card className="!p-0 overflow-hidden">
+              <div className="grid grid-cols-1 lg:grid-cols-5">
+                <div className="lg:col-span-2 p-6 sm:p-8 flex flex-col items-center text-center gap-3 border-b lg:border-b-0 lg:border-r" style={{ borderColor: 'var(--c-border)' }}>
+                  <ScoreRing value={Math.round(overallScore)} suffix="%" size={168} strokeWidth={14} tone={toneFor(overallScore)} />
                   <div>
-                    <h2 className="c-heading text-xl font-bold" style={{ color: 'var(--c-text)' }}>Score details</h2>
-                    <p className="text-xs mt-1" style={{ color: 'var(--c-text-secondary)' }}>
-                      Charts and numbers behind your score.
-                    </p>
+                    <p className="c-heading text-3xl font-bold" style={{ color: colorFor(overallScore) }}>{verdictFor(overallScore)}</p>
+                    <p className="text-xs mt-0.5" style={{ color: 'var(--c-text-muted)' }}>Overall score out of 100</p>
                   </div>
-            {/* FR 28-03: Structured Performance Overview (Audit Summary) */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-6">
-              <div className="p-3 rounded-lg border space-y-1" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
-                <span className="text-xs block" style={{ color: 'var(--c-text-muted)' }}>Questions</span>
-                <span className="font-mono text-lg font-bold" style={{ color: 'var(--c-text)' }}>{totalQuestions}</span>
-              </div>
-              <div className="p-3 rounded-lg border space-y-1" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
-                <span className="text-xs block" style={{ color: 'var(--c-text-muted)' }}>Answered</span>
-                <span className="font-mono text-lg font-bold" style={{ color: 'var(--c-text)' }}>{answeredCount}</span>
-              </div>
-              <div className="p-3 rounded-lg border space-y-1" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
-                <span className="text-xs block" style={{ color: 'var(--c-text-muted)' }}>Skipped</span>
-                <span className="font-mono text-lg font-bold" style={{ color: 'var(--c-text-muted)' }}>
-                  {summaryReport?.performance_overview?.skipped_questions ?? Math.max(0, totalQuestions - answeredCount)}
-                </span>
-              </div>
-              <div className="p-3 rounded-lg border space-y-1" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
-                <span className="text-xs block" style={{ color: 'var(--c-text-muted)' }}>Completed</span>
-                <span className="font-mono text-lg font-bold" style={{ color: 'var(--c-text)' }}>
-                  {summaryReport?.performance_overview?.completion_rate ?? (totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0)}%
-                </span>
-              </div>
-            </div>
+                  <p className="text-sm leading-relaxed max-w-xs" style={{ color: 'var(--c-text-secondary)' }}>{summaryText}</p>
                 </div>
 
-        {/* ===================================================================
-            3. MULTIMODAL EVALUATION FRAMEWORK (Triad Signal Architecture)
-           =================================================================== */}
-        {isCompleted && (
-          <section aria-label="What was scored" className="border-b pb-10 space-y-4" style={{ borderColor: 'var(--c-border)' }}>
-            <div>
-              <h2 className="c-heading text-xl font-bold" style={{ color: 'var(--c-text)' }}>
-                What was scored
-              </h2>
-              <p className="text-xs mt-1" style={{ color: 'var(--c-text-secondary)' }}>
-                Each answer is scored on three things: what you said, how you said it, and how you came across on camera.
-              </p>
-            </div>
-
-            {/* Triad Signal Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
-              {/* Pillar 1: NLP Content */}
-              <div
-                className="p-4 rounded-lg border space-y-2.5"
-                style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-[var(--c-text-muted)]" />
-                    <span className="text-sm font-bold" style={{ color: 'var(--c-text)' }}>What you said</span>
-                  </div>
-                  <span className="text-[11px] px-2 py-0.5 rounded border font-medium bg-emerald-500/10 text-emerald-400/90 border-emerald-500/20">
-                    Scored
-                  </span>
-                </div>
-                <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                  Compared with what a strong answer covers: relevance, the key points, and how complete it was.
-                </p>
-              </div>
-
-              {/* Pillar 2: Speech & Delivery */}
-              <div
-                className="p-4 rounded-lg border space-y-2.5"
-                style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Mic className="w-4 h-4 text-[var(--c-text-muted)]" />
-                    <span className="text-sm font-bold" style={{ color: 'var(--c-text)' }}>How you said it</span>
-                  </div>
-                  <span className="text-[11px] px-2 py-0.5 rounded border font-medium bg-emerald-500/10 text-emerald-400/90 border-emerald-500/20">
-                    Scored
-                  </span>
-                </div>
-                <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                  Speaking pace, pauses, and filler words such as "um" and "uh".
-                </p>
-              </div>
-
-              {/* Pillar 3: Computer Vision & Facial Analysis */}
-              <div
-                className="p-4 rounded-lg border space-y-2.5"
-                style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Eye className="w-4 h-4 text-[var(--c-text-muted)]" />
-                    <span className="text-sm font-bold" style={{ color: 'var(--c-text)' }}>On camera</span>
-                  </div>
-                  {hasVisionSummary ? (
-                    <span className="text-[11px] px-2 py-0.5 rounded border font-medium bg-emerald-500/10 text-emerald-400/90 border-emerald-500/20">
-                      Scored
-                    </span>
-                  ) : facialSummary?.status === 'no_face_detected' ? (
-                    <span className="text-[11px] px-2 py-0.5 rounded border font-medium bg-amber-500/10 text-amber-400/90 border-amber-500/20">
-                      No face found
-                    </span>
-                  ) : facialSummary?.status === 'analysis_failed' || facialSummary?.status === 'corrupt_media' ? (
-                    <span className="text-[11px] px-2 py-0.5 rounded border font-medium bg-rose-500/10 text-rose-400/90 border-rose-500/20">
-                      Video unreadable
-                    </span>
-                  ) : (
-                    <span className="text-[11px] px-2 py-0.5 rounded border font-medium bg-neutral-800 text-neutral-400 border-neutral-700">
-                      Not scored
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                  {offCameraAnswers.length > 0 && !hasVisionSummary
-                    ? `You were out of frame for most of answer${offCameraAnswers.length > 1 ? 's' : ''} ${offCameraAnswers.join(', ')}. The camera share of those answers was scored on presence.`
-                    : hasVisionSummary
-                    ? `Expression steadiness: ${facialSummary?.overall_composure || 'Not Assessed'}. Most common expression: ${facialSummary?.dominant_expression || 'Not Observed'}.`
-                    : facialSummary?.status === 'no_face_detected'
-                    ? 'Video was recorded but no face was found, so the camera part was not scored.'
-                    : facialSummary?.status === 'analysis_failed' || facialSummary?.status === 'corrupt_media'
-                    ? 'The video could not be read, so the camera part was not scored.'
-                    : 'Whether you stayed in frame, faced the camera, and kept a steady expression.'}
-                </p>
-              </div>
-            </div>
-
-          </section>
-        )}
-
-        {/* ===================================================================
-            4. PERFORMANCE & BEHAVIORAL DIMENSIONS
-           =================================================================== */}
-        {isCompleted && (
-          <section aria-label="Performance Breakdown" className="border-b pb-10 space-y-4" style={{ borderColor: 'var(--c-border)' }}>
-            <div>
-              <h2 className="c-heading text-xl font-bold" style={{ color: 'var(--c-text)' }}>Confidence, stress and expression</h2>
-              <p className="text-xs mt-1" style={{ color: 'var(--c-text-secondary)' }}>
-                Estimated from your speech and video. Shown only when your answers were long enough to judge.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 pt-2">
-              {/* Confidence Indicator */}
-              {/* Confidence Indicator (FR 29-02 Visual Indicator) */}
-              <div className="p-4 rounded-lg border space-y-2" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-bold" style={{ color: 'var(--c-text-muted)' }}>
-                    Confidence
-                  </p>
-                </div>
-                <div className="flex items-baseline gap-2">
-                  <p className="c-serif-num text-3xl font-bold" style={{ color: 'var(--c-text)' }}>
-                    {confidenceScore != null && confidenceLevel !== 'Not Assessed' ? `${Math.round(confidenceScore)}%` : 'Not Assessed'}
-                  </p>
-                  {confidenceLevel && confidenceLevel !== 'Not Assessed' && (
-                    <span className="text-xs font-sans font-semibold text-neutral-300">
-                      ({confidenceLevel})
-                    </span>
-                  )}
-                </div>
-                {/* Visual Level Meter Bar */}
-                {confidenceScore != null && confidenceLevel !== 'Not Assessed' ? (
-                  <div className="pt-1 space-y-1">
-                    <div className="h-2 w-full rounded-full bg-slate-800/80 overflow-hidden relative border border-white/5">
-                      <div
-                        className="h-full rounded-full transition-all duration-1000"
-                        style={{
-                          width: `${Math.min(100, Math.max(0, confidenceScore))}%`,
-                          background: confidenceScore >= 80 ? '#FF6B35' : ((confidenceScore ?? 0) >= 60 ? 'rgba(255, 107, 53, 0.6)' : '#94A3B8'),
-                        }}
-                      />
-                    </div>
-                    <div className="flex justify-between text-[11px] font-mono text-neutral-500">
-                      <span>Developing</span>
-                      <span>Moderate</span>
-                      <span>High</span>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="pt-1 space-y-1">
-                    <div className="h-2 w-full rounded-full bg-neutral-800/50 border border-white/5 overflow-hidden" />
-                    <div className="flex justify-between text-[11px] font-mono text-neutral-500">
-                      <span>Not enough to judge</span>
-                    </div>
-                  </div>
-                )}
-                <p className="text-[11px] leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                  Based on how steadily you spoke, phrases like "I don't know", and your expression.
-                </p>
-              </div>
-
-              {/* Stress / Composure Indicator (FR 29-02 Visual Indicator) */}
-              <div className="p-4 rounded-lg border space-y-2" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-bold" style={{ color: 'var(--c-text-muted)' }}>
-                    Stress
-                  </p>
-                </div>
-                <div className="flex items-baseline gap-2">
-                  <p className="c-serif-num text-3xl font-bold" style={{ color: 'var(--c-text)' }}>
-                    {stressLevel && stressLevel !== 'Not Assessed' ? stressLevel : 'Not Assessed'}
-                  </p>
-                  {stressScore != null && stressLevel !== 'Not Assessed' && (
-                    <span className="text-xs font-sans font-semibold text-neutral-400">
-                      ({Math.round(stressScore)}% stress)
-                    </span>
-                  )}
-                </div>
-                {/* Visual Level Meter Bar */}
-                {stressScore != null && stressLevel !== 'Not Assessed' ? (
-                  <div className="pt-1 space-y-1">
-                    <div className="h-2 w-full rounded-full bg-slate-800/80 overflow-hidden relative border border-white/5">
-                      <div
-                        className="h-full rounded-full transition-all duration-1000"
-                        style={{
-                          width: `${Math.min(100, Math.max(0, stressScore))}%`,
-                          background: (stressScore ?? 0) >= 65 ? '#EF4444' : ((stressScore ?? 0) >= 35 ? '#FF9F1C' : '#10B981'),
-                        }}
-                      />
-                    </div>
-                    <div className="flex justify-between text-[11px] font-mono text-neutral-500">
-                      <span>Low</span>
-                      <span>Moderate</span>
-                      <span>Elevated</span>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="pt-1 space-y-1">
-                    <div className="h-2 w-full rounded-full bg-neutral-800/50 border border-white/5 overflow-hidden" />
-                    <div className="flex justify-between text-[11px] font-mono text-neutral-500">
-                      <span>Not enough to judge</span>
-                    </div>
-                  </div>
-                )}
-                <p className="text-[11px] leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                  Based on pauses and hesitation in your speech, and visible tension on camera.
-                </p>
-              </div>
-
-              {/* Facial Expression Analysis */}
-              <div className={`p-4 rounded-lg border space-y-1.5 ${hasVisionSummary ? '' : 'opacity-85'}`} style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-bold text-neutral-300">
-                    Most common expression
-                  </p>
-                </div>
-                {hasVisionSummary ? (
-                  <p className="c-serif-num text-2xl font-bold text-white pt-0.5">
-                    {facialSummary?.dominant_expression || 'Not Observed'}
-                  </p>
-                ) : facialSummary?.status === 'no_face_detected' ? (
-                  <p className="c-serif-num text-2xl font-bold text-neutral-300 pt-0.5">
-                    Not Observed
-                  </p>
-                ) : (
-                  <p className="text-xs font-bold text-neutral-400 pt-1 font-mono">
-                    Camera not used
-                  </p>
-                )}
-                <p className="text-[11px] leading-relaxed text-neutral-400">
-                  {hasVisionSummary
-                    ? 'The expression the face model saw most often. It describes your face, not your feelings.'
-                    : facialSummary?.status === 'no_face_detected'
-                    ? 'Video was recorded but no face was found.'
-                    : 'No video was recorded for these answers.'}
-                </p>
-              </div>
-
-              {/* Engagement Level */}
-              <div className={`p-4 rounded-lg border space-y-1.5 ${hasVisionSummary ? '' : 'opacity-85'}`} style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-bold text-neutral-300">
-                    Expression steadiness
-                  </p>
-                </div>
-                {hasVisionSummary ? (
-                  <p className="c-serif-num text-2xl font-bold text-white pt-0.5">
-                    {facialSummary?.overall_composure || 'Not Assessed'}
-                  </p>
-                ) : facialSummary?.status === 'no_face_detected' ? (
-                  <p className="c-serif-num text-2xl font-bold text-neutral-300 pt-0.5">
-                    Not Assessed
-                  </p>
-                ) : (
-                  <p className="text-xs font-bold text-neutral-400 pt-1 font-mono">
-                    Camera not used
-                  </p>
-                )}
-                <p className="text-[11px] leading-relaxed text-neutral-400">
-                  {hasVisionSummary
-                    ? 'How much your expression changed during your answers.'
-                    : facialSummary?.status === 'no_face_detected'
-                    ? 'No face was found, so this was not measured.'
-                    : 'No video was recorded for these answers.'}
-                </p>
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* 4b. LANGUAGE QUALITY, GRAMMAR & TONE (FR16-01 / Objective 3) */}
-        {isCompleted && <LanguageSummarySection summary={languageSummary} />}
-
-        {/* ===================================================================
-            5. STRENGTHS, WEAKNESSES & COACHING STRATEGIES (FR25, FR26, FR27)
-           =================================================================== */}
-        {(strengths.length > 0 || weaknesses.length > 0 || suggestions.length > 0) && (
-          <section aria-label="Strengths and Recommendations" className="border-b pb-10 space-y-6" style={{ borderColor: 'var(--c-border)' }}>
-            <div>
-              <h2 className="c-heading text-xl font-bold" style={{ color: 'var(--c-text)' }}>All strengths and areas to improve</h2>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Demonstrated Strengths (FR25) */}
-              {strengths.length > 0 && (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 border-b pb-2" style={{ borderColor: 'var(--c-border)' }}>
-                    <ThumbsUp className="w-4 h-4 text-emerald-500" />
-                    <h3 className="c-heading text-sm font-bold" style={{ color: 'var(--c-text)' }}>Strengths</h3>
-                  </div>
-                  <ul className="space-y-2.5 text-xs">
-                    {strengths.map((st, i) => (
-                      <li key={i} className="flex items-start gap-2.5 leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                        <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5 text-emerald-500" />
-                        <span>{st}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* Areas for Improvement / Weaknesses (FR26) */}
-              {weaknesses.length > 0 && (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 border-b pb-2" style={{ borderColor: 'var(--c-border)' }}>
-                    <AlertCircle className="w-4 h-4" style={{ color: 'var(--c-warning)' }} />
-                    <h3 className="c-heading text-sm font-bold" style={{ color: 'var(--c-text)' }}>Areas to improve</h3>
-                  </div>
-                  <ul className="space-y-2.5 text-xs">
-                    {weaknesses.map((wk, i) => (
-                      <li key={i} className="flex items-start gap-2.5 leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                        <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: 'var(--c-warning)' }} />
-                        <span>{wk}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-
-            {/* Personalized Coaching & Preparation Strategies (FR27) */}
-            {suggestions.length > 0 && (
-              <div
-                className="mt-6 p-4 rounded-lg border space-y-3"
-                style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}
-              >
-                <div className="flex items-center gap-2 border-b pb-2" style={{ borderColor: 'var(--c-border)' }}>
-                  <Lightbulb className="w-4 h-4 text-[var(--c-text-muted)]" />
-                  <h3 className="c-heading text-sm font-bold" style={{ color: 'var(--c-text)' }}>
-                    Tips for your next interview
-                  </h3>
-                </div>
-                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                  {suggestions.map((sug, i) => (
-                    <li key={i} className="flex items-start gap-2 leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                      <span className="font-mono text-[var(--c-text-muted)] font-bold shrink-0 mt-0.5">0{i + 1}.</span>
-                      <span>{sug}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </section>
-        )}
-
-                <section aria-label="Answer details" className="space-y-6">
+                {/* The three skills that make up the score (FR 21, FR 29) */}
+                <div className="lg:col-span-3 p-6 sm:p-8 space-y-5">
                   <div>
-                    <h2 className="c-heading text-xl font-bold" style={{ color: 'var(--c-text)' }}>Answer details</h2>
-                    <p className="text-xs mt-1" style={{ color: 'var(--c-text-secondary)' }}>
-                      The measurements for each answer: content, speech and camera.
-                    </p>
+                    <h2 className="text-base font-bold" style={{ color: 'var(--c-text)' }}>How the score is made up</h2>
+                    <p className="text-xs mt-0.5" style={{ color: 'var(--c-text-muted)' }}>Three things are checked in every answer.</p>
                   </div>
-                  {(interview?.questions || []).map((q, idx) => {
-              const resp = (interview?.responses || []).find((r) => (r.question_id || r.questionId) === q.id);
-              const qEval = perQuestionEval.find((item) => (item.question_id || item.questionId) === q.id);
-              const isRecorded = !!resp;
-              const duration = resp?.duration_seconds || resp?.durationSeconds;
-              const transcript = qEval?.asr?.transcript;
-              const questionScore = qEval?.multimodal?.score ?? qEval?.score;
-              const wpm = qEval?.delivery?.words_per_minute;
-              const pacing = qEval?.delivery?.pacing;
-              const feedback = qEval?.feedback || qEval?.nlp?.feedback;
-
-              // NLP real metrics
-              const textAnalysis = qEval?.text_analysis;
-              const coveredConcepts = textAnalysis?.covered_concepts || [];
-              const missingConcepts = textAnalysis?.missing_concepts || qEval?.missing_concepts || [];
-              const contentScore = textAnalysis?.content_score;
-              const semanticSimScore = textAnalysis?.semantic_similarity_score;
-              const nlpModel = textAnalysis?.model;
-
-              // Delivery real metrics
-              const delivery = qEval?.delivery;
-              const fillerCount = delivery?.filler_count ?? delivery?.filler_words_count;
-              const fluencyIndicator = delivery?.fluency_indicator;
-
-              // Facial real metrics
-              const facial = qEval?.facial_analysis;
-              const hasRealVision = facial && facial.status === 'completed';
-              const camera = qEval?.camera_conduct;
-              const cameraMeasured = camera?.status === 'measured';
-              const offCamera = !!camera?.mostly_off_camera;
-              const cameraNotes = camera?.notes || [];
-              const visionContribution = qEval?.multimodal?.vision_contribution;
-              // The camera notes are also appended to `feedback` by the backend;
-              // show them once, in the camera callout.
-              const feedbackText = cameraNotes.reduce((txt, note) => txt.replace(note, ''), feedback || '').trim();
-                    if (!isRecorded) return null;
-                    return (
-                      <div key={q.id} className="space-y-2">
-                        <p className="text-xs font-semibold" style={{ color: 'var(--c-text)' }}>
-                          <span className="font-mono mr-2" style={{ color: 'var(--c-text-muted)' }}>Q{idx + 1}</span>
-                          {q.question_text}
-                        </p>
-                  {/* Multi-Signal Assessment Strip */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    {/* Signal A: NLP Content */}
-                    <div
-                      className="p-3 rounded-lg border space-y-1.5 text-xs"
-                      style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold flex items-center gap-1.5 text-neutral-300">
-                          <FileText className="w-3.5 h-3.5 text-[var(--c-text-muted)]" />
-                          <span>NLP Content</span>
-                          {nlpModel && nlpModel.includes('bert') && (
-                            <span className="text-[11px] font-mono px-1.5 py-0.2 rounded bg-white/5 text-neutral-400 border border-white/10">
-                              BERT
-                            </span>
-                          )}
+                  {areaRows.map(({ key, icon: Icon, label, score, measured, help, why }) => (
+                    <div key={key} className="space-y-1.5">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="flex items-center gap-2 text-sm font-semibold" style={{ color: 'var(--c-text)' }}>
+                          <Icon className="w-4 h-4" style={{ color: 'var(--c-text-muted)' }} /> {label}
                         </span>
-                        {contentScore != null && (
-                          <span className="font-mono text-neutral-200 font-bold">
-                            {Math.round(contentScore)}%
+                        {measured ? (
+                          <span className="text-sm font-bold" style={{ color: colorFor(score ?? 0) }}>
+                            {Math.round(score ?? 0)}% <span className="font-medium" style={{ color: 'var(--c-text-muted)' }}>· {verdictFor(score ?? 0)}</span>
                           </span>
-                        )}
-                      </div>
-                      <div className="space-y-1">
-                        {semanticSimScore != null && semanticSimScore > 0 && (
-                          <div className="flex items-center justify-between text-[11px] font-mono text-neutral-400">
-                            <span>Semantic Alignment:</span>
-                            <span className="text-neutral-200 font-semibold">{Math.round(semanticSimScore)}%</span>
-                          </div>
-                        )}
-                        {coveredConcepts.length > 0 && (
-                          <div className="flex items-center gap-1 flex-wrap text-[11px] font-mono">
-                            <span className="text-neutral-400">Covered:</span>
-                            {coveredConcepts.slice(0, 3).map((c, i) => (
-                              <span key={i} className="px-1.5 py-0.2 rounded bg-neutral-800 text-emerald-400/90 border border-emerald-500/20">
-                                {c}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                        {missingConcepts.length > 0 && (
-                          <div className="flex items-center gap-1 flex-wrap text-[11px] font-mono">
-                            <span className="text-neutral-400">Missing:</span>
-                            {missingConcepts.slice(0, 2).map((c, i) => (
-                              <span key={i} className="px-1.5 py-0.2 rounded bg-neutral-800 text-rose-400/90 border border-rose-500/20">
-                                {c}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                        {!coveredConcepts.length && !missingConcepts.length && (
-                          <p className="text-[11px] text-neutral-400">Evaluated against domain answer criteria.</p>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Signal B: Speech Delivery */}
-                    <div
-                      className="p-3 rounded-lg border space-y-1.5 text-xs"
-                      style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold flex items-center gap-1.5 text-neutral-300">
-                          <Mic className="w-3.5 h-3.5 text-[var(--c-text-muted)]" />
-                          <span>Speech Delivery</span>
-                        </span>
-                        {wpm != null && (
-                          <span className="font-mono text-neutral-200 font-bold">
-                            {Math.round(wpm)} WPM
-                          </span>
-                        )}
-                      </div>
-                      <div className="space-y-1 text-[11px] text-neutral-400">
-                        <div>
-                          <span>Pacing: </span>
-                          <span className="text-white font-medium">{pacing || 'Standard'}</span>
-                        </div>
-                        <div>
-                          <span>Fluency: </span>
-                          <span className="text-white font-medium">{fluencyIndicator || (wpm > 0 ? 'Fluent' : 'None')}</span>
-                          {fillerCount != null && fillerCount > 0 && (
-                            <span className="text-neutral-500 ml-1">({fillerCount} fillers)</span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Signal C: Vision / Behavioral */}
-                    <div
-                      className={`p-3 rounded-lg border space-y-1.5 text-xs ${hasRealVision ? '' : 'opacity-75'}`}
-                      style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold flex items-center gap-1.5 text-neutral-300">
-                          <Eye className="w-3.5 h-3.5 text-[var(--c-text-muted)]" />
-                          <span>Vision & Facial</span>
-                        </span>
-                        {offCamera ? (
-                          <span className="text-[11px] text-amber-400/90 font-medium">Away</span>
-                        ) : hasRealVision ? (
-                          <span className="text-[11px] text-emerald-400/90 font-medium">Scored</span>
-                        ) : facial?.status === 'no_face_detected' ? (
-                          <span className="text-[11px] text-amber-400/90 font-medium">No face</span>
-                        ) : facial?.status === 'analysis_failed' || facial?.status === 'corrupt_media' ? (
-                          <span className="text-[11px] text-rose-400/90 font-medium">Failed</span>
-                        ) : facial?.status === 'insufficient_data' ? (
-                          <span className="text-[11px] text-amber-400/90 font-medium">Unclear</span>
                         ) : (
-                          <span className="text-[11px] text-neutral-500">Not used</span>
+                          <span className="text-xs font-semibold" style={{ color: 'var(--c-text-muted)' }}>Not scored</span>
                         )}
                       </div>
-                      {hasRealVision ? (
-                        <div className="space-y-1 text-[11px] text-neutral-300">
-                          <div>
-                            <span className="text-neutral-400">Expression: </span>
-                            <span className="text-white font-medium">{facial?.dominant_expression || 'Not Observed'}</span>
-                            {facial?.expression_distribution && facial?.dominant_expression && facial.dominant_expression !== 'Not Observed' && (
-                              <span className="text-neutral-400 ml-1">({facial.expression_distribution[facial.dominant_expression.toLowerCase()] ?? ''}%)</span>
-                            )}
-                          </div>
-                          <div>
-                            <span className="text-neutral-400">Composure: </span>
-                            <span className="text-white font-medium">{facial.behavioral_indicators?.composure_index || 'Not Assessed'}</span>
-                          </div>
-                          <div>
-                            <span className="text-neutral-400">Engagement: </span>
-                            <span className="text-white font-medium">{facial.behavioral_indicators?.engagement_level || 'Not Assessed'}</span>
-                          </div>
-                        </div>
-                      ) : facial?.status === 'no_face_detected' ? (
-                        <div className="space-y-1 text-[11px] text-neutral-300">
-                          <div>
-                            <span className="text-neutral-400">Expression: </span>
-                            <span className="text-neutral-300 font-medium">Not Observed</span>
-                          </div>
-                          <div>
-                            <span className="text-neutral-400">Composure: </span>
-                            <span className="text-neutral-300 font-medium">Not Assessed</span>
-                          </div>
-                          <p className="text-[11px] text-neutral-400 pt-0.5 leading-tight">
-                            {offCamera
-                              ? `No face in frame. The camera share was scored on presence (${Math.round(visionContribution?.raw_score ?? 0)}/100).`
-                              : 'No face detected in video. Vision weight redistributed to verbal signals without penalty.'}
-                          </p>
-                        </div>
-                      ) : facial?.status === 'analysis_failed' || facial?.status === 'corrupt_media' ? (
-                        <p className="text-[11px] text-neutral-400 leading-relaxed">
-                          Video analysis error ({facial?.error || 'unreadable media'}). Non-verbal signals omitted without penalty.
-                        </p>
-                      ) : facial?.status === 'insufficient_data' ? (
-                        <p className="text-[11px] text-neutral-400 leading-relaxed">
-                          Facial expression confidence below classification threshold. Non-verbal signals omitted without penalty.
-                        </p>
-                      ) : (
-                        <p className="text-[11px] text-neutral-500 leading-relaxed">
-                          Vision analysis unavailable. Facial analysis will appear here when vision evaluation is enabled.
-                        </p>
+                      <Bar100 value={measured ? score : 0} color={colorFor(score ?? 0)} />
+                      <div className="flex items-start justify-between gap-3">
+                        <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-muted)' }}>{help}</p>
+                        {why && (
+                          <button type="button" onClick={() => setOpenWhy(openWhy === key ? null : key)} aria-expanded={openWhy === key}
+                            className="shrink-0 text-[11px] font-semibold hover:underline" style={{ color: 'var(--c-accent)' }}>
+                            {openWhy === key ? 'Hide' : 'Why?'}
+                          </button>
+                        )}
+                      </div>
+                      {openWhy === key && why && (
+                        <p className="text-xs leading-relaxed p-3 rounded-lg" style={{ color: 'var(--c-text)', background: 'var(--c-surface-muted)' }}>{why}</p>
                       )}
-                      {cameraMeasured && (
-                        <div className="flex items-center justify-between text-[11px] font-mono pt-1 border-t" style={{ borderColor: 'var(--c-border)' }}>
-                          <span className="text-neutral-400">In frame:</span>
-                          <span className={offCamera ? 'text-amber-400 font-semibold' : 'text-neutral-200 font-semibold'}>
-                            {Math.round((camera.camera_presence_ratio ?? 0) * 100)}%
-                          </span>
+                    </div>
+                  ))}
+                  <p className="text-[11px] flex items-start gap-1.5 pt-1" style={{ color: 'var(--c-text-muted)' }}>
+                    <Info className="w-3.5 h-3.5 shrink-0 mt-px" /> Practice feedback from an automated coach, not a hiring decision.
+                  </p>
+                </div>
+              </div>
+            </Card>
+
+            {/* 3. What to do next (FR 25, FR 26) */}
+            {(topStrengths.length > 0 || topFixes.length > 0) && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card>
+                  <h2 className="text-base font-bold flex items-center gap-2 mb-3" style={{ color: 'var(--c-text)' }}>
+                    <span className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: 'var(--c-badge-success-bg)', color: 'var(--c-success)' }}><ThumbsUp className="w-3.5 h-3.5" /></span>
+                    Keep doing
+                  </h2>
+                  {topStrengths.length ? (
+                    <ul className="space-y-2.5">
+                      {topStrengths.map((st, i) => (
+                        <li key={i} className="flex items-start gap-2.5 text-sm leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
+                          <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" style={{ color: 'var(--c-success)' }} /><span>{st}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : <p className="text-sm" style={{ color: 'var(--c-text-muted)' }}>Strengths show up here once an answer covers the key points well.</p>}
+                </Card>
+                <Card>
+                  <h2 className="text-base font-bold flex items-center gap-2 mb-3" style={{ color: 'var(--c-text)' }}>
+                    <span className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: 'var(--c-badge-warning-bg)', color: 'var(--c-warning)' }}><Lightbulb className="w-3.5 h-3.5" /></span>
+                    Work on next
+                  </h2>
+                  {topFixes.length ? (
+                    <ol className="space-y-2.5">
+                      {topFixes.map((fix, i) => (
+                        <li key={i} className="flex items-start gap-2.5 text-sm leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
+                          <span className="w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 mt-px" style={{ background: 'var(--c-surface-muted)', color: 'var(--c-text)' }}>{i + 1}</span>
+                          <span>{fix}</span>
+                        </li>
+                      ))}
+                    </ol>
+                  ) : <p className="text-sm" style={{ color: 'var(--c-text-muted)' }}>Nothing stood out to fix in this interview.</p>}
+                  <Link to={`/interview/${id}/feedback`} className="inline-flex items-center gap-1 text-xs font-semibold mt-4 hover:underline" style={{ color: 'var(--c-accent)' }}>
+                    See your practice plan <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </Card>
+              </div>
+            )}
+
+            {/* 4. Question by question (FR 18, FR 29) */}
+            <Card>
+              <SectionTitle hint="Tap a question to see your answer and what to add.">Question by question</SectionTitle>
+
+              {(offCameraAnswers.length > 0 || flaggedAnswers.length > 0) && (
+                <div className="c-badge-warning rounded-lg p-3 mb-4 flex items-start gap-2 text-xs leading-relaxed">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <p>
+                    {offCameraAnswers.length > 0 && <>You were out of the camera frame for most of answer{offCameraAnswers.length > 1 ? 's' : ''} {offCameraAnswers.join(', ')}. </>}
+                    {flaggedAnswers.length > 0 && <>Something unusual was seen on camera in answer{flaggedAnswers.length > 1 ? 's' : ''} {flaggedAnswers.join(', ')}; open {flaggedAnswers.length > 1 ? 'them' : 'it'} for details.</>}
+                  </p>
+                </div>
+              )}
+
+              <ol className="space-y-3">
+                {(interview?.questions || []).map((q, idx) => {
+                  const resp = (interview?.responses || []).find((r) => (r.question_id || r.questionId) === q.id);
+                  const qEval = perQuestionEval.find((item) => (item.question_id || item.questionId) === q.id);
+                  const isRecorded = !!resp;
+                  const typed = (resp?.response_mode || resp?.responseMode) === 'text';
+                  const failed = qEval?.status === 'failed';
+                  const questionScore = qEval?.multimodal?.score ?? qEval?.score;
+                  const hasScore = isRecorded && !failed && questionScore != null;
+                  const transcript = qEval?.asr?.transcript;
+                  const covered = qEval?.text_analysis?.covered_concepts || [];
+                  const missing = qEval?.text_analysis?.missing_concepts || qEval?.missing_concepts || [];
+                  const delivery = qEval?.delivery;
+                  const wpm = delivery?.words_per_minute;
+                  const fillers = delivery?.filler_count ?? delivery?.filler_words_count;
+                  const cameraNotes = qEval?.camera_conduct?.notes || [];
+                  const issues = qEval?.text_analysis?.language_analysis?.grammar_issues || [];
+                  const feedbackText = cameraNotes.reduce((txt, note) => txt.replace(note, ''), qEval?.feedback || qEval?.nlp?.feedback || '').trim();
+                  const isOpen = openQuestion === q.id;
+                  const summaryLine = !isRecorded
+                    ? 'You skipped this question.'
+                    : failed
+                    ? 'This answer could not be processed.'
+                    : firstSentence(feedbackText).replace(/\s*\(\d+% match[^)]*\)/i, '') || 'Scored.';
+
+                  return (
+                    <li key={q.id} className="rounded-xl border overflow-hidden" style={{ borderColor: isOpen ? 'var(--c-accent)' : 'var(--c-border)', background: 'var(--c-surface-muted)' }}>
+                      <button type="button" onClick={() => setOpenQuestion(isOpen ? null : q.id)} aria-expanded={isOpen}
+                        className="w-full text-left p-4 flex items-start gap-3">
+                        <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
+                          style={{ background: hasScore ? colorFor(questionScore) : 'var(--c-border)', color: hasScore ? '#fff' : 'var(--c-text-muted)' }}>
+                          {idx + 1}
+                        </span>
+                        <span className="flex-1 min-w-0 space-y-2">
+                          <span className="block text-sm font-semibold leading-snug" style={{ color: 'var(--c-text)' }}>{q.question_text}</span>
+                          {hasScore && <Bar100 value={questionScore} color={colorFor(questionScore)} height="h-1.5" />}
+                          <span className="block text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>{summaryLine}</span>
+                        </span>
+                        <span className="shrink-0 flex flex-col items-end gap-1">
+                          {hasScore ? (
+                            <>
+                              <span className="text-base font-bold" style={{ color: colorFor(questionScore) }}>{Math.round(questionScore)}%</span>
+                              <span className="hidden sm:block text-[11px] font-medium" style={{ color: 'var(--c-text-muted)' }}>{verdictFor(questionScore)}</span>
+                            </>
+                          ) : (
+                            <span className="c-badge c-badge-muted text-[11px]">{failed ? 'Not processed' : 'Skipped'}</span>
+                          )}
+                          <ChevronDown className={`w-4 h-4 mt-1 transition-transform ${isOpen ? 'rotate-180' : ''}`} style={{ color: 'var(--c-text-muted)' }} />
+                        </span>
+                      </button>
+
+                      {isOpen && (
+                        <div className="px-4 pb-4 sm:pl-[60px] space-y-4">
+                          {failed && <p className="text-xs" style={{ color: 'var(--c-danger)' }}>{qEval?.failed_reason || 'The recording for this answer could not be read.'}</p>}
+                          {transcript && (
+                            <div>
+                              <p className="text-[11px] font-semibold uppercase tracking-wider mb-1.5" style={{ color: 'var(--c-text-muted)' }}>{typed ? 'Your typed answer' : 'What you said'}</p>
+                              <p className="text-sm leading-relaxed p-3 rounded-lg border italic" style={{ color: 'var(--c-text)', borderColor: 'var(--c-border)', background: 'var(--c-surface)' }}>“{transcript}”</p>
+                            </div>
+                          )}
+                          {(covered.length > 0 || missing.length > 0) && (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              {covered.length > 0 && (
+                                <div>
+                                  <p className="text-xs font-semibold mb-1.5 flex items-center gap-1.5" style={{ color: 'var(--c-success)' }}><CheckCircle2 className="w-3.5 h-3.5" /> You covered</p>
+                                  <div className="flex flex-wrap gap-1.5">{covered.map((c) => <span key={c} className="c-badge c-badge-success text-[11px]">{c}</span>)}</div>
+                                </div>
+                              )}
+                              {missing.length > 0 && (
+                                <div>
+                                  <p className="text-xs font-semibold mb-1.5 flex items-center gap-1.5" style={{ color: 'var(--c-warning)' }}><Lightbulb className="w-3.5 h-3.5" /> Try to also mention</p>
+                                  <div className="flex flex-wrap gap-1.5">{missing.map((c) => <span key={c} className="c-badge c-badge-warning text-[11px]">{c}</span>)}</div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          {!typed && isRecorded && !failed && (wpm || fillers != null) && (
+                            <p className="text-xs flex flex-wrap gap-x-4 gap-y-1" style={{ color: 'var(--c-text-secondary)' }}>
+                              {wpm ? <span><Mic className="inline w-3.5 h-3.5 mr-1" />You spoke at {Math.round(wpm)} words a minute, {paceWords(delivery?.pacing, wpm)}.</span> : null}
+                              {fillers != null ? <span>{fillers === 0 ? 'No filler words like "um".' : `${fillers} filler word${fillers === 1 ? '' : 's'} like "um".`}</span> : null}
+                            </p>
+                          )}
+                          {issues.length > 0 && (
+                            <div>
+                              <p className="text-xs font-semibold mb-1.5" style={{ color: 'var(--c-text)' }}>Small language fixes</p>
+                              <ul className="space-y-1 text-xs">
+                                {issues.slice(0, 3).map((issue, i) => (
+                                  <li key={i}>
+                                    <span className="line-through" style={{ color: 'var(--c-text-muted)' }}>{issue.excerpt}</span>
+                                    <span style={{ color: 'var(--c-text-muted)' }}> → </span>
+                                    <span className="font-semibold" style={{ color: 'var(--c-text)' }}>{issue.suggestion}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          {cameraNotes.length > 0 && (
+                            <div className="c-badge-warning rounded-lg p-3 text-xs space-y-1">
+                              <p className="font-semibold flex items-center gap-1.5"><Video className="w-3.5 h-3.5" /> On camera</p>
+                              {cameraNotes.map((note, i) => <p key={i}>{note}</p>)}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ol>
+            </Card>
+
+            {/* 5. How you came across (FR 22, FR 23, FR 17) */}
+            <Card>
+              <SectionTitle hint="Estimated from your voice and, if the camera was on, your face. It describes what was seen, not how you felt.">How you came across</SectionTitle>
+              {confidenceAssessed || stressAssessed || hasVisionSummary ? (
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                  {[
+                    {
+                      label: 'Confidence', show: true, ok: confidenceAssessed,
+                      value: confidenceLevel, tone: levelTone[confidenceLevel] || 'accent', bar: confidenceScore,
+                      hint: 'From how steadily you spoke and your expression.',
+                    },
+                    {
+                      label: 'Stress', show: true, ok: stressAssessed,
+                      value: stressLevel, tone: stressTone[stressLevel] || 'warning', bar: stressScore,
+                      hint: 'From pauses, hesitation and visible tension.',
+                    },
+                    {
+                      label: 'Usual expression', show: true, ok: hasVisionSummary,
+                      value: facialSummary?.dominant_expression, tone: 'accent',
+                      hint: 'The expression seen most often.',
+                    },
+                    {
+                      label: 'Steadiness', show: true, ok: hasVisionSummary,
+                      value: facialSummary?.overall_composure, tone: 'accent',
+                      hint: 'How much your expression changed.',
+                    },
+                  ].map((t) => (
+                    <div key={t.label} className="rounded-xl p-4 space-y-2" style={{ background: 'var(--c-surface-muted)' }}>
+                      <p className="text-xs font-semibold" style={{ color: 'var(--c-text-muted)' }}>{t.label}</p>
+                      {t.ok ? (
+                        <>
+                          <p className="text-xl font-bold" style={{ color: `var(--c-${t.tone})` }}>{t.value}</p>
+                          {t.bar != null && <Bar100 value={t.bar} color={`var(--c-${t.tone})`} height="h-1.5" />}
+                        </>
+                      ) : (
+                        <p className="text-sm font-semibold" style={{ color: 'var(--c-text-muted)' }}>Not enough to judge</p>
+                      )}
+                      <p className="text-[11px] leading-relaxed" style={{ color: 'var(--c-text-muted)' }}>{t.hint}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm rounded-xl p-4" style={{ color: 'var(--c-text-secondary)', background: 'var(--c-surface-muted)' }}>
+                  {spokenCount === 0
+                    ? 'Your answers were typed, so confidence and stress could not be judged. Answer by speaking next time to see them.'
+                    : 'Your spoken answers were too short to judge confidence and stress. Longer answers (about 30 seconds or more) give a reading.'}
+                </p>
+              )}
+
+              {languageReady && (
+                <div className="mt-5 pt-5 border-t grid grid-cols-1 sm:grid-cols-3 gap-3" style={{ borderColor: 'var(--c-border)' }}>
+                  {[
+                    { label: 'Grammar', value: languageSummary.avg_grammar_score, hint: languageSummary.total_issues ? `${languageSummary.total_issues} small mistake${languageSummary.total_issues === 1 ? '' : 's'}` : 'No mistakes found' },
+                    { label: 'Clarity', value: languageSummary.avg_clarity_score, hint: 'How clear and well-ordered your sentences were' },
+                  ].map((m) => (
+                    <div key={m.label} className="space-y-1.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-semibold" style={{ color: 'var(--c-text)' }}>{m.label}</span>
+                        <span className="font-bold" style={{ color: colorFor(m.value) }}>{Math.round(m.value)}%</span>
+                      </div>
+                      <Bar100 value={m.value} color={colorFor(m.value)} height="h-1.5" />
+                      <p className="text-[11px]" style={{ color: 'var(--c-text-muted)' }}>{m.hint}</p>
+                    </div>
+                  ))}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-semibold" style={{ color: 'var(--c-text)' }}>Tone</span>
+                      <span className="font-bold" style={{ color: 'var(--c-accent)' }}>{languageSummary.dominant_tone}</span>
+                    </div>
+                    <p className="text-[11px]" style={{ color: 'var(--c-text-muted)' }}>
+                      How sure your answers sounded{languageSummary.common_hedges?.length ? `. Watch phrases like ${languageSummary.common_hedges.slice(0, 2).map((h) => `"${h}"`).join(', ')}` : ''}.
+                    </p>
+                    {corrections.length > 0 && (
+                      <p className="text-[11px]" style={{ color: 'var(--c-text-muted)' }}>
+                        Example fix: <span className="line-through">{corrections[0].excerpt}</span> → <strong style={{ color: 'var(--c-text)' }}>{corrections[0].suggestion}</strong>
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </Card>
+
+            {/* 6. Questions about your score (FR 24-03) */}
+            <Card>
+              <SectionTitle icon={HelpCircle}>Questions about your score</SectionTitle>
+              <div className="divide-y" style={{ borderColor: 'var(--c-border)' }}>
+                {helpTopics.map((t) => {
+                  const open = helpTopic === t.id;
+                  return (
+                    <div key={t.id}>
+                      <button type="button" onClick={() => setHelpTopic(open ? null : t.id)} aria-expanded={open}
+                        className="w-full flex items-center justify-between gap-3 py-3 text-left text-sm font-semibold" style={{ color: 'var(--c-text)' }}>
+                        {t.question}
+                        <ChevronDown className={`w-4 h-4 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} style={{ color: 'var(--c-text-muted)' }} />
+                      </button>
+                      {open && (
+                        <div className="pb-3 space-y-1.5" role="status" aria-live="polite">
+                          {t.answer.map((line, i) => <p key={i} className="text-sm leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>{line}</p>)}
                         </div>
                       )}
                     </div>
-                  </div>
-                      </div>
-                    );
-                  })}
-                </section>
+                  );
+                })}
               </div>
-            )}
-          </section>
+            </Card>
+          </>
         )}
-
 
         {/* NFR 11 - the candidate controls their recordings */}
         {showRecordings && (
-          <section aria-label="Your recordings" className="p-5 rounded-lg border space-y-3" style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }}>
-            <h2 className="c-heading text-base font-bold" style={{ color: 'var(--c-text)' }}>Your recordings</h2>
-            {interview?.hasRecordings ? (
-              <>
-                <p className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
-                  The audio{interview?.recordingConsent?.camera ? ' and video' : ''} of your answers is stored encrypted and used only for this
-                  assessment{interview?.recordingConsent?.research_use ? ', and to improve MockAI as you allowed' : ''}. You can delete it now; your
-                  scores, transcripts and feedback will stay.
-                </p>
-                {confirmDeleteRec ? (
-                  <div className="flex flex-wrap items-center gap-2.5">
-                    <span className="text-xs font-semibold" style={{ color: 'var(--c-text)' }}>Delete the recordings for this interview? This cannot be undone.</span>
-                    <button onClick={handleDeleteRecordings} disabled={deletingRec} className="c-btn px-3.5 py-2 text-xs font-bold rounded-md text-white" style={{ background: 'var(--c-danger)' }}>
-                      {deletingRec ? 'Deleting…' : 'Yes, delete'}
-                    </button>
-                    <button onClick={() => setConfirmDeleteRec(false)} disabled={deletingRec} className="c-btn c-btn-secondary px-3.5 py-2 text-xs font-semibold rounded-md">
-                      Cancel
-                    </button>
-                  </div>
-                ) : (
-                  <button onClick={() => setConfirmDeleteRec(true)} className="c-btn c-btn-secondary px-3.5 py-2 text-xs font-semibold rounded-md flex items-center gap-1.5">
-                    <Trash2 className="w-3.5 h-3.5" /> Delete my recordings
+          <section aria-label="Your recordings" className="rounded-2xl border p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+            style={{ borderColor: 'var(--c-border)' }}>
+            <div className="text-xs leading-relaxed" style={{ color: 'var(--c-text-secondary)' }}>
+              <p className="font-semibold text-sm" style={{ color: 'var(--c-text)' }}>Your recordings</p>
+              {interview?.hasRecordings
+                ? <>Stored encrypted and used only for this assessment{interview?.recordingConsent?.research_use ? ' and to improve MockAI, as you allowed' : ''}. Deleting them keeps your scores and feedback.</>
+                : <>Deleted. Your scores, transcripts and feedback are kept.</>}
+              {recMessage && <p className="font-semibold mt-1" style={{ color: 'var(--c-text)' }} role="status">{recMessage}</p>}
+            </div>
+            {interview?.hasRecordings && (
+              confirmDeleteRec ? (
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
+                  <span className="text-xs font-semibold" style={{ color: 'var(--c-text)' }}>This cannot be undone.</span>
+                  <button onClick={handleDeleteRecordings} disabled={deletingRec} className="c-btn px-3.5 py-2 text-xs font-bold rounded-md text-white" style={{ background: 'var(--c-danger)' }}>
+                    {deletingRec ? 'Deleting…' : 'Yes, delete'}
                   </button>
-                )}
-              </>
-            ) : (
-              <p className="text-xs" style={{ color: 'var(--c-text-secondary)' }}>
-                The recordings for this interview have been deleted. Your scores, transcripts and feedback are kept.
-              </p>
+                  <button onClick={() => setConfirmDeleteRec(false)} disabled={deletingRec} className="c-btn c-btn-secondary px-3.5 py-2 text-xs font-semibold rounded-md">Cancel</button>
+                </div>
+              ) : (
+                <button onClick={() => setConfirmDeleteRec(true)} className="c-btn c-btn-secondary shrink-0 px-3.5 py-2 text-xs font-semibold rounded-md flex items-center gap-1.5">
+                  <Trash2 className="w-3.5 h-3.5" /> Delete my recordings
+                </button>
+              )
             )}
-            {recMessage && <p className="text-xs font-semibold" style={{ color: 'var(--c-text)' }} role="status">{recMessage}</p>}
           </section>
         )}
 
-        {/* ===================================================================
-            6. ACTIONS BAR
-           =================================================================== */}
-        <section aria-label="Report Actions" className="pt-2 flex flex-col sm:flex-row sm:flex-wrap sm:items-center justify-between gap-3 sm:gap-4">
-          <div className="grid grid-cols-2 sm:flex sm:items-center gap-3">
-            <Link
-              to="/history"
-              className="c-btn c-btn-secondary px-4 py-2.5 text-xs font-semibold rounded-md flex items-center gap-1.5"
-            >
-              <History className="w-3.5 h-3.5" />
-              <span>Interview History</span>
+        {/* Next step */}
+        <section className="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-4 pt-2">
+          <div className="flex items-center gap-5 text-xs font-semibold">
+            <Link to="/history" className="flex items-center gap-1.5 hover:underline underline-offset-2" style={{ color: 'var(--c-text-secondary)' }}>
+              <History className="w-3.5 h-3.5" /> Interview history
             </Link>
-            <Link
-              to="/dashboard"
-              className="c-btn c-btn-secondary px-4 py-2.5 text-xs font-semibold rounded-md flex items-center gap-1.5"
-            >
-              <LayoutDashboard className="w-3.5 h-3.5" />
-              <span>Dashboard</span>
+            <Link to="/dashboard" className="flex items-center gap-1.5 hover:underline underline-offset-2" style={{ color: 'var(--c-text-secondary)' }}>
+              <LayoutDashboard className="w-3.5 h-3.5" /> Dashboard
             </Link>
           </div>
-
           {isCompleted ? (
-            <Link
-              to={`/interview/${id}/feedback`}
-              className="c-btn c-btn-primary px-6 py-3 text-sm font-bold rounded-md flex items-center justify-center gap-1.5"
-            >
-              <span>See your feedback and practice plan</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+            <Link to={`/interview/${id}/feedback`} className="c-btn c-btn-primary px-6 py-3.5 text-sm font-bold rounded-md flex items-center justify-center gap-2">
+              See your feedback and practice plan <ArrowRight className="w-4 h-4" />
             </Link>
           ) : (
-            <Link
-              to="/interview/goal"
-              className="c-btn c-btn-primary px-5 py-3 sm:py-2.5 text-xs font-bold rounded-md flex items-center justify-center gap-1.5"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>Practice Another Session</span>
+            <Link to="/interview/goal" className="c-btn c-btn-primary px-6 py-3.5 text-sm font-bold rounded-md flex items-center justify-center gap-2">
+              <RotateCcw className="w-4 h-4" /> Practice another interview
             </Link>
           )}
         </section>
-
       </div>
     </InterviewFlowLayout>
   );
 };
+
+// Small building blocks for the results page.
+const Card = ({ children, className = '', ...rest }) => (
+  <section className={`rounded-2xl border p-5 sm:p-6 ${className}`} style={{ background: 'var(--c-surface)', borderColor: 'var(--c-border)' }} {...rest}>
+    {children}
+  </section>
+);
+const SectionTitle = ({ icon: Icon, children, hint }) => (
+  <div className="mb-4">
+    <h2 className="c-heading text-lg font-bold flex items-center gap-2" style={{ color: 'var(--c-text)' }}>
+      {Icon && <Icon className="w-5 h-5" style={{ color: 'var(--c-accent)' }} />}
+      {children}
+    </h2>
+    {hint && <p className="text-xs mt-1" style={{ color: 'var(--c-text-muted)' }}>{hint}</p>}
+  </div>
+);
+const Bar100 = ({ value, color, height = 'h-2' }) => (
+  <div className={`${height} w-full rounded-full overflow-hidden`} style={{ background: 'var(--c-surface-muted)' }}>
+    <div className="h-full rounded-full transition-all duration-700" style={{ width: `${Math.min(100, Math.max(0, value ?? 0))}%`, background: color }} />
+  </div>
+);
 
 export default EvaluationResults;
